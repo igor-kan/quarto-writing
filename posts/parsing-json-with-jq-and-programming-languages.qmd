@@ -1,0 +1,196 @@
+---
+title: "JSON Wrangling: Mastering jq and Programmatic Parsing"
+description: "A comprehensive developer's guide to JSON data structures, command-line query processing with jq, and programmatic parsing in Python, JavaScript, and Rust."
+date: "2026-06-27"
+categories: [Programming, JSON, CLI, Python, JavaScript, Rust]
+---
+
+JSON (JavaScript Object Notation) is the lightweight, text-based standard for data exchange on the modern web. From web APIs and configurations to database storage, almost every developer works with JSON daily.
+
+However, viewing, filtering, and parsing JSON can be challenging, especially in shell environments. This guide explains how to master JSON data wrangling using the command-line utility **`jq`**, and demonstrates how to parse and serialize JSON programmatically in **Python**, **JavaScript/Node.js**, and **Rust**.
+
+---
+
+### 1. What is JSON?
+
+JSON is structured as a collection of key-value pairs (Objects) and ordered lists (Arrays). It supports six primitive and structured types:
+
+* **String:** Unicode characters enclosed in double quotes (e.g., `"username"`).
+* **Number:** Double-precision float (e.g., `42` or `3.1415`).
+* **Boolean:** `true` or `false`.
+* **Null:** Represents an empty value (`null`).
+* **Object:** An unordered set of key-value pairs wrapped in curly braces (`{}`).
+* **Array:** An ordered collection of values wrapped in brackets (`[]`).
+
+Example JSON structure (`data.json`):
+```json
+{
+  "project": "quarto-writing",
+  "active": true,
+  "stars": 128,
+  "maintainers": [
+    {"name": "Igor", "role": "Lead"},
+    {"name": "Sarah", "role": "Contributor"}
+  ],
+  "config": {
+    "port": 8080,
+    "env": "production"
+  }
+}
+```
+
+---
+
+### 2. Command-Line Processing with `jq`
+
+**`jq`** is a lightweight, flexible command-line JSON processor. It functions like `sed` or `awk` but is specifically designed to understand JSON hierarchies.
+
+#### Pretty Printing and Identity
+The simplest filter is `.`, which takes the input and prints it back as formatted (pretty-printed), colorized JSON:
+```bash
+jq . data.json
+```
+
+#### Extracting Key Values
+You can reference keys using dot-notation:
+```bash
+# Get the project name
+jq '.project' data.json  # Output: "quarto-writing"
+
+# Get the port inside the config object
+jq '.config.port' data.json  # Output: 8080
+```
+
+#### Extracting Raw Strings (`-r` or `--raw-output`)
+By default, `jq` outputs valid JSON (meaning strings are enclosed in double quotes). To output the raw text directly (ideal for storing in shell variables), use the `-r` flag:
+```bash
+PROJECT=$(jq -r '.project' data.json)
+echo "Deploying $PROJECT..."
+```
+
+#### Iterating Over Arrays
+Use `.[]` to extract elements from an array:
+```bash
+# Print each maintainer object
+jq '.maintainers[]' data.json
+
+# Print only the names of all maintainers
+jq '.maintainers[].name' data.json
+# Output:
+# "Igor"
+# "Sarah"
+```
+
+#### Filtering and Selection (`select`)
+You can use conditionals to filter elements out of an array:
+```bash
+# Example JSON array of users
+# [{"name": "Alice", "age": 22}, {"name": "Bob", "age": 30}]
+cat users.json | jq '.[] | select(.age >= 25)'
+# Output: {"name": "Bob", "age": 30}
+```
+
+#### Creating New Shapes (Object Reconstruction)
+You can map elements into completely new JSON shapes:
+```bash
+jq '.maintainers[] | {user: .name, is_lead: (.role == "Lead")}' data.json
+# Output:
+# { "user": "Igor", "is_lead": true }
+# { "user": "Sarah", "is_lead": false }
+```
+
+---
+
+### 3. Programmatic JSON Parsing by Language
+
+While `jq` is excellent for shell scripts and quick investigations, production applications parse JSON programmatically. Here is how three major languages handle it:
+
+#### Python (`json` module)
+Python has built-in support for JSON, parsing it directly into standard dictionary and list types.
+
+```python
+import json
+
+# JSON String
+json_string = '{"name": "Igor", "age": 30, "languages": ["Python", "Rust"]}'
+
+# 1. Deserialize (JSON string -> Python dict)
+data = json.loads(json_string)
+print(f"Name: {data['name']}, Primary Language: {data['languages'][0]}")
+
+# Modify dict
+data["active"] = True
+
+# 2. Serialize (Python dict -> JSON string)
+updated_json_string = json.dumps(data, indent=2)
+print(updated_json_string)
+```
+
+#### JavaScript / Node.js
+JSON is natively integrated into JavaScript, sharing syntax directly with JS objects.
+
+```javascript
+// JSON String
+const jsonString = '{"name": "Sarah", "role": "Contributor", "stars": 5}';
+
+// 1. Deserialize (JSON string -> JS Object)
+const data = JSON.parse(jsonString);
+console.log(`User: ${data.name}, Role: ${data.role}`);
+
+// Modify Object
+data.stars += 1;
+
+// 2. Serialize (JS Object -> JSON string)
+const updatedJsonString = JSON.stringify(data, null, 2);
+console.log(updatedJsonString);
+```
+
+#### Rust (`serde` and `serde_json` crates)
+Rust enforces type safety. The industry standard is `serde` (Serialization/Deserialization), which compiles fast, type-safe structures mapping directly to JSON.
+
+In `Cargo.toml`:
+```toml
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+```
+
+In `main.rs`:
+```rust
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug)]
+struct User {
+    name: String,
+    age: u32,
+    languages: Vec<String>,
+}
+
+fn main() {
+    let json_data = r#"
+        {
+            "name": "Igor",
+            "age": 30,
+            "languages": ["Rust", "Python"]
+        }
+    "#;
+
+    // 1. Deserialize (JSON string -> Rust Struct)
+    let user: User = serde_json::from_str(json_data).unwrap();
+    println!("Parsed Struct: {:?}", user);
+    println!("User Name: {}", user.name);
+
+    // 2. Serialize (Rust Struct -> JSON string)
+    let serialized = serde_json::to_string_pretty(&user).unwrap();
+    println!("Serialized JSON:\n{}", serialized);
+}
+```
+
+---
+
+### 4. Conclusion & Quick Reference
+
+For developers, standardizing tools and habits around JSON increases efficiency:
+* Use **`jq`** in terminal pipes to inspect API returns (`curl -s https://api.github.com/repos/igor-kan/quarto-writing | jq .stars_count`).
+* Use **`json.loads`/`json.dumps`** in Python for quick scripting.
+* Define strict structs with **`serde`** in Rust to enforce data integrity.
