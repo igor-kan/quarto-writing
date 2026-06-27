@@ -7,7 +7,7 @@ categories: [Linux, Systems, Desktop-Customization]
 
 For users transitioning to Linux or diving deeper into system customization ("ricing"), the visual layer of the operating system can seem like a confusing maze of acronyms and interchangeable terms. 
 
-Unlike Windows or macOS, where the graphical user interface is tightly coupled with the operating system, Linux treats the GUI as a modular, replaceable stack of software. This article breaks down the entire desktop stack from display protocols to custom rices like **Illogical Impulse**, complete with installation commands, configuration paths, and configuration examples.
+Unlike Windows or macOS, where the graphical user interface (GUI) is tightly coupled with the core operating system, Linux treats the GUI as a modular, replaceable stack of software. This article breaks down the entire desktop stack from display protocols to custom rices like **Illogical Impulse**, complete with installation commands, configuration paths, and configuration examples.
 
 ---
 
@@ -15,21 +15,38 @@ Unlike Windows or macOS, where the graphical user interface is tightly coupled w
 
 At the very bottom of the graphical stack sits the **Display Server**. Its job is to coordinate communication between your hardware (graphics card, keyboard, mouse) and your applications, telling the hardware where and how to render pixels.
 
+Here is how data flows through the Linux graphical stack:
+
 ```mermaid
-graph TD
-    Hardware[GPU, Input Devices] <--> DisplayServer[Display Server / Protocol]
-    DisplayServer <--> WindowManager[Window Manager / Compositor]
-    WindowManager <--> Client[GUI Applications]
+flowchart TD
+    subgraph InputOutput [Hardware Layer]
+        Hardware["Hardware (GPU, Keyboard, Mouse)"]
+    end
+    subgraph ProtocolLayer [Display Server Protocol]
+        DisplayServer["Display Server (Xorg / Wayland Compositor)"]
+    end
+    subgraph WindowLayer [Window Management Layer]
+        WindowManager["Window Manager / Compositor (Mutter, KWin, Hyprland, i3)"]
+    end
+    subgraph AppLayer [User Space Applications]
+        Client["GUI Applications (Firefox, Kitty, Files)"]
+    end
+
+    Hardware -->|Input Events| DisplayServer
+    DisplayServer -->|Display Signals| Hardware
+    Client -->|Render Commands| WindowManager
+    WindowManager -->|Composed Frames| DisplayServer
+    DisplayServer -->|Input Events Routing| Client
 ```
 
 ### X11 (X Window System)
-Introduced in 1984, **X11** (specifically its modern server implementation, **Xorg**) is the legacy standard.
+Introduced in 1984, the [X Window System](https://www.x.org/wiki/) (specifically its modern server implementation, **Xorg**) is the legacy standard.
 * **How it works:** It uses a client-server architecture. Applications (clients) send drawing requests to the X Server, which interacts with the hardware. A separate Window Manager is responsible for arranging the application windows.
 * **Network Transparency:** X11 natively supports running an application on a remote server and displaying its window on your local machine.
 * **Downsides:** It is old, bloated, lacks built-in security isolation (any app can capture keystrokes from other apps), and is prone to screen tearing.
 
 ### Wayland
-**Wayland** is the modern successor to X11, designed to simplify the stack and enhance performance and security.
+[Wayland](https://wayland.freedesktop.org/) is the modern successor to X11, designed to simplify the stack and enhance performance and security.
 * **How it works:** Wayland is a *protocol*, not a server. The server is called a **Wayland Compositor** (which acts as the display server, window manager, and compositor all in one).
 * **Direct Rendering:** Applications render directly into their own off-screen buffers, and the compositor paints them to the screen. Every frame is perfect (no screen tearing).
 * **Security:** Strict isolation. Applications cannot sniff keystrokes or record screens without explicit permission through system portals.
@@ -42,29 +59,29 @@ When you interact with panels, menus, and window frames, you are interacting wit
 
 | Component | Purpose | Resource Usage | Examples |
 |---|---|---|---|
-| **Window Manager (WM)** | Solitary job: positioning, sizing, and styling application windows. | Extremely low (~50MB - 150MB RAM) | i3, bspwm, Hyprland, Sway |
-| **Desktop Environment (DE)** | A complete suite of unified applications (file manager, settings, panels, system tray, display manager, WM). | Moderate to High (500MB - 2GB+ RAM) | GNOME, KDE Plasma, XFCE4 |
+| **Window Manager (WM)** | Solitary job: positioning, sizing, and styling application windows. | Extremely low (~50MB - 150MB RAM) | [i3wm](https://i3wm.org/), [bspwm](https://github.com/baskerville/bspwm), [Hyprland](https://hyprland.org/), [Sway](https://swaywm.org/) |
+| **Desktop Environment (DE)** | A complete suite of unified applications (file manager, settings, panels, system tray, display manager, WM). | Moderate to High (500MB - 2GB+ RAM) | [GNOME](https://www.gnome.org/), [KDE Plasma](https://kde.org/plasma-desktop/), [XFCE](https://xfce.org/) |
 
 ### Desktop Environments
 
 #### GNOME
-Built on the GTK toolkit, GNOME focuses on a distraction-free, touch-friendly, workspace-centric interface. It defaults to Wayland and uses its own compositor called **Mutter**.
+Built on the GTK toolkit, [GNOME](https://www.gnome.org/) focuses on a distraction-free, touch-friendly, workspace-centric interface. It defaults to Wayland and uses its own compositor called [Mutter](https://gitlab.gnome.org/GNOME/mutter).
 
 #### KDE Plasma
-Built on Qt, KDE Plasma is famous for being incredibly modular and customizable. It is lightweight despite its power and supports both X11 and Wayland via its compositor/WM, **KWin**.
+Built on Qt, [KDE Plasma](https://kde.org/plasma-desktop/) is famous for being incredibly modular and customizable. It is lightweight despite its power and supports both X11 and Wayland via its compositor/WM, [KWin](https://invent.kde.org/plasma/kwin).
 
 #### XFCE4
-A lightweight DE built on GTK. It is modular, stable, and uses very little RAM, making it perfect for older hardware. It operates primarily on X11 using the **Xfwm** window manager.
+A lightweight DE built on GTK. [XFCE](https://xfce.org/) is modular, stable, and uses very little RAM, making it perfect for older hardware. It operates primarily on X11 using the [Xfwm](https://gitlab.xfce.org/xfce/xfwm4) window manager.
 
 ---
 
 ### Window Managers & Compositors
 
 #### Hyprland
-A dynamic tiling Wayland compositor written in C++. It is popular for its fluid animations, rounded corners, dual-gaps, active blur rendering, and extensive customizability.
+[Hyprland](https://hyprland.org/) is a dynamic tiling Wayland compositor written in C++. It is popular for its fluid animations, rounded corners, dual-gaps, active blur rendering, and extensive customizability.
 
 #### i3wm
-A classic, manual tiling window manager for X11. It organizes windows in a non-overlapping grid, heavily relying on keyboard shortcuts.
+[i3wm](https://i3wm.org/) is a classic, manual tiling window manager for X11. It organizes windows in a non-overlapping grid, heavily relying on keyboard shortcuts.
 
 ---
 
@@ -78,9 +95,9 @@ In Linux, user-specific configurations are stored as plain text files, often pre
 * **X11 Startup:** `~/.xinitrc` (scripts executed when launching X11).
 
 ### Illogical Impulse: Next-Gen Hyprland Config
-**Illogical Impulse** (developed by GitHub user `end-4`) is a highly integrated, aesthetic, and usability-first set of dotfiles for the **Hyprland** Wayland compositor.
-* **Core Technology:** It relies heavily on **Quickshell** (and previously AGS - Aylur's GTK Shell) to construct widgets, control hubs, volume sliders, app launchers, and status bars using Javascript/Typescript.
-* **Why it's unique:** Unlike traditional configs where you chain different tools together (e.g., Waybar for status bar, Rofi for launcher, Dunst for notifications), Illogical Impulse unifies all desktop components into a single, cohesive Material Design interface.
+[Illogical Impulse](https://ii.clsty.link/) (developed by GitHub user [end-4](https://github.com/end-4)) is a highly integrated, aesthetic, and usability-first set of dotfiles for the **Hyprland** Wayland compositor.
+* **Core Technology:** It relies heavily on [Quickshell](https://github.com/outfoxxed/quickshell) (and previously [AGS - Aylur's GTK Shell](https://github.com/Aylur/ags)) to construct widgets, control hubs, volume sliders, app launchers, and status bars using Javascript/Typescript.
+* **Why it's unique:** Unlike traditional configs where you chain different tools together (e.g., [Waybar](https://github.com/Alexays/Waybar) for status bar, [Rofi](https://github.com/davatorium/rofi) for launcher, [Dunst](https://github.com/dunst-project/dunst) for notifications), Illogical Impulse unifies all desktop components into a single, cohesive Material Design interface.
 
 ---
 
@@ -112,7 +129,7 @@ sudo apt install hyprland
 ```
 
 ### Deploying the "Illogical Impulse" Dotfiles
-To deploy the custom **Illogical Impulse** desktop environment, you should use the official installation script on an Arch-based system:
+To deploy the custom [Illogical Impulse](https://github.com/end-4/dots-hyprland) desktop environment, you should use the official installation script on an Arch-based system:
 
 ```bash
 # Clone the repository
