@@ -6,9 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="description" content="A growing collection of comprehensive guides and textbooks.">
+<meta name="dcterms.date" content="2026-06-27">
+<meta name="description" content="A comprehensive guide navigating the single-root directory tree structure of Linux and the purpose of directories like etc, bin, var, and proc.">
 
-<title>The Textbook Library – My Writings</title>
+<title>Understanding the Linux Filesystem Hierarchy Standard (FHS) – My Writings</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -34,8 +35,6 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<script src="../site_libs/quarto-listing/list.min.js"></script>
-<script src="../site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -73,65 +72,7 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
-<script>
 
-  window.document.addEventListener("DOMContentLoaded", function (_event) {
-    const listingTargetEl = window.document.querySelector('#listing-listing .list');
-    if (!listingTargetEl) {
-      // No listing discovered, do not attach.
-      return; 
-    }
-
-    const options = {
-      valueNames: ['listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
-      
-      searchColumns: ["listing-title","listing-author","listing-image","listing-description"],
-    };
-
-    window['quarto-listings'] = window['quarto-listings'] || {};
-    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
-
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  });
-
-  window.addEventListener('hashchange',() => {
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  })
-  </script>
-
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -162,7 +103,7 @@ window.Quarto = {
 <span class="menu-text">Blog</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="../chapters/index.html" aria-current="page"> 
+    <a class="nav-link" href="../chapters/index.html"> 
 <span class="menu-text">Chapters</span></a>
   </li>  
   <li class="nav-item">
@@ -181,30 +122,60 @@ window.Quarto = {
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-fhs-directory-tree" id="toc-the-fhs-directory-tree" class="nav-link active" data-scroll-target="#the-fhs-directory-tree">1. The FHS Directory Tree</a></li>
+  <li><a href="#directory-breakdown-purpose" id="toc-directory-breakdown-purpose" class="nav-link" data-scroll-target="#directory-breakdown-purpose">2. Directory Breakdown &amp; Purpose</a>
+  <ul class="collapse">
+  <li><a href="#root" id="toc-root" class="nav-link" data-scroll-target="#root"><code>/ (Root)</code></a></li>
+  <li><a href="#bin-and-sbin" id="toc-bin-and-sbin" class="nav-link" data-scroll-target="#bin-and-sbin"><code>/bin</code> and <code>/sbin</code></a></li>
+  <li><a href="#boot" id="toc-boot" class="nav-link" data-scroll-target="#boot"><code>/boot</code></a></li>
+  <li><a href="#dev-devices" id="toc-dev-devices" class="nav-link" data-scroll-target="#dev-devices"><code>/dev</code> (Devices)</a></li>
+  <li><a href="#etc-editable-text-configuration" id="toc-etc-editable-text-configuration" class="nav-link" data-scroll-target="#etc-editable-text-configuration"><code>/etc</code> (Editable Text Configuration)</a></li>
+  <li><a href="#home-and-root" id="toc-home-and-root" class="nav-link" data-scroll-target="#home-and-root"><code>/home</code> and <code>/root</code></a></li>
+  <li><a href="#proc-and-sys-virtual-filesystems" id="toc-proc-and-sys-virtual-filesystems" class="nav-link" data-scroll-target="#proc-and-sys-virtual-filesystems"><code>/proc</code> and <code>/sys</code> (Virtual Filesystems)</a></li>
+  <li><a href="#usr-user-system-resources" id="toc-usr-user-system-resources" class="nav-link" data-scroll-target="#usr-user-system-resources"><code>/usr</code> (User System Resources)</a></li>
+  <li><a href="#var-variable" id="toc-var-variable" class="nav-link" data-scroll-target="#var-variable"><code>/var</code> (Variable)</a></li>
+  <li><a href="#tmp-temporary" id="toc-tmp-temporary" class="nav-link" data-scroll-target="#tmp-temporary"><code>/tmp</code> (Temporary)</a></li>
+  </ul></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
-<main class="content column-page" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">The Textbook Library</h1>
-</div>
+<h1 class="title">Understanding the Linux Filesystem Hierarchy Standard (FHS)</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">Linux</div>
+    <div class="quarto-category">Operating Systems</div>
+    <div class="quarto-category">FHS</div>
+  </div>
+  </div>
 
 <div>
   <div class="description">
-    A growing collection of comprehensive guides and textbooks.
+    A comprehensive guide navigating the single-root directory tree structure of Linux and the purpose of directories like etc, bin, var, and proc.
   </div>
 </div>
 
 
-<div class="quarto-title-meta column-page">
+<div class="quarto-title-meta">
 
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">June 27, 2026</p>
+    </div>
+  </div>
   
     
   </div>
@@ -214,320 +185,86 @@ window.Quarto = {
 </header>
 
 
-<p>Welcome to the textbook library. Below is the index of all currently drafted and planned textbooks spanning mathematics, computer science, software engineering, and systems architecture.</p>
+<p>For users coming from Windows, the Linux filesystem can seem disorienting. Windows organizes files around physical storage drives (e.g., <code>C:\</code> for the primary system, <code>D:\</code> for external drives).</p>
+<p>Linux, however, structures everything under a single unified directory tree starting from the <strong>Root directory (<code>/</code>)</strong>. Physical storage devices are “mounted” to specific directories within this single tree.</p>
+<p>This structure is governed by the <strong>Filesystem Hierarchy Standard (FHS)</strong>, ensuring consistency across different Linux distributions.</p>
+<hr>
+<section id="the-fhs-directory-tree" class="level2">
+<h2 class="anchored" data-anchor-id="the-fhs-directory-tree">1. The FHS Directory Tree</h2>
+<p>Here is a visual map of the standard Linux filesystem structure:</p>
+<pre class="mermaid"><code>flowchart TD
+    Root["/ (Root)"] --&gt; bin["/bin (Essential User Binaries)"]
+    Root --&gt; boot["/boot (Kernel &amp; Bootloader)"]
+    Root --&gt; dev["/dev (Device Files)"]
+    Root --&gt; etc["/etc (System Configuration Files)"]
+    Root --&gt; home["/home (User Home Directories)"]
+    Root --&gt; lib["/lib (Shared Libraries)"]
+    Root --&gt; opt["/opt (Optional Software Packages)"]
+    Root --&gt; proc["/proc (Virtual Process Filesystem)"]
+    Root --&gt; rootDir["/root (Superuser Home Directory)"]
+    Root --&gt; tmp["/tmp (Temporary Files)"]
+    Root --&gt; usr["/usr (User Utilities)"]
+    Root --&gt; var["/var (Variable Data Logs)"]
+
+    usr --&gt; usrBin["/usr/bin (Non-essential Binaries)"]
+    usr --&gt; usrShare["/usr/share (Shared App Data)"]
+    var --&gt; varLog["/var/log (System Logs)"]</code></pre>
+<hr>
+</section>
+<section id="directory-breakdown-purpose" class="level2">
+<h2 class="anchored" data-anchor-id="directory-breakdown-purpose">2. Directory Breakdown &amp; Purpose</h2>
+<section id="root" class="level3">
+<h3 class="anchored" data-anchor-id="root"><code>/ (Root)</code></h3>
+<p>The primary directory that contains all other directories and files on the system, regardless of which physical disk partition they reside on.</p>
+</section>
+<section id="bin-and-sbin" class="level3">
+<h3 class="anchored" data-anchor-id="bin-and-sbin"><code>/bin</code> and <code>/sbin</code></h3>
+<ul>
+<li><strong><code>/bin</code> (Binaries):</strong> Essential command-line utilities needed in single-user mode or for system repair (e.g., <code>ls</code>, <code>cp</code>, <code>bash</code>).</li>
+<li><strong><code>/sbin</code> (System Binaries):</strong> Essential system administration commands reserved for the superuser (e.g., <code>iptables</code>, <code>fdisk</code>, <code>reboot</code>).</li>
+<li><em>Note: In modern distributions, <code>/bin</code> and <code>/sbin</code> are often symbolic links to <code>/usr/bin</code> and <code>/usr/sbin</code>.</em></li>
+</ul>
+</section>
+<section id="boot" class="level3">
+<h3 class="anchored" data-anchor-id="boot"><code>/boot</code></h3>
+<p>Contains the static files needed to start the operating system, including the Linux kernel, initial RAM disk (initramfs), and bootloader configuration (GRUB).</p>
+</section>
+<section id="dev-devices" class="level3">
+<h3 class="anchored" data-anchor-id="dev-devices"><code>/dev</code> (Devices)</h3>
+<p>In Unix/Linux, <em>“everything is a file”</em>. This directory contains virtual files representing physical hardware. For example: * <code>/dev/sda</code> represents the first hard disk drive. * <code>/dev/input/mice</code> represents mouse input. * <code>/dev/null</code> is a virtual device that discards all data written to it.</p>
+</section>
+<section id="etc-editable-text-configuration" class="level3">
+<h3 class="anchored" data-anchor-id="etc-editable-text-configuration"><code>/etc</code> (Editable Text Configuration)</h3>
+<p>The nerve center of system configuration. It contains host-specific configuration files for the operating system and services. For example: * <code>/etc/passwd</code> lists local system users. * <code>/etc/hosts</code> configures hostname-to-IP mappings. * <code>/etc/fstab</code> defines disk mounting points.</p>
+</section>
+<section id="home-and-root" class="level3">
+<h3 class="anchored" data-anchor-id="home-and-root"><code>/home</code> and <code>/root</code></h3>
+<ul>
+<li><strong><code>/home</code>:</strong> Contains the home directories for standard users (e.g., <code>/home/igorkan</code>). This is where files, desktop folders, and user configuration dotfiles (<code>~/.config/</code>) reside.</li>
+<li><strong><code>/root</code>:</strong> The home directory for the superuser/administrator (<code>root</code>). It is separated from <code>/home</code> to ensure the system administrator can still log in and repair the machine even if the <code>/home</code> partition fails to mount.</li>
+</ul>
+</section>
+<section id="proc-and-sys-virtual-filesystems" class="level3">
+<h3 class="anchored" data-anchor-id="proc-and-sys-virtual-filesystems"><code>/proc</code> and <code>/sys</code> (Virtual Filesystems)</h3>
+<p>These are not real folders on your hard drive; they are virtual interfaces created by the Linux kernel. * <strong><code>/proc</code> (Process):</strong> Contains files representing running processes and kernel parameters. For instance, reading <code>/proc/cpuinfo</code> displays CPU specifications. * <strong><code>/sys</code> (System):</strong> Provides hierarchical information about hardware drivers and kernel subsystems.</p>
+</section>
+<section id="usr-user-system-resources" class="level3">
+<h3 class="anchored" data-anchor-id="usr-user-system-resources"><code>/usr</code> (User System Resources)</h3>
+<p>Contains user utilities, libraries, and documentation. * <code>/usr/bin</code> contains non-essential executables (like python, git, and nodejs). * <code>/usr/lib</code> holds shared library binaries. * <code>/usr/share</code> holds architecture-independent files like icons, themes, and documentation.</p>
+</section>
+<section id="var-variable" class="level3">
+<h3 class="anchored" data-anchor-id="var-variable"><code>/var</code> (Variable)</h3>
+<p>Stores data that changes dynamically as the system operates. * <code>/var/log</code> contains system and application log files (e.g., syslog, boot logs). * <code>/var/spool</code> holds print queues and mail queues. * <code>/var/cache</code> holds cached application data.</p>
+</section>
+<section id="tmp-temporary" class="level3">
+<h3 class="anchored" data-anchor-id="tmp-temporary"><code>/tmp</code> (Temporary)</h3>
+<p>A scratch directory where applications can read and write temporary files. Typically, the files here are cleared automatically every time the computer reboots.</p>
 
 
+</section>
+</section>
 
-
-<div class="quarto-listing quarto-listing-container-grid" id="listing-listing">
-<div class="list grid quarto-listing-cols-3">
-<div class="g-col-1" data-index="0" data-listing-file-modified-sort="1782586604587" data-listing-reading-time-sort="1" data-listing-word-count-sort="38">
-<a href="../chapters/ai-data-science/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Ai Data Science Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Ai Data Science.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="1" data-listing-file-modified-sort="1782586604587" data-listing-reading-time-sort="1" data-listing-word-count-sort="38">
-<a href="../chapters/c-cpp-rust/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-C Cpp Rust Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for C Cpp Rust.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="2" data-listing-file-modified-sort="1782586604588" data-listing-reading-time-sort="2" data-listing-word-count-sort="299">
-<a href="../chapters/mathematics/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Comprehensive Mathematics Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>From Single Variable Calculus to Real Analysis, PDEs, and beyond.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="3" data-listing-file-modified-sort="1782586604587" data-listing-reading-time-sort="1" data-listing-word-count-sort="37">
-<a href="../chapters/cs-dsa/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Cs Dsa Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Cs Dsa.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="4" data-listing-file-modified-sort="1782586604587" data-listing-reading-time-sort="1" data-listing-word-count-sort="36">
-<a href="../chapters/cybersecurity/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Cybersecurity Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Cybersecurity.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="5" data-listing-file-modified-sort="1782586604587" data-listing-reading-time-sort="1" data-listing-word-count-sort="36">
-<a href="../chapters/go/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Go Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Go.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="6" data-listing-file-modified-sort="1782586604587" data-listing-reading-time-sort="1" data-listing-word-count-sort="38">
-<a href="../chapters/html-css-js/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Html Css Js Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Html Css Js.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="7" data-listing-file-modified-sort="1782586604587" data-listing-reading-time-sort="1" data-listing-word-count-sort="37">
-<a href="../chapters/java-kotlin/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Java Kotlin Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Java Kotlin.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="8" data-listing-file-modified-sort="1782586604587" data-listing-reading-time-sort="1" data-listing-word-count-sort="37">
-<a href="../chapters/linux-bash/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Linux Bash Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Linux Bash.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="9" data-listing-file-modified-sort="1782586604588" data-listing-reading-time-sort="1" data-listing-word-count-sort="36">
-<a href="../chapters/networking/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Networking Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Networking.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="10" data-listing-file-modified-sort="1782586604588" data-listing-reading-time-sort="1" data-listing-word-count-sort="37">
-<a href="../chapters/nodejs-backend/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Nodejs Backend Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Nodejs Backend.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="11" data-listing-file-modified-sort="1782586604588" data-listing-reading-time-sort="1" data-listing-word-count-sort="37">
-<a href="../chapters/nosql-databases/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Nosql Databases Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Nosql Databases.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="12" data-listing-file-modified-sort="1782586604588" data-listing-reading-time-sort="1" data-listing-word-count-sort="38">
-<a href="../chapters/python-data-stack/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Python Data Stack Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Python Data Stack.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="13" data-listing-file-modified-sort="1782586604588" data-listing-reading-time-sort="1" data-listing-word-count-sort="37">
-<a href="../chapters/software-architecture/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Software Architecture Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Software Architecture.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="14" data-listing-file-modified-sort="1782586604588" data-listing-reading-time-sort="1" data-listing-word-count-sort="38">
-<a href="../chapters/sql-relational-db/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Sql Relational Db Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Sql Relational Db.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="15" data-listing-file-modified-sort="1782586604588" data-listing-reading-time-sort="1" data-listing-word-count-sort="38">
-<a href="../chapters/ts-react-nextjs/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Ts React Nextjs Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Ts React Nextjs.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-</div>
-<div class="listing-no-matching d-none">No matching items</div>
-</div></main> <!-- /main -->
+</main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
