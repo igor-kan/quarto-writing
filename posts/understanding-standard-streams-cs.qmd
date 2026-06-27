@@ -1,0 +1,212 @@
+---
+title: "Understanding Standard Streams: Stdin, Stdout, Stderr, and Redirection"
+description: "A comprehensive computer science guide to standard input, output, and error streams, explaining file descriptors, pipelines, buffering, and redirection with practical code examples."
+date: "2026-06-27"
+categories: [Computer Science, Linux, Programming]
+---
+
+In Unix and Unix-like operating systems (including Linux and macOS), the concept of **standard streams** is one of the most fundamental abstractions. Standard streams allow programs to communicate with each other, receive input from users, print output, and report errors in a uniform, decoupled way.
+
+This guide covers the core computer science concepts behind standard streams, file descriptors, redirection, and buffering, accompanied by code examples in C, Python, Node.js, and Bash.
+
+---
+
+### What are Standard Streams?
+
+When a process (a running program) is executed, the operating system automatically opens three default I/O channels (streams) for it:
+
+| Stream Name | Abbreviation | File Descriptor (FD) | Default Device | Purpose |
+|-------------|--------------|----------------------|----------------|---------|
+| **Standard Input** | `stdin` | `0` | Keyboard / Terminal | Receiving input data. |
+| **Standard Output** | `stdout` | `1` | Terminal Screen | Printing successful program output. |
+| **Standard Error** | `stderr` | `2` | Terminal Screen | Printing error messages and diagnostics. |
+
+Separating standard output (`stdout`) from standard error (`stderr`) is crucial. It ensures that when you save the output of a program to a file, the error logs do not contaminate your data files and are still visible on your screen.
+
+---
+
+### Operating System Concepts: File Descriptors
+
+In Unix, **"everything is a file"**. This means that hardware devices, directories, network sockets, and pipes are represented as files in the filesystem. 
+
+When a process wants to read from or write to any of these "files," the kernel returns a non-negative integer called a **File Descriptor (FD)**. This integer acts as an index into the kernel's per-process file descriptor table, which tracks open files.
+
+```{mermaid}
+flowchart LR
+    subgraph Process [Process File Table]
+        fd0[FD 0: stdin]
+        fd1[FD 1: stdout]
+        fd2[FD 2: stderr]
+    end
+    
+    subgraph Kernel [Operating System / Hardware]
+        keyboard[Keyboard / Input Pipe]
+        console[Terminal Screen / Console]
+        logfile[Error Log / Terminal]
+    end
+    
+    keyboard --> fd0
+    fd1 --> console
+    fd2 --> logfile
+    
+    style Process fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style Kernel fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
+```
+
+When you write a command line pipeline like `grep "error" log.txt | wc -l`, you are connecting the `stdout` (FD 1) of the first process directly to the `stdin` (FD 0) of the second process.
+
+---
+
+### Redirection and Pipelines in Bash
+
+Bash and other shells use special characters to manipulate these file descriptors:
+
+#### 1. Input Redirection (`<`)
+Reads input from a file instead of the keyboard (`stdin` redirection).
+```bash
+wc -l < data.txt
+```
+
+#### 2. Output Redirection (`>`) and Appending (`>>`)
+Redirects `stdout` to a file (creating or overwriting with `>`, or appending with `>>`).
+```bash
+echo "Hello, World!" > greeting.txt
+echo "Adding another line." >> greeting.txt
+```
+
+#### 3. Error Redirection (`2>`)
+Redirects `stderr` (FD 2) to a separate file.
+```bash
+# Redirect errors to error.log, stdout remains visible on terminal
+ls non_existent_folder 2> error.log
+```
+
+#### 4. Redirecting Both Output and Error (`&>`)
+Redirects both `stdout` and `stderr` to the same file.
+```bash
+my_script.sh &> combined_output.log
+```
+
+#### 5. Pipelines (`|`)
+Pipes the `stdout` of one command directly into the `stdin` of the next.
+```bash
+cat names.txt | sort | uniq
+```
+
+---
+
+### Stream Buffering: Block vs. Line vs. Unbuffered
+
+Standard streams do not always write data to the hardware or terminal immediately. To optimize performance, the operating system and language runtimes use **buffering**:
+
+1. **Unbuffered (`_IONBF`)**: Data is written immediately to the destination. `stderr` is unbuffered by default so that error notices appear instantly, even if the program crashes immediately after.
+2. **Line Buffered (`_IOLBF`)**: Data is stored in a buffer and flushed (written) only when a newline character (`\n`) is encountered. `stdout` is line-buffered when outputting to an interactive terminal screen.
+3. **Block Buffered (`_IOFBF`)**: Data is stored in a large buffer (typically 4KB or 8KB) and flushed only when the buffer is completely full. `stdout` becomes block-buffered when redirected to a file or piped to another process.
+
+---
+
+### Code Examples in Different Languages
+
+Below are implementations demonstrating how to read from `stdin`, write to `stdout`, and write to `stderr` in various programming languages.
+
+#### 1. Python
+Python provides access to streams via the built-in `sys` module.
+
+```python
+import sys
+
+def main():
+    # Writing to stdout
+    sys.stdout.write("Enter some text: ")
+    sys.stdout.flush()  # Force flush standard output
+    
+    # Reading from stdin line-by-line
+    for line in sys.stdin:
+        cleaned_line = line.strip()
+        if cleaned_line.lower() == "exit":
+            break
+            
+        # Write successful processing to stdout
+        sys.stdout.write(f"Processed: {cleaned_line}\n")
+        
+        # Write warnings/diagnostics to stderr
+        if len(cleaned_line) < 3:
+            sys.stderr.write("Warning: input string is very short!\n")
+
+if __name__ == "__main__":
+    main()
+```
+
+#### 2. C
+In C, streams are defined in `<stdio.h>` as `stdin`, `stdout`, and `stderr`.
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char buffer[256];
+
+    // Writing to stdout
+    fprintf(stdout, "Type something (or 'quit' to exit):\n");
+    fflush(stdout);
+
+    // Reading from stdin
+    while (fgets(buffer, sizeof(buffer), stdin) != NULL) {
+        // Strip newline character
+        buffer[strcspn(buffer, "\n")] = 0;
+
+        if (strcmp(buffer, "quit") == 0) {
+            break;
+        }
+
+        // Print processing output to stdout
+        fprintf(stdout, "Echo: %s\n", buffer);
+        fflush(stdout);
+
+        // Print diagnostics to stderr if input is empty
+        if (strlen(buffer) == 0) {
+            fprintf(stderr, "Error: received empty input line.\n");
+        }
+    }
+
+    return 0;
+}
+```
+
+#### 3. Node.js (JavaScript)
+Node.js exposes standard streams via the global `process` object. Note that `process.stdin` is a readable stream, whereas `process.stdout` and `process.stderr` are writable streams.
+
+```javascript
+const process = require('process');
+
+// Set encoding for reading stdin
+process.stdin.setEncoding('utf-8');
+
+// Write to stdout
+process.stdout.write("Node.js stream reader. Type something:\n");
+
+// Read from stdin via 'data' event listener
+process.stdin.on('data', (data) => {
+    const input = data.trim();
+    
+    if (input.toLowerCase() === 'exit') {
+        process.stdout.write("Exiting...\n");
+        process.exit(0);
+    }
+    
+    // Process input
+    process.stdout.write(`Received: ${input}\n`);
+    
+    // Write an error or warning to stderr
+    if (input === "") {
+        process.stderr.write("Warning: Received empty input line\n");
+    }
+});
+```
+
+---
+
+### Conclusion
+
+Standard streams provide a clean, powerful, and standardized interface for processes to interact with the outside world. By understanding `stdin`, `stdout`, and `stderr`, you can build modular, chainable scripts and programs that integrate seamlessly into the Unix command-line ecosystem.
