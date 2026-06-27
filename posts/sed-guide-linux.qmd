@@ -1,0 +1,82 @@
+---
+title: "Editing Files Fast with Sed: Flags, Regex, and In-Place Modifications"
+description: "Master the Linux Stream Editor (sed) to search, preview, replace, and comment out configuration lines in-place using real-world examples."
+date: "2026-06-27"
+categories: [Linux, CLI, Shell-Tools]
+---
+
+On Linux systems, configuration files are plain text. While you can open a text editor to make modifications, doing so programmatically or quickly from the command line is often more efficient. 
+
+[sed](https://www.gnu.org/software/sed/) (Stream Editor) is a utility used to perform basic text transformations on an input stream or file. In this guide, we will analyze essential `sed` flags, commands, and regular expressions using practical scenarios for editing system configs.
+
+---
+
+## 1. Key Sed Flags
+
+Two flags are essential for system configuration tasks:
+
+* **`-i` (In-Place):** By default, `sed` prints its output to the terminal screen (stdout) and leaves the original file untouched. The `-i` flag writes the changes directly back to the file.
+* **`-n` (Silent/No-Print):** By default, `sed` prints every line of the file after processing. The `-n` flag suppresses this automatic printing, allowing you to selectively print specific lines (usually combined with the `p` command).
+
+---
+
+## 2. Real-World Config Examples
+
+Let's analyze three common `sed` commands used to inspect and patch configuration files:
+
+### Example A: Previewing Specific Lines
+Before modifying a file, it is safe practice to inspect its contents.
+
+```bash
+sed -n '110,114p' ~/.config/hypr/hyprland/keybinds.conf
+```
+
+#### Syntax Breakdown:
+* **`-n`:** Tells `sed` not to print the file contents by default.
+* **`'110,114p'`:** The range `110,114` targets lines 110 through 114 inclusive. The command `p` stands for **print**.
+* **Result:** Only lines 110 to 114 of the file are printed to the terminal, serving as a preview.
+
+---
+
+### Example B: Commenting Out Deprecated Options (e.g., `ignore_window`)
+If you need to disable a setting in a config file, you can comment it out by prepending a hash (`#`) character.
+
+```bash
+sed -i 's/^\s*ignore_window\s*=.*/# &/' ~/.config/hypr/hyprland/general.conf
+```
+
+#### Syntax Breakdown:
+* **`-i`:** Edit the file in-place (save changes directly to `general.conf`).
+* **`s/pattern/replacement/`:** The substitution command. Search for `pattern` and replace it with `replacement`.
+* **The Pattern (`^\s*ignore_window\s*=.*/`):**
+  * `^` asserts the start of the line.
+  * `\s*` matches zero or more whitespace characters.
+  * `ignore_window` matches the exact word.
+  * `\s*=\s*` matches the equals sign with any surrounding spaces.
+  * `.*` matches the rest of the line (any parameters after the equals sign).
+* **The Replacement (`# &`):**
+  * The `&` character is a special reference in `sed` that represents **the entire matched string**.
+  * Prepending `# ` before `&` comments out the line while keeping its original content intact.
+* **Result:** The line `ignore_window = true` is changed to `# ignore_window = true`.
+
+---
+
+### Example C: Commenting Out VFR Settings
+Similarly, to comment out the deprecated VFR setting:
+
+```bash
+sed -i 's/^\s*vfr\s*=.*/# &/' ~/.config/hypr/hyprland/general.conf
+```
+
+This matches any active `vfr` configuration statement and comments it out securely.
+
+---
+
+## 3. Best Practices with `sed`
+
+1. **Dry Run First:** Always run your `sed` command *without* the `-i` flag first. This prints the output to your terminal, allowing you to verify that your regex is correct before writing changes to disk.
+2. **Make Backups:** You can tell `sed -i` to automatically create a backup file before editing by providing an extension:
+   ```bash
+   sed -i.bak 's/old/new/g' file.txt
+   ```
+   This edits `file.txt` and creates an unmodified copy named `file.txt.bak`.

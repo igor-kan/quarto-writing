@@ -1,0 +1,139 @@
+---
+title: "Advanced Hyprland: Configuration, Keybinds, & Persistent Workspaces"
+description: "A deep dive into modular configurations, active tiling resize controls, hyprctl operations, and limiting your desktop to exactly 10 persistent workspaces."
+date: "2026-06-27"
+categories: [Linux, Hyprland, Scripting]
+---
+
+In our [Linux Desktop Guide](linux-desktop-guide.html), we introduced **Hyprland** as a dynamic tiling Wayland compositor. Unlike traditional desktop environments, Hyprland is configured entirely via plain text files, allowing you to control layouts, windows, animations, and system scripts directly.
+
+In this guide, we will look at how Hyprland's configuration works, explain tiling resize commands, understand `hyprctl`, and implement a custom setup to limit your desktop to **exactly 10 persistent workspaces** using a shell wrapper script.
+
+---
+
+## 1. Modular Configuration Structure
+
+A clean Hyprland setup (like the [Illogical Impulse](https://github.com/end-4/dots-hyprland) repository) splits configurations into multiple modular files sourced by the main configuration file:
+
+```ini
+# --- ~/.config/hypr/hyprland.conf ---
+
+# Source external configuration modules
+source = ~/.config/hypr/hyprland/general.conf
+source = ~/.config/hypr/hyprland/keybinds.conf
+source = ~/.config/hypr/hyprland/rules.conf
+```
+
+---
+
+## 2. Deciphering Keybinds and Dispatchers
+
+Keybindings in Hyprland use the `bind` keyword:
+
+```ini
+# Syntax: bind = MODIFIERS, KEY, DISPATCHER, ARGUMENTS
+bind = $mainMod SHIFT, L, resizeactivetiling, 40
+bind = $mainMod SHIFT, H, resizeactivetiling, -40
+```
+
+### Breakdown of the command:
+* **`$mainMod`:** Typically mapped to the `SUPER` key (Windows key).
+* **`SHIFT`:** The secondary modifier key.
+* **`L` / `H`:** The trigger keys (Right/Left in Vim-like movement).
+* **`resizeactivetiling`:** The dispatcher command. It tells Hyprland to resize the currently active *tiled* window.
+* **`40` / `-40`:** The argument. It resizes the window split border by 40 pixels (positive expands the window, negative shrinks it).
+
+---
+
+## 3. What does `hyprctl reload` do?
+
+Hyprland provides a command-line interface called `hyprctl` to control the compositor dynamically.
+
+When you edit configuration files, you can force the system to apply the changes immediately by running:
+```bash
+hyprctl reload
+```
+This reloads the configuration modules from disk in real-time. Unlike restarting a session under X11, your Wayland session remains active: **none of your running applications, terminals, or browser tabs are closed**.
+
+---
+
+## 4. Setup: Limiting to Exactly 10 Persistent Workspaces
+
+By default, Hyprland creates workspaces dynamically on-demand; if you move your mouse wheel, you can cycle into workspace 11, 12, or higher. To achieve a clean, capped setup of exactly 10 workspaces, follow this three-step procedure:
+
+### Step 1: Make Workspaces 1–10 Persistent
+Add this to your `~/.config/hypr/hyprland/general.conf` (or a dedicated configuration file sourced by your main configuration):
+
+```ini
+workspace = 1, persistent:true
+workspace = 2, persistent:true
+workspace = 3, persistent:true
+workspace = 4, persistent:true
+workspace = 5, persistent:true
+workspace = 6, persistent:true
+workspace = 7, persistent:true
+workspace = 8, persistent:true
+workspace = 9, persistent:true
+workspace = 10, persistent:true
+```
+This forces all 10 workspaces to remain active on your taskbars/bars even if they do not contain any open windows.
+
+### Step 2: Create a Workspace Cycle Wrapper Script
+The default keybindings cycle infinitely using `workspace, e+1`. To prevent cycling beyond 10, we will write a script to wrap this action.
+
+Create the script directory and file:
+```bash
+mkdir -p ~/.config/hypr/scripts
+```
+
+Create `~/.config/hypr/scripts/workspace-cycle.sh`:
+```bash
+#!/bin/bash
+# Usage: workspace-cycle.sh next|prev
+
+# Fetch the active workspace ID using hyprctl JSON output
+CURRENT=$(hyprctl activeworkspace -j | jq '.id')
+
+# Calculate the target workspace index (bounded between 1 and 10)
+if [[ "$1" == "next" ]]; then
+    TARGET=$(( CURRENT < 10 ? CURRENT + 1 : 1 ))
+else
+    TARGET=$(( CURRENT > 1 ? CURRENT - 1 : 10 ))
+fi
+
+# Dispatch the transition to the compositor
+hyprctl dispatch workspace "$TARGET"
+```
+
+Make the script executable:
+```bash
+chmod +x ~/.config/hypr/scripts/workspace-cycle.sh
+```
+
+### Step 3: Replace Binds in `keybinds.conf`
+Open your `~/.config/hypr/hyprland/keybinds.conf` and comment out the default wheel-cycling lines:
+
+```ini
+# Comment out legacy infinite cycling:
+# bind = $mainMod, mouse_down, workspace, e+1
+# bind = $mainMod, mouse_up, workspace, e-1
+
+# Bind to our wrapper script:
+bind = $mainMod, mouse_down, exec, ~/.config/hypr/scripts/workspace-cycle.sh next
+bind = $mainMod, mouse_up,   exec, ~/.config/hypr/scripts/workspace-cycle.sh prev
+
+# Or bind to keyboard keys (e.g., arrow keys):
+bind = $mainMod, right, exec, ~/.config/hypr/scripts/workspace-cycle.sh next
+bind = $mainMod, left,  exec, ~/.config/hypr/scripts/workspace-cycle.sh prev
+```
+
+### Step 4: Audit and Apply
+Verify if any other infinite cycling commands exist in your files:
+```bash
+grep 'workspace,' ~/.config/hypr/hyprland/keybinds.conf | grep -v '^#'
+```
+Finally, reload the compositor to apply your changes:
+```bash
+hyprctl reload
+```
+For a detailed analysis of how this shell cycle script works line-by-line, see the [Scripting Fundamentals Guide](scripting-fundamentals-bash.html).

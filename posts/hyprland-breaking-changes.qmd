@@ -1,0 +1,106 @@
+---
+title: "Handling Hyprland API Updates & Breaking Config Changes"
+description: "A developer's troubleshooting guide resolving common config errors in custom dotfiles like Illogical Impulse, covering VFR, shadows, and layout dispatchers."
+date: "2026-06-27"
+categories: [Linux, Hyprland, Troubleshooting]
+---
+
+[Hyprland](https://hyprland.org/) is a dynamically evolving Wayland compositor. Because it is under active development, its configuration API updates frequently. New versions often deprecate or reorganize configuration options, which can lead to startup warnings, errors, or broken keybinds in popular community configuration presets like [Illogical Impulse](https://github.com/end-4/dots-hyprland) or other custom rices.
+
+In this guide, we will break down several major breaking changes in recent Hyprland releases, explain what the removed or modified options did, and show you how to patch your configuration files.
+
+---
+
+## 1. The Removal of `misc:vfr` (Variable Frame Rate)
+
+In older versions of Hyprland, you would commonly see this line in `general.conf` or `hyprland.conf`:
+
+```ini
+misc {
+    vfr = true
+}
+```
+
+### What did VFR do?
+**VFR (Variable Frame Rate)** allows the display compositor to pause rendering when nothing on the screen is moving or changing. Instead of constantly drawing 60, 120, or 144 frames per second (which consumes GPU cycles and battery power), the compositor only refreshes the screen when there is movement (e.g., cursor motion, video playback, typing).
+
+### The Change
+Hyprland has completely integrated and automated frame timing. As a result, the `vfr` configuration parameter was **removed from the `misc {}` block entirely**. If you have `vfr = true` or `vfr = false` in your configuration, Hyprland will output a red warning bar on startup:
+
+> `[Config Error] No such field: vfr`
+
+### The Fix
+Simply remove the `vfr` line from your config file, or comment it out:
+```ini
+misc {
+    # vfr = true # Deprecated: Hyprland handles VFR automatically now
+}
+```
+
+---
+
+## 2. Reorganization of Shadows (`decoration:shadow:ignore_window`)
+
+Historically, window shadows were defined directly inside the `decoration {}` block:
+
+```ini
+decoration {
+    drop_shadow = true
+    shadow_range = 4
+    shadow_render_power = 3
+    col.shadow = rgba(1a1a1aee)
+    
+    # Deprecated path:
+    ignore_window = true 
+}
+```
+
+### What did `ignore_window` do?
+This option controls how shadows are drawn under semi-transparent windows. 
+* When set to `true`, the shadow is only rendered *around* the borders of the window, not *underneath* it. This prevents the shadow from bleeding through a transparent terminal or application, which would make the background look muddy.
+
+### The Change
+To organize the growing number of shadow parameters, Hyprland moved all shadow configurations into their own sub-block: **`decoration:shadow {}`**. Placing `ignore_window` directly inside `decoration {}` now throws configuration errors.
+
+### The Fix
+Nest the shadow parameters inside a dedicated `shadow` block:
+```ini
+decoration {
+    # Other decoration properties like blur, rounding...
+
+    shadow {
+        enabled = true
+        range = 4
+        render_power = 3
+        color = rgba(1a1a1aee)
+        ignore_window = true # Correct location
+    }
+}
+```
+
+---
+
+## 3. Removal of the `splitratio` Dispatcher
+
+Keybindings in older dotfiles often contained bindings like:
+
+```ini
+bind = $mainMod, R, splitratio, 0.3
+```
+
+### What did `splitratio` do?
+In tiling layouts (like Dwindle or Master), the screen is split between active windows. The `splitratio` dispatcher allowed you to manually change the dividing ratio of the split window by a specific ratio value, shrinking or expanding the active window relative to its neighbor.
+
+### The Change
+The `splitratio` dispatcher was removed. Hyprland now handles active window resizing using more robust dispatchers such as `resizeactive` or `resizeactivetiling`.
+
+### The Fix
+Update your resize keybindings to utilize `resizeactive` or `resizeactivetiling` (which take pixel offsets rather than percentage ratios):
+
+```ini
+# Move split border right (expand active)
+bind = $mainMod SHIFT, L, resizeactive, 40 0
+
+# Move split border left (shrink active)
+bind = $mainMod SHIFT, H, resizeactive, -40 0
+```

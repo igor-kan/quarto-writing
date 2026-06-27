@@ -1,0 +1,98 @@
+---
+title: "Scripting Fundamentals: Understanding Bash Syntax & Positional Arguments"
+description: "A line-by-line breakdown of shell scripting, covering shebangs, command substitution, JSON parsing with jq, conditionals, and arithmetic ternary operators."
+date: "2026-06-27"
+categories: [Linux, Bash, Programming-Basics]
+---
+
+In modern operating systems, automation is built on **scripts**. A script is simply a plain text file containing a sequence of commands that are executed by an interpreter (such as Bash, Python, or Node.js). 
+
+A **wrapper script** is a specific type of script that wraps around an existing program or command to inject extra logic, handle default options, validate parameters, or filter output before executing the main application.
+
+In this guide, we will look at the step-by-step workflow for creating scripts on Linux and analyze a functional workspace cycling script line-by-line to master shell syntax.
+
+---
+
+## 1. The Script Creation Workflow
+
+To create and run any custom script in Linux, you follow a standard three-step workflow:
+
+### Step A: Create the Directory
+Use `mkdir -p` to safely create the destination directory. The `-p` (parents) flag ensures that no error is thrown if the directory already exists, and it creates any missing parent folders along the path.
+```bash
+mkdir -p ~/.config/hypr/scripts
+```
+
+### Step B: Write the Script File
+You can write the file using a terminal editor, or use a **Here-Document (Here-Doc)** redirection command in your terminal. 
+
+The syntax `cat > filename << 'EOF'` redirects everything you type next into `filename` until it encounters the string `EOF`. Putting single quotes around `'EOF'` is critical: it prevents your current terminal session from expanding variables (like `$1` or `$CURRENT`) while writing the file, leaving the code intact for the script to execute later.
+
+```bash
+cat > ~/.config/hypr/scripts/workspace-cycle.sh << 'EOF'
+#!/bin/bash
+# Usage: workspace-cycle.sh next|prev
+CURRENT=$(hyprctl activeworkspace -j | jq '.id')
+if [[ "$1" == "next" ]]; then
+    TARGET=$(( CURRENT < 10 ? CURRENT + 1 : 1 ))
+else
+    TARGET=$(( CURRENT > 1 ? CURRENT - 1 : 10 ))
+fi
+hyprctl dispatch workspace "$TARGET"
+EOF
+```
+
+### Step C: Grant Execution Permissions
+By default, new files on Linux do not have permission to run as programs. You must change the file mode using `chmod +x` (change mode + execute):
+```bash
+chmod +x ~/.config/hypr/scripts/workspace-cycle.sh
+```
+
+---
+
+## 2. Line-by-Line Code Analysis
+
+Let's dissect the contents of the `workspace-cycle.sh` script to understand every keyword and operator used in Bash:
+
+```bash
+#!/bin/bash
+```
+* **The Shebang:** The first line of any shell script. The `#!` sequence tells the operating system kernel to load the `/bin/bash` binary to interpret and run the rest of the commands in the file.
+
+```bash
+CURRENT=$(hyprctl activeworkspace -j | jq '.id')
+```
+* **Command Substitution `$(...)`:** Runs the commands inside the parentheses and assigns their standard output (stdout) directly to the variable `CURRENT`.
+* **JSON Output `hyprctl activeworkspace -j`:** Calls Hyprland's control utility, requesting information about the currently focused workspace in JSON format (e.g., `{"id": 3, "name": "3", "windows": 2}`).
+* **Piping to `jq`:** The pipe operator `|` passes the JSON output to [jq](https://jqlang.github.io/jq/) (a command-line JSON processor). The query `'.id'` extracts the value of the "id" key (e.g., `3`) and strips any outer quotes.
+
+```bash
+if [[ "$1" == "next" ]]; then
+```
+* **Positional Arguments `$1`:** When you run a script, any parameters you type after the script name are passed as positional variables. `$1` is the first parameter (e.g., `next` in `./workspace-cycle.sh next`), `$2` is the second, and so on.
+* **Double Brackets `[[ ... ]]`:** The standard modern Bash test operator, used to evaluate conditions.
+* **Comparison `==`:** Checks if the value of the first argument equals the string `"next"`.
+
+```bash
+    TARGET=$(( CURRENT < 10 ? CURRENT + 1 : 1 ))
+```
+* **Arithmetic Expansion `$(( ... ))`:** Performs integer mathematical operations.
+* **Ternary Operator `condition ? true_val : false_val`:** 
+  * If the value of `CURRENT` is less than 10, it evaluates to `CURRENT + 1` (advancing to the next workspace).
+  * If `CURRENT` is 10, it evaluates to `1` (wrapping around to the first workspace).
+  * This prevents the workspace index from exceeding our target cap of 10.
+
+```bash
+else
+    TARGET=$(( CURRENT > 1 ? CURRENT - 1 : 10 ))
+fi
+```
+* **Reverse Cycling:** If the argument passed is not `"next"` (meaning it is `"prev"`), this decrement condition is triggered.
+  * If `CURRENT` is greater than 1, it shifts to `CURRENT - 1`.
+  * If `CURRENT` is 1, it wraps around to `10`.
+* **`fi`:** The closing keyword for `if` statements in Bash (simply "if" spelled backward).
+
+```bash
+hyprctl dispatch workspace "$TARGET"
+```
+* **Dispatcher Command:** Executes the compositor dispatcher command to switch focus directly to the target workspace ID resolved by the script (e.g., `hyprctl dispatch workspace 4`).
