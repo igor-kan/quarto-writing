@@ -17,12 +17,42 @@ Two flags are essential for system configuration tasks:
 
 * **`-i` (In-Place):** By default, `sed` prints its output to the terminal screen (stdout) and leaves the original file untouched. The `-i` flag writes the changes directly back to the file.
 * **`-n` (Silent/No-Print):** By default, `sed` prints every line of the file after processing. The `-n` flag suppresses this automatic printing, allowing you to selectively print specific lines (usually combined with the `p` command).
+* **`-E` or `-r` (Extended Regular Expressions):** Enables modern, extended regular expressions (ERE) rather than basic regular expressions (BRE). This removes the need to escape parentheses `()`, braces `{}`, and plus signs `+`.
+* **`-e` (Multiple Scripts):** Allows you to chain multiple editing commands sequentially in a single pass.
 
 ---
 
-## 2. Real-World Config Examples
+## 2. In-Place Editing and Automatic Backups
 
-Let's analyze three common `sed` commands used to inspect and patch configuration files:
+Modifying files in-place (`-i`) is extremely convenient, but it carries the risk of corrupting critical configuration files if your regular expression is incorrect. `sed` provides a built-in mechanism to create a backup file immediately before writing changes.
+
+### The GNU vs. BSD/macOS Sed Difference
+The syntax for backups differs depending on whether you are on a GNU-based system (like Linux) or a BSD-based system (like macOS):
+
+#### GNU Sed (Linux)
+Under Linux, you can attach the backup suffix directly to the `-i` flag (with no space):
+```bash
+# Modifies config.conf and creates config.conf.bak as a backup of the original
+sed -i.bak 's/port = 80/port = 8080/g' config.conf
+```
+To run GNU `sed` in-place *without* a backup, use `-i` by itself:
+```bash
+sed -i 's/old/new/g' file.txt
+```
+
+#### BSD/macOS Sed
+macOS uses the BSD version of `sed`, which **requires** an argument for the `-i` flag specifying the backup extension. Leaving it empty requires an explicit empty string `''`:
+```bash
+# macOS/BSD: Backup file created with .bak suffix
+sed -i '.bak' 's/port = 80/port = 8080/g' config.conf
+
+# macOS/BSD: In-place edit WITHOUT creating a backup
+sed -i '' 's/old/new/g' file.txt
+```
+
+---
+
+## 3. Real-World Config Examples
 
 ### Example A: Previewing Specific Lines
 Before modifying a file, it is safe practice to inspect its contents.
@@ -42,12 +72,12 @@ sed -n '110,114p' ~/.config/hypr/hyprland/keybinds.conf
 If you need to disable a setting in a config file, you can comment it out by prepending a hash (`#`) character.
 
 ```bash
-sed -i 's/^\s*ignore_window\s*=.*/# &/' ~/.config/hypr/hyprland/general.conf
+sed -i.bak 's/^\s*ignore_window\s*=.*/# &/' ~/.config/hypr/hyprland/general.conf
 ```
 
 #### Syntax Breakdown:
-* **`-i`:** Edit the file in-place (save changes directly to `general.conf`).
-* **`s/pattern/replacement/`:** The substitution command. Search for `pattern` and replace it with `replacement`.
+* **`-i.bak`:** Edit in-place and create a backup named `general.conf.bak`.
+* **`s/pattern/replacement/`:** The substitution command.
 * **The Pattern (`^\s*ignore_window\s*=.*/`):**
   * `^` asserts the start of the line.
   * `\s*` matches zero or more whitespace characters.
@@ -55,28 +85,69 @@ sed -i 's/^\s*ignore_window\s*=.*/# &/' ~/.config/hypr/hyprland/general.conf
   * `\s*=\s*` matches the equals sign with any surrounding spaces.
   * `.*` matches the rest of the line (any parameters after the equals sign).
 * **The Replacement (`# &`):**
-  * The `&` character is a special reference in `sed` that represents **the entire matched string**.
-  * Prepending `# ` before `&` comments out the line while keeping its original content intact.
-* **Result:** The line `ignore_window = true` is changed to `# ignore_window = true`.
+  * The `&` character represents the **entire matched string**.
+  * Prepending `# ` comments out the line while keeping its original content intact.
 
 ---
 
-### Example C: Commenting Out VFR Settings
-Similarly, to comment out the deprecated VFR setting:
+### Example C: Deleting Lines, Empty Lines, or Comments
+If you want to strip out all comments or empty lines from a configuration file for cleaner viewing:
 
 ```bash
-sed -i 's/^\s*vfr\s*=.*/# &/' ~/.config/hypr/hyprland/general.conf
-```
+# Delete all lines starting with #
+sed '/^#/d' config.conf
 
-This matches any active `vfr` configuration statement and comments it out securely.
+# Delete all empty lines (or lines containing only whitespace)
+sed '/^\s*$/d' config.conf
+```
+* **`d` (Delete):** Deletes the matched lines from the stream.
 
 ---
 
-## 3. Best Practices with `sed`
+### Example D: Chaining Multiple Replacements
+If you need to change several settings simultaneously, use the `-e` flag to specify multiple scripts:
 
-1. **Dry Run First:** Always run your `sed` command *without* the `-i` flag first. This prints the output to your terminal, allowing you to verify that your regex is correct before writing changes to disk.
-2. **Make Backups:** You can tell `sed -i` to automatically create a backup file before editing by providing an extension:
+```bash
+sed -i.bak -e 's/timeout = 300/timeout = 600/' \
+           -e 's/debug = true/debug = false/' config.conf
+```
+
+---
+
+### Example E: Appending/Inserting Lines
+You can insert new lines of text before or after a specific pattern match:
+
+```bash
+# Append a line AFTER the matching line (using 'a' for append)
+sed '/ssl_enable = true/a \    ssl_port = 443' server.conf
+
+# Insert a line BEFORE the matching line (using 'i' for insert)
+sed '/server_name localhost/i \    # Default Server Block' server.conf
+```
+
+---
+
+## 4. Substitution Flags: Global, Case-Insensitive, and Specific Lines
+
+The substitution command `s/pattern/replacement/flags` accepts flags at the end to alter its behavior:
+
+| Flag | Meaning | Example |
+|------|---------|---------|
+| **`g`** | **Global:** Replace *all* occurrences of the pattern on each line, rather than just the first occurrence. | `sed 's/old/new/g'` |
+| **`I`** | **Case-Insensitive:** Match the pattern regardless of case. | `sed 's/error/WARNING/I'` |
+| **Line Number** | **Specific line match:** Perform the substitution only on a specific line. | `sed '3s/inactive/active/'` |
+
+---
+
+## 5. Summary Checklist for Stream Editing
+
+1. **Dry Run First:** Always run your command without `-i` first to see the stdout preview.
+2. **Double Quote for Variables:** Use single quotes `''` for literal patterns. If you need to expand bash variables, use double quotes `""`:
    ```bash
-   sed -i.bak 's/old/new/g' file.txt
+   PORT=8080
+   sed -i "s/PORT_PLACEHOLDER/$PORT/g" config.json
    ```
-   This edits `file.txt` and creates an unmodified copy named `file.txt.bak`.
+3. **Use Alternative Delimiters:** If your pattern contains slashes (e.g., URLs or file paths), you can use any character (like `|`, `_`, or `:`) as a delimiter to avoid escaping:
+   ```bash
+   sed 's|/usr/bin|/usr/local/bin|g' paths.txt
+   ```
