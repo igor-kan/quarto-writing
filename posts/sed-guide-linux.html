@@ -166,13 +166,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    
   <ul>
   <li><a href="#key-sed-flags" id="toc-key-sed-flags" class="nav-link active" data-scroll-target="#key-sed-flags">1. Key Sed Flags</a></li>
-  <li><a href="#real-world-config-examples" id="toc-real-world-config-examples" class="nav-link" data-scroll-target="#real-world-config-examples">2. Real-World Config Examples</a>
+  <li><a href="#in-place-editing-and-automatic-backups" id="toc-in-place-editing-and-automatic-backups" class="nav-link" data-scroll-target="#in-place-editing-and-automatic-backups">2. In-Place Editing and Automatic Backups</a>
+  <ul class="collapse">
+  <li><a href="#the-gnu-vs.-bsdmacos-sed-difference" id="toc-the-gnu-vs.-bsdmacos-sed-difference" class="nav-link" data-scroll-target="#the-gnu-vs.-bsdmacos-sed-difference">The GNU vs.&nbsp;BSD/macOS Sed Difference</a></li>
+  </ul></li>
+  <li><a href="#real-world-config-examples" id="toc-real-world-config-examples" class="nav-link" data-scroll-target="#real-world-config-examples">3. Real-World Config Examples</a>
   <ul class="collapse">
   <li><a href="#example-a-previewing-specific-lines" id="toc-example-a-previewing-specific-lines" class="nav-link" data-scroll-target="#example-a-previewing-specific-lines">Example A: Previewing Specific Lines</a></li>
   <li><a href="#example-b-commenting-out-deprecated-options-e.g.-ignore_window" id="toc-example-b-commenting-out-deprecated-options-e.g.-ignore_window" class="nav-link" data-scroll-target="#example-b-commenting-out-deprecated-options-e.g.-ignore_window">Example B: Commenting Out Deprecated Options (e.g., <code>ignore_window</code>)</a></li>
-  <li><a href="#example-c-commenting-out-vfr-settings" id="toc-example-c-commenting-out-vfr-settings" class="nav-link" data-scroll-target="#example-c-commenting-out-vfr-settings">Example C: Commenting Out VFR Settings</a></li>
+  <li><a href="#example-c-deleting-lines-empty-lines-or-comments" id="toc-example-c-deleting-lines-empty-lines-or-comments" class="nav-link" data-scroll-target="#example-c-deleting-lines-empty-lines-or-comments">Example C: Deleting Lines, Empty Lines, or Comments</a></li>
+  <li><a href="#example-d-chaining-multiple-replacements" id="toc-example-d-chaining-multiple-replacements" class="nav-link" data-scroll-target="#example-d-chaining-multiple-replacements">Example D: Chaining Multiple Replacements</a></li>
+  <li><a href="#example-e-appendinginserting-lines" id="toc-example-e-appendinginserting-lines" class="nav-link" data-scroll-target="#example-e-appendinginserting-lines">Example E: Appending/Inserting Lines</a></li>
   </ul></li>
-  <li><a href="#best-practices-with-sed" id="toc-best-practices-with-sed" class="nav-link" data-scroll-target="#best-practices-with-sed">3. Best Practices with <code>sed</code></a></li>
+  <li><a href="#substitution-flags-global-case-insensitive-and-specific-lines" id="toc-substitution-flags-global-case-insensitive-and-specific-lines" class="nav-link" data-scroll-target="#substitution-flags-global-case-insensitive-and-specific-lines">4. Substitution Flags: Global, Case-Insensitive, and Specific Lines</a></li>
+  <li><a href="#summary-checklist-for-stream-editing" id="toc-summary-checklist-for-stream-editing" class="nav-link" data-scroll-target="#summary-checklist-for-stream-editing">5. Summary Checklist for Stream Editing</a></li>
   </ul>
 </nav>
     </div>
@@ -223,16 +230,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li><strong><code>-i</code> (In-Place):</strong> By default, <code>sed</code> prints its output to the terminal screen (stdout) and leaves the original file untouched. The <code>-i</code> flag writes the changes directly back to the file.</li>
 <li><strong><code>-n</code> (Silent/No-Print):</strong> By default, <code>sed</code> prints every line of the file after processing. The <code>-n</code> flag suppresses this automatic printing, allowing you to selectively print specific lines (usually combined with the <code>p</code> command).</li>
+<li><strong><code>-E</code> or <code>-r</code> (Extended Regular Expressions):</strong> Enables modern, extended regular expressions (ERE) rather than basic regular expressions (BRE). This removes the need to escape parentheses <code>()</code>, braces <code>{}</code>, and plus signs <code>+</code>.</li>
+<li><strong><code>-e</code> (Multiple Scripts):</strong> Allows you to chain multiple editing commands sequentially in a single pass.</li>
 </ul>
 <hr>
 </section>
+<section id="in-place-editing-and-automatic-backups" class="level2">
+<h2 class="anchored" data-anchor-id="in-place-editing-and-automatic-backups">2. In-Place Editing and Automatic Backups</h2>
+<p>Modifying files in-place (<code>-i</code>) is extremely convenient, but it carries the risk of corrupting critical configuration files if your regular expression is incorrect. <code>sed</code> provides a built-in mechanism to create a backup file immediately before writing changes.</p>
+<section id="the-gnu-vs.-bsdmacos-sed-difference" class="level3">
+<h3 class="anchored" data-anchor-id="the-gnu-vs.-bsdmacos-sed-difference">The GNU vs.&nbsp;BSD/macOS Sed Difference</h3>
+<p>The syntax for backups differs depending on whether you are on a GNU-based system (like Linux) or a BSD-based system (like macOS):</p>
+<section id="gnu-sed-linux" class="level4">
+<h4 class="anchored" data-anchor-id="gnu-sed-linux">GNU Sed (Linux)</h4>
+<p>Under Linux, you can attach the backup suffix directly to the <code>-i</code> flag (with no space):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Modifies config.conf and creates config.conf.bak as a backup of the original</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i.bak</span> <span class="st">'s/port = 80/port = 8080/g'</span> config.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>To run GNU <code>sed</code> in-place <em>without</em> a backup, use <code>-i</code> by itself:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">'s/old/new/g'</span> file.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="bsdmacos-sed" class="level4">
+<h4 class="anchored" data-anchor-id="bsdmacos-sed">BSD/macOS Sed</h4>
+<p>macOS uses the BSD version of <code>sed</code>, which <strong>requires</strong> an argument for the <code>-i</code> flag specifying the backup extension. Leaving it empty requires an explicit empty string <code>''</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># macOS/BSD: Backup file created with .bak suffix</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">'.bak'</span> <span class="st">'s/port = 80/port = 8080/g'</span> config.conf</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># macOS/BSD: In-place edit WITHOUT creating a backup</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">''</span> <span class="st">'s/old/new/g'</span> file.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+</section>
 <section id="real-world-config-examples" class="level2">
-<h2 class="anchored" data-anchor-id="real-world-config-examples">2. Real-World Config Examples</h2>
-<p>Let’s analyze three common <code>sed</code> commands used to inspect and patch configuration files:</p>
+<h2 class="anchored" data-anchor-id="real-world-config-examples">3. Real-World Config Examples</h2>
 <section id="example-a-previewing-specific-lines" class="level3">
 <h3 class="anchored" data-anchor-id="example-a-previewing-specific-lines">Example A: Previewing Specific Lines</h3>
 <p>Before modifying a file, it is safe practice to inspect its contents.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-n</span> <span class="st">'110,114p'</span> ~/.config/hypr/hyprland/keybinds.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-n</span> <span class="st">'110,114p'</span> ~/.config/hypr/hyprland/keybinds.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <section id="syntax-breakdown" class="level4">
 <h4 class="anchored" data-anchor-id="syntax-breakdown">Syntax Breakdown:</h4>
 <ul>
@@ -246,12 +280,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="example-b-commenting-out-deprecated-options-e.g.-ignore_window" class="level3">
 <h3 class="anchored" data-anchor-id="example-b-commenting-out-deprecated-options-e.g.-ignore_window">Example B: Commenting Out Deprecated Options (e.g., <code>ignore_window</code>)</h3>
 <p>If you need to disable a setting in a config file, you can comment it out by prepending a hash (<code>#</code>) character.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">'s/^\s*ignore_window\s*=.*/# &amp;/'</span> ~/.config/hypr/hyprland/general.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i.bak</span> <span class="st">'s/^\s*ignore_window\s*=.*/# &amp;/'</span> ~/.config/hypr/hyprland/general.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <section id="syntax-breakdown-1" class="level4">
 <h4 class="anchored" data-anchor-id="syntax-breakdown-1">Syntax Breakdown:</h4>
 <ul>
-<li><strong><code>-i</code>:</strong> Edit the file in-place (save changes directly to <code>general.conf</code>).</li>
-<li><strong><code>s/pattern/replacement/</code>:</strong> The substitution command. Search for <code>pattern</code> and replace it with <code>replacement</code>.</li>
+<li><strong><code>-i.bak</code>:</strong> Edit in-place and create a backup named <code>general.conf.bak</code>.</li>
+<li><strong><code>s/pattern/replacement/</code>:</strong> The substitution command.</li>
 <li><strong>The Pattern (<code>^\s*ignore_window\s*=.*/</code>):</strong>
 <ul>
 <li><code>^</code> asserts the start of the line.</li>
@@ -262,29 +296,89 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul></li>
 <li><strong>The Replacement (<code># &amp;</code>):</strong>
 <ul>
-<li>The <code>&amp;</code> character is a special reference in <code>sed</code> that represents <strong>the entire matched string</strong>.</li>
-<li>Prepending <code>#</code> before <code>&amp;</code> comments out the line while keeping its original content intact.</li>
+<li>The <code>&amp;</code> character represents the <strong>entire matched string</strong>.</li>
+<li>Prepending <code>#</code> comments out the line while keeping its original content intact.</li>
 </ul></li>
-<li><strong>Result:</strong> The line <code>ignore_window = true</code> is changed to <code># ignore_window = true</code>.</li>
 </ul>
 <hr>
 </section>
 </section>
-<section id="example-c-commenting-out-vfr-settings" class="level3">
-<h3 class="anchored" data-anchor-id="example-c-commenting-out-vfr-settings">Example C: Commenting Out VFR Settings</h3>
-<p>Similarly, to comment out the deprecated VFR setting:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">'s/^\s*vfr\s*=.*/# &amp;/'</span> ~/.config/hypr/hyprland/general.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>This matches any active <code>vfr</code> configuration statement and comments it out securely.</p>
+<section id="example-c-deleting-lines-empty-lines-or-comments" class="level3">
+<h3 class="anchored" data-anchor-id="example-c-deleting-lines-empty-lines-or-comments">Example C: Deleting Lines, Empty Lines, or Comments</h3>
+<p>If you want to strip out all comments or empty lines from a configuration file for cleaner viewing:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Delete all lines starting with #</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="st">'/^#/d'</span> config.conf</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Delete all empty lines (or lines containing only whitespace)</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="st">'/^\s*$/d'</span> config.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><strong><code>d</code> (Delete):</strong> Deletes the matched lines from the stream.</li>
+</ul>
+<hr>
+</section>
+<section id="example-d-chaining-multiple-replacements" class="level3">
+<h3 class="anchored" data-anchor-id="example-d-chaining-multiple-replacements">Example D: Chaining Multiple Replacements</h3>
+<p>If you need to change several settings simultaneously, use the <code>-e</code> flag to specify multiple scripts:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i.bak</span> <span class="at">-e</span> <span class="st">'s/timeout = 300/timeout = 600/'</span> <span class="dt">\</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>           <span class="at">-e</span> <span class="st">'s/debug = true/debug = false/'</span> config.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+<section id="example-e-appendinginserting-lines" class="level3">
+<h3 class="anchored" data-anchor-id="example-e-appendinginserting-lines">Example E: Appending/Inserting Lines</h3>
+<p>You can insert new lines of text before or after a specific pattern match:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Append a line AFTER the matching line (using 'a' for append)</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="st">'/ssl_enable = true/a \    ssl_port = 443'</span> server.conf</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Insert a line BEFORE the matching line (using 'i' for insert)</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="st">'/server_name localhost/i \    # Default Server Block'</span> server.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
 </section>
-<section id="best-practices-with-sed" class="level2">
-<h2 class="anchored" data-anchor-id="best-practices-with-sed">3. Best Practices with <code>sed</code></h2>
+<section id="substitution-flags-global-case-insensitive-and-specific-lines" class="level2">
+<h2 class="anchored" data-anchor-id="substitution-flags-global-case-insensitive-and-specific-lines">4. Substitution Flags: Global, Case-Insensitive, and Specific Lines</h2>
+<p>The substitution command <code>s/pattern/replacement/flags</code> accepts flags at the end to alter its behavior:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 37%">
+<col style="width: 37%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Flag</th>
+<th>Meaning</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong><code>g</code></strong></td>
+<td><strong>Global:</strong> Replace <em>all</em> occurrences of the pattern on each line, rather than just the first occurrence.</td>
+<td><code>sed 's/old/new/g'</code></td>
+</tr>
+<tr class="even">
+<td><strong><code>I</code></strong></td>
+<td><strong>Case-Insensitive:</strong> Match the pattern regardless of case.</td>
+<td><code>sed 's/error/WARNING/I'</code></td>
+</tr>
+<tr class="odd">
+<td><strong>Line Number</strong></td>
+<td><strong>Specific line match:</strong> Perform the substitution only on a specific line.</td>
+<td><code>sed '3s/inactive/active/'</code></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="summary-checklist-for-stream-editing" class="level2">
+<h2 class="anchored" data-anchor-id="summary-checklist-for-stream-editing">5. Summary Checklist for Stream Editing</h2>
 <ol type="1">
-<li><p><strong>Dry Run First:</strong> Always run your <code>sed</code> command <em>without</em> the <code>-i</code> flag first. This prints the output to your terminal, allowing you to verify that your regex is correct before writing changes to disk.</p></li>
-<li><p><strong>Make Backups:</strong> You can tell <code>sed -i</code> to automatically create a backup file before editing by providing an extension:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i.bak</span> <span class="st">'s/old/new/g'</span> file.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>This edits <code>file.txt</code> and creates an unmodified copy named <code>file.txt.bak</code>.</p></li>
+<li><p><strong>Dry Run First:</strong> Always run your command without <code>-i</code> first to see the stdout preview.</p></li>
+<li><p><strong>Double Quote for Variables:</strong> Use single quotes <code>''</code> for literal patterns. If you need to expand bash variables, use double quotes <code>""</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="va">PORT</span><span class="op">=</span>8080</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">"s/PORT_PLACEHOLDER/</span><span class="va">$PORT</span><span class="st">/g"</span> config.json</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p><strong>Use Alternative Delimiters:</strong> If your pattern contains slashes (e.g., URLs or file paths), you can use any character (like <code>|</code>, <code>_</code>, or <code>:</code>) as a delimiter to avoid escaping:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="st">'s|/usr/bin|/usr/local/bin|g'</span> paths.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 </ol>
 
 
