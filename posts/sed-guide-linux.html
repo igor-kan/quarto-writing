@@ -6,9 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="description" content="A growing collection of comprehensive guides and textbooks.">
+<meta name="dcterms.date" content="2026-06-27">
+<meta name="description" content="Master the Linux Stream Editor (sed) to search, preview, replace, and comment out configuration lines in-place using real-world examples.">
 
-<title>The Textbook Library – My Writings</title>
+<title>Editing Files Fast with Sed: Flags, Regex, and In-Place Modifications – My Writings</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -24,6 +25,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -34,8 +70,6 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<script src="../site_libs/quarto-listing/list.min.js"></script>
-<script src="../site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -73,65 +107,7 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
-<script>
 
-  window.document.addEventListener("DOMContentLoaded", function (_event) {
-    const listingTargetEl = window.document.querySelector('#listing-listing .list');
-    if (!listingTargetEl) {
-      // No listing discovered, do not attach.
-      return; 
-    }
-
-    const options = {
-      valueNames: ['listing-title','listing-author','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
-      
-      searchColumns: ["listing-title","listing-author","listing-image","listing-description"],
-    };
-
-    window['quarto-listings'] = window['quarto-listings'] || {};
-    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
-
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  });
-
-  window.addEventListener('hashchange',() => {
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  })
-  </script>
-
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -162,7 +138,7 @@ window.Quarto = {
 <span class="menu-text">Blog</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="../chapters/index.html" aria-current="page"> 
+    <a class="nav-link" href="../chapters/index.html"> 
 <span class="menu-text">Chapters</span></a>
   </li>  
   <li class="nav-item">
@@ -181,30 +157,54 @@ window.Quarto = {
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#key-sed-flags" id="toc-key-sed-flags" class="nav-link active" data-scroll-target="#key-sed-flags">1. Key Sed Flags</a></li>
+  <li><a href="#real-world-config-examples" id="toc-real-world-config-examples" class="nav-link" data-scroll-target="#real-world-config-examples">2. Real-World Config Examples</a>
+  <ul class="collapse">
+  <li><a href="#example-a-previewing-specific-lines" id="toc-example-a-previewing-specific-lines" class="nav-link" data-scroll-target="#example-a-previewing-specific-lines">Example A: Previewing Specific Lines</a></li>
+  <li><a href="#example-b-commenting-out-deprecated-options-e.g.-ignore_window" id="toc-example-b-commenting-out-deprecated-options-e.g.-ignore_window" class="nav-link" data-scroll-target="#example-b-commenting-out-deprecated-options-e.g.-ignore_window">Example B: Commenting Out Deprecated Options (e.g., <code>ignore_window</code>)</a></li>
+  <li><a href="#example-c-commenting-out-vfr-settings" id="toc-example-c-commenting-out-vfr-settings" class="nav-link" data-scroll-target="#example-c-commenting-out-vfr-settings">Example C: Commenting Out VFR Settings</a></li>
+  </ul></li>
+  <li><a href="#best-practices-with-sed" id="toc-best-practices-with-sed" class="nav-link" data-scroll-target="#best-practices-with-sed">3. Best Practices with <code>sed</code></a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
-<main class="content column-page" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">The Textbook Library</h1>
-</div>
+<h1 class="title">Editing Files Fast with Sed: Flags, Regex, and In-Place Modifications</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">Linux</div>
+    <div class="quarto-category">CLI</div>
+    <div class="quarto-category">Shell-Tools</div>
+  </div>
+  </div>
 
 <div>
   <div class="description">
-    A growing collection of comprehensive guides and textbooks.
+    Master the Linux Stream Editor (sed) to search, preview, replace, and comment out configuration lines in-place using real-world examples.
   </div>
 </div>
 
 
-<div class="quarto-title-meta column-page">
+<div class="quarto-title-meta">
 
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">June 27, 2026</p>
+    </div>
+  </div>
   
     
   </div>
@@ -214,320 +214,83 @@ window.Quarto = {
 </header>
 
 
-<p>Welcome to the textbook library. Below is the index of all currently drafted and planned textbooks spanning mathematics, computer science, software engineering, and systems architecture.</p>
+<p>On Linux systems, configuration files are plain text. While you can open a text editor to make modifications, doing so programmatically or quickly from the command line is often more efficient.</p>
+<p><a href="https://www.gnu.org/software/sed/">sed</a> (Stream Editor) is a utility used to perform basic text transformations on an input stream or file. In this guide, we will analyze essential <code>sed</code> flags, commands, and regular expressions using practical scenarios for editing system configs.</p>
+<hr>
+<section id="key-sed-flags" class="level2">
+<h2 class="anchored" data-anchor-id="key-sed-flags">1. Key Sed Flags</h2>
+<p>Two flags are essential for system configuration tasks:</p>
+<ul>
+<li><strong><code>-i</code> (In-Place):</strong> By default, <code>sed</code> prints its output to the terminal screen (stdout) and leaves the original file untouched. The <code>-i</code> flag writes the changes directly back to the file.</li>
+<li><strong><code>-n</code> (Silent/No-Print):</strong> By default, <code>sed</code> prints every line of the file after processing. The <code>-n</code> flag suppresses this automatic printing, allowing you to selectively print specific lines (usually combined with the <code>p</code> command).</li>
+</ul>
+<hr>
+</section>
+<section id="real-world-config-examples" class="level2">
+<h2 class="anchored" data-anchor-id="real-world-config-examples">2. Real-World Config Examples</h2>
+<p>Let’s analyze three common <code>sed</code> commands used to inspect and patch configuration files:</p>
+<section id="example-a-previewing-specific-lines" class="level3">
+<h3 class="anchored" data-anchor-id="example-a-previewing-specific-lines">Example A: Previewing Specific Lines</h3>
+<p>Before modifying a file, it is safe practice to inspect its contents.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-n</span> <span class="st">'110,114p'</span> ~/.config/hypr/hyprland/keybinds.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="syntax-breakdown" class="level4">
+<h4 class="anchored" data-anchor-id="syntax-breakdown">Syntax Breakdown:</h4>
+<ul>
+<li><strong><code>-n</code>:</strong> Tells <code>sed</code> not to print the file contents by default.</li>
+<li><strong><code>'110,114p'</code>:</strong> The range <code>110,114</code> targets lines 110 through 114 inclusive. The command <code>p</code> stands for <strong>print</strong>.</li>
+<li><strong>Result:</strong> Only lines 110 to 114 of the file are printed to the terminal, serving as a preview.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="example-b-commenting-out-deprecated-options-e.g.-ignore_window" class="level3">
+<h3 class="anchored" data-anchor-id="example-b-commenting-out-deprecated-options-e.g.-ignore_window">Example B: Commenting Out Deprecated Options (e.g., <code>ignore_window</code>)</h3>
+<p>If you need to disable a setting in a config file, you can comment it out by prepending a hash (<code>#</code>) character.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">'s/^\s*ignore_window\s*=.*/# &amp;/'</span> ~/.config/hypr/hyprland/general.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="syntax-breakdown-1" class="level4">
+<h4 class="anchored" data-anchor-id="syntax-breakdown-1">Syntax Breakdown:</h4>
+<ul>
+<li><strong><code>-i</code>:</strong> Edit the file in-place (save changes directly to <code>general.conf</code>).</li>
+<li><strong><code>s/pattern/replacement/</code>:</strong> The substitution command. Search for <code>pattern</code> and replace it with <code>replacement</code>.</li>
+<li><strong>The Pattern (<code>^\s*ignore_window\s*=.*/</code>):</strong>
+<ul>
+<li><code>^</code> asserts the start of the line.</li>
+<li><code>\s*</code> matches zero or more whitespace characters.</li>
+<li><code>ignore_window</code> matches the exact word.</li>
+<li><code>\s*=\s*</code> matches the equals sign with any surrounding spaces.</li>
+<li><code>.*</code> matches the rest of the line (any parameters after the equals sign).</li>
+</ul></li>
+<li><strong>The Replacement (<code># &amp;</code>):</strong>
+<ul>
+<li>The <code>&amp;</code> character is a special reference in <code>sed</code> that represents <strong>the entire matched string</strong>.</li>
+<li>Prepending <code>#</code> before <code>&amp;</code> comments out the line while keeping its original content intact.</li>
+</ul></li>
+<li><strong>Result:</strong> The line <code>ignore_window = true</code> is changed to <code># ignore_window = true</code>.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="example-c-commenting-out-vfr-settings" class="level3">
+<h3 class="anchored" data-anchor-id="example-c-commenting-out-vfr-settings">Example C: Commenting Out VFR Settings</h3>
+<p>Similarly, to comment out the deprecated VFR setting:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">'s/^\s*vfr\s*=.*/# &amp;/'</span> ~/.config/hypr/hyprland/general.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This matches any active <code>vfr</code> configuration statement and comments it out securely.</p>
+<hr>
+</section>
+</section>
+<section id="best-practices-with-sed" class="level2">
+<h2 class="anchored" data-anchor-id="best-practices-with-sed">3. Best Practices with <code>sed</code></h2>
+<ol type="1">
+<li><p><strong>Dry Run First:</strong> Always run your <code>sed</code> command <em>without</em> the <code>-i</code> flag first. This prints the output to your terminal, allowing you to verify that your regex is correct before writing changes to disk.</p></li>
+<li><p><strong>Make Backups:</strong> You can tell <code>sed -i</code> to automatically create a backup file before editing by providing an extension:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i.bak</span> <span class="st">'s/old/new/g'</span> file.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This edits <code>file.txt</code> and creates an unmodified copy named <code>file.txt.bak</code>.</p></li>
+</ol>
 
 
+</section>
 
-
-<div class="quarto-listing quarto-listing-container-grid" id="listing-listing">
-<div class="list grid quarto-listing-cols-3">
-<div class="g-col-1" data-index="0" data-listing-file-modified-sort="1782587956053" data-listing-reading-time-sort="1" data-listing-word-count-sort="38">
-<a href="../chapters/ai-data-science/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Ai Data Science Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Ai Data Science.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="1" data-listing-file-modified-sort="1782587956053" data-listing-reading-time-sort="1" data-listing-word-count-sort="38">
-<a href="../chapters/c-cpp-rust/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-C Cpp Rust Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for C Cpp Rust.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="2" data-listing-file-modified-sort="1782587956054" data-listing-reading-time-sort="2" data-listing-word-count-sort="299">
-<a href="../chapters/mathematics/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Comprehensive Mathematics Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>From Single Variable Calculus to Real Analysis, PDEs, and beyond.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="3" data-listing-file-modified-sort="1782587956053" data-listing-reading-time-sort="1" data-listing-word-count-sort="37">
-<a href="../chapters/cs-dsa/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Cs Dsa Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Cs Dsa.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="4" data-listing-file-modified-sort="1782587956053" data-listing-reading-time-sort="1" data-listing-word-count-sort="36">
-<a href="../chapters/cybersecurity/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Cybersecurity Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Cybersecurity.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="5" data-listing-file-modified-sort="1782587956053" data-listing-reading-time-sort="1" data-listing-word-count-sort="36">
-<a href="../chapters/go/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Go Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Go.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="6" data-listing-file-modified-sort="1782587956053" data-listing-reading-time-sort="1" data-listing-word-count-sort="38">
-<a href="../chapters/html-css-js/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Html Css Js Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Html Css Js.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="7" data-listing-file-modified-sort="1782587956053" data-listing-reading-time-sort="1" data-listing-word-count-sort="37">
-<a href="../chapters/java-kotlin/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Java Kotlin Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Java Kotlin.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="8" data-listing-file-modified-sort="1782587956053" data-listing-reading-time-sort="1" data-listing-word-count-sort="37">
-<a href="../chapters/linux-bash/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Linux Bash Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Linux Bash.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="9" data-listing-file-modified-sort="1782587956054" data-listing-reading-time-sort="1" data-listing-word-count-sort="36">
-<a href="../chapters/networking/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Networking Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Networking.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="10" data-listing-file-modified-sort="1782587956054" data-listing-reading-time-sort="1" data-listing-word-count-sort="37">
-<a href="../chapters/nodejs-backend/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Nodejs Backend Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Nodejs Backend.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="11" data-listing-file-modified-sort="1782587956054" data-listing-reading-time-sort="1" data-listing-word-count-sort="37">
-<a href="../chapters/nosql-databases/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Nosql Databases Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Nosql Databases.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="12" data-listing-file-modified-sort="1782587956054" data-listing-reading-time-sort="1" data-listing-word-count-sort="38">
-<a href="../chapters/python-data-stack/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Python Data Stack Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Python Data Stack.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="13" data-listing-file-modified-sort="1782587956054" data-listing-reading-time-sort="1" data-listing-word-count-sort="37">
-<a href="../chapters/software-architecture/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Software Architecture Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Software Architecture.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="14" data-listing-file-modified-sort="1782587956054" data-listing-reading-time-sort="1" data-listing-word-count-sort="38">
-<a href="../chapters/sql-relational-db/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Sql Relational Db Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Sql Relational Db.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-<div class="g-col-1" data-index="15" data-listing-file-modified-sort="1782587956054" data-listing-reading-time-sort="1" data-listing-word-count-sort="38">
-<a href="../chapters/ts-react-nextjs/index.html" class="quarto-grid-link">
-<div class="quarto-grid-item card h-100 card-left">
-<div class="listing-item-img-placeholder card-img-top" style="height: 150px;">&nbsp;</div>
-<div class="card-body post-contents">
-<h5 class="no-anchor card-title listing-title">
-Ts React Nextjs Foundations
-</h5>
-<div class="card-text listing-description delink">
-<p>Placeholder outline and textbook structure for Ts React Nextjs.</p>
-</div>
-<div class="card-attribution card-text-small start">
-<div class="listing-author">
-
-</div>
-</div>
-</div>
-</div></a>
-</div>
-</div>
-<div class="listing-no-matching d-none">No matching items</div>
-</div></main> <!-- /main -->
+</main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
