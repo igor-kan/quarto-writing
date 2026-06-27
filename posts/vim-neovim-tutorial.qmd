@@ -1,0 +1,118 @@
+---
+title: "Vim and Neovim Tutorial: Modal Editing & System Clipboard Setup"
+description: "A comprehensive guide to modal editing, essential shortcuts, navigation, and configuring Neovim/Vim to share the system clipboard."
+date: "2026-06-27"
+categories: [Linux, Text Editors, Vim, Productivity]
+---
+
+[Vim](https://www.vim.org/) and its modern extension [Neovim](https://neovim.io/) are highly efficient, terminal-based modal text editors. Unlike standard text editors, Vim segregates typing text from executing navigation commands by utilizing different "modes."
+
+In this tutorial, we will cover the core modes, key navigation, essential commands, and how to resolve one of the most common friction points for new users: **setting up seamless copy-pasting to and from the system clipboard.**
+
+---
+
+## 1. The Core Concept: Modal Editing
+
+When you open Vim or Neovim, you start in **Normal Mode**. You cannot type text immediately; instead, keys on your keyboard act as shortcuts for moving around and editing the file.
+
+There are three primary modes:
+* **Normal Mode (Default):** For navigation, deleting, copying, and pasting text. Press `Esc` to return to this mode from any other mode.
+* **Insert Mode:** For writing text. Enter this mode by pressing `i` (insert before cursor) or `a` (append after cursor).
+* **Visual Mode:** For selecting blocks of text. Enter this mode by pressing `v` (character-wise) or `V` (line-wise).
+
+---
+
+## 2. Essential Navigation & Commands
+
+All of these commands are executed from **Normal Mode**.
+
+### Navigation (HJKL)
+Avoid the arrow keys. Use these keys to keep your fingers on the home row:
+* **`h`:** Move left
+* **`j`:** Move down
+* **`k`:** Move up
+* **`l`:** Move right
+
+### Basic Editing Commands
+* **`x`:** Delete character under cursor.
+* **`dd`:** Delete (cut) the entire current line.
+* **`yy`:** Copy (yank) the entire current line.
+* **`p`:** Paste (put) copied text after the cursor.
+* **`u`:** Undo the last action (`Ctrl + r` to redo).
+
+### Command Line Mode (Ex Commands)
+Press `:` to enter command line mode, then type:
+* **`:w`:** Save changes (write).
+* **`:q`:** Quit Vim.
+* **`:wq`:** Save changes and quit (equivalent to `:x` or `ZZ`).
+* **`:q!`:** Quit without saving changes.
+
+---
+
+## 3. Configuring Copy-Paste to the System Clipboard
+
+By default, when you copy (yank) text using `y` or delete text using `d`, Vim stores it in its internal registers, not your system's global clipboard. This means you cannot paste yanked text into your web browser or another application.
+
+To bridge this gap, Vim uses special registers:
+* `+` represents the system clipboard (global copy/paste).
+* `*` represents the primary selection (middle-click paste).
+
+### Step 1: Verification
+
+First, verify that your Vim or Neovim installation has clipboard support compiled in.
+
+For Vim, run:
+```bash
+vim --version | grep clipboard
+```
+If you see `+clipboard` or `+xterm_clipboard`, clipboard integration is supported. If you see `-clipboard`, you need to install a version of Vim with GUI support (like `vim-gtk3` on Ubuntu or `gvim` on Arch).
+
+For Neovim, clipboard support is handled through external utilities. You must install the appropriate tool for your display server:
+
+```bash
+# For X11 (Arch Linux / Ubuntu)
+sudo pacman -S xclip xsel     # Arch
+sudo apt install xclip xsel    # Ubuntu
+
+# For Wayland (Arch Linux / Ubuntu)
+sudo pacman -S wl-clipboard   # Arch
+sudo apt install wl-clipboard  # Ubuntu
+```
+
+### Step 2: Configuring Auto-Clipboard Integration
+
+Rather than typing special keys to access the clipboard registers every time, you can configure Vim/Neovim to automatically route all yanks and deletes directly to the system clipboard.
+
+#### For Vim:
+Edit your `~/.vimrc`:
+```bash
+nano ~/.vimrc
+```
+Add the following line:
+```vim
+" Automatically sync Vim registers with the system clipboard
+set clipboard=unnamedplus
+```
+
+#### For Neovim:
+Edit your configuration file:
+* If using Lua (`~/.config/nvim/init.lua`):
+  ```lua
+  -- Sync Neovim register with system clipboard
+  vim.opt.clipboard = "unnamedplus"
+  ```
+* If using Vimscript (`~/.config/nvim/init.vim`):
+  ```vim
+  set clipboard=unnamedplus
+  ```
+
+### Step 3: Copying & Pasting Manually (Without configuration)
+
+If you are on a server and don't want to change your global configuration, you can target the system clipboard register (`+`) explicitly:
+
+* **To Copy (Yank) to Clipboard:**
+  1. Highlight text in Visual Mode (`v`).
+  2. Type: `"+y` (Double quote, plus sign, yank).
+* **To Paste from Clipboard:**
+  1. In Normal Mode, place the cursor where you want the text.
+  2. Type: `"+p` (Double quote, plus sign, paste).

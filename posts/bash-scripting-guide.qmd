@@ -1,0 +1,147 @@
+---
+title: "Bash Scripting Essentials: Automating the Command Line"
+description: "A developer's guide to writing safe, efficient Bash scripts, using variables, control structures, and error-handling options."
+date: "2026-06-27"
+categories: [Linux, Bash, Automation]
+---
+
+[Bash](https://www.gnu.org/software/bash/) (Bourne Again Shell) is the default command-line interpreter on most Linux and macOS systems. While running individual terminal commands is useful, bundling commands into a **Bash script** allows you to automate repetitive tasks, manage configurations, and execute automated deployment pipelines.
+
+In this guide, we will explore the essential building blocks of a Bash script and write a functional, safe automation script.
+
+---
+
+## 1. Structure of a Bash Script
+
+A Bash script is a plain text file. It begins with a **Shebang** (`#!`), which tells the operating system which interpreter to use to run the script.
+
+Create a file named `hello.sh`:
+```bash
+#!/bin/bash
+
+# This is a comment
+echo "Hello, World!"
+```
+
+### Making the Script Executable
+Before you can run a script directly, you must grant it execution permissions using `chmod`:
+
+```bash
+# Grant execute permission
+chmod +x hello.sh
+
+# Run the script
+./hello.sh
+```
+
+---
+
+## 2. Variables and User Input
+
+Variables in Bash do not require type declarations.
+* **Important:** Do not put spaces around the equal sign (`=`) during assignment.
+
+```bash
+#!/bin/bash
+
+# Variable assignment (no spaces around '=')
+NAME="Igor"
+echo "Hello, $NAME"
+
+# Reading user input
+echo "Enter your project name:"
+read PROJECT_NAME
+echo "Creating project: $PROJECT_NAME..."
+```
+
+---
+
+## 3. Conditional Statements (If-Else)
+
+To perform checks, Bash uses double square brackets `[[ ]]` for evaluations.
+
+```bash
+#!/bin/bash
+
+FILE="config.env"
+
+# Check if a file exists (-f)
+if [[ -f "$FILE" ]]; then
+    echo "$FILE exists."
+else
+    echo "$FILE does not exist. Creating default file..."
+    touch "$FILE"
+fi
+```
+
+### Common Test Flags
+* `-f $FILE`: True if the file exists and is a regular file.
+* `-d $DIR`: True if the directory exists.
+* `-z $STRING`: True if the string is empty.
+* `$A == $B`: True if string A equals string B.
+
+---
+
+## 4. Loops (For & While)
+
+Loops allow you to iterate over lists of files, numbers, or command outputs.
+
+```bash
+#!/bin/bash
+
+# Loop through a list of names
+for user in Alice Bob Charlie; do
+    echo "Processing user: $user"
+done
+
+# Loop through files in a directory
+for file in *.qmd; do
+    echo "Rendering Quarto file: $file"
+done
+```
+
+---
+
+## 5. Writing Safe Scripts: Strict Mode
+
+By default, Bash scripts will continue executing even if a command fails, which can lead to unpredictable behaviors. To prevent this, include these safety options at the top of your scripts:
+
+```bash
+#!/bin/bash
+set -e          # Exit immediately if a command exits with a non-zero status
+set -u          # Treat unset variables as an error and exit immediately
+set -o pipefail # Return value of a pipeline is the status of the last command to exit with a non-zero status
+```
+
+---
+
+## 6. Practical Example: Backup Script
+
+Here is a complete, safe script to compress a target directory and back it up:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+# Configuration
+SOURCE_DIR="./posts"
+BACKUP_DIR="./backups"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+BACKUP_FILE="$BACKUP_DIR/posts_backup_$TIMESTAMP.tar.gz"
+
+echo "Starting backup procedure..."
+
+# Ensure the backup directory exists
+if [[ ! -d "$BACKUP_DIR" ]]; then
+    echo "Backup directory not found. Creating $BACKUP_DIR..."
+    mkdir -p "$BACKUP_DIR"
+fi
+
+# Create compressed tarball
+if tar -czf "$BACKUP_FILE" "$SOURCE_DIR"; then
+    echo "Backup successful: $BACKUP_FILE"
+else
+    echo "Error: Backup failed." >&2
+    exit 1
+fi
+```

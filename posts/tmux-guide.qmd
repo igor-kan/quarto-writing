@@ -1,0 +1,116 @@
+---
+title: "The Ultimate Guide to Tmux: Terminal Multiplexing Made Easy"
+description: "Learn how to manage sessions, split windows into panes, configure shortcuts, and keep your terminal environments alive across SSH sessions."
+date: "2026-06-27"
+categories: [Linux, CLI, Productivity]
+---
+
+If you spend a lot of time in the terminal, you have likely run into the limit of managing multiple terminals, tabs, and windows. This problem is amplified when connecting to remote servers via SSH; if your network connection drops, your running processes die.
+
+[Tmux](https://github.com/tmux/tmux) (Terminal Multiplexer) solves these problems. It allows you to run multiple terminal sessions inside a single window, split your screen into panes, and detach sessions so they run in the background even if you log out.
+
+---
+
+## 1. Core Concepts of Tmux
+
+Tmux organizes your workflow into three hierarchical structures:
+1. **Sessions:** A session contains one or more windows. A session runs in the background and stays alive until the server restarts or you explicitly kill it.
+2. **Windows:** Similar to tabs in a web browser, a window occupies the entire display screen.
+3. **Panes:** You can split any window into multiple rectangular areas called panes, each running its own shell.
+
+---
+
+## 2. Managing Sessions from the Command Line
+
+Before launching tmux, you manage sessions using the standard system terminal.
+
+```bash
+# Start a new session with a random name
+tmux
+
+# Start a new session with a descriptive name (Recommended)
+tmux new -s dev
+
+# List all active tmux sessions
+tmux ls
+
+# Attach to the last active session
+tmux a
+
+# Attach to a specific named session
+tmux attach -t dev
+
+# Kill/Delete a specific session
+tmux kill-session -t dev
+
+# Kill all active tmux sessions
+tmux kill-server
+```
+
+---
+
+## 3. Session Navigation: The Prefix Key
+
+Once inside a Tmux session, all keyboard commands must be preceded by the **Prefix key**. By default, the prefix key is:
+
+$$\text{Prefix} = \text{Ctrl} + \text{b}$$
+
+To execute a command, press `Ctrl + b`, release both keys, and then immediately press the command key.
+
+### Essential Keyboard Shortcuts
+
+#### Session Operations
+* **`Prefix` + `d`:** Detach from the current session (leaves it running in the background).
+* **`Prefix` + `$`:** Rename the current session.
+* **`Prefix` + `s`:** List and switch between active sessions.
+
+#### Window (Tab) Operations
+* **`Prefix` + `c`:** Create a new window.
+* **`Prefix` + `,`:** Rename the current window.
+* **`Prefix` + `n` / `p`:** Move to the Next or Previous window.
+* **`Prefix` + `0` through `9`:** Select window by index number.
+* **`Prefix` + `&`:** Kill (close) the current window.
+
+#### Pane Operations
+* **`Prefix` + `%`:** Split the window vertically (left and right panes).
+* **`Prefix` + `"`:** Split the window horizontally (top and bottom panes).
+* **`Prefix` + `Arrow Keys`:** Navigate between panes in the specified direction.
+* **`Prefix` + `x`:** Kill (close) the active pane.
+* **`Prefix` + `z`:** Toggle Zoom (maximize the active pane; press again to minimize back).
+
+---
+
+## 4. Customizing Tmux
+
+You can customize Tmux configuration by editing the `~/.tmux.conf` file. A popular customization is changing the prefix key to `Ctrl+a` (similar to GNU Screen) and enabling mouse support.
+
+Create or edit your config:
+```bash
+nano ~/.tmux.conf
+```
+
+Add these lines to configure mouse support and custom keybindings:
+```ini
+# Enable mouse click, scroll, and resize support
+set -g mouse on
+
+# Remap prefix from 'Ctrl-b' to 'Ctrl-a'
+unbind C-b
+set-option -g prefix C-a
+bind-option C-a send-prefix
+
+# Split panes using | and - instead of % and "
+bind | split-window -h
+bind - split-window -v
+unbind '"'
+unbind %
+
+# Improve status bar styling
+set -g status-bg black
+set -g status-fg white
+```
+
+Apply your changes immediately without restarting Tmux:
+```bash
+tmux source-file ~/.tmux.conf
+```
