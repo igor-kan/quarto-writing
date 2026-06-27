@@ -233,22 +233,38 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>For users transitioning to Linux or diving deeper into system customization (“ricing”), the visual layer of the operating system can seem like a confusing maze of acronyms and interchangeable terms.</p>
-<p>Unlike Windows or macOS, where the graphical user interface is tightly coupled with the operating system, Linux treats the GUI as a modular, replaceable stack of software. This article breaks down the entire desktop stack from display protocols to custom rices like <strong>Illogical Impulse</strong>, complete with installation commands, configuration paths, and configuration examples.</p>
+<p>Unlike Windows or macOS, where the graphical user interface (GUI) is tightly coupled with the core operating system, Linux treats the GUI as a modular, replaceable stack of software. This article breaks down the entire desktop stack from display protocols to custom rices like <strong>Illogical Impulse</strong>, complete with installation commands, configuration paths, and configuration examples.</p>
 <hr>
 <section id="the-foundation-display-protocols-servers" class="level2">
 <h2 class="anchored" data-anchor-id="the-foundation-display-protocols-servers">1. The Foundation: Display Protocols &amp; Servers</h2>
 <p>At the very bottom of the graphical stack sits the <strong>Display Server</strong>. Its job is to coordinate communication between your hardware (graphics card, keyboard, mouse) and your applications, telling the hardware where and how to render pixels.</p>
-<pre class="mermaid"><code>graph TD
-    Hardware[GPU, Input Devices] &lt;--&gt; DisplayServer[Display Server / Protocol]
-    DisplayServer &lt;--&gt; WindowManager[Window Manager / Compositor]
-    WindowManager &lt;--&gt; Client[GUI Applications]</code></pre>
+<p>Here is how data flows through the Linux graphical stack:</p>
+<pre class="mermaid"><code>flowchart TD
+    subgraph InputOutput [Hardware Layer]
+        Hardware["Hardware (GPU, Keyboard, Mouse)"]
+    end
+    subgraph ProtocolLayer [Display Server Protocol]
+        DisplayServer["Display Server (Xorg / Wayland Compositor)"]
+    end
+    subgraph WindowLayer [Window Management Layer]
+        WindowManager["Window Manager / Compositor (Mutter, KWin, Hyprland, i3)"]
+    end
+    subgraph AppLayer [User Space Applications]
+        Client["GUI Applications (Firefox, Kitty, Files)"]
+    end
+
+    Hardware --&gt;|Input Events| DisplayServer
+    DisplayServer --&gt;|Display Signals| Hardware
+    Client --&gt;|Render Commands| WindowManager
+    WindowManager --&gt;|Composed Frames| DisplayServer
+    DisplayServer --&gt;|Input Events Routing| Client</code></pre>
 <section id="x11-x-window-system" class="level3">
 <h3 class="anchored" data-anchor-id="x11-x-window-system">X11 (X Window System)</h3>
-<p>Introduced in 1984, <strong>X11</strong> (specifically its modern server implementation, <strong>Xorg</strong>) is the legacy standard. * <strong>How it works:</strong> It uses a client-server architecture. Applications (clients) send drawing requests to the X Server, which interacts with the hardware. A separate Window Manager is responsible for arranging the application windows. * <strong>Network Transparency:</strong> X11 natively supports running an application on a remote server and displaying its window on your local machine. * <strong>Downsides:</strong> It is old, bloated, lacks built-in security isolation (any app can capture keystrokes from other apps), and is prone to screen tearing.</p>
+<p>Introduced in 1984, the <a href="https://www.x.org/wiki/">X Window System</a> (specifically its modern server implementation, <strong>Xorg</strong>) is the legacy standard. * <strong>How it works:</strong> It uses a client-server architecture. Applications (clients) send drawing requests to the X Server, which interacts with the hardware. A separate Window Manager is responsible for arranging the application windows. * <strong>Network Transparency:</strong> X11 natively supports running an application on a remote server and displaying its window on your local machine. * <strong>Downsides:</strong> It is old, bloated, lacks built-in security isolation (any app can capture keystrokes from other apps), and is prone to screen tearing.</p>
 </section>
 <section id="wayland" class="level3">
 <h3 class="anchored" data-anchor-id="wayland">Wayland</h3>
-<p><strong>Wayland</strong> is the modern successor to X11, designed to simplify the stack and enhance performance and security. * <strong>How it works:</strong> Wayland is a <em>protocol</em>, not a server. The server is called a <strong>Wayland Compositor</strong> (which acts as the display server, window manager, and compositor all in one). * <strong>Direct Rendering:</strong> Applications render directly into their own off-screen buffers, and the compositor paints them to the screen. Every frame is perfect (no screen tearing). * <strong>Security:</strong> Strict isolation. Applications cannot sniff keystrokes or record screens without explicit permission through system portals.</p>
+<p><a href="https://wayland.freedesktop.org/">Wayland</a> is the modern successor to X11, designed to simplify the stack and enhance performance and security. * <strong>How it works:</strong> Wayland is a <em>protocol</em>, not a server. The server is called a <strong>Wayland Compositor</strong> (which acts as the display server, window manager, and compositor all in one). * <strong>Direct Rendering:</strong> Applications render directly into their own off-screen buffers, and the compositor paints them to the screen. Every frame is perfect (no screen tearing). * <strong>Security:</strong> Strict isolation. Applications cannot sniff keystrokes or record screens without explicit permission through system portals.</p>
 <hr>
 </section>
 </section>
@@ -256,12 +272,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="window-managers-wm-vs.-desktop-environments-de">2. Window Managers (WM) vs.&nbsp;Desktop Environments (DE)</h2>
 <p>When you interact with panels, menus, and window frames, you are interacting with either a Window Manager or a full Desktop Environment.</p>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 25%">
-<col style="width: 25%">
-<col style="width: 25%">
-<col style="width: 25%">
-</colgroup>
 <thead>
 <tr class="header">
 <th>Component</th>
@@ -275,13 +285,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><strong>Window Manager (WM)</strong></td>
 <td>Solitary job: positioning, sizing, and styling application windows.</td>
 <td>Extremely low (~50MB - 150MB RAM)</td>
-<td>i3, bspwm, Hyprland, Sway</td>
+<td><a href="https://i3wm.org/">i3wm</a>, <a href="https://github.com/baskerville/bspwm">bspwm</a>, <a href="https://hyprland.org/">Hyprland</a>, <a href="https://swaywm.org/">Sway</a></td>
 </tr>
 <tr class="even">
 <td><strong>Desktop Environment (DE)</strong></td>
 <td>A complete suite of unified applications (file manager, settings, panels, system tray, display manager, WM).</td>
 <td>Moderate to High (500MB - 2GB+ RAM)</td>
-<td>GNOME, KDE Plasma, XFCE4</td>
+<td><a href="https://www.gnome.org/">GNOME</a>, <a href="https://kde.org/plasma-desktop/">KDE Plasma</a>, <a href="https://xfce.org/">XFCE</a></td>
 </tr>
 </tbody>
 </table>
@@ -289,15 +299,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="desktop-environments">Desktop Environments</h3>
 <section id="gnome" class="level4">
 <h4 class="anchored" data-anchor-id="gnome">GNOME</h4>
-<p>Built on the GTK toolkit, GNOME focuses on a distraction-free, touch-friendly, workspace-centric interface. It defaults to Wayland and uses its own compositor called <strong>Mutter</strong>.</p>
+<p>Built on the GTK toolkit, <a href="https://www.gnome.org/">GNOME</a> focuses on a distraction-free, touch-friendly, workspace-centric interface. It defaults to Wayland and uses its own compositor called <a href="https://gitlab.gnome.org/GNOME/mutter">Mutter</a>.</p>
 </section>
 <section id="kde-plasma" class="level4">
 <h4 class="anchored" data-anchor-id="kde-plasma">KDE Plasma</h4>
-<p>Built on Qt, KDE Plasma is famous for being incredibly modular and customizable. It is lightweight despite its power and supports both X11 and Wayland via its compositor/WM, <strong>KWin</strong>.</p>
+<p>Built on Qt, <a href="https://kde.org/plasma-desktop/">KDE Plasma</a> is famous for being incredibly modular and customizable. It is lightweight despite its power and supports both X11 and Wayland via its compositor/WM, <a href="https://invent.kde.org/plasma/kwin">KWin</a>.</p>
 </section>
 <section id="xfce4" class="level4">
 <h4 class="anchored" data-anchor-id="xfce4">XFCE4</h4>
-<p>A lightweight DE built on GTK. It is modular, stable, and uses very little RAM, making it perfect for older hardware. It operates primarily on X11 using the <strong>Xfwm</strong> window manager.</p>
+<p>A lightweight DE built on GTK. <a href="https://xfce.org/">XFCE</a> is modular, stable, and uses very little RAM, making it perfect for older hardware. It operates primarily on X11 using the <a href="https://gitlab.xfce.org/xfce/xfwm4">Xfwm</a> window manager.</p>
 <hr>
 </section>
 </section>
@@ -305,11 +315,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="window-managers-compositors">Window Managers &amp; Compositors</h3>
 <section id="hyprland" class="level4">
 <h4 class="anchored" data-anchor-id="hyprland">Hyprland</h4>
-<p>A dynamic tiling Wayland compositor written in C++. It is popular for its fluid animations, rounded corners, dual-gaps, active blur rendering, and extensive customizability.</p>
+<p><a href="https://hyprland.org/">Hyprland</a> is a dynamic tiling Wayland compositor written in C++. It is popular for its fluid animations, rounded corners, dual-gaps, active blur rendering, and extensive customizability.</p>
 </section>
 <section id="i3wm" class="level4">
 <h4 class="anchored" data-anchor-id="i3wm">i3wm</h4>
-<p>A classic, manual tiling window manager for X11. It organizes windows in a non-overlapping grid, heavily relying on keyboard shortcuts.</p>
+<p><a href="https://i3wm.org/">i3wm</a> is a classic, manual tiling window manager for X11. It organizes windows in a non-overlapping grid, heavily relying on keyboard shortcuts.</p>
 <hr>
 </section>
 </section>
@@ -327,7 +337,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="illogical-impulse-next-gen-hyprland-config" class="level3">
 <h3 class="anchored" data-anchor-id="illogical-impulse-next-gen-hyprland-config">Illogical Impulse: Next-Gen Hyprland Config</h3>
-<p><strong>Illogical Impulse</strong> (developed by GitHub user <code>end-4</code>) is a highly integrated, aesthetic, and usability-first set of dotfiles for the <strong>Hyprland</strong> Wayland compositor. * <strong>Core Technology:</strong> It relies heavily on <strong>Quickshell</strong> (and previously AGS - Aylur’s GTK Shell) to construct widgets, control hubs, volume sliders, app launchers, and status bars using Javascript/Typescript. * <strong>Why it’s unique:</strong> Unlike traditional configs where you chain different tools together (e.g., Waybar for status bar, Rofi for launcher, Dunst for notifications), Illogical Impulse unifies all desktop components into a single, cohesive Material Design interface.</p>
+<p><a href="https://ii.clsty.link/">Illogical Impulse</a> (developed by GitHub user <a href="https://github.com/end-4">end-4</a>) is a highly integrated, aesthetic, and usability-first set of dotfiles for the <strong>Hyprland</strong> Wayland compositor. * <strong>Core Technology:</strong> It relies heavily on <a href="https://github.com/outfoxxed/quickshell">Quickshell</a> (and previously <a href="https://github.com/Aylur/ags">AGS - Aylur’s GTK Shell</a>) to construct widgets, control hubs, volume sliders, app launchers, and status bars using Javascript/Typescript. * <strong>Why it’s unique:</strong> Unlike traditional configs where you chain different tools together (e.g., <a href="https://github.com/Alexays/Waybar">Waybar</a> for status bar, <a href="https://github.com/davatorium/rofi">Rofi</a> for launcher, <a href="https://github.com/dunst-project/dunst">Dunst</a> for notifications), Illogical Impulse unifies all desktop components into a single, cohesive Material Design interface.</p>
 <hr>
 </section>
 </section>
@@ -359,7 +369,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="deploying-the-illogical-impulse-dotfiles" class="level3">
 <h3 class="anchored" data-anchor-id="deploying-the-illogical-impulse-dotfiles">Deploying the “Illogical Impulse” Dotfiles</h3>
-<p>To deploy the custom <strong>Illogical Impulse</strong> desktop environment, you should use the official installation script on an Arch-based system:</p>
+<p>To deploy the custom <a href="https://github.com/end-4/dots-hyprland">Illogical Impulse</a> desktop environment, you should use the official installation script on an Arch-based system:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Clone the repository</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone <span class="at">--depth</span> 1 https://github.com/end-4/dots-hyprland.git ~/dots-hyprland</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
