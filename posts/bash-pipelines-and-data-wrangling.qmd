@@ -1,0 +1,183 @@
+---
+title: "Mastering Bash Pipelines & Data Wrangling: Cat, Echo, Grep, and Awk"
+description: "A comprehensive guide to constructing powerful command pipelines in Bash and processing text streams using standard CLI utilities: cat, echo, grep, and awk."
+date: "2026-06-27"
+categories: [Linux, Bash, CLI, Programming]
+---
+
+The Unix philosophy states: **"Write programs that do one thing and do it well. Write programs to work together. Write programs to handle text streams, because that is a universal interface."**
+
+In this guide, we will explore the heart of this philosophy: **Bash pipelines**—which allow us to chain simple utilities together to solve complex data-processing problems. We will cover the mechanics of pipelines and dive deep into four essential tools: `cat`, `echo`, `grep`, and `awk`.
+
+---
+
+### 1. Understanding Bash Pipelines (`|`)
+
+A pipeline in Bash is created using the vertical bar operator (`|`). It takes the standard output (`stdout`) of the command on the left and passes it as standard input (`stdin`) to the command on the right.
+
+```bash
+command1 | command2 | command3
+```
+
+#### How Pipelines Work Under the Hood:
+1. **Concurrency:** All commands in a pipeline run **concurrently** (at the same time), not sequentially. The kernel manages the data buffers between processes. If `command2` reads slower than `command1` writes, `command1` is temporarily suspended by the kernel until buffer space becomes available.
+2. **Subshells:** Each command in a pipeline runs in its own subshell (a separate child process). Consequently, environment variables or directory changes (`cd`) made inside a pipeline do not affect your parent shell.
+3. **Pipeline Exit Codes (`PIPESTATUS`):** By default, the exit code of a pipeline is the exit code of the *last* command. If `command1` fails but `command3` succeeds, the overall pipeline returns `0` (success). To see the exit status of each command in the chain, use the Bash environment variable `PIPESTATUS`:
+   ```bash
+   # Run a pipeline
+   cat non_existent_file | grep "pattern"
+   # Inspect exit codes
+   echo "${PIPESTATUS[0]} ${PIPESTATUS[1]}"  # Prints: 1 1 (both failed)
+   ```
+
+---
+
+### 2. Deep Dive: The Core Utilities
+
+#### Utility A: `cat` (Concatenate)
+`cat` is one of the most frequently used commands, designed to read files and print their contents to standard output.
+
+* **Basic Usage:** `cat filename.txt`
+* **Printing Line Numbers (`-n`):** 
+  ```bash
+  cat -n config.conf
+  ```
+* **Squeezing Empty Lines (`-s`):** Suppresses consecutive empty output lines into a single blank line.
+  ```bash
+  cat -s spacing.txt
+  ```
+* **Concatenating Multiple Files:**
+  ```bash
+  cat part1.log part2.log > combined.log
+  ```
+
+> [!WARNING]
+> **Anti-Pattern: Useless Use of Cat (UUOC)**
+> Beginners often write `cat file.txt | grep "pattern"`. This spawns a redundant process. Most utilities accept files as arguments directly. Prefer writing:
+> `grep "pattern" file.txt`
+
+---
+
+#### Utility B: `echo` (Print Text)
+`echo` is a built-in shell utility used to print arguments to standard output.
+
+* **Basic Usage:** `echo "Hello, world!"`
+* **Suppressing the Newline (`-n`):** By default, `echo` appends a newline at the end. Use `-n` to prevent this:
+  ```bash
+  echo -n "Connecting..."
+  ```
+* **Interpreting Backslash Escapes (`-e`):** Enables interpretation of special characters like tab (`\t`) and newline (`\n`).
+  ```bash
+  echo -e "Column1\tColumn2\nValue1\tValue2"
+  ```
+
+> [!TIP]
+> For complex output formatting, prefer the more robust `printf` utility, which behaves predictably across different Unix shells.
+
+---
+
+#### Utility C: `grep` (Global Regular Expression Print)
+`grep` searches input files (or stream input) for lines matching a specified pattern and prints them.
+
+* **Case-Insensitive Match (`-i`):**
+  ```bash
+  grep -i "error" server.log
+  ```
+* **Invert Match (`-v`):** Prints lines that do **not** match the pattern (highly useful for filtering out noise).
+  ```bash
+  grep -v "DEBUG" server.log
+  ```
+* **Count Matches (`-c`):** Instead of printing lines, output the count of matching occurrences.
+  ```bash
+  grep -c "ERROR" system.log
+  ```
+* **Display Line Numbers (`-n`):** Prepends the file line number to each matching line.
+  ```bash
+  grep -n "FATAL" system.log
+  ```
+* **Recursive Search (`-r` or `-R`):** Search all files under the specified directory.
+  ```bash
+  grep -rn "TODO" ./src/
+  ```
+* **Extended Regular Expressions (`-E`):** Interprets pattern as an extended regular expression (equivalent to `egrep`).
+  ```bash
+  grep -E "(warning|error|critical)" app.log
+  ```
+
+---
+
+#### Utility D: `awk` (Pattern Scanning and Processing)
+`awk` is not just a command; it is a complete Turing-complete programming language designed for processing columns and structured text.
+
+An `awk` script consists of patterns and actions:
+```awk
+pattern { action }
+```
+
+* **Printing Specific Columns:** Columns are referenced by `$1`, `$2`, etc. `$0` represents the entire line.
+  ```bash
+  # Print the username (first column) and shell (seventh column) from /etc/passwd
+  awk -F ":" '{print $1, $7}' /etc/passwd
+  ```
+  * *Note:* The `-F` flag changes the default field separator (which is whitespace) to a colon (`:`).
+* **Filtering Rows by Value:**
+  ```bash
+  # Print processes where memory usage (column 4) is greater than 5%
+  ps aux | awk '$4 > 5.0 {print $1, $2, $4, $11}'
+  ```
+* **Using Built-in Variables:**
+  * `NR`: Number of Records (current line number).
+  * `NF`: Number of Fields (number of columns in the current line).
+  ```bash
+  # Print the line number followed by the line content
+  awk '{print NR, $0}' document.txt
+  ```
+* **Basic Arithmetic & Aggregations:**
+  ```bash
+  # Sum the file sizes in bytes (5th column of ls -l)
+  ls -l | awk '{sum += $5} END {print "Total size:", sum, "bytes"}'
+  ```
+
+---
+
+### 3. Combining Them: Advanced Pipelines
+
+Here are three real-world pipelines showing these tools in action together:
+
+#### Pipeline A: Analysing Access Logs to Find Top IP Addresses
+Extract the IP addresses from an Apache access log, count unique hits, and sort them to find the most active visitors.
+
+```bash
+cat access.log | awk '{print $1}' | sort | uniq -c | sort -rn | head -n 10
+```
+* **`awk '{print $1}'`** extracts the first column (the client IP address).
+* **`sort`** groups identical IPs together (required for `uniq`).
+* **`uniq -c`** collapses duplicate lines and counts occurrences.
+* **`sort -rn`** sorts the results numerically (`-n`) in reverse order (`-r`) to put high counts at the top.
+* **`head -n 10`** displays only the top 10 rows.
+
+---
+
+#### Pipeline B: Finding and Terminating Specific Processes
+Identify running instances of a program (e.g., `node`) without matching the `grep` command itself:
+
+```bash
+ps aux | grep -v "grep" | grep "node" | awk '{print $2}' | xargs kill -9
+```
+* **`ps aux`** lists all active processes.
+* **`grep -v "grep"`** filters out our own search command from the list.
+* **`grep "node"`** filters for lines containing "node".
+* **`awk '{print $2}'`** prints the second column (the Process ID or PID).
+* **`xargs kill -9`** passes the PID list as arguments to the `kill` command.
+
+---
+
+#### Pipeline C: Quick File Summary
+Verify the number of non-comment, non-empty configuration options in a config file:
+
+```bash
+grep -v "^#" server.conf | grep -v "^$" | wc -l
+```
+* **`grep -v "^#"`** excludes lines starting with a comment hash.
+* **`grep -v "^$"`** excludes empty lines.
+* **`wc -l`** counts the remaining lines.
