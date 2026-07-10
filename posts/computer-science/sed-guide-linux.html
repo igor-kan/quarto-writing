@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2026-06-27">
+<meta name="description" content="Master the Linux Stream Editor (sed) to search, preview, replace, and comment out configuration lines in-place using real-world examples.">
+
+<title>Editing Files Fast with Sed: Flags, Regex, and In-Place Modifications – My Writings</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-bba5ebae505b5c03f3f0d8040a416a6b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">My Writings</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../literature/index.html"> 
+<span class="menu-text">Literature</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../chapters/index.html"> 
+<span class="menu-text">Chapters</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../tutorials/index.html"> 
+<span class="menu-text">Tutorials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#key-sed-flags" id="toc-key-sed-flags" class="nav-link active" data-scroll-target="#key-sed-flags">1. Key Sed Flags</a></li>
+  <li><a href="#in-place-editing-and-automatic-backups" id="toc-in-place-editing-and-automatic-backups" class="nav-link" data-scroll-target="#in-place-editing-and-automatic-backups">2. In-Place Editing and Automatic Backups</a>
+  <ul class="collapse">
+  <li><a href="#the-gnu-vs.-bsdmacos-sed-difference" id="toc-the-gnu-vs.-bsdmacos-sed-difference" class="nav-link" data-scroll-target="#the-gnu-vs.-bsdmacos-sed-difference">The GNU vs.&nbsp;BSD/macOS Sed Difference</a></li>
+  </ul></li>
+  <li><a href="#real-world-config-examples" id="toc-real-world-config-examples" class="nav-link" data-scroll-target="#real-world-config-examples">3. Real-World Config Examples</a>
+  <ul class="collapse">
+  <li><a href="#example-a-previewing-specific-lines" id="toc-example-a-previewing-specific-lines" class="nav-link" data-scroll-target="#example-a-previewing-specific-lines">Example A: Previewing Specific Lines</a></li>
+  <li><a href="#example-b-commenting-out-deprecated-options-e.g.-ignore_window" id="toc-example-b-commenting-out-deprecated-options-e.g.-ignore_window" class="nav-link" data-scroll-target="#example-b-commenting-out-deprecated-options-e.g.-ignore_window">Example B: Commenting Out Deprecated Options (e.g., <code>ignore_window</code>)</a></li>
+  <li><a href="#example-c-deleting-lines-empty-lines-or-comments" id="toc-example-c-deleting-lines-empty-lines-or-comments" class="nav-link" data-scroll-target="#example-c-deleting-lines-empty-lines-or-comments">Example C: Deleting Lines, Empty Lines, or Comments</a></li>
+  <li><a href="#example-d-chaining-multiple-replacements" id="toc-example-d-chaining-multiple-replacements" class="nav-link" data-scroll-target="#example-d-chaining-multiple-replacements">Example D: Chaining Multiple Replacements</a></li>
+  <li><a href="#example-e-appendinginserting-lines" id="toc-example-e-appendinginserting-lines" class="nav-link" data-scroll-target="#example-e-appendinginserting-lines">Example E: Appending/Inserting Lines</a></li>
+  </ul></li>
+  <li><a href="#substitution-flags-global-case-insensitive-and-specific-lines" id="toc-substitution-flags-global-case-insensitive-and-specific-lines" class="nav-link" data-scroll-target="#substitution-flags-global-case-insensitive-and-specific-lines">4. Substitution Flags: Global, Case-Insensitive, and Specific Lines</a></li>
+  <li><a href="#summary-checklist-for-stream-editing" id="toc-summary-checklist-for-stream-editing" class="nav-link" data-scroll-target="#summary-checklist-for-stream-editing">5. Summary Checklist for Stream Editing</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Editing Files Fast with Sed: Flags, Regex, and In-Place Modifications</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">Linux</div>
+    <div class="quarto-category">CLI</div>
+    <div class="quarto-category">Shell-Tools</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    Master the Linux Stream Editor (sed) to search, preview, replace, and comment out configuration lines in-place using real-world examples.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">June 27, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>On Linux systems, configuration files are plain text. While you can open a text editor to make modifications, doing so programmatically or quickly from the command line is often more efficient.</p>
+<p><a href="https://www.gnu.org/software/sed/">sed</a> (Stream Editor) is a utility used to perform basic text transformations on an input stream or file. In this guide, we will analyze essential <code>sed</code> flags, commands, and regular expressions using practical scenarios for editing system configs.</p>
+<hr>
+<section id="key-sed-flags" class="level2">
+<h2 class="anchored" data-anchor-id="key-sed-flags">1. Key Sed Flags</h2>
+<p>Two flags are essential for system configuration tasks:</p>
+<ul>
+<li><strong><code>-i</code> (In-Place):</strong> By default, <code>sed</code> prints its output to the terminal screen (stdout) and leaves the original file untouched. The <code>-i</code> flag writes the changes directly back to the file.</li>
+<li><strong><code>-n</code> (Silent/No-Print):</strong> By default, <code>sed</code> prints every line of the file after processing. The <code>-n</code> flag suppresses this automatic printing, allowing you to selectively print specific lines (usually combined with the <code>p</code> command).</li>
+<li><strong><code>-E</code> or <code>-r</code> (Extended Regular Expressions):</strong> Enables modern, extended regular expressions (ERE) rather than basic regular expressions (BRE). This removes the need to escape parentheses <code>()</code>, braces <code>{}</code>, and plus signs <code>+</code>.</li>
+<li><strong><code>-e</code> (Multiple Scripts):</strong> Allows you to chain multiple editing commands sequentially in a single pass.</li>
+</ul>
+<hr>
+</section>
+<section id="in-place-editing-and-automatic-backups" class="level2">
+<h2 class="anchored" data-anchor-id="in-place-editing-and-automatic-backups">2. In-Place Editing and Automatic Backups</h2>
+<p>Modifying files in-place (<code>-i</code>) is extremely convenient, but it carries the risk of corrupting critical configuration files if your regular expression is incorrect. <code>sed</code> provides a built-in mechanism to create a backup file immediately before writing changes.</p>
+<section id="the-gnu-vs.-bsdmacos-sed-difference" class="level3">
+<h3 class="anchored" data-anchor-id="the-gnu-vs.-bsdmacos-sed-difference">The GNU vs.&nbsp;BSD/macOS Sed Difference</h3>
+<p>The syntax for backups differs depending on whether you are on a GNU-based system (like Linux) or a BSD-based system (like macOS):</p>
+<section id="gnu-sed-linux" class="level4">
+<h4 class="anchored" data-anchor-id="gnu-sed-linux">GNU Sed (Linux)</h4>
+<p>Under Linux, you can attach the backup suffix directly to the <code>-i</code> flag (with no space):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Modifies config.conf and creates config.conf.bak as a backup of the original</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i.bak</span> <span class="st">'s/port = 80/port = 8080/g'</span> config.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>To run GNU <code>sed</code> in-place <em>without</em> a backup, use <code>-i</code> by itself:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">'s/old/new/g'</span> file.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="bsdmacos-sed" class="level4">
+<h4 class="anchored" data-anchor-id="bsdmacos-sed">BSD/macOS Sed</h4>
+<p>macOS uses the BSD version of <code>sed</code>, which <strong>requires</strong> an argument for the <code>-i</code> flag specifying the backup extension. Leaving it empty requires an explicit empty string <code>''</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># macOS/BSD: Backup file created with .bak suffix</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">'.bak'</span> <span class="st">'s/port = 80/port = 8080/g'</span> config.conf</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># macOS/BSD: In-place edit WITHOUT creating a backup</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">''</span> <span class="st">'s/old/new/g'</span> file.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+</section>
+<section id="real-world-config-examples" class="level2">
+<h2 class="anchored" data-anchor-id="real-world-config-examples">3. Real-World Config Examples</h2>
+<section id="example-a-previewing-specific-lines" class="level3">
+<h3 class="anchored" data-anchor-id="example-a-previewing-specific-lines">Example A: Previewing Specific Lines</h3>
+<p>Before modifying a file, it is safe practice to inspect its contents.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-n</span> <span class="st">'110,114p'</span> ~/.config/hypr/hyprland/keybinds.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="syntax-breakdown" class="level4">
+<h4 class="anchored" data-anchor-id="syntax-breakdown">Syntax Breakdown:</h4>
+<ul>
+<li><strong><code>-n</code>:</strong> Tells <code>sed</code> not to print the file contents by default.</li>
+<li><strong><code>'110,114p'</code>:</strong> The range <code>110,114</code> targets lines 110 through 114 inclusive. The command <code>p</code> stands for <strong>print</strong>.</li>
+<li><strong>Result:</strong> Only lines 110 to 114 of the file are printed to the terminal, serving as a preview.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="example-b-commenting-out-deprecated-options-e.g.-ignore_window" class="level3">
+<h3 class="anchored" data-anchor-id="example-b-commenting-out-deprecated-options-e.g.-ignore_window">Example B: Commenting Out Deprecated Options (e.g., <code>ignore_window</code>)</h3>
+<p>If you need to disable a setting in a config file, you can comment it out by prepending a hash (<code>#</code>) character.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i.bak</span> <span class="st">'s/^\s*ignore_window\s*=.*/# &amp;/'</span> ~/.config/hypr/hyprland/general.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="syntax-breakdown-1" class="level4">
+<h4 class="anchored" data-anchor-id="syntax-breakdown-1">Syntax Breakdown:</h4>
+<ul>
+<li><strong><code>-i.bak</code>:</strong> Edit in-place and create a backup named <code>general.conf.bak</code>.</li>
+<li><strong><code>s/pattern/replacement/</code>:</strong> The substitution command.</li>
+<li><strong>The Pattern (<code>^\s*ignore_window\s*=.*/</code>):</strong>
+<ul>
+<li><code>^</code> asserts the start of the line.</li>
+<li><code>\s*</code> matches zero or more whitespace characters.</li>
+<li><code>ignore_window</code> matches the exact word.</li>
+<li><code>\s*=\s*</code> matches the equals sign with any surrounding spaces.</li>
+<li><code>.*</code> matches the rest of the line (any parameters after the equals sign).</li>
+</ul></li>
+<li><strong>The Replacement (<code># &amp;</code>):</strong>
+<ul>
+<li>The <code>&amp;</code> character represents the <strong>entire matched string</strong>.</li>
+<li>Prepending <code>#</code> comments out the line while keeping its original content intact.</li>
+</ul></li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="example-c-deleting-lines-empty-lines-or-comments" class="level3">
+<h3 class="anchored" data-anchor-id="example-c-deleting-lines-empty-lines-or-comments">Example C: Deleting Lines, Empty Lines, or Comments</h3>
+<p>If you want to strip out all comments or empty lines from a configuration file for cleaner viewing:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Delete all lines starting with #</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="st">'/^#/d'</span> config.conf</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Delete all empty lines (or lines containing only whitespace)</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="st">'/^\s*$/d'</span> config.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><strong><code>d</code> (Delete):</strong> Deletes the matched lines from the stream.</li>
+</ul>
+<hr>
+</section>
+<section id="example-d-chaining-multiple-replacements" class="level3">
+<h3 class="anchored" data-anchor-id="example-d-chaining-multiple-replacements">Example D: Chaining Multiple Replacements</h3>
+<p>If you need to change several settings simultaneously, use the <code>-e</code> flag to specify multiple scripts:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i.bak</span> <span class="at">-e</span> <span class="st">'s/timeout = 300/timeout = 600/'</span> <span class="dt">\</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>           <span class="at">-e</span> <span class="st">'s/debug = true/debug = false/'</span> config.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+<section id="example-e-appendinginserting-lines" class="level3">
+<h3 class="anchored" data-anchor-id="example-e-appendinginserting-lines">Example E: Appending/Inserting Lines</h3>
+<p>You can insert new lines of text before or after a specific pattern match:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Append a line AFTER the matching line (using 'a' for append)</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="st">'/ssl_enable = true/a \    ssl_port = 443'</span> server.conf</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Insert a line BEFORE the matching line (using 'i' for insert)</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="st">'/server_name localhost/i \    # Default Server Block'</span> server.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="substitution-flags-global-case-insensitive-and-specific-lines" class="level2">
+<h2 class="anchored" data-anchor-id="substitution-flags-global-case-insensitive-and-specific-lines">4. Substitution Flags: Global, Case-Insensitive, and Specific Lines</h2>
+<p>The substitution command <code>s/pattern/replacement/flags</code> accepts flags at the end to alter its behavior:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 37%">
+<col style="width: 37%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Flag</th>
+<th>Meaning</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong><code>g</code></strong></td>
+<td><strong>Global:</strong> Replace <em>all</em> occurrences of the pattern on each line, rather than just the first occurrence.</td>
+<td><code>sed 's/old/new/g'</code></td>
+</tr>
+<tr class="even">
+<td><strong><code>I</code></strong></td>
+<td><strong>Case-Insensitive:</strong> Match the pattern regardless of case.</td>
+<td><code>sed 's/error/WARNING/I'</code></td>
+</tr>
+<tr class="odd">
+<td><strong>Line Number</strong></td>
+<td><strong>Specific line match:</strong> Perform the substitution only on a specific line.</td>
+<td><code>sed '3s/inactive/active/'</code></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="summary-checklist-for-stream-editing" class="level2">
+<h2 class="anchored" data-anchor-id="summary-checklist-for-stream-editing">5. Summary Checklist for Stream Editing</h2>
+<ol type="1">
+<li><p><strong>Dry Run First:</strong> Always run your command without <code>-i</code> first to see the stdout preview.</p></li>
+<li><p><strong>Double Quote for Variables:</strong> Use single quotes <code>''</code> for literal patterns. If you need to expand bash variables, use double quotes <code>""</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="va">PORT</span><span class="op">=</span>8080</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">"s/PORT_PLACEHOLDER/</span><span class="va">$PORT</span><span class="st">/g"</span> config.json</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p><strong>Use Alternative Delimiters:</strong> If your pattern contains slashes (e.g., URLs or file paths), you can use any character (like <code>|</code>, <code>_</code>, or <code>:</code>) as a delimiter to avoid escaping:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="st">'s|/usr/bin|/usr/local/bin|g'</span> paths.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+</ol>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/igor-kan\.github\.io\/quarto-writing\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
