@@ -1,0 +1,167 @@
+---
+title: "Configuring Hyprland & Illogical Impulse Quickshell: A Complete Setup Guide"
+author: "Igor Kan"
+date: "2026-07-20"
+description: "A comprehensive documentation guide for configuring Hyprland with Illogical Impulse Quickshell, custom workspace clamping scripts, monitor alignment, and overview keybindings."
+categories: [Linux, Hyprland, Quickshell, Dotfiles, Customization]
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+---
+
+## Introduction
+
+This guide documents the complete setup and troubleshooting process for **Hyprland** running **Illogical Impulse Quickshell**, a modern desktop widget and shell suite.
+
+Whether you are configuring vertical bars, setting up custom workspace clamping, aligning multi-monitor coordinate spaces, or fixing IPC keybindings for the overview launcher, this document serves as a reference.
+
+---
+
+## 1. Monitor Setup & Coordinate Alignment
+
+When running Hyprland with disconnected or dynamic monitors, coordinate offsets can cause layer surfaces (like Quickshell bars) to render off-screen in invisible coordinate gaps.
+
+### Configuration (`~/.config/hypr/monitors.conf`)
+
+Ensure your primary active display is set at `0x0` position to prevent ghost coordinate gaps:
+
+```ini
+# Primary active monitor (4K scaled to 1440p feel)
+monitor=HDMI-A-1, 3840x2160@60, 0x0, 1.5
+
+# Secondary monitor (auto placement when plugged in)
+monitor=DP-1, 2560x1440@60, auto, 1
+```
+
+> **Tip:** If a disconnected monitor was configured at `0x0` and your active screen started at `2560x0`, widgets anchored to `x=0` will render into the empty space. Setting the primary active screen to `0x0` eliminates this issue.
+
+---
+
+## 2. Illogical Impulse Quickshell Configuration
+
+Illogical Impulse stores its core configuration in `~/.config/illogical-impulse/config.json`.
+
+### Recommended Settings
+
+To set up a vertical bar on the left side of the screen, enable workspace number indices, and hide the background clock:
+
+```json
+{
+  "panelFamily": "ii",
+  "background": {
+    "showClock": false
+  },
+  "bar": {
+    "bottom": false,
+    "vertical": true,
+    "workspaces": {
+      "alwaysShowNumbers": true,
+      "shown": 10
+    }
+  }
+}
+```
+
+### Positioning Sidebars on the Left
+
+By default, the Action Center sidebar in `ii` anchors to the right. To move `SidebarRight` to the left:
+
+In `~/.config/quickshell/ii/modules/ii/sidebarRight/SidebarRight.qml`:
+
+```qml
+PanelWindow {
+    anchors {
+        top: true
+        left: true
+        bottom: true
+    }
+}
+```
+
+And update Hyprland layer rules in `~/.config/hypr/hyprland/rules.conf`:
+
+```ini
+layerrule = animation slide left, quickshell:sidebarRight
+```
+
+---
+
+## 3. Enforcing a 10-Workspace Limit (Workspace Clamping)
+
+To prevent workspace scrolling from opening an infinite number of workspaces, create a clamping script and bind it both in Hyprland and Quickshell.
+
+### Bash Clamping Script (`~/.config/hypr/hyprland/scripts/workspace_clamp.sh`)
+
+```bash
+#!/usr/bin/env bash
+dir=$1 # +1 or -1
+curr=$(hyprctl activeworkspace -j | jq -r '.id')
+if [[ "$dir" == "+1" && "$curr" -lt 10 ]]; then
+    hyprctl dispatch workspace r+1
+elif [[ "$dir" == "-1" && "$curr" -gt 1 ]]; then
+    hyprctl dispatch workspace r-1
+fi
+```
+
+Make sure the script is executable: `chmod +x ~/.config/hypr/hyprland/scripts/workspace_clamp.sh`.
+
+### Keybindings (`~/.config/hypr/hyprland/keybinds.conf`)
+
+```ini
+bind = Super, Page_Down, exec, ~/.config/hypr/hyprland/scripts/workspace_clamp.sh +1
+bind = Super, Page_Up, exec, ~/.config/hypr/hyprland/scripts/workspace_clamp.sh -1
+bind = Super, mouse_up, exec, ~/.config/hypr/hyprland/scripts/workspace_clamp.sh +1
+bind = Super, mouse_down, exec, ~/.config/hypr/hyprland/scripts/workspace_clamp.sh -1
+```
+
+### Quickshell Scroll Integration (`~/.config/quickshell/ii/modules/ii/bar/Workspaces.qml`)
+
+Update the `WheelHandler` in Quickshell to trigger the clamping script:
+
+```qml
+WheelHandler {
+    onWheel: (event) => {
+        if (event.angleDelta.y < 0)
+            Hyprland.dispatch(`exec`, `~/.config/hypr/hyprland/scripts/workspace_clamp.sh +1`);
+        else if (event.angleDelta.y > 0)
+            Hyprland.dispatch(`exec`, `~/.config/hypr/hyprland/scripts/workspace_clamp.sh -1`);
+    }
+    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+}
+```
+
+---
+
+## 4. Overview & Application Launcher Shortcuts
+
+Quickshell registers global IPC shortcuts for toggling its overview and search launcher.
+
+### Keybinding Syntax (`~/.config/hypr/hyprland/keybinds.conf`)
+
+Hyprland requires `bindr` (bind on key release) to capture standalone Super key presses. The shortcut target in Quickshell's `Overview.qml` is named `quickshell:searchToggleRelease`:
+
+```ini
+# Trigger launcher/overview on standalone Super release
+bindr = Super, Super_L, global, quickshell:searchToggleRelease
+bindrd = Super, Super_R, Toggle overview, global, quickshell:searchToggleRelease
+
+# Interrupt launcher trigger when Super is used as modifier
+binditn = Super, catchall, global, quickshell:searchToggleReleaseInterrupt
+```
+
+---
+
+## 5. Useful Commands & Troubleshooting
+
+| Action | Command |
+|---|---|
+| Reload Hyprland | `hyprctl reload` |
+| Restart Quickshell | `killall qs; hyprctl dispatch exec "qs -c ii"` |
+| Check Layer Surfaces | `hyprctl layers` |
+| View Quickshell Logs | `cat /run/user/1000/quickshell/by-id/*/log.qslog \| tail -n 50` |
+
+---
+
+*Document compiled and published using Quarto.*
