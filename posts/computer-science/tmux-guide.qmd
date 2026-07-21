@@ -148,14 +148,39 @@ for session in $(tmux ls | cut -d: -f1); do
 done
 ```
 
-### Method 4: Interactive Batch Session Killing (Session Tree View)
+### Method 4: Interactive Multi-Select Session Killing (Choose-Tree & Tagging)
 
-You can view and destroy sessions interactively without writing CLI scripts:
+Tmux has a built-in interactive tree manager (`choose-tree`) that supports **multi-selecting (tagging)** sessions to kill them in batch:
 
-1. Inside any tmux session, press **`Prefix` + `s`** (or **`Prefix` + `w`**).
-2. Use arrow keys or `j`/`k` to navigate through the listed sessions.
-3. Highlight a session and press **`x`**.
-4. Press **`y`** to confirm deletion. Repeat for each session you want to close.
+#### Step-by-step Multi-Selection:
+
+1. Press **`Prefix` + `s`** (or **`Prefix` + `w`**) to open the session tree view.
+2. Use **`j` / `k`** or **Up / Down Arrow keys** to navigate and highlight sessions.
+3. Press **`t`** on each session you want to select. A **`*` tag marker** will appear next to every tagged session.
+4. Once you have tagged all sessions to be removed, press **`X`** (Shift + X).
+5. Confirm deletion if prompted. All tagged sessions will be killed simultaneously!
+
+> [!TIP]
+> **Tree View Multi-Selection Shortcuts:**
+> * **`t`**: Tag / Untag current highlighted session.
+> * **`Ctrl-t`**: Tag ALL sessions in the list.
+> * **`T`**: Clear/remove all tags.
+> * **`x`**: Kill only the single highlighted session under cursor.
+> * **`X`**: Kill **ALL tagged sessions** at once.
+
+---
+
+### Method 5: Interactive Multi-Select Killing with FZF (`fzf -m`)
+
+If you use [FZF (Fuzzy Finder)](https://github.com/junegunn/fzf), you can interactively search, check/highlight multiple sessions using `Tab`, and kill them all at once:
+
+```bash
+# Multi-select sessions using FZF and kill selected sessions
+tmux ls | fzf -m --prompt="Select sessions to kill: " | cut -d: -f1 | xargs -I {} tmux kill-session -t {}
+```
+
+* Use **`Tab`** or **`Shift + Tab`** in FZF to check/select multiple sessions.
+* Press **`Enter`** to execute and kill all checked sessions in one go.
 
 ---
 
