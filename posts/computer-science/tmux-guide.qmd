@@ -105,63 +105,115 @@ To scroll up or copy text using keyboard navigation:
 
 ---
 
-## 4. Killing Sessions: Single, Multiple, and Batch Patterns
+## 4. How to Kill Multiple Sessions at Once (Batch Termination)
 
-As your workflow expands, orphan or unused tmux sessions accumulate. Tmux provides several methods to kill single or multiple sessions simultaneously.
+As your workflow expands, orphan or unused tmux sessions accumulate. Tmux provides several built-in commands and CLI tricks to kill multiple sessions at once.
 
-### 1. Killing a Single Session
-```bash
-# Kill a specific session by name
-tmux kill-session -t session_name
-```
+> [!IMPORTANT]
+> Choose the method based on whether you want to wipe everything, target specific session names, keep your active session, or select sessions interactively.
 
-### 2. Killing ALL Sessions at Once (Server Wipe)
-To terminate the entire tmux server and destroy all sessions instantly:
+### Method 1: Kill ALL Sessions at Once (Server Wipe)
+To instantly destroy **all** running tmux sessions and stop the tmux server process:
 ```bash
 tmux kill-server
 ```
 
-### 3. Killing All Sessions EXCEPT the Current Session
-Keep your current active session while wiping out all other idle sessions:
+### Method 2: Kill All Sessions EXCEPT the Active Session
+If you are inside a tmux session and want to clear out all other background sessions without losing your current workspace:
 
 ```bash
-# From inside an active tmux session:
+# Run from INSIDE your active tmux session:
 tmux kill-session -a
 
-# From outside tmux (specify session to keep):
-tmux kill-session -a -t keep_session_name
+# Run from OUTSIDE tmux (specify the session name to keep):
+tmux kill-session -a -t keep_this_session
 ```
 
-### 4. Batch Killing Sessions Matching a Pattern (CLI One-Liners)
+### Method 3: Batch Kill Sessions Matching a Name Pattern (CLI One-Liners)
 
-If you have multiple sessions matching a specific naming convention (e.g., `test-1`, `test-2`, `dev-api`), use shell pipelines to purge them:
+If you have multiple sessions with matching names (e.g. `test-1`, `test-2`, `dev-api`), use shell pipelines to filter and kill them in bulk:
 
 ```bash
-# Kill all sessions starting with "test" using awk and xargs
+# Kill all sessions starting with "test"
 tmux ls | awk -F: '/^test/ {print $1}' | xargs -n 1 tmux kill-session -t
 
-# Kill all sessions matching "feature-" using grep & xargs
-tmux ls | grep 'feature-' | cut -d: -f1 | xargs -I {} tmux kill-session -t {}
+# Kill all sessions containing "dev-"
+tmux ls | grep 'dev-' | cut -d: -f1 | xargs -I {} tmux kill-session -t {}
 
-# Using a standard Bash loop
+# Batch kill using a Bash loop with wildcards
 for session in $(tmux ls | cut -d: -f1); do
-    if [[ $session == debug_* ]]; then
+    if [[ $session == temp_* ]]; then
         tmux kill-session -t "$session"
     fi
 done
 ```
 
-### 5. Interactive Batch Killing (Session Tree View)
+### Method 4: Interactive Batch Session Killing (Session Tree View)
 
-You don't need to drop to bash to kill multiple sessions:
-1. Inside tmux, press **`Prefix` + `s`** (or **`Prefix` + `w`**).
-2. Highlight any session or window using `j`/`k` or arrow keys.
-3. Press **`x`** to kill the selected session/window instantly.
-4. Confirm deletion with `y`.
+You can view and destroy sessions interactively without writing CLI scripts:
+
+1. Inside any tmux session, press **`Prefix` + `s`** (or **`Prefix` + `w`**).
+2. Use arrow keys or `j`/`k` to navigate through the listed sessions.
+3. Highlight a session and press **`x`**.
+4. Press **`y`** to confirm deletion. Repeat for each session you want to close.
 
 ---
 
-## 5. Modern Configuration (`~/.tmux.conf`)
+## 5. Batch Editing & Synchronizing Multiple Terminals
+
+Tmux allows you to perform **batch editing**—executing the same keystrokes or commands across multiple terminal panes or sessions simultaneously.
+
+### Method 1: Pane Synchronization (Batch Editing Panes in Real-Time)
+
+When pane synchronization is enabled, every keypress, command, or edit you type in one pane is **broadcast to all panes** in the current window at the same time. This is invaluable when configuring multiple servers via SSH or running identical commands across environments.
+
+```
++---------------------------+---------------------------+
+| Pane 1 (Server 1)         | Pane 2 (Server 2)         |
+| $ sudo apt update         | $ sudo apt update         |
++---------------------------+---------------------------+
+| Pane 3 (Server 3)         | Pane 4 (Server 4)         |
+| $ sudo apt update         | $ sudo apt update         |
++---------------------------+---------------------------+
+  ^ Keystrokes are broadcast to ALL 4 panes simultaneously!
+```
+
+#### How to Enable Pane Synchronization:
+1. Press **`Prefix` + `:`** to enter tmux command mode.
+2. Type `setw synchronize-panes on` and press `Enter`.
+3. Type your commands or perform edits—they will appear in **all** panes simultaneously.
+
+#### How to Disable Pane Synchronization:
+1. Press **`Prefix` + `:`**.
+2. Type `setw synchronize-panes off` and press `Enter`.
+
+#### Add a Toggle Shortcut to `~/.tmux.conf`:
+```ini
+# Toggle pane synchronization with Prefix + y
+bind y set-window-option synchronize-panes\; display-message "Synchronize panes: #{?synchronize-panes,on,off}"
+```
+
+---
+
+### Method 2: Batch Command Execution Across Sessions (`tmux send-keys`)
+
+If you want to send a command or script to multiple running sessions in the background without manually attaching to each one:
+
+```bash
+# Send a command to a single target session in the background
+tmux send-keys -t dev_session "git pull && npm run build" C-m
+
+# Batch send a command to ALL active tmux sessions using a shell loop
+for session in $(tmux ls | cut -d: -f1); do
+    tmux send-keys -t "$session" "echo 'System update scheduled'" C-m
+done
+```
+
+*(Note: `C-m` simulates pressing the `Enter` key to execute the sent command).*
+
+---
+
+## 6. Modern Configuration (`~/.tmux.conf`)
 
 Enhance usability by editing `~/.tmux.conf`:
 
