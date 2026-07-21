@@ -6,10 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="dcterms.date" content="2026-06-27">
-<meta name="description" content="Learn how to manage sessions, split windows into panes, configure shortcuts, and keep your terminal environments alive across SSH sessions.">
+<meta name="dcterms.date" content="2026-07-21">
+<meta name="description" content="Master terminal multiplexing: session management, multi-pane workflows, batch session killing, and surviving system reboots with tmux-resurrect and tmux-continuum.">
 
-<title>The Ultimate Guide to Tmux: Terminal Multiplexing Made Easy – My Writings</title>
+<title>The Complete Tmux Guide: From Essentials to Reboot Persistence – My Writings</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -198,13 +198,42 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#core-concepts-of-tmux" id="toc-core-concepts-of-tmux" class="nav-link active" data-scroll-target="#core-concepts-of-tmux">1. Core Concepts of Tmux</a></li>
-  <li><a href="#managing-sessions-from-the-command-line" id="toc-managing-sessions-from-the-command-line" class="nav-link" data-scroll-target="#managing-sessions-from-the-command-line">2. Managing Sessions from the Command Line</a></li>
-  <li><a href="#session-navigation-the-prefix-key" id="toc-session-navigation-the-prefix-key" class="nav-link" data-scroll-target="#session-navigation-the-prefix-key">3. Session Navigation: The Prefix Key</a>
+  <li><a href="#core-architecture-of-tmux" id="toc-core-architecture-of-tmux" class="nav-link active" data-scroll-target="#core-architecture-of-tmux">1. Core Architecture of Tmux</a></li>
+  <li><a href="#getting-started-commands-the-prefix-key" id="toc-getting-started-commands-the-prefix-key" class="nav-link" data-scroll-target="#getting-started-commands-the-prefix-key">2. Getting Started: Commands &amp; The Prefix Key</a>
   <ul class="collapse">
-  <li><a href="#essential-keyboard-shortcuts" id="toc-essential-keyboard-shortcuts" class="nav-link" data-scroll-target="#essential-keyboard-shortcuts">Essential Keyboard Shortcuts</a></li>
+  <li><a href="#the-prefix-key" id="toc-the-prefix-key" class="nav-link" data-scroll-target="#the-prefix-key">The Prefix Key</a></li>
+  <li><a href="#essential-command-line-operations" id="toc-essential-command-line-operations" class="nav-link" data-scroll-target="#essential-command-line-operations">Essential Command Line Operations</a></li>
   </ul></li>
-  <li><a href="#customizing-tmux" id="toc-customizing-tmux" class="nav-link" data-scroll-target="#customizing-tmux">4. Customizing Tmux</a></li>
+  <li><a href="#windows-and-panes-management" id="toc-windows-and-panes-management" class="nav-link" data-scroll-target="#windows-and-panes-management">3. Windows and Panes Management</a>
+  <ul class="collapse">
+  <li><a href="#window-tab-controls" id="toc-window-tab-controls" class="nav-link" data-scroll-target="#window-tab-controls">Window (Tab) Controls</a></li>
+  <li><a href="#pane-split-controls" id="toc-pane-split-controls" class="nav-link" data-scroll-target="#pane-split-controls">Pane Split Controls</a></li>
+  <li><a href="#copy-scroll-mode" id="toc-copy-scroll-mode" class="nav-link" data-scroll-target="#copy-scroll-mode">Copy &amp; Scroll Mode</a></li>
+  </ul></li>
+  <li><a href="#how-to-kill-multiple-sessions-at-once-batch-termination" id="toc-how-to-kill-multiple-sessions-at-once-batch-termination" class="nav-link" data-scroll-target="#how-to-kill-multiple-sessions-at-once-batch-termination">4. How to Kill Multiple Sessions at Once (Batch Termination)</a>
+  <ul class="collapse">
+  <li><a href="#method-1-kill-all-sessions-at-once-server-wipe" id="toc-method-1-kill-all-sessions-at-once-server-wipe" class="nav-link" data-scroll-target="#method-1-kill-all-sessions-at-once-server-wipe">Method 1: Kill ALL Sessions at Once (Server Wipe)</a></li>
+  <li><a href="#method-2-kill-all-sessions-except-the-active-session" id="toc-method-2-kill-all-sessions-except-the-active-session" class="nav-link" data-scroll-target="#method-2-kill-all-sessions-except-the-active-session">Method 2: Kill All Sessions EXCEPT the Active Session</a></li>
+  <li><a href="#method-3-batch-kill-sessions-matching-a-name-pattern-cli-one-liners" id="toc-method-3-batch-kill-sessions-matching-a-name-pattern-cli-one-liners" class="nav-link" data-scroll-target="#method-3-batch-kill-sessions-matching-a-name-pattern-cli-one-liners">Method 3: Batch Kill Sessions Matching a Name Pattern (CLI One-Liners)</a></li>
+  <li><a href="#method-4-interactive-multi-select-session-killing-choose-tree-tagging" id="toc-method-4-interactive-multi-select-session-killing-choose-tree-tagging" class="nav-link" data-scroll-target="#method-4-interactive-multi-select-session-killing-choose-tree-tagging">Method 4: Interactive Multi-Select Session Killing (Choose-Tree &amp; Tagging)</a></li>
+  <li><a href="#method-5-interactive-multi-select-killing-with-fzf-fzf--m" id="toc-method-5-interactive-multi-select-killing-with-fzf-fzf--m" class="nav-link" data-scroll-target="#method-5-interactive-multi-select-killing-with-fzf-fzf--m">Method 5: Interactive Multi-Select Killing with FZF (<code>fzf -m</code>)</a></li>
+  </ul></li>
+  <li><a href="#batch-editing-synchronizing-multiple-terminals" id="toc-batch-editing-synchronizing-multiple-terminals" class="nav-link" data-scroll-target="#batch-editing-synchronizing-multiple-terminals">5. Batch Editing &amp; Synchronizing Multiple Terminals</a>
+  <ul class="collapse">
+  <li><a href="#method-1-pane-synchronization-batch-editing-panes-in-real-time" id="toc-method-1-pane-synchronization-batch-editing-panes-in-real-time" class="nav-link" data-scroll-target="#method-1-pane-synchronization-batch-editing-panes-in-real-time">Method 1: Pane Synchronization (Batch Editing Panes in Real-Time)</a></li>
+  <li><a href="#method-2-batch-command-execution-across-sessions-tmux-send-keys" id="toc-method-2-batch-command-execution-across-sessions-tmux-send-keys" class="nav-link" data-scroll-target="#method-2-batch-command-execution-across-sessions-tmux-send-keys">Method 2: Batch Command Execution Across Sessions (<code>tmux send-keys</code>)</a></li>
+  </ul></li>
+  <li><a href="#modern-configuration-.tmux.conf" id="toc-modern-configuration-.tmux.conf" class="nav-link" data-scroll-target="#modern-configuration-.tmux.conf">6. Modern Configuration (<code>~/.tmux.conf</code>)</a></li>
+  <li><a href="#persisting-tmux-sessions-across-reboots" id="toc-persisting-tmux-sessions-across-reboots" class="nav-link" data-scroll-target="#persisting-tmux-sessions-across-reboots">6. Persisting Tmux Sessions Across Reboots</a>
+  <ul class="collapse">
+  <li><a href="#step-1-install-tmux-plugin-manager-tpm" id="toc-step-1-install-tmux-plugin-manager-tpm" class="nav-link" data-scroll-target="#step-1-install-tmux-plugin-manager-tpm">Step 1: Install Tmux Plugin Manager (TPM)</a></li>
+  <li><a href="#step-2-configure-.tmux.conf-for-persistence" id="toc-step-2-configure-.tmux.conf-for-persistence" class="nav-link" data-scroll-target="#step-2-configure-.tmux.conf-for-persistence">Step 2: Configure <code>~/.tmux.conf</code> for Persistence</a></li>
+  <li><a href="#step-3-install-plugins-inside-tmux" id="toc-step-3-install-plugins-inside-tmux" class="nav-link" data-scroll-target="#step-3-install-plugins-inside-tmux">Step 3: Install Plugins inside Tmux</a></li>
+  <li><a href="#step-4-manual-vs.-automatic-persistence" id="toc-step-4-manual-vs.-automatic-persistence" class="nav-link" data-scroll-target="#step-4-manual-vs.-automatic-persistence">Step 4: Manual vs.&nbsp;Automatic Persistence</a></li>
+  <li><a href="#step-5-auto-starting-tmux-on-system-boot" id="toc-step-5-auto-starting-tmux-on-system-boot" class="nav-link" data-scroll-target="#step-5-auto-starting-tmux-on-system-boot">Step 5: Auto-Starting Tmux on System Boot</a></li>
+  </ul></li>
+  <li><a href="#quick-reference-cheat-sheet" id="toc-quick-reference-cheat-sheet" class="nav-link" data-scroll-target="#quick-reference-cheat-sheet">7. Quick Reference Cheat Sheet</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
     </div>
@@ -213,17 +242,18 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">The Ultimate Guide to Tmux: Terminal Multiplexing Made Easy</h1>
+<h1 class="title">The Complete Tmux Guide: From Essentials to Reboot Persistence</h1>
   <div class="quarto-categories">
     <div class="quarto-category">Linux</div>
     <div class="quarto-category">CLI</div>
     <div class="quarto-category">Productivity</div>
+    <div class="quarto-category">DevOps</div>
   </div>
   </div>
 
 <div>
   <div class="description">
-    Learn how to manage sessions, split windows into panes, configure shortcuts, and keep your terminal environments alive across SSH sessions.
+    Master terminal multiplexing: session management, multi-pane workflows, batch session killing, and surviving system reboots with tmux-resurrect and tmux-continuum.
   </div>
 </div>
 
@@ -234,7 +264,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">June 27, 2026</p>
+      <p class="date">July 21, 2026</p>
     </div>
   </div>
   
@@ -246,102 +276,390 @@ window.Quarto = {
 </header>
 
 
-<p>If you spend a lot of time in the terminal, you have likely run into the limit of managing multiple terminals, tabs, and windows. This problem is amplified when connecting to remote servers via SSH; if your network connection drops, your running processes die.</p>
-<p><a href="https://github.com/tmux/tmux">Tmux</a> (Terminal Multiplexer) solves these problems. It allows you to run multiple terminal sessions inside a single window, split your screen into panes, and detach sessions so they run in the background even if you log out.</p>
+<p>If you spend significant time in the Linux terminal, managing multiple SSH connections, background jobs, and split terminal windows can quickly become chaotic. Network drops during remote SSH sessions can terminate running scripts, wasting hours of work.</p>
+<p><a href="https://github.com/tmux/tmux">Tmux</a> (Terminal Multiplexer) solves these issues by decoupling terminal sessions from your physical terminal emulator. It lets you run multiple terminal sessions inside a single window, split screens into custom panes, detach long-running tasks, and persist full dev environments across system reboots.</p>
 <hr>
-<section id="core-concepts-of-tmux" class="level2">
-<h2 class="anchored" data-anchor-id="core-concepts-of-tmux">1. Core Concepts of Tmux</h2>
-<p>Tmux organizes your workflow into three hierarchical structures: 1. <strong>Sessions:</strong> A session contains one or more windows. A session runs in the background and stays alive until the server restarts or you explicitly kill it. 2. <strong>Windows:</strong> Similar to tabs in a web browser, a window occupies the entire display screen. 3. <strong>Panes:</strong> You can split any window into multiple rectangular areas called panes, each running its own shell.</p>
-<hr>
-</section>
-<section id="managing-sessions-from-the-command-line" class="level2">
-<h2 class="anchored" data-anchor-id="managing-sessions-from-the-command-line">2. Managing Sessions from the Command Line</h2>
-<p>Before launching tmux, you manage sessions using the standard system terminal.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Start a new session with a random name</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Start a new session with a descriptive name (Recommended)</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> new <span class="at">-s</span> dev</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># List all active tmux sessions</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> ls</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Attach to the last active session</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> a</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Attach to a specific named session</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> attach <span class="at">-t</span> dev</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Kill/Delete a specific session</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> kill-session <span class="at">-t</span> dev</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Kill all active tmux sessions</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> kill-server</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="core-architecture-of-tmux" class="level2">
+<h2 class="anchored" data-anchor-id="core-architecture-of-tmux">1. Core Architecture of Tmux</h2>
+<p>Tmux operates on a 4-tier hierarchy:</p>
+<ol type="1">
+<li><strong>Server:</strong> The background daemon managing all tmux activity. Runs as long as at least one session exists (or until explicitly killed).</li>
+<li><strong>Sessions:</strong> Isolated workspace containers. Each session runs independently and remains active even if you disconnect from SSH or close your terminal.</li>
+<li><strong>Windows:</strong> Visual tabs within a session, each occupying the full display area.</li>
+<li><strong>Panes:</strong> Individual rectangular splits inside a window running independent shell instances.</li>
+</ol>
+<pre><code>+-------------------------------------------------------------+
+| Tmux Server                                                 |
+|  +-------------------------------------------------------+  |
+|  | Session 1: "dev"                                      |  |
+|  |  +---------------------+---------------------------+  |  |
+|  |  | Window 0: "editor"  | Window 1: "server"        |  |  |
+|  |  |  +-------+-------+  |  +---------------------+  |  |  |
+|  |  |  | Pane 0| Pane 1|  |  | Pane 0              |  |  |  |
+|  |  |  +-------+-------+  |  +---------------------+  |  |  |
+|  |  +---------------------+---------------------------+  |  |
+|  +-------------------------------------------------------+  |
++-------------------------------------------------------------+</code></pre>
 <hr>
 </section>
-<section id="session-navigation-the-prefix-key" class="level2">
-<h2 class="anchored" data-anchor-id="session-navigation-the-prefix-key">3. Session Navigation: The Prefix Key</h2>
-<p>Once inside a Tmux session, all keyboard commands must be preceded by the <strong>Prefix key</strong>. By default, the prefix key is:</p>
-<p><span class="math display">\[\text{Prefix} = \text{Ctrl} + \text{b}\]</span></p>
-<p>To execute a command, press <code>Ctrl + b</code>, release both keys, and then immediately press the command key.</p>
-<section id="essential-keyboard-shortcuts" class="level3">
-<h3 class="anchored" data-anchor-id="essential-keyboard-shortcuts">Essential Keyboard Shortcuts</h3>
-<section id="session-operations" class="level4">
-<h4 class="anchored" data-anchor-id="session-operations">Session Operations</h4>
+<section id="getting-started-commands-the-prefix-key" class="level2">
+<h2 class="anchored" data-anchor-id="getting-started-commands-the-prefix-key">2. Getting Started: Commands &amp; The Prefix Key</h2>
+<section id="the-prefix-key" class="level3">
+<h3 class="anchored" data-anchor-id="the-prefix-key">The Prefix Key</h3>
+<p>Once inside a tmux session, standard keyboard shortcuts are intercepted by your active shell unless preceded by the <strong>Prefix key</strong>. By default:</p>
+<p><span class="math display">\[\text{Prefix} = \text{Ctrl} + \text{b} \quad (\text{written as } \text{C-b})\]</span></p>
+<p>To execute a command, press <code>Ctrl + b</code>, release both keys, then press the desired key command.</p>
+</section>
+<section id="essential-command-line-operations" class="level3">
+<h3 class="anchored" data-anchor-id="essential-command-line-operations">Essential Command Line Operations</h3>
+<p>Execute these commands from your standard system shell:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Start a new un-named session</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Start a new named session (recommended)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> new <span class="at">-s</span> dev</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># List all active sessions</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> ls</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Attach to the last active session</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> a</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Attach to a specific named session</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> attach <span class="at">-t</span> dev</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Detach from inside an active tmux session</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Press: Ctrl+b, then d</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="windows-and-panes-management" class="level2">
+<h2 class="anchored" data-anchor-id="windows-and-panes-management">3. Windows and Panes Management</h2>
+<section id="window-tab-controls" class="level3">
+<h3 class="anchored" data-anchor-id="window-tab-controls">Window (Tab) Controls</h3>
 <ul>
-<li><strong><code>Prefix</code> + <code>d</code>:</strong> Detach from the current session (leaves it running in the background).</li>
-<li><strong><code>Prefix</code> + <code>$</code>:</strong> Rename the current session.</li>
-<li><strong><code>Prefix</code> + <code>s</code>:</strong> List and switch between active sessions.</li>
+<li><strong><code>Prefix</code> + <code>c</code></strong>: Create a new window.</li>
+<li><strong><code>Prefix</code> + <code>,</code></strong>: Rename current window.</li>
+<li><strong><code>Prefix</code> + <code>n</code></strong>: Switch to Next window.</li>
+<li><strong><code>Prefix</code> + <code>p</code></strong>: Switch to Previous window.</li>
+<li><strong><code>Prefix</code> + <code>0..9</code></strong>: Switch to window by index.</li>
+<li><strong><code>Prefix</code> + <code>w</code></strong>: Display interactive tree menu of all windows &amp; sessions.</li>
+<li><strong><code>Prefix</code> + <code>&amp;</code></strong>: Kill current window.</li>
 </ul>
 </section>
-<section id="window-tab-operations" class="level4">
-<h4 class="anchored" data-anchor-id="window-tab-operations">Window (Tab) Operations</h4>
+<section id="pane-split-controls" class="level3">
+<h3 class="anchored" data-anchor-id="pane-split-controls">Pane Split Controls</h3>
 <ul>
-<li><strong><code>Prefix</code> + <code>c</code>:</strong> Create a new window.</li>
-<li><strong><code>Prefix</code> + <code>,</code>:</strong> Rename the current window.</li>
-<li><strong><code>Prefix</code> + <code>n</code> / <code>p</code>:</strong> Move to the Next or Previous window.</li>
-<li><strong><code>Prefix</code> + <code>0</code> through <code>9</code>:</strong> Select window by index number.</li>
-<li><strong><code>Prefix</code> + <code>&amp;</code>:</strong> Kill (close) the current window.</li>
+<li><strong><code>Prefix</code> + <code>%</code></strong>: Split pane vertically (Left / Right).</li>
+<li><strong><code>Prefix</code> + <code>"</code></strong>: Split pane horizontally (Top / Bottom).</li>
+<li><strong><code>Prefix</code> + <code>Arrow Keys</code></strong>: Move cursor between adjacent panes.</li>
+<li><strong><code>Prefix</code> + <code>o</code></strong>: Rotate to next pane.</li>
+<li><strong><code>Prefix</code> + <code>z</code></strong>: Toggle Zoom (maximize active pane; press again to restore).</li>
+<li><strong><code>Prefix</code> + <code>x</code></strong>: Kill active pane.</li>
+<li><strong><code>Prefix</code> + <code>{</code> or <code>}</code></strong>: Swap active pane left or right.</li>
 </ul>
 </section>
-<section id="pane-operations" class="level4">
-<h4 class="anchored" data-anchor-id="pane-operations">Pane Operations</h4>
+<section id="copy-scroll-mode" class="level3">
+<h3 class="anchored" data-anchor-id="copy-scroll-mode">Copy &amp; Scroll Mode</h3>
+<p>To scroll up or copy text using keyboard navigation: 1. Press <strong><code>Prefix</code> + <code>[</code></strong> to enter copy mode. 2. Use arrow keys, <code>PageUp</code>/<code>PageDown</code>, or Vi motion keys (<code>k</code>, <code>j</code>, <code>g</code>, <code>G</code>) to navigate history. 3. Press <code>Space</code> to start selection, <code>Enter</code> to copy to tmux buffer, and <code>q</code> to exit copy mode. 4. Press <strong><code>Prefix</code> + <code>]</code></strong> to paste the copied buffer.</p>
+<hr>
+</section>
+</section>
+<section id="how-to-kill-multiple-sessions-at-once-batch-termination" class="level2">
+<h2 class="anchored" data-anchor-id="how-to-kill-multiple-sessions-at-once-batch-termination">4. How to Kill Multiple Sessions at Once (Batch Termination)</h2>
+<p>As your workflow expands, orphan or unused tmux sessions accumulate. Tmux provides several built-in commands and CLI tricks to kill multiple sessions at once.</p>
+<blockquote class="blockquote">
+<p>[!IMPORTANT] Choose the method based on whether you want to wipe everything, target specific session names, keep your active session, or select sessions interactively.</p>
+</blockquote>
+<section id="method-1-kill-all-sessions-at-once-server-wipe" class="level3">
+<h3 class="anchored" data-anchor-id="method-1-kill-all-sessions-at-once-server-wipe">Method 1: Kill ALL Sessions at Once (Server Wipe)</h3>
+<p>To instantly destroy <strong>all</strong> running tmux sessions and stop the tmux server process:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> kill-server</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="method-2-kill-all-sessions-except-the-active-session" class="level3">
+<h3 class="anchored" data-anchor-id="method-2-kill-all-sessions-except-the-active-session">Method 2: Kill All Sessions EXCEPT the Active Session</h3>
+<p>If you are inside a tmux session and want to clear out all other background sessions without losing your current workspace:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run from INSIDE your active tmux session:</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> kill-session <span class="at">-a</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Run from OUTSIDE tmux (specify the session name to keep):</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> kill-session <span class="at">-a</span> <span class="at">-t</span> keep_this_session</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="method-3-batch-kill-sessions-matching-a-name-pattern-cli-one-liners" class="level3">
+<h3 class="anchored" data-anchor-id="method-3-batch-kill-sessions-matching-a-name-pattern-cli-one-liners">Method 3: Batch Kill Sessions Matching a Name Pattern (CLI One-Liners)</h3>
+<p>If you have multiple sessions with matching names (e.g.&nbsp;<code>test-1</code>, <code>test-2</code>, <code>dev-api</code>), use shell pipelines to filter and kill them in bulk:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Kill all sessions starting with "test"</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> ls <span class="kw">|</span> <span class="fu">awk</span> <span class="at">-F:</span> <span class="st">'/^test/ {print $1}'</span> <span class="kw">|</span> <span class="fu">xargs</span> <span class="at">-n</span> 1 tmux kill-session <span class="at">-t</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Kill all sessions containing "dev-"</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> ls <span class="kw">|</span> <span class="fu">grep</span> <span class="st">'dev-'</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-d:</span> <span class="at">-f1</span> <span class="kw">|</span> <span class="fu">xargs</span> <span class="at">-I</span> {} tmux kill-session <span class="at">-t</span> {}</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Batch kill using a Bash loop with wildcards</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> session <span class="kw">in</span> <span class="va">$(</span><span class="ex">tmux</span> ls <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-d:</span> <span class="at">-f1</span><span class="va">)</span><span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">[[</span> <span class="va">$session</span> <span class="ot">==</span> temp_<span class="pp">*</span> <span class="kw">]];</span> <span class="cf">then</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        <span class="ex">tmux</span> kill-session <span class="at">-t</span> <span class="st">"</span><span class="va">$session</span><span class="st">"</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="method-4-interactive-multi-select-session-killing-choose-tree-tagging" class="level3">
+<h3 class="anchored" data-anchor-id="method-4-interactive-multi-select-session-killing-choose-tree-tagging">Method 4: Interactive Multi-Select Session Killing (Choose-Tree &amp; Tagging)</h3>
+<p>Tmux has a built-in interactive tree manager (<code>choose-tree</code>) that supports <strong>multi-selecting (tagging)</strong> sessions to kill them in batch:</p>
+<section id="step-by-step-multi-selection" class="level4">
+<h4 class="anchored" data-anchor-id="step-by-step-multi-selection">Step-by-step Multi-Selection:</h4>
+<ol type="1">
+<li>Press <strong><code>Prefix</code> + <code>s</code></strong> (or <strong><code>Prefix</code> + <code>w</code></strong>) to open the session tree view.</li>
+<li>Use <strong><code>j</code> / <code>k</code></strong> or <strong>Up / Down Arrow keys</strong> to navigate and highlight sessions.</li>
+<li>Press <strong><code>t</code></strong> on each session you want to select. A <strong><code>*</code> tag marker</strong> will appear next to every tagged session.</li>
+<li>Once you have tagged all sessions to be removed, press <strong><code>X</code></strong> (Shift + X).</li>
+<li>Confirm deletion if prompted. All tagged sessions will be killed simultaneously!</li>
+</ol>
+<blockquote class="blockquote">
+<p>[!TIP] <strong>Tree View Multi-Selection Shortcuts:</strong> * <strong><code>t</code></strong>: Tag / Untag current highlighted session. * <strong><code>Ctrl-t</code></strong>: Tag ALL sessions in the list. * <strong><code>T</code></strong>: Clear/remove all tags. * <strong><code>x</code></strong>: Kill only the single highlighted session under cursor. * <strong><code>X</code></strong>: Kill <strong>ALL tagged sessions</strong> at once.</p>
+</blockquote>
+<hr>
+</section>
+</section>
+<section id="method-5-interactive-multi-select-killing-with-fzf-fzf--m" class="level3">
+<h3 class="anchored" data-anchor-id="method-5-interactive-multi-select-killing-with-fzf-fzf--m">Method 5: Interactive Multi-Select Killing with FZF (<code>fzf -m</code>)</h3>
+<p>If you use <a href="https://github.com/junegunn/fzf">FZF (Fuzzy Finder)</a>, you can interactively search, check/highlight multiple sessions using <code>Tab</code>, and kill them all at once:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Multi-select sessions using FZF and kill selected sessions</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> ls <span class="kw">|</span> <span class="ex">fzf</span> <span class="at">-m</span> <span class="at">--prompt</span><span class="op">=</span><span class="st">"Select sessions to kill: "</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-d:</span> <span class="at">-f1</span> <span class="kw">|</span> <span class="fu">xargs</span> <span class="at">-I</span> {} tmux kill-session <span class="at">-t</span> {}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
-<li><strong><code>Prefix</code> + <code>%</code>:</strong> Split the window vertically (left and right panes).</li>
-<li><strong><code>Prefix</code> + <code>"</code>:</strong> Split the window horizontally (top and bottom panes).</li>
-<li><strong><code>Prefix</code> + <code>Arrow Keys</code>:</strong> Navigate between panes in the specified direction.</li>
-<li><strong><code>Prefix</code> + <code>x</code>:</strong> Kill (close) the active pane.</li>
-<li><strong><code>Prefix</code> + <code>z</code>:</strong> Toggle Zoom (maximize the active pane; press again to minimize back).</li>
+<li>Use <strong><code>Tab</code></strong> or <strong><code>Shift + Tab</code></strong> in FZF to check/select multiple sessions.</li>
+<li>Press <strong><code>Enter</code></strong> to execute and kill all checked sessions in one go.</li>
 </ul>
 <hr>
 </section>
 </section>
+<section id="batch-editing-synchronizing-multiple-terminals" class="level2">
+<h2 class="anchored" data-anchor-id="batch-editing-synchronizing-multiple-terminals">5. Batch Editing &amp; Synchronizing Multiple Terminals</h2>
+<p>Tmux allows you to perform <strong>batch editing</strong>—executing the same keystrokes or commands across multiple terminal panes or sessions simultaneously.</p>
+<section id="method-1-pane-synchronization-batch-editing-panes-in-real-time" class="level3">
+<h3 class="anchored" data-anchor-id="method-1-pane-synchronization-batch-editing-panes-in-real-time">Method 1: Pane Synchronization (Batch Editing Panes in Real-Time)</h3>
+<p>When pane synchronization is enabled, every keypress, command, or edit you type in one pane is <strong>broadcast to all panes</strong> in the current window at the same time. This is invaluable when configuring multiple servers via SSH or running identical commands across environments.</p>
+<pre><code>+---------------------------+---------------------------+
+| Pane 1 (Server 1)         | Pane 2 (Server 2)         |
+| $ sudo apt update         | $ sudo apt update         |
++---------------------------+---------------------------+
+| Pane 3 (Server 3)         | Pane 4 (Server 4)         |
+| $ sudo apt update         | $ sudo apt update         |
++---------------------------+---------------------------+
+  ^ Keystrokes are broadcast to ALL 4 panes simultaneously!</code></pre>
+<section id="how-to-enable-pane-synchronization" class="level4">
+<h4 class="anchored" data-anchor-id="how-to-enable-pane-synchronization">How to Enable Pane Synchronization:</h4>
+<ol type="1">
+<li>Press <strong><code>Prefix</code> + <code>:</code></strong> to enter tmux command mode.</li>
+<li>Type <code>setw synchronize-panes on</code> and press <code>Enter</code>.</li>
+<li>Type your commands or perform edits—they will appear in <strong>all</strong> panes simultaneously.</li>
+</ol>
 </section>
-<section id="customizing-tmux" class="level2">
-<h2 class="anchored" data-anchor-id="customizing-tmux">4. Customizing Tmux</h2>
-<p>You can customize Tmux configuration by editing the <code>~/.tmux.conf</code> file. A popular customization is changing the prefix key to <code>Ctrl+a</code> (similar to GNU Screen) and enabling mouse support.</p>
-<p>Create or edit your config:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> ~/.tmux.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Add these lines to configure mouse support and custom keybindings:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Enable mouse click, scroll, and resize support</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g mouse on</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Remap prefix from 'Ctrl-b' to 'Ctrl-a'</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="dt">unbind C-b</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="dt">set-option -g prefix C-a</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="dt">bind-option C-a send-prefix</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Split panes using | and - instead of % and "</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="dt">bind | split-window -h</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="dt">bind - split-window -v</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="dt">unbind '"'</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="dt">unbind %</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Improve status bar styling</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g status-bg black</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g status-fg white</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Apply your changes immediately without restarting Tmux:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> source-file ~/.tmux.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="how-to-disable-pane-synchronization" class="level4">
+<h4 class="anchored" data-anchor-id="how-to-disable-pane-synchronization">How to Disable Pane Synchronization:</h4>
+<ol type="1">
+<li>Press <strong><code>Prefix</code> + <code>:</code></strong>.</li>
+<li>Type <code>setw synchronize-panes off</code> and press <code>Enter</code>.</li>
+</ol>
+</section>
+<section id="add-a-toggle-shortcut-to-.tmux.conf" class="level4">
+<h4 class="anchored" data-anchor-id="add-a-toggle-shortcut-to-.tmux.conf">Add a Toggle Shortcut to <code>~/.tmux.conf</code>:</h4>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Toggle pane synchronization with Prefix + y</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="dt">bind y set-window-option synchronize-panes\; display-message "Synchronize panes: #{?synchronize-panes,on,off}"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="method-2-batch-command-execution-across-sessions-tmux-send-keys" class="level3">
+<h3 class="anchored" data-anchor-id="method-2-batch-command-execution-across-sessions-tmux-send-keys">Method 2: Batch Command Execution Across Sessions (<code>tmux send-keys</code>)</h3>
+<p>If you want to send a command or script to multiple running sessions in the background without manually attaching to each one:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Send a command to a single target session in the background</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> send-keys <span class="at">-t</span> dev_session <span class="st">"git pull &amp;&amp; npm run build"</span> C-m</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Batch send a command to ALL active tmux sessions using a shell loop</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> session <span class="kw">in</span> <span class="va">$(</span><span class="ex">tmux</span> ls <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-d:</span> <span class="at">-f1</span><span class="va">)</span><span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="ex">tmux</span> send-keys <span class="at">-t</span> <span class="st">"</span><span class="va">$session</span><span class="st">"</span> <span class="st">"echo 'System update scheduled'"</span> C-m</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>(Note: <code>C-m</code> simulates pressing the <code>Enter</code> key to execute the sent command).</em></p>
+<hr>
+</section>
+</section>
+<section id="modern-configuration-.tmux.conf" class="level2">
+<h2 class="anchored" data-anchor-id="modern-configuration-.tmux.conf">6. Modern Configuration (<code>~/.tmux.conf</code>)</h2>
+<p>Enhance usability by editing <code>~/.tmux.conf</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Enable full mouse support (click, resize, scroll)</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g mouse on</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Set prefix to Ctrl+a (easier reach than Ctrl+b)</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="dt">unbind C-b</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="dt">set-option -g prefix C-a</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="dt">bind-option C-a send-prefix</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Start window and pane indexing at 1 (instead of 0)</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g base-index 1</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="dt">setw -g pane-base-index 1</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Intuitive split keybindings</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="dt">bind | split-window -h -c "#{pane_current_path}"</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="dt">bind - split-window -v -c "#{pane_current_path}"</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="dt">unbind '"'</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="dt">unbind %</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Reload config easily</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a><span class="dt">bind r source-file ~/.tmux.conf \; display "Config Reloaded!"</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a><span class="co"># True color support &amp; status bar styling</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g default-terminal "screen-256color"</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g status-bg "#1e1e2e"</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g status-fg "#cdd6f4"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Reload configuration active sessions:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> source-file ~/.tmux.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+<section id="persisting-tmux-sessions-across-reboots" class="level2">
+<h2 class="anchored" data-anchor-id="persisting-tmux-sessions-across-reboots">6. Persisting Tmux Sessions Across Reboots</h2>
+<p>By default, tmux sessions live in system memory. Reboots or server restarts destroy all running sessions.</p>
+<p>Using <strong>TPM (Tmux Plugin Manager)</strong> with <strong><code>tmux-resurrect</code></strong> and <strong><code>tmux-continuum</code></strong>, you can automatically save and restore full session layouts, pane paths, terminal history, and active processes across reboot cycles.</p>
+<section id="step-1-install-tmux-plugin-manager-tpm" class="level3">
+<h3 class="anchored" data-anchor-id="step-1-install-tmux-plugin-manager-tpm">Step 1: Install Tmux Plugin Manager (TPM)</h3>
+<p>Clone TPM into your home directory:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="step-2-configure-.tmux.conf-for-persistence" class="level3">
+<h3 class="anchored" data-anchor-id="step-2-configure-.tmux.conf-for-persistence">Step 2: Configure <code>~/.tmux.conf</code> for Persistence</h3>
+<p>Add the following plugin setup to the bottom of <code>~/.tmux.conf</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># List of plugins</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @plugin 'tmux-plugins/tpm'</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @plugin 'tmux-plugins/tmux-sensible'</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @plugin 'tmux-plugins/tmux-resurrect'</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @plugin 'tmux-plugins/tmux-continuum'</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Restore pane contents &amp; shell commands</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @resurrect-capture-pane-contents 'on'</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @resurrect-processes 'vi vim nvim emacs man htop top ssh'</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Enable automatic session restore on tmux server boot</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @continuum-restore 'on'</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @continuum-save-interval '15' # Auto-save every 15 minutes</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="dt">run '~/.tmux/plugins/tpm/tpm'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="step-3-install-plugins-inside-tmux" class="level3">
+<h3 class="anchored" data-anchor-id="step-3-install-plugins-inside-tmux">Step 3: Install Plugins inside Tmux</h3>
+<ol type="1">
+<li>Open a tmux session or reload configuration: <code>tmux source-file ~/.tmux.conf</code></li>
+<li>Press <strong><code>Prefix</code> + <code>I</code></strong> (capital <code>I</code>).</li>
+<li>TPM will download and install <code>tmux-resurrect</code> and <code>tmux-continuum</code>.</li>
+</ol>
+</section>
+<section id="step-4-manual-vs.-automatic-persistence" class="level3">
+<h3 class="anchored" data-anchor-id="step-4-manual-vs.-automatic-persistence">Step 4: Manual vs.&nbsp;Automatic Persistence</h3>
+<ul>
+<li><strong>Manual Save</strong>: Press <strong><code>Prefix</code> + <code>Ctrl-s</code></strong> (<code>C-s</code>) to manually freeze current session state.</li>
+<li><strong>Manual Restore</strong>: Press <strong><code>Prefix</code> + <code>Ctrl-r</code></strong> (<code>C-r</code>) to restore saved session state.</li>
+<li><strong>Automatic Save/Restore</strong>: <code>tmux-continuum</code> automatically writes session metadata every 15 minutes and restores them automatically whenever the tmux server launches after a system reboot.</li>
+</ul>
+</section>
+<section id="step-5-auto-starting-tmux-on-system-boot" class="level3">
+<h3 class="anchored" data-anchor-id="step-5-auto-starting-tmux-on-system-boot">Step 5: Auto-Starting Tmux on System Boot</h3>
+<p>To guarantee tmux starts automatically upon system reboot (without waiting for manual login):</p>
+<section id="method-a-systemd-user-service-linux" class="level4">
+<h4 class="anchored" data-anchor-id="method-a-systemd-user-service-linux">Method A: Systemd User Service (Linux)</h4>
+<p>Create <code>~/.config/systemd/user/tmux.service</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[Unit]</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Description</span><span class="ot">=</span><span class="st">Tmux Server Session Persistence</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="dt">After</span><span class="ot">=</span><span class="st">network.target</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="kw">[Service]</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="dt">Type</span><span class="ot">=</span><span class="st">forking</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStart</span><span class="ot">=</span><span class="st">/usr/bin/tmux new-session -s default -d</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStop</span><span class="ot">=</span><span class="st">/usr/bin/tmux kill-server</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="dt">Restart</span><span class="ot">=</span><span class="st">on-failure</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="kw">[Install]</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="dt">WantedBy</span><span class="ot">=</span><span class="st">default.target</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Enable and start the service:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> enable tmux</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> start tmux</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+</section>
+<section id="quick-reference-cheat-sheet" class="level2">
+<h2 class="anchored" data-anchor-id="quick-reference-cheat-sheet">7. Quick Reference Cheat Sheet</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Action</th>
+<th style="text-align: left;">Command / Keybinding</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>New Named Session</strong></td>
+<td style="text-align: left;"><code>tmux new -s &lt;name&gt;</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>List Sessions</strong></td>
+<td style="text-align: left;"><code>tmux ls</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Attach Session</strong></td>
+<td style="text-align: left;"><code>tmux a -t &lt;name&gt;</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Kill Single Session</strong></td>
+<td style="text-align: left;"><code>tmux kill-session -t &lt;name&gt;</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Kill ALL Sessions</strong></td>
+<td style="text-align: left;"><code>tmux kill-server</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Kill All EXCEPT Active</strong></td>
+<td style="text-align: left;"><code>tmux kill-session -a</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Detach Session</strong></td>
+<td style="text-align: left;"><code>Prefix</code> + <code>d</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Create Window</strong></td>
+<td style="text-align: left;"><code>Prefix</code> + <code>c</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Interactive Tree</strong></td>
+<td style="text-align: left;"><code>Prefix</code> + <code>s</code> or <code>Prefix</code> + <code>w</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Split Vertically</strong></td>
+<td style="text-align: left;"><code>Prefix</code> + <code>%</code> (or <code>Prefix</code> + <code>\|</code>)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Split Horizontally</strong></td>
+<td style="text-align: left;"><code>Prefix</code> + <code>"</code> (or <code>Prefix</code> + <code>-</code>)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Toggle Zoom Pane</strong></td>
+<td style="text-align: left;"><code>Prefix</code> + <code>z</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Copy / Scroll Mode</strong></td>
+<td style="text-align: left;"><code>Prefix</code> + <code>[</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Save Sessions</strong></td>
+<td style="text-align: left;"><code>Prefix</code> + <code>Ctrl-s</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Restore Sessions</strong></td>
+<td style="text-align: left;"><code>Prefix</code> + <code>Ctrl-r</code></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>With <code>tmux</code>, terminal management shifts from a fragile process vulnerable to network drops into a resilient development environment. By incorporating <strong><code>tmux-resurrect</code></strong> and <strong><code>tmux-continuum</code></strong>, your terminal state survives server reboots seamlessly.</p>
 
 
 </section>
