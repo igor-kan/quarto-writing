@@ -1,0 +1,220 @@
+---
+title: "How to Safely Mount Android Devices & Transfer Files on Arch Linux via CLI"
+description: "A complete guide to inspecting USB devices, mounting Android MTP filesystems via GIO and FUSE, transferring data safely without corruption, and automating the workflow."
+date: "2026-07-20"
+categories: [Linux, Arch Linux, Storage, Bash, Automation, Systems]
+---
+
+Managing file transfers between an Android smartphone and an Arch Linux system over USB relies on **MTP (Media Transfer Protocol)**. Unlike USB Mass Storage (which presents raw block devices), MTP is a session-based protocol where the phone acts as an MTP responder and Linux acts as an MTP initiator.
+
+This guide covers everything you need to inspect connected Android devices, resolve MTP device locks, mount the filesystem cleanly via the command line, perform fail-safe file transfers, and automate your workflow with shell scripts.
+
+---
+
+## 1. Inspecting & Identifying Connected Android Devices
+
+When you connect an Android phone via USB and select **File Transfer / MTP** in the Android notification panel, Linux detects the USB interface and registers it in the system.
+
+### Inspecting Hardware Identifiers via Sysfs
+
+To list connected USB devices without requiring additional third-party utilities:
+
+```bash
+grep -E "MANUFACTURER|PRODUCT" /sys/bus/usb/devices/*/uevent 2>/dev/null
+```
+
+You will see output identifying your device:
+
+```text
+/sys/bus/usb/devices/1-1/uevent:PRODUCT=18d1/4ee1/440
+```
+
+* `18d1` — USB Vendor ID (Google)
+* `4ee1` — USB Product ID (Android MTP + ADB mode)
+
+To view the human-readable manufacturer and model name:
+
+```bash
+cat /sys/bus/usb/devices/1-1/manufacturer
+cat /sys/bus/usb/devices/1-1/product
+```
+
+### Inspecting MTP Volumes via GIO
+
+GVFS (GNOME Virtual File System) provides a volume monitor for MTP devices. To discover the exact MTP URI:
+
+```bash
+gio mount -l -i
+```
+
+Look for the volume entry:
+
+```text
+Volume(0): Pixel 5
+  Type: GProxyVolume (GProxyVolumeMonitorMTP)
+  activation_root=mtp://Google_Pixel_5_DEVICE_SERIAL_HERE/
+  can_mount=1
+```
+
+Take note of the `activation_root` string (`mtp://<Device_Name>_<Serial>/`), as this is used to mount the device via GIO.
+
+---
+
+## 2. Resolving MTP Connection Locks
+
+A common issue when attempting to mount an Android phone in Linux is the error:
+
+```text
+gio: mtp://...: Unable to open MTP device "001,048"
+```
+
+### Why This Happens
+
+MTP allows **only one process or driver** to claim exclusive access to the USB MTP interface at a time. If a file manager like Dolphin (which uses KDE's `kio_mtp` engine) or another MTP daemon is currently connected to the phone, CLI tools like `gio mount` or `simple-mtpfs` will be locked out.
+
+### Solution
+
+Close the MTP tab in your file manager, or terminate the existing worker process before running your CLI mount command:
+
+```bash
+pkill -f "kio/mtp.so" 2>/dev/null
+```
+
+---
+
+## 3. Mounting the Android Filesystem via CLI
+
+Once the MTP interface is free, mount your phone using `gio mount`:
+
+```bash
+gio mount mtp://Google_Pixel_5_DEVICE_SERIAL_HERE/
+```
+
+### Locating the Mounted Directory
+
+GVFS exposes MTP mounts to the local filesystem using FUSE under the user's run directory:
+
+```path
+/run/user/<YOUR_UID>/gvfs/mtp:host=Google_Pixel_5_DEVICE_SERIAL_HERE/Internal shared storage/
+```
+
+You can set an environment variable to make navigating this directory easier:
+
+```bash
+export PHONE="/run/user/$(id -u)/gvfs/mtp:host=Google_Pixel_5_DEVICE_SERIAL_HERE/Internal shared storage"
+cd "$PHONE" && ls -lh
+```
+
+---
+
+## 4. Best Practices for Safe File Transfers
+
+MTP operates over transaction buffers rather than direct block writes. An interrupted file move (`mv`) across filesystems can cause data loss if the source file is deleted before destination writes are verified.
+
+### Rule 1: Use Copy-Verify-Delete Instead of Direct Move
+
+Always use `cp` (copy), verify the file integrity on the target device, and then delete (`rm`) the original file:
+
+```bash
+# 1. Copy file to phone
+cp ~/Documents/report.pdf "$PHONE/Download/"
+
+# 2. Verify file size on phone
+ls -lh "$PHONE/Download/report.pdf"
+
+# 3. Safely remove local copy (if moving)
+rm ~/Documents/report.pdf
+```
+
+### Rule 2: Using `gio copy` for Protocol-Native Transfers
+
+`gio copy` handles MTP buffer streams natively and ensures Android's `MediaStore` database indexes newly added photos, videos, and documents immediately:
+
+```bash
+# Copy file from PC to Phone
+gio copy ~/Downloads/audio.mp3 "mtp://Google_Pixel_5_DEVICE_SERIAL_HERE/Internal shared storage/Music/"
+
+# Copy file from Phone to PC
+gio copy "mtp://Google_Pixel_5_DEVICE_SERIAL_HERE/Internal shared storage/DCIM/Camera/photo.jpg" ~/Pictures/
+```
+
+### Rule 3: Alternative Transfer via ADB
+
+If USB Debugging is enabled on your Android phone, **ADB (Android Debug Bridge)** offers block-level checksum validation and fast transfers:
+
+```bash
+# Push file to phone
+adb push ~/Downloads/video.mp4 /sdcard/Download/
+
+# Pull file from phone
+adb pull /sdcard/DCIM/Camera/photo.jpg ~/Pictures/
+```
+
+---
+
+## 5. Automating the Workflow with Shell Functions
+
+You can automate device detection, mounting, and creating a convenient shortcut link (`~/Phone`) by adding these functions to your shell configuration (`~/.bashrc` or `~/.zshrc`):
+
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+
+mount-phone() {
+    # Release any existing file-manager MTP locks
+    pkill -f "kio/mtp.so" 2>/dev/null || true
+    sleep 0.5
+    
+    # Auto-detect MTP volume URI
+    MTP_URI=$(gio mount -l -i 2>/dev/null | grep -oE "mtp://[^/]+" | head -n 1)
+    
+    if [ -z "$MTP_URI" ]; then
+        echo "❌ No MTP device detected. Ensure screen is unlocked and set to 'File Transfer'."
+        return 1
+    fi
+
+    # Mount via GIO
+    gio mount "$MTP_URI" 2>/dev/null
+    
+    # Locate GVFS mount path
+    MTP_PATH=$(ls -d /run/user/$UID/gvfs/mtp:host=* 2>/dev/null | head -n 1)
+    
+    if [ -n "$MTP_PATH" ]; then
+        if [ -d "$MTP_PATH/Internal shared storage" ]; then
+            ln -sfn "$MTP_PATH/Internal shared storage" "$HOME/Phone"
+        else
+            ln -sfn "$MTP_PATH" "$HOME/Phone"
+        fi
+        echo "✅ Phone mounted! Accessible at: $HOME/Phone"
+    else
+        echo "❌ Mount failed. Check phone connection and USB options."
+    fi
+}
+
+unmount-phone() {
+    MTP_URI=$(gio mount -l -i 2>/dev/null | grep -oE "mtp://[^/]+" | head -n 1)
+    if [ -n "$MTP_URI" ]; then
+        gio mount -u "$MTP_URI" 2>/dev/null
+    fi
+    rm -f "$HOME/Phone"
+    echo "⚡ Phone unmounted safely."
+}
+```
+
+### Usage
+
+1. Connect your Android phone and select **File Transfer (MTP)**.
+2. Run `mount-phone` in your terminal.
+3. Access your files instantly at `~/Phone`.
+4. Run `unmount-phone` before unplugging the USB cable.
+
+---
+
+## 6. Safely Unmounting Devices
+
+Before disconnecting your phone's USB cable, always unmount to ensure all cached data is written to phone storage:
+
+```bash
+gio mount -u mtp://Google_Pixel_5_DEVICE_SERIAL_HERE/
+```
+
+This prevents incomplete file writes and protects your phone's filesystem integrity.

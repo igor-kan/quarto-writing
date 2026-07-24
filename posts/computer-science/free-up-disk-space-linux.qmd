@@ -1,0 +1,391 @@
+---
+title: "The Ultimate Guide to Freeing Up Disk Space on Linux"
+description: "A comprehensive, multi-distro guide to analyzing storage, clearing package caches, developer runtimes, AI/LLM models, system logs, Flatpaks, and heavy gaming/VM files."
+date: "2026-07-20"
+categories: [Linux, Systems, DevOps, Disk-Cleanup]
+---
+
+As Linux machines age—or as we build software, train local AI models, run games, and test multiple software packages—storage space quietly vanishes. It is common for a modern Linux system to accumulate dozens or even hundreds of gigabytes of hidden caches, orphaned build artifacts, and system logs.
+
+This guide provides a comprehensive breakdown of how to analyze your disk usage, identify large space-consumers across various Linux distributions and workflows, and safely reclaim gigabytes (or terabytes) of storage.
+
+---
+
+## 1. Quick Storage Diagnosis & Analysis
+
+Before deleting anything, you need an accurate map of where storage is being used.
+
+### Core CLI Tools
+
+Use standard GNU utilities to inspect disk utilization:
+
+```bash
+# Check overall filesystem space across mounts
+df -h /home
+
+# Find top-level directory sizes in your home folder
+du -h --max-depth=1 ~ 2>/dev/null | sort -hr | head -n 20
+
+# Drill down into hidden dot-directories (~/.cache, ~/.local, ~/.config, etc.)
+du -h --max-depth=2 ~/.cache ~/.local ~/.var 2>/dev/null | sort -hr | head -n 25
+```
+
+### Modern Interactive Analyzers
+
+For a faster, interactive TUI breakdown:
+
+* **`ncdu`** (NCurses Disk Usage): `ncdu ~`
+* **`gdu`** (Fast Go-based analyzer): `gdu ~`
+* **`dust`** (Rust-based `du` replacement): `dust ~`
+
+```bash
+# Install ncdu on your package manager:
+sudo pacman -S ncdu       # Arch Linux
+sudo apt install ncdu     # Debian / Ubuntu
+sudo dnf install ncdu     # Fedora
+```
+
+---
+
+## 2. System Package Managers & Application Containers
+
+Package managers save downloaded installation archives (`.pkg.tar.zst`, `.deb`, `.rpm`) in local caches. Over time, these caches grow indefinitely.
+
+### Arch Linux & AUR (`pacman` / `yay` / `paru`)
+
+Arch Linux keeps all downloaded package versions in `/var/cache/pacman/pkg/` by default. AUR helpers like `yay` or `paru` store build files in `~/.cache/`.
+
+```bash
+# Remove uninstalled packages from pacman cache
+sudo pacman -Sc
+
+# Keep only the last 2 installed versions (requires pacman-contrib)
+sudo paccache -r
+
+# Clean AUR helper build cache (safely reclaims tens of GBs)
+rm -rf ~/.cache/yay/*
+rm -rf ~/.cache/paru/build/*
+```
+
+### Debian & Ubuntu (`apt`)
+
+APT retains downloaded `.deb` packages in `/var/cache/apt/archives/`.
+
+```bash
+# Remove all downloaded package archives
+sudo apt clean
+
+# Remove orphaned dependencies no longer needed by any app
+sudo apt autoremove --purge
+```
+
+### Fedora & RHEL (`dnf`)
+
+DNF stores metadata and RPM packages under `/var/cache/dnf/`.
+
+```bash
+# Clean cached packages and metadata
+sudo dnf clean all
+```
+
+### Application Containers: Flatpak & Snap
+
+System containers frequently retain unused runtimes and old revisions.
+
+```bash
+# Remove unused Flatpak runtimes & dependencies
+flatpak uninstall --unused
+
+# Clean user-level Flatpak app caches (e.g., Steam, Discord, OBS)
+du -sh ~/.var/app/*
+
+# Set Snap to retain only 2 revisions (reduces /var/lib/snapd usage)
+sudo snap set system refresh.retain=2
+
+# Script to remove disabled/old Snap revisions
+sudo snap list --all | awk '/disabled/{print $1, $2}' | while read snapname revision; do
+    sudo snap remove "$snapname" --revision="$revision"
+done
+```
+
+---
+
+## 3. Developer Runtimes & Build Artifacts
+
+Developer toolchains aggressively cache dependencies and build artifacts. If you work with Node.js, Rust, Go, Python, or Docker, hundreds of gigabytes can easily be locked inside these caches.
+
+### Node.js & Package Managers
+
+```bash
+# Clean global NPM download cache
+npm cache clean --force
+# Or purge the directory directly:
+rm -rf ~/.npm
+
+# Clean PNPM global store
+pnpm store prune
+
+# Clean Yarn cache
+yarn cache clean
+```
+
+### Rust & Cargo
+
+Rust's `target/` build directories in projects can easily reach several gigabytes per project.
+
+```bash
+# Clean Cargo package registry index & downloaded crates
+rm -rf ~/.cargo/registry/cache/*
+rm -rf ~/.cargo/git/db/*
+
+# Use cargo-sweep to clean old target directories across all project repos
+cargo install cargo-sweep
+cargo sweep --installed
+```
+
+### Python, Virtual Environments & `uv`
+
+```bash
+# Purge pip cache
+pip cache purge
+# Or remove directly:
+rm -rf ~/.cache/pip
+
+# Purge uv cache (fast Python package manager)
+uv cache clean
+
+# Find and delete inactive virtual environments (~/.venv or project .venv)
+find ~ -type d -name ".venv" -exec du -sh {} +
+```
+
+### Go Language
+
+```bash
+# Clear Go build cache and module download cache
+go clean -cache -modcache
+```
+
+### Docker & Podman Containers
+
+Docker images, containers, and unused volumes accumulate rapidly.
+
+```bash
+# Remove all unused containers, networks, images, and volumes
+docker system prune -a --volumes
+
+# For Podman users:
+podman system prune -a --volumes
+```
+
+---
+
+## 4. Local AI & Machine Learning Storage
+
+Local Large Language Models (LLMs), speech recognition (Whisper), and image generation models consume significant disk space (ranging from 4 GB to over 100 GB per model).
+
+### Ollama Models (`~/.ollama`)
+
+Ollama stores pulled model weights under `~/.ollama/models/`.
+
+```bash
+# List all installed Ollama models
+ollama list
+
+# Remove specific unused models
+ollama rm llama3:70b
+ollama rm mistral:latest
+
+# Check directory size
+du -sh ~/.ollama/models
+```
+
+### Hugging Face Transformer Cache (`~/.cache/huggingface`)
+
+When downloading models via Python scripts or Transformers libraries, weights are stored in HuggingFace cache.
+
+```bash
+# Inspect HuggingFace cache size
+du -sh ~/.cache/huggingface
+
+# Interactively delete HuggingFace cached models (requires huggingface_hub)
+pip install huggingface_hub
+huggingface-cli delete-cache
+
+# Or directly purge all cached model files
+rm -rf ~/.cache/huggingface/hub/*
+```
+
+### Custom Model Paths & PyTorch Cache
+
+Check custom model folders in your home or project directories (`~/models`, `~/.cache/torch`):
+
+```bash
+# PyTorch model hub cache
+rm -rf ~/.cache/torch/hub/checkpoints/*
+
+# Find custom downloaded model weights (.safetensors, .bin, .gguf, .ckpt)
+find ~ -type f \( -name "*.safetensors" -o -name "*.gguf" -o -name "*.ckpt" \) -exec ls -lh {} +
+```
+
+---
+
+## 5. System Logs, Core Dumps & Desktop Caches
+
+### Systemd Journal Logs
+
+The systemd journal records system events and can grow to many gigabytes over time.
+
+```bash
+# Check current journal log size
+journalctl --disk-usage
+
+# Retain only the last 100 MB of logs
+sudo journalctl --vacuum-size=100M
+
+# Or retain only the last 7 days of logs
+sudo journalctl --vacuum-time=7d
+```
+
+### Application Core Dumps & Crash Reports
+
+Crash dumps are generated when applications crash unexpectedly:
+
+```bash
+# Check systemd coredump storage
+coredumpctl list
+sudo rm -rf /var/lib/systemd/coredump/*
+
+# Clear application-specific crash logs (e.g., Quickshell, Electron apps)
+rm -rf ~/.cache/*/crashes
+```
+
+### Desktop Trash & Image Thumbnails
+
+```bash
+# Empty User Trash
+rm -rf ~/.local/share/Trash/*
+
+# Clear generated video/image preview thumbnails
+rm -rf ~/.cache/thumbnails/*
+```
+
+### Stale Temp Files & Auto-saves
+
+```bash
+# Clear temporary editor auto-save files (~/nano.*.save, #*# files)
+find ~ -maxdepth 2 -type f \( -name "nano.*.save" -o -name "#*#" -o -name "*~" \) -delete
+```
+
+---
+
+## 6. Large Repositories, Virtual Machines & Gaming
+
+### Git Repository History Pruning
+
+Building large open-source projects (like Chromium, the Linux Kernel, or GitLab) creates massive `.git` folders.
+
+```bash
+# Find largest .git folders in your repos
+find ~/repos -type d -name ".git" -exec du -sh {} + | sort -hr | head -n 10
+
+# Run Git garbage collection on heavy repos
+git gc --prune=now --aggressive
+```
+
+### Virtual Machine Images (`.qcow2`, `.vdi`)
+
+Hypervisors (KVM, QEMU, VirtualBox) store virtual disks as large monolithic files.
+
+```bash
+# Search for VM disk images in your home directory
+find ~ -type f \( -name "*.qcow2" -o -name "*.vdi" -o -name "*.vmdk" \) -exec ls -lh {} +
+```
+
+### Gaming: Steam & Proton Prefixes
+
+Steam games and Proton/Wine compatibility prefixes can take up several hundred gigabytes.
+
+```bash
+# Inspect Steam Flatpak game storage
+du -h --max-depth=2 ~/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common/
+
+# Inspect Wine prefixes
+du -sh ~/.wine ~/.local/share/bottles/prefixes/* 2>/dev/null
+```
+
+---
+
+## 7. Storage Cleanup Master Reference
+
+The table below summarizes common cleanup targets, typical potential space savings, and safety recommendations:
+
+| Category | Target Path / Command | Typical Savings | Safety Level | Action Command |
+| :--- | :--- | :--- | :--- | :--- |
+| **AUR Cache** | `~/.cache/yay/*` | 10 – 50 GB | 🟢 Safe | `rm -rf ~/.cache/yay/*` |
+| **NPM Cache** | `~/.npm` | 5 – 30 GB | 🟢 Safe | `npm cache clean --force` |
+| **Flatpak Unused** | Runtimes & SDKs | 5 – 25 GB | 🟢 Safe | `flatpak uninstall --unused` |
+| **Journal Logs** | `/var/log/journal/` | 2 – 10 GB | 🟢 Safe | `sudo journalctl --vacuum-size=100M` |
+| **Thumbnails** | `~/.cache/thumbnails/` | 1 – 5 GB | 🟢 Safe | `rm -rf ~/.cache/thumbnails/*` |
+| **System Trash** | `~/.local/share/Trash/` | Variable | 🟢 Safe | `rm -rf ~/.local/share/Trash/*` |
+| **HuggingFace** | `~/.cache/huggingface/` | 10 – 100 GB | 🟡 Re-downloads needed | `huggingface-cli delete-cache` |
+| **Ollama Models** | `~/.ollama/models/` | 20 – 150 GB | 🟡 Re-downloads needed | `ollama rm <model>` |
+| **Cargo Cache** | `~/.cargo/registry/` | 5 – 30 GB | 🟢 Safe | `rm -rf ~/.cargo/registry/cache/*` |
+| **Docker System** | Containers & Images | 10 – 100 GB | 🟡 Re-builds needed | `docker system prune -a --volumes` |
+| **VM Images** | `*.qcow2`, `*.vdi` | 20 – 200 GB | 🔴 Backup First | Delete unused VM disks manually |
+
+---
+
+## 8. Safe Automated Maintenance Script
+
+Save the following script as `~/.local/bin/clean-linux.sh` and make it executable (`chmod +x ~/.local/bin/clean-linux.sh`) to perform safe, routine maintenance:
+
+```bash
+#!/usr/bin/env bash
+# safe-linux-clean.sh - Routine safe system maintenance script
+
+set -euo pipefail
+
+echo "==> Clearing User Trash and Thumbnails..."
+rm -rf ~/.local/share/Trash/* ~/.cache/thumbnails/*
+
+echo "==> Clearing Package Caches..."
+if command -v pacman &>/dev/null; then
+    sudo pacman -Sc --noconfirm 2>/dev/null || true
+fi
+if command -v yay &>/dev/null; then
+    rm -rf ~/.cache/yay/*
+fi
+if command -v apt &>/dev/null; then
+    sudo apt clean
+    sudo apt autoremove -y
+fi
+if command -v dnf &>/dev/null; then
+    sudo dnf clean all
+fi
+
+echo "==> Clearing Flatpak Unused Runtimes..."
+if command -v flatpak &>/dev/null; then
+    flatpak uninstall --unused -y
+fi
+
+echo "==> Clearing Developer Caches..."
+if command -v npm &>/dev/null; then
+    npm cache clean --force 2>/dev/null || true
+fi
+if command -v pip &>/dev/null; then
+    pip cache purge 2>/dev/null || true
+fi
+if command -v uv &>/dev/null; then
+    uv cache clean 2>/dev/null || true
+fi
+
+echo "==> Vacuuming Systemd Journal Logs (keeping 100MB)..."
+if command -v journalctl &>/dev/null; then
+    sudo journalctl --vacuum-size=100M
+fi
+
+echo "==> Storage Maintenance Complete!"
+df -h /home
+```
+
+Regularly auditing your storage with these steps ensures your Linux system remains fast, organized, and free of unnecessary clutter.
