@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2026-07-20">
+<meta name="description" content="A comprehensive, multi-distro guide to analyzing storage, clearing package caches, developer runtimes, AI/LLM models, system logs, Flatpaks, and heavy gaming/VM files.">
+
+<title>The Ultimate Guide to Freeing Up Disk Space on Linux – My Writings</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">My Writings</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../literature/index.html"> 
+<span class="menu-text">Literature</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../chapters/index.html"> 
+<span class="menu-text">Chapters</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../tutorials/index.html"> 
+<span class="menu-text">Tutorials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#quick-storage-diagnosis-analysis" id="toc-quick-storage-diagnosis-analysis" class="nav-link active" data-scroll-target="#quick-storage-diagnosis-analysis">1. Quick Storage Diagnosis &amp; Analysis</a>
+  <ul class="collapse">
+  <li><a href="#core-cli-tools" id="toc-core-cli-tools" class="nav-link" data-scroll-target="#core-cli-tools">Core CLI Tools</a></li>
+  <li><a href="#modern-interactive-analyzers" id="toc-modern-interactive-analyzers" class="nav-link" data-scroll-target="#modern-interactive-analyzers">Modern Interactive Analyzers</a></li>
+  </ul></li>
+  <li><a href="#system-package-managers-application-containers" id="toc-system-package-managers-application-containers" class="nav-link" data-scroll-target="#system-package-managers-application-containers">2. System Package Managers &amp; Application Containers</a>
+  <ul class="collapse">
+  <li><a href="#arch-linux-aur-pacman-yay-paru" id="toc-arch-linux-aur-pacman-yay-paru" class="nav-link" data-scroll-target="#arch-linux-aur-pacman-yay-paru">Arch Linux &amp; AUR (<code>pacman</code> / <code>yay</code> / <code>paru</code>)</a></li>
+  <li><a href="#debian-ubuntu-apt" id="toc-debian-ubuntu-apt" class="nav-link" data-scroll-target="#debian-ubuntu-apt">Debian &amp; Ubuntu (<code>apt</code>)</a></li>
+  <li><a href="#fedora-rhel-dnf" id="toc-fedora-rhel-dnf" class="nav-link" data-scroll-target="#fedora-rhel-dnf">Fedora &amp; RHEL (<code>dnf</code>)</a></li>
+  <li><a href="#application-containers-flatpak-snap" id="toc-application-containers-flatpak-snap" class="nav-link" data-scroll-target="#application-containers-flatpak-snap">Application Containers: Flatpak &amp; Snap</a></li>
+  </ul></li>
+  <li><a href="#developer-runtimes-build-artifacts" id="toc-developer-runtimes-build-artifacts" class="nav-link" data-scroll-target="#developer-runtimes-build-artifacts">3. Developer Runtimes &amp; Build Artifacts</a>
+  <ul class="collapse">
+  <li><a href="#node.js-package-managers" id="toc-node.js-package-managers" class="nav-link" data-scroll-target="#node.js-package-managers">Node.js &amp; Package Managers</a></li>
+  <li><a href="#rust-cargo" id="toc-rust-cargo" class="nav-link" data-scroll-target="#rust-cargo">Rust &amp; Cargo</a></li>
+  <li><a href="#python-virtual-environments-uv" id="toc-python-virtual-environments-uv" class="nav-link" data-scroll-target="#python-virtual-environments-uv">Python, Virtual Environments &amp; <code>uv</code></a></li>
+  <li><a href="#go-language" id="toc-go-language" class="nav-link" data-scroll-target="#go-language">Go Language</a></li>
+  <li><a href="#docker-podman-containers" id="toc-docker-podman-containers" class="nav-link" data-scroll-target="#docker-podman-containers">Docker &amp; Podman Containers</a></li>
+  </ul></li>
+  <li><a href="#local-ai-machine-learning-storage" id="toc-local-ai-machine-learning-storage" class="nav-link" data-scroll-target="#local-ai-machine-learning-storage">4. Local AI &amp; Machine Learning Storage</a>
+  <ul class="collapse">
+  <li><a href="#ollama-models-.ollama" id="toc-ollama-models-.ollama" class="nav-link" data-scroll-target="#ollama-models-.ollama">Ollama Models (<code>~/.ollama</code>)</a></li>
+  <li><a href="#hugging-face-transformer-cache-.cachehuggingface" id="toc-hugging-face-transformer-cache-.cachehuggingface" class="nav-link" data-scroll-target="#hugging-face-transformer-cache-.cachehuggingface">Hugging Face Transformer Cache (<code>~/.cache/huggingface</code>)</a></li>
+  <li><a href="#custom-model-paths-pytorch-cache" id="toc-custom-model-paths-pytorch-cache" class="nav-link" data-scroll-target="#custom-model-paths-pytorch-cache">Custom Model Paths &amp; PyTorch Cache</a></li>
+  </ul></li>
+  <li><a href="#system-logs-core-dumps-desktop-caches" id="toc-system-logs-core-dumps-desktop-caches" class="nav-link" data-scroll-target="#system-logs-core-dumps-desktop-caches">5. System Logs, Core Dumps &amp; Desktop Caches</a>
+  <ul class="collapse">
+  <li><a href="#systemd-journal-logs" id="toc-systemd-journal-logs" class="nav-link" data-scroll-target="#systemd-journal-logs">Systemd Journal Logs</a></li>
+  <li><a href="#application-core-dumps-crash-reports" id="toc-application-core-dumps-crash-reports" class="nav-link" data-scroll-target="#application-core-dumps-crash-reports">Application Core Dumps &amp; Crash Reports</a></li>
+  <li><a href="#desktop-trash-image-thumbnails" id="toc-desktop-trash-image-thumbnails" class="nav-link" data-scroll-target="#desktop-trash-image-thumbnails">Desktop Trash &amp; Image Thumbnails</a></li>
+  <li><a href="#stale-temp-files-auto-saves" id="toc-stale-temp-files-auto-saves" class="nav-link" data-scroll-target="#stale-temp-files-auto-saves">Stale Temp Files &amp; Auto-saves</a></li>
+  </ul></li>
+  <li><a href="#large-repositories-virtual-machines-gaming" id="toc-large-repositories-virtual-machines-gaming" class="nav-link" data-scroll-target="#large-repositories-virtual-machines-gaming">6. Large Repositories, Virtual Machines &amp; Gaming</a>
+  <ul class="collapse">
+  <li><a href="#git-repository-history-pruning" id="toc-git-repository-history-pruning" class="nav-link" data-scroll-target="#git-repository-history-pruning">Git Repository History Pruning</a></li>
+  <li><a href="#virtual-machine-images-.qcow2-.vdi" id="toc-virtual-machine-images-.qcow2-.vdi" class="nav-link" data-scroll-target="#virtual-machine-images-.qcow2-.vdi">Virtual Machine Images (<code>.qcow2</code>, <code>.vdi</code>)</a></li>
+  <li><a href="#gaming-steam-proton-prefixes" id="toc-gaming-steam-proton-prefixes" class="nav-link" data-scroll-target="#gaming-steam-proton-prefixes">Gaming: Steam &amp; Proton Prefixes</a></li>
+  </ul></li>
+  <li><a href="#storage-cleanup-master-reference" id="toc-storage-cleanup-master-reference" class="nav-link" data-scroll-target="#storage-cleanup-master-reference">7. Storage Cleanup Master Reference</a></li>
+  <li><a href="#safe-automated-maintenance-script" id="toc-safe-automated-maintenance-script" class="nav-link" data-scroll-target="#safe-automated-maintenance-script">8. Safe Automated Maintenance Script</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">The Ultimate Guide to Freeing Up Disk Space on Linux</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">Linux</div>
+    <div class="quarto-category">Systems</div>
+    <div class="quarto-category">DevOps</div>
+    <div class="quarto-category">Disk-Cleanup</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    A comprehensive, multi-distro guide to analyzing storage, clearing package caches, developer runtimes, AI/LLM models, system logs, Flatpaks, and heavy gaming/VM files.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">July 20, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>As Linux machines age—or as we build software, train local AI models, run games, and test multiple software packages—storage space quietly vanishes. It is common for a modern Linux system to accumulate dozens or even hundreds of gigabytes of hidden caches, orphaned build artifacts, and system logs.</p>
+<p>This guide provides a comprehensive breakdown of how to analyze your disk usage, identify large space-consumers across various Linux distributions and workflows, and safely reclaim gigabytes (or terabytes) of storage.</p>
+<hr>
+<section id="quick-storage-diagnosis-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="quick-storage-diagnosis-analysis">1. Quick Storage Diagnosis &amp; Analysis</h2>
+<p>Before deleting anything, you need an accurate map of where storage is being used.</p>
+<section id="core-cli-tools" class="level3">
+<h3 class="anchored" data-anchor-id="core-cli-tools">Core CLI Tools</h3>
+<p>Use standard GNU utilities to inspect disk utilization:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check overall filesystem space across mounts</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">df</span> <span class="at">-h</span> /home</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Find top-level directory sizes in your home folder</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-h</span> <span class="at">--max-depth</span><span class="op">=</span>1 ~ <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-hr</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 20</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Drill down into hidden dot-directories (~/.cache, ~/.local, ~/.config, etc.)</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-h</span> <span class="at">--max-depth</span><span class="op">=</span>2 ~/.cache ~/.local ~/.var <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-hr</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 25</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="modern-interactive-analyzers" class="level3">
+<h3 class="anchored" data-anchor-id="modern-interactive-analyzers">Modern Interactive Analyzers</h3>
+<p>For a faster, interactive TUI breakdown:</p>
+<ul>
+<li><strong><code>ncdu</code></strong> (NCurses Disk Usage): <code>ncdu ~</code></li>
+<li><strong><code>gdu</code></strong> (Fast Go-based analyzer): <code>gdu ~</code></li>
+<li><strong><code>dust</code></strong> (Rust-based <code>du</code> replacement): <code>dust ~</code></li>
+</ul>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install ncdu on your package manager:</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> pacman <span class="at">-S</span> ncdu       <span class="co"># Arch Linux</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install ncdu     <span class="co"># Debian / Ubuntu</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> dnf install ncdu     <span class="co"># Fedora</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="system-package-managers-application-containers" class="level2">
+<h2 class="anchored" data-anchor-id="system-package-managers-application-containers">2. System Package Managers &amp; Application Containers</h2>
+<p>Package managers save downloaded installation archives (<code>.pkg.tar.zst</code>, <code>.deb</code>, <code>.rpm</code>) in local caches. Over time, these caches grow indefinitely.</p>
+<section id="arch-linux-aur-pacman-yay-paru" class="level3">
+<h3 class="anchored" data-anchor-id="arch-linux-aur-pacman-yay-paru">Arch Linux &amp; AUR (<code>pacman</code> / <code>yay</code> / <code>paru</code>)</h3>
+<p>Arch Linux keeps all downloaded package versions in <code>/var/cache/pacman/pkg/</code> by default. AUR helpers like <code>yay</code> or <code>paru</code> store build files in <code>~/.cache/</code>.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove uninstalled packages from pacman cache</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> pacman <span class="at">-Sc</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep only the last 2 installed versions (requires pacman-contrib)</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> paccache <span class="at">-r</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean AUR helper build cache (safely reclaims tens of GBs)</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> ~/.cache/yay/<span class="pp">*</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> ~/.cache/paru/build/<span class="pp">*</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="debian-ubuntu-apt" class="level3">
+<h3 class="anchored" data-anchor-id="debian-ubuntu-apt">Debian &amp; Ubuntu (<code>apt</code>)</h3>
+<p>APT retains downloaded <code>.deb</code> packages in <code>/var/cache/apt/archives/</code>.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove all downloaded package archives</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt clean</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove orphaned dependencies no longer needed by any app</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt autoremove <span class="at">--purge</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="fedora-rhel-dnf" class="level3">
+<h3 class="anchored" data-anchor-id="fedora-rhel-dnf">Fedora &amp; RHEL (<code>dnf</code>)</h3>
+<p>DNF stores metadata and RPM packages under <code>/var/cache/dnf/</code>.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean cached packages and metadata</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> dnf clean all</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="application-containers-flatpak-snap" class="level3">
+<h3 class="anchored" data-anchor-id="application-containers-flatpak-snap">Application Containers: Flatpak &amp; Snap</h3>
+<p>System containers frequently retain unused runtimes and old revisions.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove unused Flatpak runtimes &amp; dependencies</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">flatpak</span> uninstall <span class="at">--unused</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean user-level Flatpak app caches (e.g., Steam, Discord, OBS)</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-sh</span> ~/.var/app/<span class="pp">*</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Set Snap to retain only 2 revisions (reduces /var/lib/snapd usage)</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> snap set system refresh.retain=2</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Script to remove disabled/old Snap revisions</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> snap list <span class="at">--all</span> <span class="kw">|</span> <span class="fu">awk</span> <span class="st">'/disabled/{print $1, $2}'</span> <span class="kw">|</span> <span class="cf">while</span> <span class="bu">read</span> <span class="va">snapname</span> <span class="va">revision</span><span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sudo</span> snap remove <span class="st">"</span><span class="va">$snapname</span><span class="st">"</span> <span class="at">--revision</span><span class="op">=</span><span class="st">"</span><span class="va">$revision</span><span class="st">"</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="developer-runtimes-build-artifacts" class="level2">
+<h2 class="anchored" data-anchor-id="developer-runtimes-build-artifacts">3. Developer Runtimes &amp; Build Artifacts</h2>
+<p>Developer toolchains aggressively cache dependencies and build artifacts. If you work with Node.js, Rust, Go, Python, or Docker, hundreds of gigabytes can easily be locked inside these caches.</p>
+<section id="node.js-package-managers" class="level3">
+<h3 class="anchored" data-anchor-id="node.js-package-managers">Node.js &amp; Package Managers</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean global NPM download cache</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> cache clean <span class="at">--force</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Or purge the directory directly:</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> ~/.npm</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean PNPM global store</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="ex">pnpm</span> store prune</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean Yarn cache</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="ex">yarn</span> cache clean</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="rust-cargo" class="level3">
+<h3 class="anchored" data-anchor-id="rust-cargo">Rust &amp; Cargo</h3>
+<p>Rust’s <code>target/</code> build directories in projects can easily reach several gigabytes per project.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean Cargo package registry index &amp; downloaded crates</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> ~/.cargo/registry/cache/<span class="pp">*</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> ~/.cargo/git/db/<span class="pp">*</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Use cargo-sweep to clean old target directories across all project repos</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> install cargo-sweep</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> sweep <span class="at">--installed</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="python-virtual-environments-uv" class="level3">
+<h3 class="anchored" data-anchor-id="python-virtual-environments-uv">Python, Virtual Environments &amp; <code>uv</code></h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Purge pip cache</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> cache purge</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Or remove directly:</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> ~/.cache/pip</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Purge uv cache (fast Python package manager)</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> cache clean</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Find and delete inactive virtual environments (~/.venv or project .venv)</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="fu">find</span> ~ <span class="at">-type</span> d <span class="at">-name</span> <span class="st">".venv"</span> <span class="at">-exec</span> du <span class="at">-sh</span> {} +</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="go-language" class="level3">
+<h3 class="anchored" data-anchor-id="go-language">Go Language</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Clear Go build cache and module download cache</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> clean <span class="at">-cache</span> <span class="at">-modcache</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="docker-podman-containers" class="level3">
+<h3 class="anchored" data-anchor-id="docker-podman-containers">Docker &amp; Podman Containers</h3>
+<p>Docker images, containers, and unused volumes accumulate rapidly.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove all unused containers, networks, images, and volumes</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> system prune <span class="at">-a</span> <span class="at">--volumes</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># For Podman users:</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> system prune <span class="at">-a</span> <span class="at">--volumes</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="local-ai-machine-learning-storage" class="level2">
+<h2 class="anchored" data-anchor-id="local-ai-machine-learning-storage">4. Local AI &amp; Machine Learning Storage</h2>
+<p>Local Large Language Models (LLMs), speech recognition (Whisper), and image generation models consume significant disk space (ranging from 4 GB to over 100 GB per model).</p>
+<section id="ollama-models-.ollama" class="level3">
+<h3 class="anchored" data-anchor-id="ollama-models-.ollama">Ollama Models (<code>~/.ollama</code>)</h3>
+<p>Ollama stores pulled model weights under <code>~/.ollama/models/</code>.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># List all installed Ollama models</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> list</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove specific unused models</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> rm llama3:70b</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> rm mistral:latest</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Check directory size</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-sh</span> ~/.ollama/models</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="hugging-face-transformer-cache-.cachehuggingface" class="level3">
+<h3 class="anchored" data-anchor-id="hugging-face-transformer-cache-.cachehuggingface">Hugging Face Transformer Cache (<code>~/.cache/huggingface</code>)</h3>
+<p>When downloading models via Python scripts or Transformers libraries, weights are stored in HuggingFace cache.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspect HuggingFace cache size</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-sh</span> ~/.cache/huggingface</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Interactively delete HuggingFace cached models (requires huggingface_hub)</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install huggingface_hub</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="ex">huggingface-cli</span> delete-cache</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Or directly purge all cached model files</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> ~/.cache/huggingface/hub/<span class="pp">*</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="custom-model-paths-pytorch-cache" class="level3">
+<h3 class="anchored" data-anchor-id="custom-model-paths-pytorch-cache">Custom Model Paths &amp; PyTorch Cache</h3>
+<p>Check custom model folders in your home or project directories (<code>~/models</code>, <code>~/.cache/torch</code>):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># PyTorch model hub cache</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> ~/.cache/torch/hub/checkpoints/<span class="pp">*</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Find custom downloaded model weights (.safetensors, .bin, .gguf, .ckpt)</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="fu">find</span> ~ <span class="at">-type</span> f <span class="dt">\(</span> <span class="at">-name</span> <span class="st">"*.safetensors"</span> <span class="at">-o</span> <span class="at">-name</span> <span class="st">"*.gguf"</span> <span class="at">-o</span> <span class="at">-name</span> <span class="st">"*.ckpt"</span> <span class="dt">\)</span> <span class="at">-exec</span> ls <span class="at">-lh</span> {} +</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="system-logs-core-dumps-desktop-caches" class="level2">
+<h2 class="anchored" data-anchor-id="system-logs-core-dumps-desktop-caches">5. System Logs, Core Dumps &amp; Desktop Caches</h2>
+<section id="systemd-journal-logs" class="level3">
+<h3 class="anchored" data-anchor-id="systemd-journal-logs">Systemd Journal Logs</h3>
+<p>The systemd journal records system events and can grow to many gigabytes over time.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check current journal log size</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ex">journalctl</span> <span class="at">--disk-usage</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Retain only the last 100 MB of logs</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">--vacuum-size</span><span class="op">=</span>100M</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Or retain only the last 7 days of logs</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">--vacuum-time</span><span class="op">=</span>7d</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="application-core-dumps-crash-reports" class="level3">
+<h3 class="anchored" data-anchor-id="application-core-dumps-crash-reports">Application Core Dumps &amp; Crash Reports</h3>
+<p>Crash dumps are generated when applications crash unexpectedly:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check systemd coredump storage</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">coredumpctl</span> list</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> rm <span class="at">-rf</span> /var/lib/systemd/coredump/<span class="pp">*</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Clear application-specific crash logs (e.g., Quickshell, Electron apps)</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> ~/.cache/<span class="pp">*</span>/crashes</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="desktop-trash-image-thumbnails" class="level3">
+<h3 class="anchored" data-anchor-id="desktop-trash-image-thumbnails">Desktop Trash &amp; Image Thumbnails</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Empty User Trash</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> ~/.local/share/Trash/<span class="pp">*</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Clear generated video/image preview thumbnails</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> ~/.cache/thumbnails/<span class="pp">*</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="stale-temp-files-auto-saves" class="level3">
+<h3 class="anchored" data-anchor-id="stale-temp-files-auto-saves">Stale Temp Files &amp; Auto-saves</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Clear temporary editor auto-save files (~/nano.*.save, #*# files)</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">find</span> ~ <span class="at">-maxdepth</span> 2 <span class="at">-type</span> f <span class="dt">\(</span> <span class="at">-name</span> <span class="st">"nano.*.save"</span> <span class="at">-o</span> <span class="at">-name</span> <span class="st">"#*#"</span> <span class="at">-o</span> <span class="at">-name</span> <span class="st">"*~"</span> <span class="dt">\)</span> <span class="at">-delete</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="large-repositories-virtual-machines-gaming" class="level2">
+<h2 class="anchored" data-anchor-id="large-repositories-virtual-machines-gaming">6. Large Repositories, Virtual Machines &amp; Gaming</h2>
+<section id="git-repository-history-pruning" class="level3">
+<h3 class="anchored" data-anchor-id="git-repository-history-pruning">Git Repository History Pruning</h3>
+<p>Building large open-source projects (like Chromium, the Linux Kernel, or GitLab) creates massive <code>.git</code> folders.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find largest .git folders in your repos</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">find</span> ~/repos <span class="at">-type</span> d <span class="at">-name</span> <span class="st">".git"</span> <span class="at">-exec</span> du <span class="at">-sh</span> {} + <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-hr</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 10</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Run Git garbage collection on heavy repos</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> gc <span class="at">--prune</span><span class="op">=</span>now <span class="at">--aggressive</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="virtual-machine-images-.qcow2-.vdi" class="level3">
+<h3 class="anchored" data-anchor-id="virtual-machine-images-.qcow2-.vdi">Virtual Machine Images (<code>.qcow2</code>, <code>.vdi</code>)</h3>
+<p>Hypervisors (KVM, QEMU, VirtualBox) store virtual disks as large monolithic files.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Search for VM disk images in your home directory</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">find</span> ~ <span class="at">-type</span> f <span class="dt">\(</span> <span class="at">-name</span> <span class="st">"*.qcow2"</span> <span class="at">-o</span> <span class="at">-name</span> <span class="st">"*.vdi"</span> <span class="at">-o</span> <span class="at">-name</span> <span class="st">"*.vmdk"</span> <span class="dt">\)</span> <span class="at">-exec</span> ls <span class="at">-lh</span> {} +</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="gaming-steam-proton-prefixes" class="level3">
+<h3 class="anchored" data-anchor-id="gaming-steam-proton-prefixes">Gaming: Steam &amp; Proton Prefixes</h3>
+<p>Steam games and Proton/Wine compatibility prefixes can take up several hundred gigabytes.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspect Steam Flatpak game storage</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-h</span> <span class="at">--max-depth</span><span class="op">=</span>2 ~/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common/</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspect Wine prefixes</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-sh</span> ~/.wine ~/.local/share/bottles/prefixes/<span class="pp">*</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="storage-cleanup-master-reference" class="level2">
+<h2 class="anchored" data-anchor-id="storage-cleanup-master-reference">7. Storage Cleanup Master Reference</h2>
+<p>The table below summarizes common cleanup targets, typical potential space savings, and safety recommendations:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Category</th>
+<th style="text-align: left;">Target Path / Command</th>
+<th style="text-align: left;">Typical Savings</th>
+<th style="text-align: left;">Safety Level</th>
+<th style="text-align: left;">Action Command</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>AUR Cache</strong></td>
+<td style="text-align: left;"><code>~/.cache/yay/*</code></td>
+<td style="text-align: left;">10 – 50 GB</td>
+<td style="text-align: left;">🟢 Safe</td>
+<td style="text-align: left;"><code>rm -rf ~/.cache/yay/*</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>NPM Cache</strong></td>
+<td style="text-align: left;"><code>~/.npm</code></td>
+<td style="text-align: left;">5 – 30 GB</td>
+<td style="text-align: left;">🟢 Safe</td>
+<td style="text-align: left;"><code>npm cache clean --force</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Flatpak Unused</strong></td>
+<td style="text-align: left;">Runtimes &amp; SDKs</td>
+<td style="text-align: left;">5 – 25 GB</td>
+<td style="text-align: left;">🟢 Safe</td>
+<td style="text-align: left;"><code>flatpak uninstall --unused</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Journal Logs</strong></td>
+<td style="text-align: left;"><code>/var/log/journal/</code></td>
+<td style="text-align: left;">2 – 10 GB</td>
+<td style="text-align: left;">🟢 Safe</td>
+<td style="text-align: left;"><code>sudo journalctl --vacuum-size=100M</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Thumbnails</strong></td>
+<td style="text-align: left;"><code>~/.cache/thumbnails/</code></td>
+<td style="text-align: left;">1 – 5 GB</td>
+<td style="text-align: left;">🟢 Safe</td>
+<td style="text-align: left;"><code>rm -rf ~/.cache/thumbnails/*</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>System Trash</strong></td>
+<td style="text-align: left;"><code>~/.local/share/Trash/</code></td>
+<td style="text-align: left;">Variable</td>
+<td style="text-align: left;">🟢 Safe</td>
+<td style="text-align: left;"><code>rm -rf ~/.local/share/Trash/*</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>HuggingFace</strong></td>
+<td style="text-align: left;"><code>~/.cache/huggingface/</code></td>
+<td style="text-align: left;">10 – 100 GB</td>
+<td style="text-align: left;">🟡 Re-downloads needed</td>
+<td style="text-align: left;"><code>huggingface-cli delete-cache</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Ollama Models</strong></td>
+<td style="text-align: left;"><code>~/.ollama/models/</code></td>
+<td style="text-align: left;">20 – 150 GB</td>
+<td style="text-align: left;">🟡 Re-downloads needed</td>
+<td style="text-align: left;"><code>ollama rm &lt;model&gt;</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Cargo Cache</strong></td>
+<td style="text-align: left;"><code>~/.cargo/registry/</code></td>
+<td style="text-align: left;">5 – 30 GB</td>
+<td style="text-align: left;">🟢 Safe</td>
+<td style="text-align: left;"><code>rm -rf ~/.cargo/registry/cache/*</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Docker System</strong></td>
+<td style="text-align: left;">Containers &amp; Images</td>
+<td style="text-align: left;">10 – 100 GB</td>
+<td style="text-align: left;">🟡 Re-builds needed</td>
+<td style="text-align: left;"><code>docker system prune -a --volumes</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>VM Images</strong></td>
+<td style="text-align: left;"><code>*.qcow2</code>, <code>*.vdi</code></td>
+<td style="text-align: left;">20 – 200 GB</td>
+<td style="text-align: left;">🔴 Backup First</td>
+<td style="text-align: left;">Delete unused VM disks manually</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="safe-automated-maintenance-script" class="level2">
+<h2 class="anchored" data-anchor-id="safe-automated-maintenance-script">8. Safe Automated Maintenance Script</h2>
+<p>Save the following script as <code>~/.local/bin/clean-linux.sh</code> and make it executable (<code>chmod +x ~/.local/bin/clean-linux.sh</code>) to perform safe, routine maintenance:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/usr/bin/env bash</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co"># safe-linux-clean.sh - Routine safe system maintenance script</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">-euo</span> pipefail</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"==&gt; Clearing User Trash and Thumbnails..."</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> ~/.local/share/Trash/<span class="pp">*</span> ~/.cache/thumbnails/<span class="pp">*</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"==&gt; Clearing Package Caches..."</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">command</span> <span class="at">-v</span> pacman <span class="op">&amp;&gt;</span>/dev/null<span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sudo</span> pacman <span class="at">-Sc</span> <span class="at">--noconfirm</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">true</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">command</span> <span class="at">-v</span> yay <span class="op">&amp;&gt;</span>/dev/null<span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rm</span> <span class="at">-rf</span> ~/.cache/yay/<span class="pp">*</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">command</span> <span class="at">-v</span> apt <span class="op">&amp;&gt;</span>/dev/null<span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sudo</span> apt clean</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sudo</span> apt autoremove <span class="at">-y</span></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">command</span> <span class="at">-v</span> dnf <span class="op">&amp;&gt;</span>/dev/null<span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sudo</span> dnf clean all</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"==&gt; Clearing Flatpak Unused Runtimes..."</span></span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">command</span> <span class="at">-v</span> flatpak <span class="op">&amp;&gt;</span>/dev/null<span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a>    <span class="ex">flatpak</span> uninstall <span class="at">--unused</span> <span class="at">-y</span></span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"==&gt; Clearing Developer Caches..."</span></span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">command</span> <span class="at">-v</span> npm <span class="op">&amp;&gt;</span>/dev/null<span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a>    <span class="ex">npm</span> cache clean <span class="at">--force</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">true</span></span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">command</span> <span class="at">-v</span> pip <span class="op">&amp;&gt;</span>/dev/null<span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb22-34"><a href="#cb22-34" aria-hidden="true" tabindex="-1"></a>    <span class="ex">pip</span> cache purge <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">true</span></span>
+<span id="cb22-35"><a href="#cb22-35" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb22-36"><a href="#cb22-36" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">command</span> <span class="at">-v</span> uv <span class="op">&amp;&gt;</span>/dev/null<span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb22-37"><a href="#cb22-37" aria-hidden="true" tabindex="-1"></a>    <span class="ex">uv</span> cache clean <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">true</span></span>
+<span id="cb22-38"><a href="#cb22-38" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb22-39"><a href="#cb22-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-40"><a href="#cb22-40" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"==&gt; Vacuuming Systemd Journal Logs (keeping 100MB)..."</span></span>
+<span id="cb22-41"><a href="#cb22-41" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">command</span> <span class="at">-v</span> journalctl <span class="op">&amp;&gt;</span>/dev/null<span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb22-42"><a href="#cb22-42" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sudo</span> journalctl <span class="at">--vacuum-size</span><span class="op">=</span>100M</span>
+<span id="cb22-43"><a href="#cb22-43" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb22-44"><a href="#cb22-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-45"><a href="#cb22-45" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"==&gt; Storage Maintenance Complete!"</span></span>
+<span id="cb22-46"><a href="#cb22-46" aria-hidden="true" tabindex="-1"></a><span class="fu">df</span> <span class="at">-h</span> /home</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Regularly auditing your storage with these steps ensures your Linux system remains fast, organized, and free of unnecessary clutter.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/igor-kan\.github\.io\/quarto-writing\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

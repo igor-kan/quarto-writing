@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2026-07-20">
+<meta name="description" content="A complete guide to inspecting USB devices, mounting Android MTP filesystems via GIO and FUSE, transferring data safely without corruption, and automating the workflow.">
+
+<title>How to Safely Mount Android Devices &amp; Transfer Files on Arch Linux via CLI – My Writings</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">My Writings</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../literature/index.html"> 
+<span class="menu-text">Literature</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../chapters/index.html"> 
+<span class="menu-text">Chapters</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../tutorials/index.html"> 
+<span class="menu-text">Tutorials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#inspecting-identifying-connected-android-devices" id="toc-inspecting-identifying-connected-android-devices" class="nav-link active" data-scroll-target="#inspecting-identifying-connected-android-devices">1. Inspecting &amp; Identifying Connected Android Devices</a>
+  <ul class="collapse">
+  <li><a href="#inspecting-hardware-identifiers-via-sysfs" id="toc-inspecting-hardware-identifiers-via-sysfs" class="nav-link" data-scroll-target="#inspecting-hardware-identifiers-via-sysfs">Inspecting Hardware Identifiers via Sysfs</a></li>
+  <li><a href="#inspecting-mtp-volumes-via-gio" id="toc-inspecting-mtp-volumes-via-gio" class="nav-link" data-scroll-target="#inspecting-mtp-volumes-via-gio">Inspecting MTP Volumes via GIO</a></li>
+  </ul></li>
+  <li><a href="#resolving-mtp-connection-locks" id="toc-resolving-mtp-connection-locks" class="nav-link" data-scroll-target="#resolving-mtp-connection-locks">2. Resolving MTP Connection Locks</a>
+  <ul class="collapse">
+  <li><a href="#why-this-happens" id="toc-why-this-happens" class="nav-link" data-scroll-target="#why-this-happens">Why This Happens</a></li>
+  <li><a href="#solution" id="toc-solution" class="nav-link" data-scroll-target="#solution">Solution</a></li>
+  </ul></li>
+  <li><a href="#mounting-the-android-filesystem-via-cli" id="toc-mounting-the-android-filesystem-via-cli" class="nav-link" data-scroll-target="#mounting-the-android-filesystem-via-cli">3. Mounting the Android Filesystem via CLI</a>
+  <ul class="collapse">
+  <li><a href="#locating-the-mounted-directory" id="toc-locating-the-mounted-directory" class="nav-link" data-scroll-target="#locating-the-mounted-directory">Locating the Mounted Directory</a></li>
+  </ul></li>
+  <li><a href="#best-practices-for-safe-file-transfers" id="toc-best-practices-for-safe-file-transfers" class="nav-link" data-scroll-target="#best-practices-for-safe-file-transfers">4. Best Practices for Safe File Transfers</a>
+  <ul class="collapse">
+  <li><a href="#rule-1-use-copy-verify-delete-instead-of-direct-move" id="toc-rule-1-use-copy-verify-delete-instead-of-direct-move" class="nav-link" data-scroll-target="#rule-1-use-copy-verify-delete-instead-of-direct-move">Rule 1: Use Copy-Verify-Delete Instead of Direct Move</a></li>
+  <li><a href="#rule-2-using-gio-copy-for-protocol-native-transfers" id="toc-rule-2-using-gio-copy-for-protocol-native-transfers" class="nav-link" data-scroll-target="#rule-2-using-gio-copy-for-protocol-native-transfers">Rule 2: Using <code>gio copy</code> for Protocol-Native Transfers</a></li>
+  <li><a href="#rule-3-alternative-transfer-via-adb" id="toc-rule-3-alternative-transfer-via-adb" class="nav-link" data-scroll-target="#rule-3-alternative-transfer-via-adb">Rule 3: Alternative Transfer via ADB</a></li>
+  </ul></li>
+  <li><a href="#automating-the-workflow-with-shell-functions" id="toc-automating-the-workflow-with-shell-functions" class="nav-link" data-scroll-target="#automating-the-workflow-with-shell-functions">5. Automating the Workflow with Shell Functions</a>
+  <ul class="collapse">
+  <li><a href="#usage" id="toc-usage" class="nav-link" data-scroll-target="#usage">Usage</a></li>
+  </ul></li>
+  <li><a href="#safely-unmounting-devices" id="toc-safely-unmounting-devices" class="nav-link" data-scroll-target="#safely-unmounting-devices">6. Safely Unmounting Devices</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">How to Safely Mount Android Devices &amp; Transfer Files on Arch Linux via CLI</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">Linux</div>
+    <div class="quarto-category">Arch Linux</div>
+    <div class="quarto-category">Storage</div>
+    <div class="quarto-category">Bash</div>
+    <div class="quarto-category">Automation</div>
+    <div class="quarto-category">Systems</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    A complete guide to inspecting USB devices, mounting Android MTP filesystems via GIO and FUSE, transferring data safely without corruption, and automating the workflow.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">July 20, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Managing file transfers between an Android smartphone and an Arch Linux system over USB relies on <strong>MTP (Media Transfer Protocol)</strong>. Unlike USB Mass Storage (which presents raw block devices), MTP is a session-based protocol where the phone acts as an MTP responder and Linux acts as an MTP initiator.</p>
+<p>This guide covers everything you need to inspect connected Android devices, resolve MTP device locks, mount the filesystem cleanly via the command line, perform fail-safe file transfers, and automate your workflow with shell scripts.</p>
+<hr>
+<section id="inspecting-identifying-connected-android-devices" class="level2">
+<h2 class="anchored" data-anchor-id="inspecting-identifying-connected-android-devices">1. Inspecting &amp; Identifying Connected Android Devices</h2>
+<p>When you connect an Android phone via USB and select <strong>File Transfer / MTP</strong> in the Android notification panel, Linux detects the USB interface and registers it in the system.</p>
+<section id="inspecting-hardware-identifiers-via-sysfs" class="level3">
+<h3 class="anchored" data-anchor-id="inspecting-hardware-identifiers-via-sysfs">Inspecting Hardware Identifiers via Sysfs</h3>
+<p>To list connected USB devices without requiring additional third-party utilities:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-E</span> <span class="st">"MANUFACTURER|PRODUCT"</span> /sys/bus/usb/devices/<span class="pp">*</span>/uevent <span class="dv">2</span><span class="op">&gt;</span>/dev/null</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>You will see output identifying your device:</p>
+<pre class="text"><code>/sys/bus/usb/devices/1-1/uevent:PRODUCT=18d1/4ee1/440</code></pre>
+<ul>
+<li><code>18d1</code> — USB Vendor ID (Google)</li>
+<li><code>4ee1</code> — USB Product ID (Android MTP + ADB mode)</li>
+</ul>
+<p>To view the human-readable manufacturer and model name:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> /sys/bus/usb/devices/1-1/manufacturer</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> /sys/bus/usb/devices/1-1/product</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="inspecting-mtp-volumes-via-gio" class="level3">
+<h3 class="anchored" data-anchor-id="inspecting-mtp-volumes-via-gio">Inspecting MTP Volumes via GIO</h3>
+<p>GVFS (GNOME Virtual File System) provides a volume monitor for MTP devices. To discover the exact MTP URI:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gio</span> mount <span class="at">-l</span> <span class="at">-i</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Look for the volume entry:</p>
+<pre class="text"><code>Volume(0): Pixel 5
+  Type: GProxyVolume (GProxyVolumeMonitorMTP)
+  activation_root=mtp://Google_Pixel_5_DEVICE_SERIAL_HERE/
+  can_mount=1</code></pre>
+<p>Take note of the <code>activation_root</code> string (<code>mtp://&lt;Device_Name&gt;_&lt;Serial&gt;/</code>), as this is used to mount the device via GIO.</p>
+<hr>
+</section>
+</section>
+<section id="resolving-mtp-connection-locks" class="level2">
+<h2 class="anchored" data-anchor-id="resolving-mtp-connection-locks">2. Resolving MTP Connection Locks</h2>
+<p>A common issue when attempting to mount an Android phone in Linux is the error:</p>
+<pre class="text"><code>gio: mtp://...: Unable to open MTP device "001,048"</code></pre>
+<section id="why-this-happens" class="level3">
+<h3 class="anchored" data-anchor-id="why-this-happens">Why This Happens</h3>
+<p>MTP allows <strong>only one process or driver</strong> to claim exclusive access to the USB MTP interface at a time. If a file manager like Dolphin (which uses KDE’s <code>kio_mtp</code> engine) or another MTP daemon is currently connected to the phone, CLI tools like <code>gio mount</code> or <code>simple-mtpfs</code> will be locked out.</p>
+</section>
+<section id="solution" class="level3">
+<h3 class="anchored" data-anchor-id="solution">Solution</h3>
+<p>Close the MTP tab in your file manager, or terminate the existing worker process before running your CLI mount command:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pkill</span> <span class="at">-f</span> <span class="st">"kio/mtp.so"</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="mounting-the-android-filesystem-via-cli" class="level2">
+<h2 class="anchored" data-anchor-id="mounting-the-android-filesystem-via-cli">3. Mounting the Android Filesystem via CLI</h2>
+<p>Once the MTP interface is free, mount your phone using <code>gio mount</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gio</span> mount mtp://Google_Pixel_5_DEVICE_SERIAL_HERE/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="locating-the-mounted-directory" class="level3">
+<h3 class="anchored" data-anchor-id="locating-the-mounted-directory">Locating the Mounted Directory</h3>
+<p>GVFS exposes MTP mounts to the local filesystem using FUSE under the user’s run directory:</p>
+<pre class="path"><code>/run/user/&lt;YOUR_UID&gt;/gvfs/mtp:host=Google_Pixel_5_DEVICE_SERIAL_HERE/Internal shared storage/</code></pre>
+<p>You can set an environment variable to make navigating this directory easier:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">PHONE</span><span class="op">=</span><span class="st">"/run/user/</span><span class="va">$(</span><span class="fu">id</span> <span class="at">-u</span><span class="va">)</span><span class="st">/gvfs/mtp:host=Google_Pixel_5_DEVICE_SERIAL_HERE/Internal shared storage"</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="st">"</span><span class="va">$PHONE</span><span class="st">"</span> <span class="kw">&amp;&amp;</span> <span class="fu">ls</span> <span class="at">-lh</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="best-practices-for-safe-file-transfers" class="level2">
+<h2 class="anchored" data-anchor-id="best-practices-for-safe-file-transfers">4. Best Practices for Safe File Transfers</h2>
+<p>MTP operates over transaction buffers rather than direct block writes. An interrupted file move (<code>mv</code>) across filesystems can cause data loss if the source file is deleted before destination writes are verified.</p>
+<section id="rule-1-use-copy-verify-delete-instead-of-direct-move" class="level3">
+<h3 class="anchored" data-anchor-id="rule-1-use-copy-verify-delete-instead-of-direct-move">Rule 1: Use Copy-Verify-Delete Instead of Direct Move</h3>
+<p>Always use <code>cp</code> (copy), verify the file integrity on the target device, and then delete (<code>rm</code>) the original file:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Copy file to phone</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> ~/Documents/report.pdf <span class="st">"</span><span class="va">$PHONE</span><span class="st">/Download/"</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Verify file size on phone</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-lh</span> <span class="st">"</span><span class="va">$PHONE</span><span class="st">/Download/report.pdf"</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Safely remove local copy (if moving)</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> ~/Documents/report.pdf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="rule-2-using-gio-copy-for-protocol-native-transfers" class="level3">
+<h3 class="anchored" data-anchor-id="rule-2-using-gio-copy-for-protocol-native-transfers">Rule 2: Using <code>gio copy</code> for Protocol-Native Transfers</h3>
+<p><code>gio copy</code> handles MTP buffer streams natively and ensures Android’s <code>MediaStore</code> database indexes newly added photos, videos, and documents immediately:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Copy file from PC to Phone</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ex">gio</span> copy ~/Downloads/audio.mp3 <span class="st">"mtp://Google_Pixel_5_DEVICE_SERIAL_HERE/Internal shared storage/Music/"</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Copy file from Phone to PC</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="ex">gio</span> copy <span class="st">"mtp://Google_Pixel_5_DEVICE_SERIAL_HERE/Internal shared storage/DCIM/Camera/photo.jpg"</span> ~/Pictures/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="rule-3-alternative-transfer-via-adb" class="level3">
+<h3 class="anchored" data-anchor-id="rule-3-alternative-transfer-via-adb">Rule 3: Alternative Transfer via ADB</h3>
+<p>If USB Debugging is enabled on your Android phone, <strong>ADB (Android Debug Bridge)</strong> offers block-level checksum validation and fast transfers:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Push file to phone</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ex">adb</span> push ~/Downloads/video.mp4 /sdcard/Download/</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Pull file from phone</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="ex">adb</span> pull /sdcard/DCIM/Camera/photo.jpg ~/Pictures/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="automating-the-workflow-with-shell-functions" class="level2">
+<h2 class="anchored" data-anchor-id="automating-the-workflow-with-shell-functions">5. Automating the Workflow with Shell Functions</h2>
+<p>You can automate device detection, mounting, and creating a convenient shortcut link (<code>~/Phone</code>) by adding these functions to your shell configuration (<code>~/.bashrc</code> or <code>~/.zshrc</code>):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Add to ~/.bashrc or ~/.zshrc</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">mount-phone()</span> <span class="kw">{</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Release any existing file-manager MTP locks</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="ex">pkill</span> <span class="at">-f</span> <span class="st">"kio/mtp.so"</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">true</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sleep</span> 0.5</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Auto-detect MTP volume URI</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    <span class="va">MTP_URI</span><span class="op">=</span><span class="va">$(</span><span class="ex">gio</span> mount <span class="at">-l</span> <span class="at">-i</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-oE</span> <span class="st">"mtp://[^/]+"</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 1<span class="va">)</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">[</span> <span class="ot">-z</span> <span class="st">"</span><span class="va">$MTP_URI</span><span class="st">"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">echo</span> <span class="st">"❌ No MTP device detected. Ensure screen is unlocked and set to 'File Transfer'."</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">1</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Mount via GIO</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    <span class="ex">gio</span> mount <span class="st">"</span><span class="va">$MTP_URI</span><span class="st">"</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Locate GVFS mount path</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    <span class="va">MTP_PATH</span><span class="op">=</span><span class="va">$(</span><span class="fu">ls</span> <span class="at">-d</span> /run/user/<span class="va">$UID</span>/gvfs/mtp:host=<span class="pp">*</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 1<span class="va">)</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">[</span> <span class="ot">-n</span> <span class="st">"</span><span class="va">$MTP_PATH</span><span class="st">"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">[</span> <span class="ot">-d</span> <span class="st">"</span><span class="va">$MTP_PATH</span><span class="st">/Internal shared storage"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>            <span class="fu">ln</span> <span class="at">-sfn</span> <span class="st">"</span><span class="va">$MTP_PATH</span><span class="st">/Internal shared storage"</span> <span class="st">"</span><span class="va">$HOME</span><span class="st">/Phone"</span></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>            <span class="fu">ln</span> <span class="at">-sfn</span> <span class="st">"</span><span class="va">$MTP_PATH</span><span class="st">"</span> <span class="st">"</span><span class="va">$HOME</span><span class="st">/Phone"</span></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">fi</span></span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>        <span class="bu">echo</span> <span class="st">"✅ Phone mounted! Accessible at: </span><span class="va">$HOME</span><span class="st">/Phone"</span></span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>        <span class="bu">echo</span> <span class="st">"❌ Mount failed. Check phone connection and USB options."</span></span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a><span class="kw">}</span></span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a><span class="fu">unmount-phone()</span> <span class="kw">{</span></span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>    <span class="va">MTP_URI</span><span class="op">=</span><span class="va">$(</span><span class="ex">gio</span> mount <span class="at">-l</span> <span class="at">-i</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-oE</span> <span class="st">"mtp://[^/]+"</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 1<span class="va">)</span></span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">[</span> <span class="ot">-n</span> <span class="st">"</span><span class="va">$MTP_URI</span><span class="st">"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>        <span class="ex">gio</span> mount <span class="at">-u</span> <span class="st">"</span><span class="va">$MTP_URI</span><span class="st">"</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null</span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rm</span> <span class="at">-f</span> <span class="st">"</span><span class="va">$HOME</span><span class="st">/Phone"</span></span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"⚡ Phone unmounted safely."</span></span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a><span class="kw">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="usage" class="level3">
+<h3 class="anchored" data-anchor-id="usage">Usage</h3>
+<ol type="1">
+<li>Connect your Android phone and select <strong>File Transfer (MTP)</strong>.</li>
+<li>Run <code>mount-phone</code> in your terminal.</li>
+<li>Access your files instantly at <code>~/Phone</code>.</li>
+<li>Run <code>unmount-phone</code> before unplugging the USB cable.</li>
+</ol>
+<hr>
+</section>
+</section>
+<section id="safely-unmounting-devices" class="level2">
+<h2 class="anchored" data-anchor-id="safely-unmounting-devices">6. Safely Unmounting Devices</h2>
+<p>Before disconnecting your phone’s USB cable, always unmount to ensure all cached data is written to phone storage:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gio</span> mount <span class="at">-u</span> mtp://Google_Pixel_5_DEVICE_SERIAL_HERE/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This prevents incomplete file writes and protects your phone’s filesystem integrity.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/igor-kan\.github\.io\/quarto-writing\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
