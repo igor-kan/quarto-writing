@@ -1,0 +1,123 @@
+---
+title: "Prerequisites for Efficient Sequence Models and Brain-to-Text Decoding"
+description: "A compact primer on the math and modeling ideas that show up in linear attention, Gated Delta Networks, and Brain2Qwerty."
+author: "Igor"
+date: "2026-07-25"
+categories: [Machine Learning, Sequence Modeling, Mathematics, Brain-Computer Interfaces]
+---
+
+This note collects the background that the paper articles depend on. It is intentionally not a full tutorial; it is the minimum shared vocabulary needed to read the papers without getting stuck on notation.
+
+## 1. Linear algebra for memory updates
+
+These papers treat a model state as a matrix or vector that gets updated over time.
+
+- An outer product like $k_t v_t^\top$ writes a value vector into memory at a key-dependent location.
+- A diagonal matrix like $\mathrm{Diag}(\alpha_t)$ applies channel-wise decay.
+- A term like $(I - \beta_t k_t k_t^\top)$ removes the component of the state aligned with the current key before writing the new value.
+
+If you want to keep one mental model, use this: the state is a memory table, and each step either decays, erases, or writes into that table.
+
+## 2. Attention and linear attention
+
+Standard attention compares a query to a set of keys and uses the resulting weights to mix values.
+
+Linear attention replaces the quadratic attention matrix with a recurrent state:
+
+$$
+S_t = S_{t-1} + k_t v_t^\top, \qquad y_t = S_t^\top q_t
+$$
+
+This matters because it turns sequence processing into fixed-memory recurrence, which is the starting point for several of the later models.
+
+## 3. Gating
+
+Gating is a controlled way to decide how much of the old state survives.
+
+- Scalar gating controls the whole state with one number.
+- Channel-wise gating lets different dimensions decay differently.
+- Separate erase and write gates decouple “forget old content” from “store new content”.
+
+That distinction is central in the Gated DeltaNet line of work.
+
+## 4. Delta-rule style updates
+
+The delta rule is the idea of correcting memory by subtracting what is already there before adding the new value.
+
+One useful form is:
+
+$$
+S_t = (I - \beta_t k_t k_t^\top)S_{t-1} + \beta_t k_t v_t^\top
+$$
+
+Interpretation:
+
+- erase the old value associated with the key,
+- then write the new value,
+- use $\beta_t$ to control how aggressive the update is.
+
+This is the main bridge from linear attention to DeltaNet and Gated DeltaNet.
+
+## 5. State space models and Mamba-style recurrence
+
+Mamba-style models keep a compact recurrent state and use learned dynamics to control information flow across long sequences.
+
+The important idea for this reading path is not the exact implementation; it is the design goal:
+
+- constant or linear memory,
+- long-context processing,
+- selective forgetting,
+- efficient training and inference.
+
+Gated Delta Networks are easiest to read as a hybrid between the selective memory behavior of state space models and the addressable update behavior of delta-rule memory.
+
+## 6. EEG and MEG basics for Brain2Qwerty
+
+Brain2Qwerty works on non-invasive brain recordings.
+
+- EEG: electrodes on the scalp measure electrical activity.
+- MEG: sensors measure magnetic fields produced by neural activity.
+- Both are noisy, low-dimensional relative to raw brain activity, and strongly time-dependent.
+
+For the papers, the key point is that the model does not decode text from a static image; it decodes text from time series.
+
+## 7. Sequence decoding and language models
+
+Brain-to-text decoding is not just classification. It is sequence generation under uncertainty.
+
+That means you need:
+
+- an encoder for noisy temporal signals,
+- a sequence model for ordering and timing,
+- a language model to restore grammatical and lexical structure,
+- a metric like character error rate or word error rate.
+
+## 8. Why these prerequisites matter here
+
+- Gated Delta Networks assumes you understand recurrent memory updates, gating, and delta-rule corrections.
+- Brain2Qwerty assumes you understand time-series encoders, sequence decoders, and language-model-based post-processing.
+
+## Beginner catch-up links
+
+- [Attention Is All You Need](https://arxiv.org/abs/1706.03762)
+- [The Illustrated Transformer](https://jalammar.github.io/illustrated-transformer/)
+- [Deep Learning](https://www.deeplearningbook.org/)
+  - Chapter 8: Optimization for Training Deep Models
+  - Chapter 9: Convolutional Networks
+  - Chapter 10: Sequence Modeling: Recurrent and Recursive Nets
+- [Speech and Language Processing](https://web.stanford.edu/~jurafsky/slp3/)
+  - Chapter 3: N-gram Language Models
+  - Chapter 7: Neural Networks and Neural Language Models
+  - Chapter 8: Transformers
+  - Chapter 9: Post-training: Instruction Tuning, Alignment, and Test-Time Compute
+  - Chapter 10: Masked Language Models
+- [The Scientist and Engineer’s Guide to Digital Signal Processing](https://www.dspguide.com/)
+- [Electroencephalography (EEG): An Introductory Text and Atlas of Normal and Abnormal Findings](https://www.ncbi.nlm.nih.gov/books/NBK390354/)
+- [Magnetoencephalography: Basic principles](https://pmc.ncbi.nlm.nih.gov/articles/PMC4001219/)
+- [An Introductory Tutorial on Brain–Computer Interfaces and Their Applications](https://www.mdpi.com/2079-9292/10/5/560)
+
+## Related articles
+
+- [Gated Delta Networks](./gated-delta-networks.qmd)
+- [Brain2Qwerty](./brain2qwerty.qmd)
+- [Brain2Qwerty v2](./brain2qwerty-v2.qmd)

@@ -1,0 +1,83 @@
+---
+title: "Mastering the Claude CLI: Anthropic in Your Terminal"
+description: "How to integrate Anthropic's Claude into your command line workflow using CLI tools for text generation, log analysis, and system administration."
+date: "2026-08-03"
+categories: [AI, CLI, Anthropic, Claude, Productivity]
+image: "claude_cli_header.jpg"
+---
+
+![Claude Terminal Interface](claude_cli_header.jpg)
+
+Anthropic’s **Claude** models are renowned for their nuanced writing, massive context windows, and strong coding capabilities. Bringing Claude into the terminal allows you to pipe system logs, source code, and data directly into the model without manual copying and pasting.
+
+While Anthropic provides an API, the community has built excellent CLI wrappers, such as Simon Willison’s [LLM](https://llm.datasette.io/) utility, to interact with Claude from the shell.
+
+## 1. Setting Up Claude via the `llm` CLI
+
+The `llm` tool is a brilliant Python-based CLI that supports multiple models via plugins.
+
+### Installation
+```bash
+# Install the core tool
+pipx install llm
+
+# Install the Claude plugin
+llm install llm-anthropic
+```
+
+### Authentication
+You'll need an Anthropic API key from the [Anthropic Console](https://console.anthropic.com/).
+```bash
+llm keys set anthropic
+# Paste your key when prompted
+```
+
+## 2. Basic Prompting and Chat
+
+You can query Claude directly from the command line:
+
+```bash
+llm -m claude-3-5-sonnet "Write a python script to fetch weather data from open-meteo"
+```
+
+To start an interactive chat session with persistent context:
+```bash
+llm chat -m claude-3-5-sonnet
+```
+
+## 3. The Power of Unix Piping
+
+The true power of Claude in the CLI comes from Unix pipes (`|`). You can pipe the output of standard Linux tools directly into Claude for analysis.
+
+### Log Analysis
+If your server crashes and you want Claude to diagnose the stack trace:
+```bash
+tail -n 100 /var/log/syslog | llm -m claude-3-5-sonnet "Why did the web server crash based on these logs?"
+```
+
+### Code Review
+You can pipe code changes to Claude for a quick review before committing:
+```bash
+git diff | llm -m claude-3-5-sonnet "Review these git changes. Are there any security vulnerabilities?"
+```
+
+### Data Extraction
+Extracting JSON or structured data from messy curl responses:
+```bash
+curl -s https://api.example.com/messy-data | llm -m claude-3-5-sonnet "Extract only the user emails from this payload and format them as a CSV."
+```
+
+## 4. System Prompts and Templates
+
+You can save custom system prompts to reuse specific personas. For example, creating a strict code-reviewer:
+
+```bash
+llm templates save reviewer -m claude-3-5-sonnet --system "You are a strict, senior DevOps engineer. Review the provided code or configuration. Point out security flaws, performance bottlenecks, and style violations. Be concise."
+```
+
+Then use it on a file:
+```bash
+cat Dockerfile | llm -t reviewer
+```
+
+By integrating Claude into your terminal pipelines, you transform it from a chatbot into a core Unix utility.

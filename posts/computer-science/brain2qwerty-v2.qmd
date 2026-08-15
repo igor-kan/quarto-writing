@@ -1,0 +1,103 @@
+---
+title: "Brain2Qwerty v2: Sentence Decoding from Continuous MEG"
+description: "An explanation of the second Brain2Qwerty paper, its scaling story, and the extra prerequisites needed for continuous brain-to-text decoding."
+author: "Igor"
+date: "2026-07-25"
+categories: [Brain-Computer Interfaces, Machine Learning, MEG, Language Models]
+---
+
+Source paper: [PDF](./assets/papers/brain2qwerty-v2.pdf)
+
+Project page: https://facebookresearch.github.io/brain2qwerty/
+
+Paper page: https://www.nature.com/articles/s41593-026-02303-2
+
+## What changed from v1
+
+Brain2Qwerty v1 decoded typed sentences from brain recordings tied to the timing of keyboard input.
+
+Brain2Qwerty v2 moves to a harder setting:
+
+- continuous MEG,
+- natural sentence decoding,
+- real-time style inference,
+- larger-scale training data.
+
+That is a genuine systems-level shift, not just a minor architecture tweak.
+
+## Prerequisites
+
+This paper assumes the background from:
+
+- [Prerequisites for Efficient Sequence Models and Brain-to-Text Decoding](./sequence-modeling-prerequisites.qmd)
+- [Brain2Qwerty](./brain2qwerty.qmd)
+
+Additional things to understand:
+
+- alignment between neural events and text,
+- scaling effects in sequence models,
+- the role of large language models in denoising and restructuring outputs.
+
+## Architecture at a high level
+
+The official project page describes Brain2Qwerty v2 as combining hierarchical modules that improve decoding at the letter, word, and sentence levels.
+
+A useful way to think about it is:
+
+- low-level neural features are extracted from MEG,
+- intermediate modules align those features to linguistic structure,
+- a language model turns partial evidence into fluent sentence predictions.
+
+The paper’s own framing emphasizes the move from hand-crafted event pipelines toward end-to-end learned components.
+
+## Data scale
+
+The paper’s main scaling move is data.
+
+It uses roughly 22,000 typed sentences from nine subjects, with about 10 hours of recording per subject. That scale matters because sentence decoding from MEG is a data-hungry problem.
+
+## Main result
+
+The reported headline result is an average word error rate of 39%, with the best participant reaching half of the sentences with one word error or less.
+
+The important point is not just the number. It is that performance improves roughly log-linearly with more data, which suggests that the gap to invasive approaches may shrink with scale.
+
+## Why the model works better than a small bespoke pipeline
+
+The paper points to three reasons:
+
+1. replacing hand-crafted event detection with learned components,
+2. fine-tuning large language models for semantic structure,
+3. using automated code development to iterate on the pipeline.
+
+That is a pattern you see in a lot of modern ML systems: the model improves when you stop overfitting the pipeline to one exact interpretation of the data and instead let learned modules absorb more of the structure.
+
+## Limitations
+
+The result is strong, but it is still a constrained decoding problem.
+
+It does not eliminate the need for:
+
+- subject-specific training,
+- high-quality MEG,
+- supervised paired data,
+- substantial compute and engineering effort.
+
+## Why this paper matters
+
+Brain2Qwerty v2 is the paper that makes the non-invasive decoding story look like an engineering trajectory rather than a proof-of-concept. The point is not that the model is done; the point is that scaling and architecture design are moving the frontier in the right direction.
+
+## Related articles
+
+- [Prerequisites for Efficient Sequence Models and Brain-to-Text Decoding](./sequence-modeling-prerequisites.qmd)
+- [Brain2Qwerty](./brain2qwerty.qmd)
+- [Gated Delta Networks](./gated-delta-networks.qmd)
+
+## Beginner catch-up links
+
+- [Brain2Qwerty project page](https://facebookresearch.github.io/brain2qwerty/)
+- [Brain-to-Text Decoding: A Non-invasive Approach via Typing](https://arxiv.org/abs/2502.17480)
+- [The Scientist and Engineer’s Guide to Digital Signal Processing](https://www.dspguide.com/)
+- [Electroencephalography (EEG): An Introductory Text and Atlas of Normal and Abnormal Findings](https://www.ncbi.nlm.nih.gov/books/NBK390354/)
+- [Magnetoencephalography: Basic principles](https://pmc.ncbi.nlm.nih.gov/articles/PMC4001219/)
+- [An Introductory Tutorial on Brain–Computer Interfaces and Their Applications](https://www.mdpi.com/2079-9292/10/5/560)

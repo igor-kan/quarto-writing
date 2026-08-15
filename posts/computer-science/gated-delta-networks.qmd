@@ -1,0 +1,122 @@
+---
+title: "Gated Delta Networks: Why Delta-Rule Memory Needs Gating"
+description: "An explanation of Gated Delta Networks, how the delta rule differs from linear attention, and why gating improves long-context memory."
+author: "Igor"
+date: "2026-07-25"
+categories: [Machine Learning, Sequence Modeling, Attention, State Space Models]
+---
+
+Source paper: [PDF](./assets/papers/gated-delta-networks-2412.06464.pdf)
+
+Paper page: https://arxiv.org/abs/2412.06464
+
+Code: https://github.com/NVlabs/GatedDeltaNet
+
+## What problem the paper is solving
+
+The paper targets a practical weakness of efficient sequence models: they can be fast and memory-efficient, but they often struggle to retain useful information over long contexts while still making precise updates.
+
+The authors focus on two ideas that are individually useful but incomplete on their own:
+
+- gating for selective forgetting,
+- the delta rule for targeted memory modification.
+
+The point of the paper is that these two mechanisms work better together than separately.
+
+## The progression of memory updates
+
+The paper’s update family can be read as a progression.
+
+| Model | Core idea |
+| --- | --- |
+| Linear attention | accumulate key-value outer products |
+| Mamba-2 | decay the previous state, then add a new contribution |
+| DeltaNet | erase the part of memory aligned with the current key, then write the new value |
+| Gated DeltaNet | combine global decay with the delta update |
+| KDA | make the decay channel-wise |
+| Gated DeltaNet-2 | separate erase and write gates |
+| SDM | move from one compact state to a multi-slot memory |
+
+The most useful mental model is not the equation itself; it is the update semantics:
+
+1. locate the memory location associated with the current key,
+2. remove stale content,
+3. write the new value,
+4. optionally decay the rest of the state.
+
+## Core equation
+
+The Gated DeltaNet update can be written as:
+
+$$
+S_t = \alpha_t (I - \beta_t k_t k_t^\top) S_{t-1} + \beta_t k_t v_t^\top
+$$
+
+Interpretation:
+
+- $\alpha_t$ controls global decay,
+- $\beta_t$ controls update strength,
+- $k_t k_t^\top$ makes the update key-specific,
+- $v_t^\top$ injects the new content.
+
+This is stronger than plain linear attention because it does not only accumulate. It actively edits memory.
+
+## Why gating matters
+
+Without gating, delta-style memory can be too blunt.
+
+If the model only has a scalar update knob, it can erase or preserve too much at once. Gating gives it a way to control memory more selectively, which is especially useful when the sequence contains both stable structure and rapidly changing local detail.
+
+In long-context tasks, that distinction matters because some information should persist, while other information should be overwritten immediately.
+
+## Where this sits relative to other sequence models
+
+You can place the paper on a simple spectrum:
+
+- Transformers are expressive but expensive in context length.
+- Linear attention is cheaper but can be too weak in memory control.
+- State space models are efficient and good at long sequences, but the memory update is less directly addressable.
+- Gated DeltaNet tries to combine selective memory editing with efficient recurrence.
+
+That is why the paper compares against both Mamba-2 and DeltaNet.
+
+## What the paper reports
+
+The paper reports improvements on:
+
+- language modeling,
+- commonsense reasoning,
+- in-context retrieval,
+- length extrapolation,
+- long-context understanding.
+
+It also studies hybrid architectures that mix Gated DeltaNet with sliding-window attention or Mamba-2 layers.
+
+## What to understand before reading the paper
+
+Read the primer first if any of these are unfamiliar:
+
+- outer products and matrix updates,
+- attention as key-query-value retrieval,
+- state space models,
+- scalar vs channel-wise gating,
+- the delta rule.
+
+## My concise reading of the contribution
+
+The paper is not claiming that gating or delta updates are new in isolation. The contribution is that the combination is a better memory primitive for efficient sequence modeling than either mechanism alone.
+
+## Related primer and follow-up
+
+- [Prerequisites for Efficient Sequence Models and Brain-to-Text Decoding](./sequence-modeling-prerequisites.qmd)
+- [Brain2Qwerty](./brain2qwerty.qmd)
+- [Brain2Qwerty v2](./brain2qwerty-v2.qmd)
+
+## Beginner catch-up links
+
+- [Attention Is All You Need](https://arxiv.org/abs/1706.03762)
+- [The Illustrated Transformer](https://jalammar.github.io/illustrated-transformer/)
+- [Mamba: Linear-Time Sequence Modeling with Selective State Spaces](https://arxiv.org/abs/2312.00752)
+- [State Space Duality (Mamba-2) Part I: The Model](https://tridao.me/blog/2024/mamba2-part1-model/)
+- [Mamba Explained](https://thegradient.pub/mamba-explained/)
+- [Deep Learning, Chapter 10: Sequence Modeling: Recurrent and Recursive Nets](https://www.deeplearningbook.org/contents/rnn.html)
