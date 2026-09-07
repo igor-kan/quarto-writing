@@ -1,101 +1,285 @@
 ---
 title: "The Calculus of Variations: From Brachistochrones to the Principle of Least Action"
-description: "An introduction to functionals, the Euler-Lagrange equation, and classic optimization problems like the Brachistochrone, Tautochrone, and Fermat's Principle."
+description: "A rigorous mathematical exploration of functionals, the Euler-Lagrange equation, the Beltrami identity, isoperimetric constraints, and classical variational problems."
 date: "2026-09-07"
-categories: [Physics, Mathematics, Calculus]
+categories: [Physics, Mathematics, Calculus, Classical Mechanics]
 format:
   html:
     code-fold: true
+    toc: true
+    toc-depth: 3
 jupyter: python3
 ---
 
-The **Calculus of Variations** is a field of mathematical analysis that deals with maximizing or minimizing *functionals*. While standard calculus finds the specific *value* (like $x$) that minimizes a function $f(x)$, the calculus of variations finds the specific *function* $y(x)$ that minimizes a functional $J[y]$.
+The **Calculus of Variations** is the mathematical framework for finding extrema (maxima, minima, or stationary points) of **functionals**. While differential calculus deals with functions that map numbers to numbers ($f: \mathbb{R} \to \mathbb{R}$), the calculus of variations deals with functionals that map entire curves, paths, or fields to numbers ($J: \mathcal{C}^2 \to \mathbb{R}$).
 
-A functional is essentially a "function of a function," typically expressed as an integral:
+A typical one-dimensional variational problem seeks a curve $y(x) \in \mathcal{C}^2[x_1, x_2]$ with fixed boundary conditions $y(x_1) = y_1$ and $y(x_2) = y_2$ that renders the action functional $J[y]$ stationary:
 
-$$ J[y] = \int_{x_1}^{x_2} L(x, y, y') \, dx $$
+$$ J[y] = \int_{x_1}^{x_2} L(x, y(x), y'(x)) \, dx $$
 
-To find the function $y(x)$ that makes $J[y]$ stationary (a minimum or maximum), we use the **Euler-Lagrange Equation**:
+where $L(x, y, y')$ is the **Lagrangian** of the system.
+
+---
+
+## 1. Rigorous Derivation of the Euler-Lagrange Equation
+
+Consider an optimal path $y_0(x)$ that extremizes $J[y]$. We construct a family of perturbed comparison paths:
+
+$$ y(x, \epsilon) = y_0(x) + \epsilon \eta(x) $$
+
+where $\epsilon \in \mathbb{R}$ is a small parameter, and $\eta(x) \in \mathcal{C}^2[x_1, x_2]$ is an arbitrary test function satisfying Dirichlet boundary conditions:
+
+$$ \eta(x_1) = 0, \quad \eta(x_2) = 0 $$
+
+The functional becomes a standard single-variable function of $\epsilon$:
+
+$$ \Phi(\epsilon) = J[y_0 + \epsilon \eta] = \int_{x_1}^{x_2} L(x, y_0 + \epsilon \eta, y_0' + \epsilon \eta') \, dx $$
+
+For $y_0(x)$ to be a stationary curve, the first variation $\delta J$ must vanish, which means the derivative of $\Phi(\epsilon)$ evaluated at $\epsilon = 0$ must be zero for *any* admissible $\eta(x)$:
+
+$$ \left. \frac{d\Phi}{d\epsilon} \right|_{\epsilon=0} = 0 $$
+
+Differentiating inside the integral using the multivariable chain rule:
+
+$$ \left. \frac{d\Phi}{d\epsilon} \right|_{\epsilon=0} = \int_{x_1}^{x_2} \left[ \frac{\partial L}{\partial y} \eta(x) + \frac{\partial L}{\partial y'} \eta'(x) \right] dx = 0 $$
+
+We integrate the second term by parts to factor out $\eta(x)$:
+
+$$ \int_{x_1}^{x_2} \frac{\partial L}{\partial y'} \eta'(x) \, dx = \left[ \frac{\partial L}{\partial y'} \eta(x) \right]_{x_1}^{x_2} - \int_{x_1}^{x_2} \frac{d}{dx} \left( \frac{\partial L}{\partial y'} \right) \eta(x) \, dx $$
+
+Because $\eta(x_1) = \eta(x_2) = 0$, the boundary term vanishes identically. Combining the integrals:
+
+$$ \int_{x_1}^{x_2} \left[ \frac{\partial L}{\partial y} - \frac{d}{dx} \left( \frac{\partial L}{\partial y'} \right) \right] \eta(x) \, dx = 0 $$
+
+### The Fundamental Lemma of the Calculus of Variations (du Bois-Reymond)
+> **Lemma:** If a continuous function $M(x)$ satisfies $\int_{x_1}^{x_2} M(x) \eta(x) \, dx = 0$ for all twice continuously differentiable functions $\eta(x)$ with $\eta(x_1) = \eta(x_2) = 0$, then $M(x) \equiv 0$ everywhere on $[x_1, x_2]$.
+
+Applying this lemma immediately yields the **Euler-Lagrange Equation**:
 
 $$ \frac{\partial L}{\partial y} - \frac{d}{dx} \left( \frac{\partial L}{\partial y'} \right) = 0 $$
 
 ---
 
-## 1. The Simplest Problem: Shortest Distance
-What is the shortest path between two points in a flat plane? We know it's a straight line, but the calculus of variations proves it. The arc length $s$ is given by:
-$$ s = \int_{x_1}^{x_2} \sqrt{1 + (y')^2} \, dx $$
+## 2. First Integrals: The Beltrami Identity
 
-Here, $L = \sqrt{1 + (y')^2}$. Since $\frac{\partial L}{\partial y} = 0$, the Euler-Lagrange equation dictates that $\frac{\partial L}{\partial y'}$ must be a constant. This forces $y'$ (the slope) to be a constant, which is the definition of a straight line!
+When the Lagrangian does not depend explicitly on the independent variable $x$ (i.e., $\partial L / \partial x = 0$), the total derivative with respect to $x$ is:
+
+$$ \frac{dL}{dx} = \frac{\partial L}{\partial x} + \frac{\partial L}{\partial y} y' + \frac{\partial L}{\partial y'} y'' = 0 + \frac{\partial L}{\partial y} y' + \frac{\partial L}{\partial y'} y'' $$
+
+Substituting the Euler-Lagrange equation $\frac{\partial L}{\partial y} = \frac{d}{dx} \left( \frac{\partial L}{\partial y'} \right)$:
+
+$$ \frac{dL}{dx} = \left[ \frac{d}{dx} \left( \frac{\partial L}{\partial y'} \right) \right] y' + \frac{\partial L}{\partial y'} y'' = \frac{d}{dx} \left( y' \frac{\partial L}{\partial y'} \right) $$
+
+Rearranging yields:
+
+$$ \frac{d}{dx} \left( L - y' \frac{\partial L}{\partial y'} \right) = 0 $$
+
+Integrating directly with respect to $x$ provides the **Beltrami Identity** (the variational analogue of energy conservation):
+
+$$ L - y' \frac{\partial L}{\partial y'} = C $$
+
+where $C$ is a constant of integration. This reduces a second-order nonlinear differential equation to a first-order separable differential equation!
 
 ---
 
-## 2. The Brachistochrone Problem
-Proposed by Johann Bernoulli in 1696: *What is the curve down which a bead sliding frictionlessly under gravity will travel between two points in the shortest possible time?*
+## 3. The Brachistochrone Problem
 
-It is not a straight line! A straight line is the shortest *distance*, but a steeper initial drop allows the bead to pick up more speed early on. 
+In June 1696, Johann Bernoulli challenged European mathematicians to solve the *Brachistochrone* (Greek: $\beta\rho\acute{\alpha}\chi\iota\sigma\tau o\varsigma$ shortest, $\chi\rho\acute{o}\nu o\varsigma$ time):
 
-Using the calculus of variations, the time functional is:
-$$ T[y] = \int \frac{ds}{v} = \int_{0}^{x_f} \sqrt{\frac{1 + (y')^2}{2gy}} \, dx $$
+> *Given two points $A$ and $B$ in a vertical plane, determine the path along which a movable particle will descend by gravity from $A$ to $B$ in the shortest possible time, starting from rest without friction.*
 
-Applying the Euler-Lagrange equation yields the parametric equations for a **Cycloid**:
+### Derivation
+Orient the coordinate system such that point $A$ is at the origin $(0, 0)$ and the vertical axis $y$ points **downward** in the direction of gravitational acceleration $g$.
+
+By conservation of energy:
+$$ \frac{1}{2} m v^2 = m g y \implies v = \sqrt{2gy} $$
+
+The differential arc length is $ds = \sqrt{dx^2 + dy^2} = \sqrt{1 + (y')^2} \, dx$. The total transit time is:
+
+$$ T[y] = \int_{A}^{B} \frac{ds}{v} = \frac{1}{\sqrt{2g}} \int_{0}^{x_B} \sqrt{\frac{1 + (y')^2}{y}} \, dx $$
+
+The Lagrangian is $L(y, y') = \sqrt{\frac{1 + (y')^2}{y}}$. Because $\partial L / \partial x = 0$, we invoke the Beltrami identity:
+
+$$ L - y' \frac{\partial L}{\partial y'} = \sqrt{\frac{1 + (y')^2}{y}} - y' \cdot \frac{y'}{\sqrt{y(1 + (y')^2)}} = \frac{1}{\sqrt{y(1 + (y')^2)}} = \frac{1}{\sqrt{2R}} $$
+
+where $2R$ is a positive constant. Inverting and squaring both sides:
+
+$$ y [1 + (y')^2] = 2R \implies y' = \sqrt{\frac{2R - y}{y}} $$
+
+To solve this nonlinear first-order ODE, apply the trigonometric substitution:
+$$ y = R(1 - \cos\theta) = 2R \sin^2\left(\frac{\theta}{2}\right) $$
+
+Differentiating with respect to the parameter $\theta$:
+$$ dy = R \sin\theta \, d\theta $$
+
+From the differential equation:
+$$ dx = \frac{dy}{y'} = \frac{R \sin\theta \, d\theta}{\sqrt{\frac{2R - R(1 - \cos\theta)}{R(1 - \cos\theta)}}} = \frac{R \sin\theta \, d\theta}{\cot(\theta/2)} = \frac{2R \sin(\theta/2)\cos(\theta/2) \, d\theta}{\cos(\theta/2)/\sin(\theta/2)} = 2R \sin^2\left(\frac{\theta}{2}\right) d\theta $$
+
+Using the identity $2\sin^2(\theta/2) = 1 - \cos\theta$:
+$$ dx = R(1 - \cos\theta) \, d\theta $$
+
+Integrating with the initial condition $x(0) = 0$:
 $$ x(\theta) = R(\theta - \sin\theta) $$
 $$ y(\theta) = R(1 - \cos\theta) $$
 
-### Programmatic Visualization: The Brachistochrone Curve
+This is the exact parametric equation of a **Cycloid**—the trajectory traced out by a fixed point on the rim of a wheel of radius $R$ rolling along a flat horizontal ceiling!
+
+---
+
+## 4. Programmatic Comparison: Cycloid vs. Line vs. Parabola
+
+Below is an explicit numerical simulation verifying that the cycloid minimizes descent time compared to a straight line and a parabolic curve connecting the same two points.
 
 ```{python}
-#| label: fig-brachistochrone
-#| fig-cap: "The Brachistochrone curve (a cycloid) compared to a straight line."
+#| label: fig-brachistochrone-sim
+#| fig-cap: "Descent paths and computed transit times under gravity."
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.integrate import quad
+from scipy.optimize import root_scalar
 
-theta = np.linspace(0, np.pi, 100)
-R = 1
+g = 9.81
+# Target coordinates
+x_target, y_target = 3.0, 1.5
 
-# Cycloid parametric equations
+# 1. Solve for Cycloid parameters R and theta_target
+def cycloid_target(theta):
+    # Ratio y/x = (1 - cos(theta)) / (theta - sin(theta))
+    return (1 - np.cos(theta)) / (theta - np.sin(theta)) - (y_target / x_target)
+
+res = root_scalar(cycloid_target, bracket=[0.1, 2*np.pi])
+theta_max = res.root
+R = y_target / (1 - np.cos(theta_max))
+
+theta = np.linspace(0.001, theta_max, 300)
 x_cyc = R * (theta - np.sin(theta))
-y_cyc = -R * (1 - np.cos(theta))
+y_cyc = R * (1 - np.cos(theta))
 
-# Straight line for comparison
-x_line = np.linspace(0, x_cyc[-1], 100)
-y_line = np.linspace(0, y_cyc[-1], 100)
+# Time for Cycloid: ds = 2R sin(theta/2) dtheta, v = sqrt(2gy) = sqrt(4gR) sin(theta/2)
+# dt = ds / v = sqrt(R/g) dtheta -> T = theta_max * sqrt(R/g)
+T_cyc = theta_max * np.sqrt(R / g)
 
-plt.figure(figsize=(8, 4))
-plt.plot(x_cyc, y_cyc, label='Brachistochrone (Cycloid)', color='blue', linewidth=2)
-plt.plot(x_line, y_line, label='Straight Line', color='red', linestyle='--')
-plt.scatter([0, x_cyc[-1]], [0, y_cyc[-1]], color='black', zorder=5)
-plt.title("Paths of Descent")
-plt.xlabel("Horizontal Distance (x)")
-plt.ylabel("Vertical Drop (y)")
-plt.legend()
-plt.grid(True, linestyle=':')
-plt.gca().set_aspect('equal')
+# 2. Straight line: y(x) = (y_target / x_target) * x
+m = y_target / x_target
+# v(x) = sqrt(2g m x), ds = sqrt(1 + m^2) dx
+# T = sqrt(1+m^2)/sqrt(2g m) * int_0^x_target x^(-1/2) dx = sqrt(2 * (1+m^2) * x_target / (g * m))
+T_line = np.sqrt(2 * (1 + m**2) * x_target / (g * m))
+
+# 3. Parabola: y(x) = y_target * sqrt(x / x_target)
+# Numerical quadrature for parabola
+def dt_parabola(x):
+    if x == 0: return 0
+    y = y_target * np.sqrt(x / x_target)
+    y_prime = y_target / (2 * np.sqrt(x * x_target))
+    ds = np.sqrt(1 + y_prime**2)
+    v = np.sqrt(2 * g * y)
+    return ds / v
+
+T_parab, _ = quad(dt_parabola, 1e-6, x_target)
+
+# Plotting
+x_dense = np.linspace(0, x_target, 300)
+y_line = m * x_dense
+y_parab = y_target * np.sqrt(x_dense / x_target)
+
+fig, ax = plt.subplots(figsize=(9, 5))
+ax.plot(x_cyc, y_cyc, label=f'Brachistochrone Cycloid (T = {T_cyc:.3f} s)', color='#1f77b4', lw=2.5)
+ax.plot(x_dense, y_parab, label=f'Square-root Curve (T = {T_parab:.3f} s)', color='#2ca02c', lw=2, linestyle='-.')
+ax.plot(x_dense, y_line, label=f'Straight Line (T = {T_line:.3f} s)', color='#d62728', lw=2, linestyle='--')
+
+ax.scatter([0, x_target], [0, y_target], color='black', s=60, zorder=5)
+ax.text(0, -0.08, 'Start (0, 0)', ha='center', fontweight='bold')
+ax.text(x_target, y_target + 0.12, f'Finish ({x_target}, {y_target})', ha='center', fontweight='bold')
+
+ax.invert_yaxis()
+ax.set_xlabel('Horizontal Distance [m]')
+ax.set_ylabel('Vertical Drop $y$ [m]')
+ax.set_title('Descent Time Optimization Under Gravity', fontsize=13, fontweight='bold')
+ax.grid(True, linestyle=':', alpha=0.7)
+ax.legend(loc='lower left', frameon=True)
+plt.tight_layout()
 plt.show()
 ```
 
 ---
 
-## 3. The Tautochrone Problem
-Closely related is the **Tautochrone** (or Isochrone) problem: *What curve guarantees that a mass released from ANY point on the curve will reach the bottom in exactly the same amount of time?*
+## 5. The Tautochrone Problem and Abel's Integral Equation
 
-Remarkably, Christiaan Huygens proved that the solution is *also* a cycloid. No matter how high up the cycloid track you release a marble, it will reach the lowest point at the exact same moment. This property was historically used to design highly accurate pendulum clocks.
+The **Tautochrone** (Greek: $\tau\alpha\upsilon\tau\acute{o}$ the same, $\chi\rho\acute{o}\nu o\varsigma$ time) asks for a curve such that the time taken by an object sliding down without friction to its lowest point is independent of its starting elevation $y_0$.
+
+Let $y_0$ be the release height. At any subsequent height $y \le y_0$, velocity is $v = \sqrt{2g(y_0 - y)}$. The travel time to the bottom ($y=0$) is given by the integral:
+
+$$ T(y_0) = \int_{0}^{y_0} \frac{ds/dy}{\sqrt{2g(y_0 - y)}} \, dy $$
+
+Let $f(y) = \frac{ds}{dy}$. For $T(y_0) = T_0 = \text{constant}$, this is a singular Volterra integral equation of the first kind (**Abel's Integral Equation**):
+
+$$ \int_{0}^{y_0} \frac{f(y)}{\sqrt{y_0 - y}} \, dy = T_0 \sqrt{2g} $$
+
+Multiplying both sides by $\frac{1}{\sqrt{\xi - y_0}}$ and integrating with respect to $y_0$ from $0$ to $\xi$:
+
+$$ \int_{0}^{\xi} \frac{1}{\sqrt{\xi - y_0}} \left( \int_{0}^{y_0} \frac{f(y)}{\sqrt{y_0 - y}} \, dy \right) dy_0 = T_0 \sqrt{2g} \int_{0}^{\xi} \frac{dy_0}{\sqrt{\xi - y_0}} $$
+
+Reversing the order of integration on the left side:
+
+$$ \int_{0}^{\xi} f(y) \left( \int_{y}^{\xi} \frac{dy_0}{\sqrt{(\xi - y_0)(y_0 - y)}} \right) dy = 2 T_0 \sqrt{2g \xi} $$
+
+The inner integral evaluates to the standard constant $\pi$ via the beta function $B(1/2, 1/2)$:
+
+$$ \pi \int_{0}^{\xi} f(y) \, dy = 2 T_0 \sqrt{2g \xi} $$
+
+Differentiating with respect to $\xi$:
+
+$$ \pi f(\xi) = \frac{T_0 \sqrt{2g}}{\sqrt{\xi}} \implies \frac{ds}{dy} = \sqrt{\frac{2R}{y}} \quad \text{where } R = \frac{g T_0^2}{\pi^2} $$
+
+Since $(ds/dy)^2 = 1 + (dx/dy)^2 = 2R/y$, we obtain:
+
+$$ \frac{dx}{dy} = \sqrt{\frac{2R - y}{y}} $$
+
+This is precisely the differential equation of the **Cycloid**! Hence, the cycloid is both the Brachistochrone (fastest path) and the Tautochrone (equal-time path).
 
 ---
 
-## 4. Fermat's Principle of Least Time (Optics)
-The calculus of variations isn't just for mechanics; it governs light. Fermat's Principle states that light travels between two points along the path that requires the least time.
+## 6. Constrained Variations: The Isoperimetric Problem
 
-If light travels through a medium with a variable refractive index $n(x, y)$, its speed is $v = c/n$. The time taken is:
-$$ T = \int \frac{ds}{v} = \frac{1}{c} \int n(x, y) \sqrt{1 + (y')^2} \, dx $$
+In many physical systems, an extremum is sought subject to an integral constraint $\int_{x_1}^{x_2} G(x, y, y') \, dx = C$. 
 
-When the calculus of variations is applied to this functional, it mathematically yields **Snell's Law of Refraction** at the boundary of two media, proving that the bending of light in glass or water is nature's way of optimizing travel time!
+Using Lagrange multipliers, we construct the augmented Lagrangian:
+
+$$ L^*(x, y, y', \lambda) = L(x, y, y') + \lambda G(x, y, y') $$
+
+The stationarity condition becomes:
+
+$$ \frac{\partial L^*}{\partial y} - \frac{d}{dx}\left( \frac{\partial L^*}{\partial y'} \right) = 0 $$
+
+### Queen Dido's Classical Problem
+Find the closed curve of fixed perimeter $P$ that encloses the maximum area $A$. In Cartesian coordinates, Green's Theorem expresses the area as $A = \frac{1}{2} \oint (x dy - y dx)$, and the perimeter constraint is $P = \oint \sqrt{\dot{x}^2 + \dot{y}^2} \, dt$. Solving the variational equations shows that the curvature $\kappa$ must be constant everywhere along the curve, rigorously proving that the **circle** is the unique maximal geometry.
 
 ---
 
-## 5. Generalization: The Principle of Least Action
-In advanced mechanics, the Euler-Lagrange equations form the foundation of **Lagrangian Mechanics**. 
+## 7. Generalization to Classical Mechanics and Field Theory
 
-Instead of minimizing time or distance, nature minimizes a quantity called **Action** ($S$), defined as the integral of the Lagrangian ($L = Kinetic Energy - Potential Energy$) over time:
-$$ S = \int_{t_1}^{t_2} L(q, \dot{q}, t) \, dt $$
+### Hamilton's Principle of Stationary Action
+In analytical mechanics, a system of $N$ degrees of freedom is specified by generalized coordinates $q_i(t)$ ($i = 1, \dots, N$). The physical path traversed by the system between times $t_1$ and $t_2$ makes the action $S$ stationary:
 
-Every fundamental force and particle path in the universe—from planets orbiting the sun to electrons scattering in a quantum field—can be derived by applying the calculus of variations to this single principle.
+$$ \delta S = \delta \int_{t_1}^{t_2} L(q_i, \dot{q}_i, t) \, dt = 0 $$
+
+This yields the system of coupled Lagrange equations:
+
+$$ \frac{d}{dt}\left( \frac{\partial L}{\partial \dot{q}_i} \right) - \frac{\partial L}{\partial q_i} = 0, \quad i = 1, \dots, N $$
+
+### Noether's Theorem
+Every continuous variational symmetry of the action functional implies an exact conservation law:
+* **Time invariance** ($\partial L / \partial t = 0$) $\implies$ Conservation of **Energy** ($H = \sum \dot{q}_i p_i - L$).
+* **Spatial translation invariance** ($\partial L / \partial q_i = 0$) $\implies$ Conservation of **Linear Momentum** ($p_i = \partial L / \partial \dot{q}_i$).
+* **Rotational invariance** $\implies$ Conservation of **Angular Momentum**.
+
+### Relativistic Field Theory
+In continuum field theory, coordinates become continuous spacetime variables $x^\mu = (ct, \mathbf{x})$, and the dynamical variables are fields $\phi^a(x^\mu)$. The action is an integral over spacetime volume:
+
+$$ S[\phi] = \int \mathcal{L}\left( \phi^a, \partial_\mu \phi^a \right) d^4 x $$
+
+The Euler-Lagrange field equations take the covariant 4-divergence form:
+
+$$ \partial_\mu \left( \frac{\partial \mathcal{L}}{\partial (\partial_\mu \phi^a)} \right) - \frac{\partial \mathcal{L}}{\partial \phi^a} = 0 $$
+
+From Maxwell's equations in electrodynamics to the Dirac equation in quantum field theory and the Einstein field equations of general relativity, modern physics is written in the language of the calculus of variations.
