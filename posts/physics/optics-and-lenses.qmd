@@ -1,0 +1,109 @@
+---
+title: "Optics and Lenses: Snell's Law and the Behavior of Light"
+description: "A mathematical exploration of geometrical optics, including the refractive index, Snell's Law, and the thin lens equation."
+date: "2026-09-07"
+categories: [Physics, Optics, Light]
+format:
+  html:
+    code-fold: true
+jupyter: python3
+---
+
+Geometrical optics is the study of light propagating as "rays." When light encounters a boundary between different materials—like air and glass—it can be reflected, absorbed, or transmitted. When transmitted, its path bends, a phenomenon known as **refraction**.
+
+---
+
+## 1. The Refractive Index
+The speed of light in a perfect vacuum is a fundamental constant, $c \approx 3 \times 10^8 \text{ m/s}$. However, when light travels through a physical medium (like water or glass), it slows down due to electromagnetic interactions with atoms.
+
+The **Index of Refraction ($n$)** is the ratio of the speed of light in a vacuum ($c$) to the phase velocity of light in the medium ($v$):
+$$ n = \frac{c}{v} $$
+
+Because light always slows down in a medium, $n \ge 1$. For example:
+* Vacuum: $n = 1$
+* Air: $n \approx 1.0003$
+* Water: $n \approx 1.33$
+* Crown Glass: $n \approx 1.52$
+* Diamond: $n \approx 2.42$
+
+---
+
+## 2. Snell's Law of Refraction
+When a light ray crosses a boundary between two media with different refractive indices ($n_1$ and $n_2$), its direction changes. The relationship between the angles of incidence ($\theta_1$) and refraction ($\theta_2$), measured relative to the normal (perpendicular) of the boundary, is governed by **Snell's Law**:
+
+$$ n_1 \sin\theta_1 = n_2 \sin\theta_2 $$
+
+If light moves from a lower $n$ to a higher $n$ (e.g., air into glass), it bends *toward* the normal. If it moves from a higher $n$ to a lower $n$, it bends *away* from the normal.
+
+### Programmatic Visualization: Ray Tracing Snell's Law
+
+```{python}
+#| label: fig-snells-law
+#| fig-cap: "Visualization of Snell's Law: Light entering a denser medium bends toward the normal."
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_refraction(n1, n2, theta1_deg):
+    theta1 = np.radians(theta1_deg)
+    
+    # Snell's Law
+    sin_theta2 = (n1 / n2) * np.sin(theta1)
+    
+    if sin_theta2 > 1.0: # Total Internal Reflection
+        theta2 = np.pi - theta1
+        label2 = "Reflected Ray (TIR)"
+        color2 = 'red'
+    else:
+        theta2 = np.arcsin(sin_theta2)
+        label2 = "Refracted Ray"
+        color2 = 'blue'
+        
+    # Coordinates for plotting
+    x_inc, y_inc = [-np.sin(theta1), 0], [np.cos(theta1), 0]
+    x_ref, y_ref = [0, np.sin(theta2)], [0, -np.cos(theta2)]
+    
+    plt.figure(figsize=(6, 6))
+    
+    # Draw boundary and normal
+    plt.axhline(0, color='black', linewidth=2, label="Boundary")
+    plt.axvline(0, color='gray', linestyle='--', label="Normal")
+    
+    # Draw rays
+    plt.plot(x_inc, y_inc, color='orange', linewidth=2, label="Incident Ray")
+    plt.plot(x_ref, y_ref, color=color2, linewidth=2, label=label2)
+    
+    # Fill media
+    plt.fill_between([-1, 1], 0, 1, color='lightblue', alpha=0.3, label=f'Medium 1 (n={n1})')
+    plt.fill_between([-1, 1], -1, 0, color='lightgray', alpha=0.3, label=f'Medium 2 (n={n2})')
+    
+    plt.xlim(-1, 1)
+    plt.ylim(-1, 1)
+    plt.gca().set_aspect('equal')
+    plt.title(f"Snell's Law ($\\theta_1 = {theta1_deg}^\\circ$)")
+    plt.legend(loc="upper right", fontsize='small')
+    plt.axis('off')
+    plt.show()
+
+plot_refraction(n1=1.0, n2=1.52, theta1_deg=45)
+```
+
+---
+
+## 3. Lenses and Image Formation
+By carefully shaping pieces of glass, we can use refraction to focus or disperse light. 
+
+* **Convex (Converging) Lenses:** Thicker in the middle. They bend incoming parallel rays inward to meet at a single point called the *focal point*.
+* **Concave (Diverging) Lenses:** Thinner in the middle. They bend incoming parallel rays outward, making them appear to diverge from a virtual focal point.
+
+### The Lens-Maker's Equation
+How powerful is a lens? The focal length $f$ of a lens depends on the refractive index of the glass ($n$) and the radii of curvature of its two surfaces ($R_1$ and $R_2$):
+
+$$ \frac{1}{f} = (n - 1) \left[ \frac{1}{R_1} - \frac{1}{R_2} + \frac{(n-1)d}{n R_1 R_2} \right] $$
+*(Assuming the lens is in air, and $d$ is the thickness of the lens).*
+
+### The Thin Lens Equation
+For lenses where the thickness $d$ is negligible, we use the Thin Lens Equation to find where an image will form. Let $d_o$ be the object distance, $d_i$ be the image distance, and $f$ be the focal length:
+
+$$ \frac{1}{d_o} + \frac{1}{d_i} = \frac{1}{f} $$
+
+By manipulating this simple geometric formula, physicists and engineers can design everything from eyeglasses to the complex multi-lens arrays found in modern telescopes and smartphone cameras.
