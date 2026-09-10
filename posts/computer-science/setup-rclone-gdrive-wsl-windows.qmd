@@ -1,0 +1,286 @@
+---
+title: "Setting Up an Automated Rclone FUSE Google Drive Mount on Windows WSL2"
+description: "A complete guide to configuring Rclone with FUSE and systemd inside WSL2, featuring VFS full caching, Windows drive letter mapping, and automated background sync."
+date: "2026-09-10"
+categories: [WSL, Linux, Windows, Cloud, DevOps, Storage, Systems]
+---
+
+Integrating cloud storage into a developer workflow often comes down to a difficult choice: native desktop sync clients that consume excessive disk space, or CLI tools that require manual uploads and lack transparent filesystem access.
+
+On Linux distributions such as Arch, the standard gold-plate architecture pairs **Rclone** with **FUSE3** and **systemd user services**. This provides a real-time, on-demand virtual filesystem with local sparse-file caching (`--vfs-cache-mode full`), POSIX permission virtualization, and automated background sync scripts.
+
+When transitioning to a Windows laptop with WSL2 (Windows Subsystem for Linux), you can completely replicate this Linux-native cloud architecture inside WSL2—and even map the resulting virtual mount as a native drive letter in Windows File Explorer.
+
+---
+
+## Architectural Overview
+
+Rather than running dual sync clients or clunky third-party Windows drivers (such as WinFsp), this architecture isolates the cloud daemon and automation pipelines entirely inside WSL2:
+
+```
+┌────────────────────────────────────────────────────────┐
+│                     Google Drive                       │
+└───────────────────────────▲────────────────────────────┘
+                            │ HTTPS REST / Changes API
+┌───────────────────────────▼────────────────────────────┐
+│              WSL2 Linux Environment                    │
+│                                                        │
+│  systemd (user) ──> rclone mount daemon                │
+│       │             ├── NVMe VFS Cache (~/.cache/rclone)
+│       │             └── FUSE3 Mount Point (~/gdrive)   │
+│       │                                                │
+│  systemd timers ──> Backup / Prune / Maintenance       │
+└───────────────────────────▲────────────────────────────┘
+                            │ Plan9 (9P) Network Protocol
+┌───────────────────────────▼────────────────────────────┐
+│                    Windows 11 Host                     │
+│                                                        │
+│  Windows File Explorer ──> Network Drive (G:\)         │
+│  Native Windows Apps   ──> \\wsl$\...\home\user\gdrive │
+└────────────────────────────────────────────────────────┘
+```
+
+### Key Advantages:
+1. **Zero Dual-Cache Conflicts:** A single daemon manages read/write locks and asynchronous uploads.
+2. **Native POSIX Scripting:** Your bash scripts, Python verification checks, and systemd timers run without modification.
+3. **Sparse-File VFS Caching:** Only downloaded or modified chunks are stored locally, capping SSD usage.
+4. **Seamless Interoperability:** Files modified in Windows applications (Photoshop, VS Code, Office) are instantly detected and uploaded by the WSL2 Rclone process.
+
+---
+
+## Step 1: Enable Systemd in WSL2
+
+Modern WSL2 includes native support for `systemd`, which is essential for user services (`systemctl --user`), timers, and lingering daemons.
+
+1. In your WSL terminal, open or create `/etc/wsl.conf`:
+   ```bash
+   sudo nano /etc/wsl.conf
+   ```
+
+2. Add the `[boot]` section to enable systemd:
+   ```ini
+   [boot]
+   systemd=true
+   ```
+
+3. Save the file (`Ctrl+O`, `Enter`, `Ctrl+X`).
+
+4. Open **PowerShell on Windows** and issue a full shutdown to apply the configuration:
+   ```powershell
+   wsl --shutdown
+   ```
+
+5. Reopen your WSL terminal. Verify that systemd is active:
+   ```bash
+   systemctl is-system-running
+   ```
+   *(It should report `running` or `degraded` if some optional system units are skipped—both are completely fine for user services).*
+
+---
+
+## Step 2: Install Rclone and FUSE3
+
+Install the required packages in your WSL distribution:
+
+```bash
+sudo apt update
+sudo apt install rclone fuse3 -y
+```
+
+> **Note on dpkg locks:** If you receive an error stating `dpkg was interrupted`, recover the package manager by running `sudo dpkg --configure -a` before re-running `apt install`.
+
+---
+
+## Step 3: Configure FUSE Multi-User Permissions
+
+Because Windows accesses WSL filesystems through a 9P network redirector under a distinct user mapping, FUSE mounts must allow other users to traverse the mount point.
+
+1. Open `/etc/fuse.conf`:
+   ```bash
+   sudo nano /etc/fuse.conf
+   ```
+
+2. Locate the commented-out directive:
+   ```ini
+   #user_allow_other
+   ```
+
+3. Uncomment the line by removing the `#`:
+   ```ini
+   user_allow_other
+   ```
+
+4. Save and exit.
+
+---
+
+## Step 4: Configure Google Drive Remote (`rclone config`)
+
+To prevent API rate limits and throttling caused by shared application credentials, configure your own OAuth Client ID through the Google Cloud Console.
+
+### Creating Personal Google Cloud Credentials
+1. Visit the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a project named `Rclone-Personal`.
+3. In **APIs & Services > Library**, search for **Google Drive API** and click **Enable**.
+4. In **APIs & Services > OAuth consent screen**:
+   - User Type: **External**
+   - App Name: `Rclone`
+   - User Support & Developer Email: Your Google email.
+   - Test Users: Add your Google account email.
+5. In **APIs & Services > Credentials**:
+   - Click **Create Credentials > OAuth client ID**.
+   - Application Type: **Desktop app**.
+   - Name: `Rclone Desktop`.
+6. Copy the generated **Client ID** and **Client Secret**.
+
+### Running the Wizard
+In WSL, run:
+
+```bash
+rclone config
+```
+
+1. Press `n` for **New remote**.
+2. Name: `gdrive`.
+3. Storage Type: `drive` (Google Drive).
+4. Paste your **Client ID** and **Client Secret**.
+5. Scope: Select `1` (`drive` - full access).
+6. When prompted to `Use web browser to automatically authenticate?`, choose `y`.
+   - WSL2 will automatically forward the authentication URL to your default Windows web browser.
+   - Log into your Google account and grant permissions.
+7. Confirm the remote and quit (`q`).
+
+Verify connectivity:
+```bash
+rclone lsd gdrive:
+```
+
+---
+
+## Step 5: Construct the Rclone VFS Systemd Service
+
+Create a dedicated mount directory in your WSL home folder:
+
+```bash
+mkdir -p ~/gdrive
+```
+
+Next, establish a systemd user unit that mounts the drive automatically on boot:
+
+1. Create the user service directory:
+   ```bash
+   mkdir -p ~/.config/systemd/user
+   ```
+
+2. Create `~/.config/systemd/user/rclone-gdrive.service`:
+   ```bash
+   nano ~/.config/systemd/user/rclone-gdrive.service
+   ```
+
+3. Insert the production-tuned service configuration:
+   ```ini
+   [Unit]
+   Description=Rclone Google Drive VFS Mount
+   Documentation=https://rclone.org/commands/rclone_mount/
+   After=network-online.target
+   Wants=network-online.target
+
+   [Service]
+   Type=notify
+   ExecStart=/usr/bin/rclone mount gdrive: %h/gdrive \
+     --config %h/.config/rclone/rclone.conf \
+     --vfs-cache-mode full \
+     --vfs-cache-max-size 10G \
+     --vfs-cache-max-age 24h \
+     --vfs-write-back 5s \
+     --dir-cache-time 24h \
+     --poll-interval 1m \
+     --drive-chunk-size 64M \
+     --umask 022 \
+     --allow-other
+   ExecStop=/bin/fusermount -u %h/gdrive
+   Restart=on-failure
+   RestartSec=10
+
+   [Install]
+   WantedBy=default.target
+   ```
+
+### VFS Flag Reference
+* `--vfs-cache-mode full`: Caches chunks of files on your local SSD (`~/.cache/rclone/vfs/gdrive/`), enabling seamless random reads/writes and memory-mapped files.
+* `--vfs-cache-max-size 10G`: Caps local cache storage at 10 GB with Least Recently Used (LRU) eviction.
+* `--vfs-write-back 5s`: Batches rapid successive writes before streaming them to the cloud.
+* `--dir-cache-time 24h` & `--poll-interval 1m`: Caches directory hierarchies in RAM and polls Google's Changes API every 60 seconds to keep listings updated without expensive rescanning.
+* `--allow-other`: Permits non-root processes and Windows 9P shares to access the mount.
+
+---
+
+## Step 6: Enable and Start the Service
+
+Reload the user daemon, enable the service, and turn on session lingering:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now rclone-gdrive.service
+sudo loginctl enable-linger $USER
+```
+
+Check the active status:
+```bash
+systemctl --user status rclone-gdrive.service
+```
+
+You should see an active status with `Mounted gdrive: at /home/<user>/gdrive`.
+
+---
+
+## Step 7: Map the Mount as a Native Windows Drive
+
+Once the drive is mounted inside WSL, it is directly exposed to Windows over the internal network share `\\wsl$\`.
+
+1. Open **Windows File Explorer** (`Win + E`).
+2. In the address bar, navigate to your WSL distribution's mount path:
+   ```
+   \\wsl$\Ubuntu\home\<your-wsl-username>\gdrive
+   ```
+   *(Replace `Ubuntu` with your distro name if running Debian, Arch, etc., and `<your-wsl-username>` with your actual Linux user).*
+3. Right-click on the `gdrive` folder in the breadcrumb bar or navigation tree and select **Map network drive...**
+4. Select your preferred drive letter (e.g., `G:`).
+5. Check **Reconnect at sign-in** and click **Finish**.
+
+Your Google Drive will now appear under **This PC** alongside `C:\` as a fully functioning local drive.
+
+---
+
+## Step 8: Ensuring Background Persistence
+
+On standalone Linux, systemd runs continuously. On Windows, however, WSL2 enters a dormant state when no interactive shells or active processes are running.
+
+To keep your Rclone mount and systemd timers running in the background whenever Windows boots:
+
+1. Press `Win + R`, type `taskschd.msc`, and press **Enter**.
+2. Click **Create Basic Task**:
+   - **Name:** `Start WSL Background Services`
+   - **Trigger:** `When I log on` (or `When the computer starts`)
+   - **Action:** `Start a program`
+   - **Program/script:** `wsl.exe`
+   - **Add arguments:** `-d Ubuntu -e sleep infinity`
+3. Check **Open the Properties dialog** upon completion, and set the task to run **hidden** so no terminal window appears.
+
+This single background process prevents the WSL VM from shutting down, ensuring systemd timers, file syncing, and network drive access remain uninterrupted.
+
+---
+
+## Operational Runbook & Diagnostics
+
+| Operation | Command |
+| :--- | :--- |
+| **Check service health** | `systemctl --user status rclone-gdrive.service` |
+| **View real-time mount logs** | `journalctl --user -u rclone-gdrive.service -f` |
+| **Restart the mount daemon** | `systemctl --user restart rclone-gdrive.service` |
+| **Force graceful unmount** | `fusermount -u ~/gdrive` |
+| **Emergency lazy unmount** | `fusermount -z -u ~/gdrive` |
+| **Inspect local cache usage** | `du -sh ~/.cache/rclone/vfs/gdrive/` |
+| **Purge local VFS cache** | `rm -rf ~/.cache/rclone/vfs/gdrive/*` |
+
+With this setup, you retain all the power, automation, and speed of an Arch Linux Rclone configuration while benefiting from native Windows desktop integration!
