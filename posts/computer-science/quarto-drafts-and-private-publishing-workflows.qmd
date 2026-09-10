@@ -1,0 +1,361 @@
+---
+title: "The Comprehensive Guide to Quarto Drafts: Local Previews, Dual Remotes, and Cryptographic Privacy"
+description: "A complete architectural tutorial on managing work-in-progress content in Quarto websites: decoupling local preview servers from public GitHub Pages, securing drafts via Dual Remotes and git-crypt, and automating multi-course publishing workflows."
+date: "2026-09-10"
+categories: [Quarto, Git, DevOps, Web Development, Tutorial, Computer Science]
+format:
+  html:
+    code-fold: true
+    toc: true
+    toc-depth: 3
+---
+
+Publishing technical writing, university lecture notes, and research problem sets with [Quarto](https://quarto.org/) is a joy. By coupling plain Markdown (`.qmd`) and Jupyter Notebooks (`.ipynb`) with GitHub Actions and GitHub Pages, every `git push` automatically compiles equations, embeds interactive Plotly widgets, and updates your live website.
+
+However, as soon as you transition from occasional blogging to actively maintaining comprehensive academic websites, you run into **The Draft Dilemma**:
+
+1. **The Iteration Latency Problem:** Waiting 2 to 3 minutes for GitHub Actions to compile and deploy just to verify a LaTeX equation or CSS layout is agonizingly slow.
+2. **The Public Incompleteness Problem:** You cannot push half-solved physics problem sets, raw lecture notes, or unverified mathematical proofs to a live public university portal.
+3. **The Git Exposure Paradox:** Even if an article is hidden from your website's navigation bar, anyone browsing your public GitHub repository can still read your raw `.qmd` and `.ipynb` source files.
+4. **The GitHub Free Constraint:** On GitHub Free, enabling GitHub Pages requires a **public** repository. If you make the repository private, GitHub Pages is instantly disabled unless you pay for GitHub Pro or have an active GitHub Student Developer Pack.
+
+This guide provides a comprehensive tutorial on every architectural pattern for managing drafts in Quarto—from native frontmatter flags to **Dual-Remote architectures**, **git-crypt client-side encryption**, and **zero-root local server configurations**.
+
+---
+
+## 1. The Decision Matrix: 5 Drafting Architectures Compared
+
+| Strategy | Local Preview (`localhost:4200`) | Live Web Page (`username.github.io`) | Public GitHub Source Code | Complexity | Best For |
+|:---|:---:|:---:|:---:|:---:|:---|
+| **1. Native `draft: true`** | **Visible** | **Hidden (404)** | ⚠️ Visible | Trivial | Public articles undergoing minor formatting adjustments. |
+| **2. Ignored Folder (`_drafts/`)** | **Visible** | **Hidden (404)** | **Hidden** *(if gitignored)* | Very Low | Personal scratchpads and private study notes stored strictly on your SSD. |
+| **3. Dual Remotes (`public` + `private`)** | **Visible** | **Hidden (404)** | 🔒 **100% Private** | Medium | University courses where source code and solutions must be cloud-backed privately. |
+| **4. Client-Side `git-crypt`** | **Visible** | **Hidden (404)** | 🔐 **Encrypted Ciphertext** | High | Maintaining a single public repository while cryptographically locking draft folders. |
+| **5. Separate Draft Branches (`dev` vs `main`)** | **Visible** | **Hidden** *(until merge)* | ⚠️ Visible on `dev` branch | Low | Collaborative editorial review and phased release milestones. |
+
+---
+
+## 2. Approach 1: Native Quarto Draft Mode (`draft: true`)
+
+Quarto provides first-class support for draft documents directly inside the YAML frontmatter of `.qmd` and `.ipynb` files.
+
+### Syntax
+Add `draft: true` to the top of any document:
+
+```yaml
+---
+title: "Taylor Classical Mechanics: Chapter 6 Complex Geodesics"
+subtitle: "Incomplete derivation of cone geodesics"
+date: "2026-09-10"
+categories: [Physics, Classical Mechanics]
+draft: true
+---
+```
+
+For Jupyter Notebooks (`.ipynb`), prepend this YAML block into the very first Markdown cell of the notebook.
+
+### How Quarto Handles Drafts Under the Hood
+
+Quarto dynamically changes its behavior based on the execution environment:
+
+* **Production Compilation (`quarto render` / GitHub Actions CI):**
+  When GitHub Actions builds your site for deployment, Quarto runs in production mode. Any file marked `draft: true` is **completely dropped**:
+  * No HTML file is generated in `_site/`.
+  * The article is omitted from all Quarto listing indexes (tables, grids, default listings).
+  * The title is stripped from search indexes and sitemaps.
+  * Direct URL access results in a clean `404 Not Found`.
+* **Local Development (`quarto preview`):**
+  When running locally on your computer, Quarto defaults to `draft-mode: visible`. The article renders normally, appears in listings, and features a subtle visual badge indicating that it is a working draft.
+
+---
+
+## 3. Approach 2: The Underscore Directory Convention (`_drafts/`)
+
+Quarto strictly enforces an internal directory rule: **any file or directory prefixed with an underscore (`_`) is automatically ignored during website compilation.**
+
+You already see this convention in Quarto system folders like `_site/` and `_quarto.yml`. You can leverage this to create un-rendered staging grounds.
+
+### Setup
+Create a draft directory anywhere inside your repository:
+```bash
+mkdir -p solutions/_drafts
+```
+
+Move your work-in-progress files there:
+```bash
+mv solutions/unfinished-problem.qmd solutions/_drafts/
+```
+
+### Making it 100% Local (Zero Cloud Leakage)
+If you never want these scratchpad files uploaded to GitHub at all, add the pattern to your repository's `.gitignore`:
+
+```bash
+echo "_drafts/" >> .gitignore
+```
+
+Now, anything inside `_drafts/` lives exclusively on your local hard drive. When a problem set or article is polished and ready to enter the public website, simply promote it:
+
+```bash
+git mv solutions/_drafts/problem-6.qmd solutions/taylor-problem-6.qmd
+```
+
+---
+
+## 4. Approach 3: Dual Remotes (Public Site + Private Companion Repo)
+
+This is the architectural system we engineered for the **PHYC54**, **STAC67**, **PHYD57**, and **ASTB23** course repositories. It is the gold-standard solution when you need:
+1. A **public live website** hosted on GitHub Pages (requiring a public repository on GitHub Free).
+2. A **100% private cloud backup** of all your draft solutions, unreleased lecture notes, and full Git commit history.
+
+### The Architecture Diagram
+
+```
+Local Repository (/home/user/repos/course)
+  ├── Edit articles with `draft: true`
+  ├── View locally on http://localhost:4200 (quarto preview)
+  │
+  ├── git push-drafts  ────────>  Private GitHub Repo (course-drafts)
+  │                               (100% Private, contains all source code & drafts)
+  │
+  └── git push-public  ────────>  Public GitHub Repo (course)
+                                  ├── Triggers GitHub Actions
+                                  ├── Quarto drops `draft: true` files
+                                  └── Deploys clean public website to GitHub Pages
+```
+
+### Step-by-Step Implementation
+
+#### Step 1: Create a Private Companion Repository on GitHub
+Using the GitHub CLI (`gh`):
+```bash
+gh repo create igor-kan/phyc54h3-drafts --private
+```
+
+#### Step 2: Configure Dual Remotes Locally
+Inspect your current remotes in your local repository:
+```bash
+cd ~/repos/phyc54h3
+git remote -v
+# origin  https://github.com/igor-kan/phyc54h3.git (fetch)
+# origin  https://github.com/igor-kan/phyc54h3.git (push)
+```
+
+Add a second remote named `private`:
+```bash
+git remote add private https://github.com/igor-kan/phyc54h3-drafts.git
+```
+
+#### Step 3: Configure Streamlined Git Aliases
+Rather than typing verbose remote targets, establish global aliases in your `~/.gitconfig`:
+
+```bash
+git config --global alias.push-drafts "push private main"
+git config --global alias.push-public "push origin main"
+git config --global alias.push-all '!git push private main && git push origin main'
+```
+
+#### Step 4: The Daily Workflow
+1. **Writing Drafts:** Create new solutions or notes. Keep `draft: true` in their frontmatter.
+2. **Backing Up Drafts Privately:**
+   ```bash
+   git add .
+   git commit -m "wip: solving problem 6.12"
+   git push-drafts
+   ```
+   *Your work is pushed to your private GitHub repository where no classmate or internet user can view it.*
+3. **Publishing an Article:** Once an article is complete, remove `draft: true`, commit, and push to the public remote:
+   ```bash
+   git add solutions/problem-6-12.qmd
+   git commit -m "feat: publish problem 6.12 solution"
+   git push-public
+   ```
+   *GitHub Actions renders the site, sees `draft: false`, and publishes it live to the web!*
+
+---
+
+## 5. Approach 4: Client-Side Encryption via `git-crypt`
+
+If you refuse to manage two separate repositories and insist on keeping everything inside a single public repository, you can use **`git-crypt`** to encrypt sensitive draft files before they ever leave your laptop.
+
+### How `git-crypt` Works
+`git-crypt` hooks into Git's clean/smudge filter system:
+* When you commit and push, Git runs the `clean` filter, converting plain text Markdown files into encrypted binary ciphertext using an AES-256 key.
+* When you pull or view files locally, Git runs the `smudge` filter, decrypting them seamlessly back into readable `.qmd` files.
+* **On GitHub:** Public visitors browsing the web UI see only binary gibberish labeled `GITCRYPT`.
+* **On Your Laptop:** You work with ordinary Markdown files.
+
+### Setup Guide (Arch Linux / Debian)
+
+1. **Install `git-crypt`:**
+   ```bash
+   # Arch Linux
+   sudo pacman -S git-crypt
+
+   # Ubuntu / Debian
+   sudo apt install git-crypt
+   ```
+
+2. **Initialize git-crypt inside your repository:**
+   ```bash
+   cd ~/repos/my-course-repo
+   git-crypt init
+   ```
+
+3. **Export a backup of your symmetric key:**
+   ```bash
+   git-crypt export-key ~/my-repo-key.key
+   ```
+   *(Store this key safely! If you lose it, your encrypted files are permanently irrecoverable).*
+
+4. **Define encrypted files via `.gitattributes`:**
+   Create a `.gitattributes` file in the root of your repository:
+   ```text
+   # Encrypt all files inside any drafts folder
+   **/_drafts/** filter=git-crypt diff=git-crypt
+   
+   # Encrypt any file ending with .draft.qmd
+   *.draft.qmd filter=git-crypt diff=git-crypt
+   ```
+
+5. **Commit and Push:**
+   ```bash
+   git add .gitattributes solutions/_drafts/
+   git commit -m "chore: enable git-crypt on drafts"
+   git push origin main
+   ```
+
+### Tradeoffs & Pitfalls of git-crypt
+* **Merge Conflicts in Ciphertext:** Resolving merge conflicts on encrypted files is nearly impossible; you must decrypt both sides manually.
+* **CI/CD Complexity:** If GitHub Actions needs to read encrypted files during build time, you must store your symmetric key in GitHub Actions Secrets and decrypt the repository inside your workflow YAML prior to running `quarto render`.
+
+---
+
+## 6. The Local Development Engine: `quarto preview`
+
+The biggest productivity booster when authoring Quarto websites is completely bypassing remote CI/CD during active drafting.
+
+### Why Local Preview Dominates
+* **Sub-Second Hot Reload:** The moment you press `Ctrl+S` in VS Code or Neovim, Quarto parses the AST, renders MathJax/KaTeX equations, and injects the updated HTML into your browser via WebSockets in milliseconds.
+* **Draft Visibility:** All `draft: true` files are rendered and fully navigable.
+* **Console Diagnostics:** If a Plotly widget fails or a YAML key is malformed, the terminal prints the exact line number immediately.
+
+### Installing Quarto Locally Without Root (`sudo`) Privileges
+If you are on a university-managed workstation, an HPC cluster, or a personal Linux machine where you prefer not to touch system-wide packages, you can install the official precompiled standalone Quarto binary in your user directory:
+
+```bash
+# 1. Create a local opt directory
+mkdir -p ~/.local/opt
+
+# 2. Download and unpack the latest standalone Linux binary
+curl -sL https://github.com/quarto-dev/quarto-cli/releases/download/v1.10.18/quarto-1.10.18-linux-amd64.tar.gz | tar -xz -C ~/.local/opt
+
+# 3. Create a symlink in your user bin directory
+ln -sf ~/.local/opt/quarto-1.10.18/bin/quarto ~/.local/bin/quarto
+
+# 4. Verify the installation
+quarto --version
+```
+
+Because `~/.local/bin` is part of your standard `$PATH`, `quarto` is immediately available everywhere.
+
+### Running Concurrent Previews Across Multiple Courses
+Quarto dynamically allocates networking ports. You can run previews for multiple course sites simultaneously in separate terminal windows:
+
+```bash
+# Terminal 1: Classical Mechanics
+cd ~/repos/phyc54h3 && quarto preview
+# -> Serving at http://localhost:4200
+
+# Terminal 2: Astrophysics
+cd ~/repos/astb23h3 && quarto preview
+# -> Serving at http://localhost:4201
+
+# Terminal 3: Computational Physics
+cd ~/repos/phyd57h3 && quarto preview
+# -> Serving at http://localhost:4202
+```
+
+---
+
+## 7. Automating Bulk Draft Tagging with Python
+
+When migrating an existing repository with dozens of articles into a draft-protected state, manually editing 70+ YAML headers is error-prone. 
+
+Here is a lightweight Python script that safely iterates through a Quarto project, preserves root and listing `index.qmd` files, and injects `draft: true` into all content articles and `.ipynb` notebooks:
+
+```python
+import os
+import re
+import json
+
+def mark_draft_qmd(filepath):
+    with open(filepath, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    if content.startswith('---'):
+        parts = content.split('---', 2)
+        if len(parts) >= 3:
+            yaml_block = parts[1]
+            rest = parts[2]
+            if re.search(r'^draft:', yaml_block, flags=re.MULTILINE):
+                yaml_block = re.sub(r'^draft:\s*(false|true)', 'draft: true', yaml_block, flags=re.MULTILINE)
+            else:
+                yaml_block = yaml_block.rstrip() + '
+draft: true
+'
+            new_content = '---' + yaml_block + '---' + rest
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(new_content)
+            return True
+    return False
+
+def mark_draft_ipynb(filepath):
+    with open(filepath, 'r', encoding='utf-8') as f:
+        nb = json.load(f)
+    
+    if nb.get('cells') and nb['cells'][0]['cell_type'] == 'markdown':
+        src = "".join(nb['cells'][0]['source'])
+        if src.startswith('---'):
+            parts = src.split('---', 2)
+            if len(parts) >= 3:
+                yaml_block = parts[1]
+                rest = parts[2]
+                if re.search(r'^draft:', yaml_block, flags=re.MULTILINE):
+                    yaml_block = re.sub(r'^draft:\s*(false|true)', 'draft: true', yaml_block, flags=re.MULTILINE)
+                else:
+                    yaml_block = yaml_block.rstrip() + '
+draft: true
+'
+                nb['cells'][0]['source'] = ['---' + yaml_block + '---' + rest]
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    json.dump(nb, f, indent=1)
+                return True
+    return False
+
+# Walk repository and tag non-index files
+for root, _, files in os.walk('.'):
+    if any(p in root for p in ['.git', '_site', '.quarto']):
+        continue
+    for file in files:
+        if file == 'index.qmd':
+            continue
+        p = os.path.join(root, file)
+        if file.endswith('.qmd'):
+            mark_draft_qmd(p)
+        elif file.endswith('.ipynb'):
+            mark_draft_ipynb(p)
+```
+
+---
+
+## 8. Summary: The Recommended Best Practice
+
+For academic writing, problem sets, and technical blogging:
+
+1. **Keep `draft: true` as your standard frontmatter default** for all in-progress work.
+2. **Develop locally with `quarto preview`** to get instant feedback on equations and code plots in under a second.
+3. **Use the Dual-Remote Git Pattern (`public` + `private`)**:
+   * Push your drafts freely and continuously to your **private companion repository** for encrypted cloud backup.
+   * Push to your **public repository** only when you intentionally flip an article to `draft: false`.
+
+With this architecture, your public website remains immaculate and professional, while your private working process remains flexible, fast, and completely secure.
