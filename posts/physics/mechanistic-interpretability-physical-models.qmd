@@ -1,0 +1,128 @@
+---
+title: "Mechanistic Interpretability of Physical Models: Discovering Conserved Circuits in Neural Weights"
+subtitle: "Using Sparse Autoencoders (SAEs), activation patching, and causal intervention to extract analytical conservation laws from black-box neural networks."
+date: "2026-09-10"
+categories: ["Physics", "Artificial Intelligence", "Mechanistic Interpretability", "Machine Learning", "Classical Mechanics", "Astrophysics", "Research Roadmap"]
+format:
+  html:
+    code-fold: true
+    toc: true
+    toc-depth: 3
+    math: true
+jupyter: python3
+---
+
+## Executive Summary & Strategic Positioning
+
+Training deep neural networks to approximate complex dynamical systems is increasingly automated. However, neural networks remain opaque black boxes. While an AI can learn to predict turbulent flow or chaotic orbits, only human physicists possess the epistemic framework required to dissect latent activation spaces and extract the analytical invariants discovered by the model.
+
+### Comprehensive Ranking & Project Roadmap
+
+| Rank | Domain | Human Leverage | AI Automatability | Primary Bottleneck | First Beginner Project (MVP) |
+|:---:|:---|:---:|:---:|:---|:---|
+| **1** | **Formal Verification & Axiomatic Physics (Lean 4)** | **Extremely High** | **Very Low** | Near-zero training corpus; non-trivial bridge between physics intuition and Mathlib measure theory | Formalize the 1D harmonic oscillator or the Euler–Lagrange derivation for $L(q, \dot{q}, t)$ in Lean 4 |
+| **2** | **Neuro-Symbolic Verification Harnesses ("Automated Judges")** | **Very High** | **Low** | Handling AST edge cases, conjugate points, and branch cuts deterministically | Python AST parser + SymPy harness that checks Taylor Ch. 6 solutions for zero-equivalence and Jacobi stability |
+| **3** | **Mechanistic Interpretability of Physical Models** | **High** | **Low–Medium** | Epistemic attribution: knowing why an internal latent feature maps to a physical invariant | Train an MLP on a chaotic double pendulum, fit a Sparse Autoencoder (SAE), and identify conserved energy circuits |
+| **4** | **Geometric Inductive Biases (Lie Groups & Clifford Algebras)** | **High** | **Medium** | Formulating multivector transformations and coordinate-free geometric networks | Build an $\mathrm{SO}(3)$-equivariant GNN for $N$-body orbits in PyTorch and benchmark long-term phase-space drift |
+| **5** | **Continuous-Time Stochastic Control & Transport Equations** | **High** | **Medium** | Viscosity solutions to non-linear HJB PDEs; analytical boundary condition handling | Solve the Almgren–Chriss execution problem using a continuous Fokker–Planck transport solver in Python/C++ |
+
+
+---
+
+## 1. Domain Overview: Mechanistic Interpretability in Physics
+
+Mechanistic Interpretability (MechInterp) reverse-engineers the weights and activations of trained neural networks into human-understandable algorithms and physical laws.
+
+In physics applications, a neural network trained purely on coordinate trajectories often implicitly learns fundamental conservation laws—such as conservation of energy, angular momentum, or adiabatic invariants—to optimize its multi-step prediction loss. MechInterp leverages **Sparse Autoencoders (SAEs)**, **activation patching**, and **probing classifiers** to isolate these conserved features from polysemantic superposition.
+
+### Why Individual Human Leverage is High (High / Low–Medium Automatability)
+* **Epistemic Attribution:** AI can optimize loss functions, but it cannot explain *why* a particular linear combination of latent features corresponds to a Noether invariant. Human domain intuition is indispensable.
+* **Small-Model Tractability:** You do not need a 70B parameter LLM; profound interpretability research is routinely conducted on compact 3-layer MLPs or 4-layer Transformers trained on classical dynamical systems.
+
+### The Primary Bottleneck
+* **The Superposition Problem:** Individual neurons are polysemantic; a single neuron activates for multiple unrelated physical quantities.
+* Disentangling true causal invariants from spurious statistical correlations in chaotic phase space.
+
+---
+
+## 2. Curricular Bridge: Taylor, ASTB23, and PHYD57
+
+* **Taylor Classical Mechanics (Ch. 7):**
+  * Phase-space flows and canonical energy conservation ($h = \sum \dot{q}_i p_i - L$).
+  * Coupled non-linear systems: The chaotic double pendulum (7.29) and its phase-space divergence.
+* **ASTB23 (Astrophysics: Stars & Galaxies):**
+  * Stellar dynamics in galactic potentials and **Jeans' Theorem**: Any steady-state distribution function $f(\mathbf{x}, \mathbf{v})$ depends on the phase-space coordinates only through the integrals of motion ($f = f(E, L_z, I_3)$).
+  * The non-analytic **"Third Integral" ($I_3$)** in flattened axisymmetric galactic disks (e.g., Miyamoto–Nagai potentials).
+* **PHYD57 (Computational Physics):**
+  * Symplectic integration (Verlet, leapfrog schemes) preserving phase-space volume (Liouville's theorem).
+  * PyTorch neural network training, latent space extraction, and autoencoder optimization.
+
+---
+
+## 3. First Beginner Project (MVP)
+
+* **Goal:** Detect whether a neural network trained purely on coordinate trajectories independently discovers conservation of energy.
+* **Implementation:**
+  1. Generate $10^5$ trajectory steps of a chaotic double pendulum using a symplectic integrator in Python.
+  2. Train a 3-layer MLP or small Transformer to predict state $s_{t+1} = (\theta_1, \theta_2, p_1, p_2)_{t+1}$ from $s_t$.
+  3. Train a Sparse Autoencoder (SAE) on the hidden layer activations to disentangle polysemantic neurons into an overcomplete sparse dictionary:
+     $$\mathbf{a} \approx \sum_{i} c_i \mathbf{f}_i$$
+  4. Compute the linear correlation between individual SAE latent features $c_i$ and the analytical total energy $E = T + V$. Identify the specific "conservation circuit" inside the network weights.
+
+---
+
+## 4. Execution Roadmap
+
+### Phase 1: Right Now (Weeks 1–2) — Invariant Discovery in Chaotic Double Pendula
+1. **Data Generation:** Use a symplectic Verlet integrator to simulate the double pendulum (Taylor 7.29) across diverse energy shells.
+2. **Model Training & SAE Disentanglement:**
+   Train an MLP to predict $(\theta_1, \theta_2, \dot{\theta}_1, \dot{\theta}_2)_{t+\Delta t}$. Freeze weights, record activations, and train an SAE with an $L_1$ sparsity penalty:
+
+```python
+import torch
+import torch.nn as nn
+
+class SparseAutoencoder(nn.Module):
+    def __init__(self, hidden_dim, dict_dim, l1_coeff=1e-3):
+        super().__init__()
+        self.encoder = nn.Linear(hidden_dim, dict_dim)
+        self.decoder = nn.Linear(dict_dim, hidden_dim)
+        self.l1_coeff = l1_coeff
+
+    def forward(self, x):
+        # Sparse latent representation
+        latents = torch.relu(self.encoder(x))
+        reconstruction = self.decoder(latents)
+        
+        mse_loss = nn.functional.mse_loss(reconstruction, x)
+        l1_loss = self.l1_coeff * latents.sum(dim=-1).mean()
+        return reconstruction, latents, mse_loss + l1_loss
+```
+
+3. **Causal Circuit Extraction:** Compute Pearson correlation between sparse latents $c_i$ and the analytical Hamiltonian $H$.
+* **Deliverable:** A Jupyter notebook isolating the specific latent "energy conservation feature" synthesized by the network.
+
+### Phase 2: Near Future (Months 1–2) — Probing the Galactic "Third Integral"
+1. **Galactic Trajectory Simulation:** In ASTB23, stars orbiting in a flattened Miyamoto–Nagai disk potential conserve energy $E$ and angular momentum $L_z$, plus an approximate non-analytic "third integral" $I_3$ that limits vertical excursion.
+2. **Causal Intervention (Activation Patching):** Train a Transformer on 3D galactic stellar orbits. Identify candidate $I_3$ circuits. Systematically ablate or patch these latents and observe whether vertical oscillation stability collapses, proving that the model synthesized Jeans' distribution function $f(E, L_z, I_3)$.
+* **Deliverable:** A technical pre-print mapping internal representations of deep dynamics models directly to galactic stellar orbital theory.
+
+---
+
+## 5. Ecosystem, Publication Venues & Dissemination
+
+### Open-Source Integration
+* [`TransformerLens`](https://github.com/TransformerLensOrg/TransformerLens) / [`SAE-Lens`](https://github.com/jbloomAus/SAELens): Integrate physical dataset loaders and automated probe evaluators into standard interpretability pipelines.
+* Hugging Face: Publish benchmark datasets and pre-trained SAE dictionaries.
+
+### Communities & Forums
+* **EleutherAI Discord:** Active working groups in mechanistic interpretability and sparse dictionary learning.
+* **LessWrong & Alignment Forum:** High-density community reviewing mechanistic interpretability experiments.
+
+### Publication & Workshop Venues
+* **Workshops:** NeurIPS / ICML / ICLR Mechanistic Interpretability Workshops (e.g., *Attributing Model Behavior*, *PIAMI*).
+* **Cross-Over Journals:** *Physical Review E* (PRE) or *Machine Learning: Science and Technology* (IOP).
+
+### Packaging and Archiving
+* Open-source GitHub repository with Zenodo DOI.
+* arXiv preprint under `cs.LG` (Machine Learning).

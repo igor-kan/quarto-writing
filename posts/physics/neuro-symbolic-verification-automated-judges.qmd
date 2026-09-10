@@ -1,0 +1,146 @@
+---
+title: "Neuro-Symbolic Verification Harnesses: Deterministic Automated Judges for Physics"
+subtitle: "Eliminating mathematical hallucinations by interfacing language models with Computer Algebra Systems, zero-equivalence simplifications, and Legendre stability tests."
+date: "2026-09-10"
+categories: ["Physics", "Artificial Intelligence", "Neuro-Symbolic", "SymPy", "Classical Mechanics", "Research Roadmap"]
+format:
+  html:
+    code-fold: true
+    toc: true
+    toc-depth: 3
+    math: true
+jupyter: python3
+---
+
+## Executive Summary & Strategic Positioning
+
+Large language models (LLMs) are notorious for generating superficially plausible but mathematically broken derivations when solving variational problems and non-linear differential equations. Rather than training larger parameters, **Individual Human Leverage** is highest when building deterministic, neuro-symbolic verification harnesses ("Automated Judges") that anchor probabilistic models to exact Computer Algebra Systems (CAS).
+
+### Comprehensive Ranking & Project Roadmap
+
+| Rank | Domain | Human Leverage | AI Automatability | Primary Bottleneck | First Beginner Project (MVP) |
+|:---:|:---|:---:|:---:|:---|:---|
+| **1** | **Formal Verification & Axiomatic Physics (Lean 4)** | **Extremely High** | **Very Low** | Near-zero training corpus; non-trivial bridge between physics intuition and Mathlib measure theory | Formalize the 1D harmonic oscillator or the Euler–Lagrange derivation for $L(q, \dot{q}, t)$ in Lean 4 |
+| **2** | **Neuro-Symbolic Verification Harnesses ("Automated Judges")** | **Very High** | **Low** | Handling AST edge cases, conjugate points, and branch cuts deterministically | Python AST parser + SymPy harness that checks Taylor Ch. 6 solutions for zero-equivalence and Jacobi stability |
+| **3** | **Mechanistic Interpretability of Physical Models** | **High** | **Low–Medium** | Epistemic attribution: knowing why an internal latent feature maps to a physical invariant | Train an MLP on a chaotic double pendulum, fit a Sparse Autoencoder (SAE), and identify conserved energy circuits |
+| **4** | **Geometric Inductive Biases (Lie Groups & Clifford Algebras)** | **High** | **Medium** | Formulating multivector transformations and coordinate-free geometric networks | Build an $\mathrm{SO}(3)$-equivariant GNN for $N$-body orbits in PyTorch and benchmark long-term phase-space drift |
+| **5** | **Continuous-Time Stochastic Control & Transport Equations** | **High** | **Medium** | Viscosity solutions to non-linear HJB PDEs; analytical boundary condition handling | Solve the Almgren–Chriss execution problem using a continuous Fokker–Planck transport solver in Python/C++ |
+
+
+---
+
+## 1. Domain Overview: Neuro-Symbolic Automated Judges
+
+A neuro-symbolic judge operates as a deterministic gatekeeper. It treats LLM outputs as untrusted proposals, parses the unstructured mathematical text into an Abstract Syntax Tree (AST), maps it into symbolic expressions, and executes rigorous algebraic and analytic tests:
+
+1. **Zero-Equivalence Testing:** Proving whether an expression $\mathcal{E}[y]$ identically vanishes without false positives.
+2. **Operator Evaluation:** Executing Euler–Lagrange functional derivatives $\frac{d}{dt}\frac{\partial L}{\partial \dot{q}} - \frac{\partial L}{\partial q}$.
+3. **Legendre Stability:** Verifying whether $\frac{\partial^2 L}{\partial \dot{q}_i \partial \dot{q}_j} > 0$ to distinguish true action minima from saddles.
+
+### Why Individual Human Leverage is High (Very High)
+* **No Cluster Required:** Developing a state-of-the-art verification harness requires zero GPU clusters—only a rigorous understanding of algebraic manipulation, boundary value analysis, and AST parsing.
+* **Deterministic Reliability:** Neural models will always struggle with edge-case sign flips, branch cuts in multi-valued complex functions, and coordinate singularities. A deterministic harness solves this permanently.
+
+### The Primary Bottleneck
+* Mapping informal, ambiguous LaTeX derivations into unambiguous ASTs.
+* Managing algebraic expression swell and branch cuts without causing CAS simplifiers to hang indefinitely.
+* Handling conjugate points (Jacobi condition) where a path ceases to be a local minimum even when Euler–Lagrange holds.
+
+---
+
+## 2. Curricular Bridge: Taylor & PHYD57
+
+* **Taylor Classical Mechanics (Ch. 6 & 7):**
+  * Geodesics on surfaces: Cylinders (6.2, 6.7), spheres (6.1, 6.16), and cones (6.17).
+  * The Brachistochrone (6.21) and minimal surfaces of revolution / soap films (6.19).
+  * Multi-degree-of-freedom Lagrangians: Bead on a spinning hoop (7.21), spherical pendulum (7.40), coupled double pendulum (7.29).
+* **PHYD57 (Advanced Computational Methods):**
+  * Symbolic automation in Python (`sympy`).
+  * Numerical verification against analytical baselines.
+  * Two-point Boundary Value Problems (BVPs) and shooting methods.
+
+---
+
+## 3. First Beginner Project (MVP)
+
+* **Goal:** Build an automated grading and step-checking CLI for Chapter 6 variational problems.
+* **Implementation:**
+  1. Using Python, `instructor`, and `pydantic`, write an extractor that ingests raw markdown/LaTeX proofs and forces output into a structured JSON schema:
+     ```json
+     {
+       "coordinates": ["theta", "phi"],
+       "lagrangian": "R**2 * (theta_dot**2 + sin(theta)**2 * phi_dot**2)",
+       "claimed_first_integral": "sin(theta)**2 * phi_dot",
+       "claimed_equations_of_motion": ["..."]
+     }
+     ```
+  2. Ingest the parsed strings into SymPy.
+  3. Implement a module that checks the **Legendre condition** ($\frac{\partial^2 L}{\partial \dot{q}^2} > 0$) and computes whether the proposed trajectory satisfies the Euler–Lagrange differential operator via zero-equivalence ($\operatorname{simplify}(\mathcal{E}[y]) == 0$).
+
+---
+
+## 4. Execution Roadmap
+
+### Phase 1: Right Now (Weeks 1–2) — Automated Euler–Lagrange & Legendre Checker
+1. **Python CLI Architecture:** Construct a modular CLI tool taking LaTeX derivations as input.
+2. **Symbolic Verification Engine:**
+
+```python
+import sympy as sp
+from pydantic import BaseModel
+from typing import List
+
+class VariationalSubmission(BaseModel):
+    coordinates: List[str]
+    time_var: str = "t"
+    lagrangian_latex: str
+    claimed_first_integral: str
+
+def verify_euler_lagrange(L_expr, q_sym, t_sym):
+    # Computes Euler-Lagrange operator: d/dt(dL/dq_dot) - dL/dq == 0
+    q = sp.Function(q_sym)(t_sym)
+    q_dot = sp.diff(q, t_sym)
+    q_ddot = sp.diff(q_dot, t_sym)
+    
+    # Substitute into symbolic expression
+    L = sp.sympify(L_expr, locals={q_sym: q, f"{q_sym}_dot": q_dot})
+    
+    dL_dq = sp.diff(L, q)
+    dL_dqdot = sp.diff(L, q_dot)
+    dt_dL_dqdot = sp.diff(dL_dqdot, t_sym)
+    
+    el_residual = sp.simplify(dt_dL_dqdot - dL_dq)
+    
+    # Legendre Stability Condition: d^2 L / d(q_dot)^2 > 0
+    legendre_test = sp.diff(dL_dqdot, q_dot)
+    
+    return el_residual, legendre_test
+```
+
+* **Deliverable:** A test suite that automatically evaluates all 27 problems in Taylor Ch. 6, catching sign errors, spurious conserved quantities, and non-minimizing stationary points.
+
+### Phase 2: Near Future (Months 1–2) — BVP Shooting Verification Engine
+1. **Coupling to Numerical Solvers:** For non-linear equations lacking closed-form solutions (e.g., large-angle pendulums or asymmetric soap bubbles), compile symbolic equations into high-speed C++ via `scipy.LowLevelCallable` or `pybind11`.
+2. **Shooting Method:** Implement a 4th-order Runge–Kutta (RK4) shooting method to verify whether a user's claimed analytical path satisfies fixed Dirichlet boundary conditions $(q(t_1), q(t_2))$.
+* **Deliverable:** An automated grading API that accepts informal derivations and produces step-by-step verification reports with counterexample phase-space plots.
+
+---
+
+## 5. Ecosystem, Publication Venues & Dissemination
+
+### Open-Source Integration
+* [`sympy/sympy`](https://github.com/sympy/sympy): Contribute directly to `sympy.physics.mechanics` (Lagrangian and Kane's methods) or improve `sympy.parsing.latex` to better handle variational notation, implicit functionals, and total time derivatives.
+* Standalone Tool: Release as `variational-judge` or `mechanics-eval` on PyPI.
+
+### Communities & Forums
+* **SymPy Mailing List & GitHub Discussions**
+* **Scientific Python Discourse** (`discuss.scientific-python.org`)
+
+### Publication & Workshop Venues
+* **Software Paper:** *Journal of Open Source Software* (JOSS) for well-documented Python scientific libraries.
+* **Conferences:** NeurIPS Workshop on AI for Science (AI4Science), ICLR Workshop on Neuro-Symbolic Learning, ICLR Applied Track.
+* **Pedagogical Physics:** *American Journal of Physics* (AJP) or *European Journal of Physics* (EJP).
+
+### Packaging and Archiving
+* GitHub repo with MIT License, 100% test coverage via GitHub Actions, and Zenodo DOI.
+* arXiv preprint under `cs.LG` (Machine Learning) or `physics.comp-ph` (Computational Physics).

@@ -1,0 +1,137 @@
+---
+title: "Geometric Inductive Biases: Lie Groups, Clifford Algebras, and Equivariant Physics Networks"
+subtitle: "Embedding coordinate-free geometries, rotation groups, and multivectors into deep learning architectures to eliminate generalization penalties."
+date: "2026-09-10"
+categories: ["Physics", "Artificial Intelligence", "Geometric Deep Learning", "Clifford Algebra", "Astrophysics", "Classical Mechanics", "Research Roadmap"]
+format:
+  html:
+    code-fold: true
+    toc: true
+    toc-depth: 3
+    math: true
+jupyter: python3
+---
+
+## Executive Summary & Strategic Positioning
+
+Standard deep learning models treat physical coordinates as arbitrary numerical vectors in $\mathbb{R}^n$. When a physical system is rotated, translated, or boosted into a different reference frame, standard models must re-learn the physics from scratch across millions of augmented data points. **Geometric Inductive Biases** use group theory and Clifford geometric algebras to build networks that preserve symmetries *by construction*.
+
+### Comprehensive Ranking & Project Roadmap
+
+| Rank | Domain | Human Leverage | AI Automatability | Primary Bottleneck | First Beginner Project (MVP) |
+|:---:|:---|:---:|:---:|:---|:---|
+| **1** | **Formal Verification & Axiomatic Physics (Lean 4)** | **Extremely High** | **Very Low** | Near-zero training corpus; non-trivial bridge between physics intuition and Mathlib measure theory | Formalize the 1D harmonic oscillator or the Euler–Lagrange derivation for $L(q, \dot{q}, t)$ in Lean 4 |
+| **2** | **Neuro-Symbolic Verification Harnesses ("Automated Judges")** | **Very High** | **Low** | Handling AST edge cases, conjugate points, and branch cuts deterministically | Python AST parser + SymPy harness that checks Taylor Ch. 6 solutions for zero-equivalence and Jacobi stability |
+| **3** | **Mechanistic Interpretability of Physical Models** | **High** | **Low–Medium** | Epistemic attribution: knowing why an internal latent feature maps to a physical invariant | Train an MLP on a chaotic double pendulum, fit a Sparse Autoencoder (SAE), and identify conserved energy circuits |
+| **4** | **Geometric Inductive Biases (Lie Groups & Clifford Algebras)** | **High** | **Medium** | Formulating multivector transformations and coordinate-free geometric networks | Build an $\mathrm{SO}(3)$-equivariant GNN for $N$-body orbits in PyTorch and benchmark long-term phase-space drift |
+| **5** | **Continuous-Time Stochastic Control & Transport Equations** | **High** | **Medium** | Viscosity solutions to non-linear HJB PDEs; analytical boundary condition handling | Solve the Almgren–Chriss execution problem using a continuous Fokker–Planck transport solver in Python/C++ |
+
+
+---
+
+## 1. Domain Overview: Geometric Deep Learning & Clifford Algebras
+
+Rather than relying on unconstrained parameters, geometric architectures bake the symmetry group of spacetime directly into network layers:
+
+* **$\mathrm{SO}(3)$ / $\mathrm{SE}(3)$ Equivariance:** Ensuring that if the input coordinates rotate, the output forces and velocities rotate identically:
+  $$f(R \cdot \mathbf{x}) = R \cdot f(\mathbf{x}) \quad \forall R \in \mathrm{SO}(3)$$
+* **Clifford Geometric Algebra ($\mathrm{Cl}(3,0)$):** Representing physical quantities not as disconnected scalars and vectors, but as multivectors combining scalars (mass, energy), vectors (velocity, position), bivectors (angular momentum, magnetic fields), and trivectors (volume elements).
+
+### Why Individual Human Leverage is High (High Leverage / Medium Automatability)
+* **Mathematical Design vs. Brute Force:** Creating an equivariant architecture requires algebraic group theory and differential geometry, not massive GPU compute. An equivariant network trained on 100 samples routinely outperforms an unconstrained model trained on 100,000 samples.
+* **Theoretical Durability:** Coordinate-free geometric networks are mathematically exact and immune to coordinate singularities (e.g., gimbal lock or coordinate poles).
+
+### The Primary Bottleneck
+* Developing computationally efficient multivector products and group convolutions that execute efficiently on hardware without saturating GPU memory bandwidth.
+* Handling gauge transformations and curved manifold embeddings efficiently.
+
+---
+
+## 2. Curricular Bridge: Taylor, ASTB23, and PHYD57
+
+* **Taylor Classical Mechanics (Ch. 7 & 10):**
+  * Symmetries of generalized coordinates and rotational invariance in central force problems.
+  * Moving coordinate frames, Coriolis and centrifugal forces, and Euler angles $(\phi, \theta, \psi)$.
+* **ASTB23 (Astrophysics: Stars & Galaxies):**
+  * Gravitational $N$-body systems and virial equilibrium of star clusters.
+  * **Galactic Tidal Tensors:** The tidal stripping of satellite galaxies governed by the second derivative of the gravitational potential:
+    $$T_{ij} = -\frac{\partial^2 \Phi}{\partial x_i \partial x_j}$$
+* **PHYD57 (Computational Physics & HPC):**
+  * SIMD vectorization (AVX2, AVX-512) for high-performance tensor algebra.
+  * Parallelized $N$-body gravitational algorithms and PyTorch custom CUDA/C++ extensions.
+
+---
+
+## 3. First Beginner Project (MVP)
+
+* **Goal:** Construct a rotation-invariant $N$-body gravitational orbit predictor.
+* **Implementation:**
+  1. Build a small Graph Neural Network (GNN) in PyTorch.
+  2. For the baseline, feed Cartesian coordinates $(x, y, z)$.
+  3. For the geometric model, formulate node and edge updates using only scalar invariants:
+     * Relative Euclidean distances: $d_{ij} = \|\mathbf{r}_i - \mathbf{r}_j\|$
+     * Velocity inner products: $v_{ij} = \mathbf{v}_i \cdot \mathbf{v}_j$
+     * Projection scalars: $r_{ij}v = (\mathbf{r}_i - \mathbf{r}_j) \cdot \mathbf{v}_i$
+  4. Compare performance when the orbital configuration is subjected to an arbitrary 3D rotation $R \in \mathrm{SO}(3)$: prove that the baseline fails catastrophically, while the geometric GNN has mathematically zero error degradation.
+
+---
+
+## 4. Execution Roadmap
+
+### Phase 1: Right Now (Weeks 1–2) — Invariant N-Body Gravitational Toy Model
+1. **Toy System:** Simulate a 4-body gravitational choreographic orbit.
+2. **Invariant Feature Formulation:**
+
+```python
+import torch
+import torch.nn as nn
+
+class InvariantNBodyLayer(nn.Module):
+    def __init__(self, hidden_dim):
+        super().__init__()
+        # Takes 3 scalar invariants as input
+        self.mlp = nn.Sequential(
+            nn.Linear(3, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, 1)
+        )
+
+    def forward(self, r, v):
+        # r, v: [batch, N, 3]
+        r_diff = r.unsqueeze(2) - r.unsqueeze(1)  # [batch, N, N, 3]
+        dist = torch.norm(r_diff, dim=-1, keepdim=True)
+        v_dot = torch.sum(v.unsqueeze(2) * v.unsqueeze(1), dim=-1, keepdim=True)
+        proj = torch.sum(r_diff * v.unsqueeze(2), dim=-1, keepdim=True)
+        
+        invariants = torch.cat([dist, v_dot, proj], dim=-1)
+        return self.mlp(invariants)
+```
+
+3. **Rotation Stress Testing:** Benchmark against an unconstrained MLP under arbitrary Euler angle rotations.
+* **Deliverable:** Benchmark plots proving that standard MLPs suffer $>50\%$ error under rotation, whereas the invariant architecture exhibits mathematically zero generalization penalty.
+
+### Phase 2: Near Future (Months 1–2) — Clifford Algebra Galactic Tidal Tensor Simulator
+1. **Astrophysical Setting:** In ASTB23, galactic tidal disruption is dictated by the tidal tensor $T_{ij} = -\partial^2 \Phi / \partial x_i \partial x_j$.
+2. **Clifford Algebraic Representation:** Formulate the system in 3D Geometric Algebra $\mathrm{Cl}(3,0)$, encoding orientations via rotors $R = \exp(-\frac{\theta}{2} B)$.
+3. **High-Performance Acceleration:** Implement custom vectorized kernels using AVX2/AVX-512 SIMD instructions in C++ (PHYD57 HPC), bypassing coordinate singularities at the galactic poles.
+* **Deliverable:** An open-source geometric deep learning package for astrophysical tidal tensor evaluation.
+
+---
+
+## 5. Ecosystem, Publication Venues & Dissemination
+
+### Open-Source Integration
+* [`e3nn`](https://github.com/e3nn/e3nn) / [`torch-harmonics`](https://github.com/NVIDIA/torch-harmonics): The gold standard for Euclidean group ($\mathrm{E}(3)$) and spherical harmonic representations.
+* [`clifford`](https://github.com/pygae/clifford) / [`algebraic-torch`](https://github.com/pygae/algebraic-torch): Python packages for geometric algebra calculations.
+
+### Communities & Forums
+* **Geometric Deep Learning Discord**
+* **PyTorch Geometric (PyG) Discussions**
+
+### Publication & Workshop Venues
+* **Conferences:** ICLR Workshop on Geometry-grounded Representation Learning and Generative Modeling (GRaM), NeurIPS / ICLR Main Track.
+* **Journals:** *IEEE Transactions on Pattern Analysis and Machine Intelligence* (TPAMI), *Computer Physics Communications* (CPC).
+
+### Packaging and Archiving
+* Open-source GitHub repository with Zenodo DOI.
+* arXiv preprint under `cs.LG` (Machine Learning).

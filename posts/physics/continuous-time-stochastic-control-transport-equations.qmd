@@ -1,0 +1,130 @@
+---
+title: "Continuous-Time Stochastic Optimal Control & Transport Equations: Solving PDEs from Zermelo to Stellar Collapse"
+subtitle: "Bridging Hamilton-Jacobi-Bellman viscosity solutions, Fokker-Planck kinetic theory, and high-performance scientific computing."
+date: "2026-09-10"
+categories: ["Physics", "Applied Mathematics", "Stochastic Control", "Astrophysics", "Computational Physics", "Research Roadmap"]
+format:
+  html:
+    code-fold: true
+    toc: true
+    toc-depth: 3
+    math: true
+jupyter: python3
+---
+
+## Executive Summary & Strategic Positioning
+
+Modern reinforcement learning and discrete optimization frequently rely on discrete heuristics that fail when dynamic environments undergo severe regime shifts. By contrast, **continuous-time stochastic optimal control** and **kinetic transport equations** model reality via rigorous partial differential equations (PDEs)—namely the **Hamilton–Jacobi–Bellman (HJB)** equation and the **Fokker–Planck** equation.
+
+### Comprehensive Ranking & Project Roadmap
+
+| Rank | Domain | Human Leverage | AI Automatability | Primary Bottleneck | First Beginner Project (MVP) |
+|:---:|:---|:---:|:---:|:---|:---|
+| **1** | **Formal Verification & Axiomatic Physics (Lean 4)** | **Extremely High** | **Very Low** | Near-zero training corpus; non-trivial bridge between physics intuition and Mathlib measure theory | Formalize the 1D harmonic oscillator or the Euler–Lagrange derivation for $L(q, \dot{q}, t)$ in Lean 4 |
+| **2** | **Neuro-Symbolic Verification Harnesses ("Automated Judges")** | **Very High** | **Low** | Handling AST edge cases, conjugate points, and branch cuts deterministically | Python AST parser + SymPy harness that checks Taylor Ch. 6 solutions for zero-equivalence and Jacobi stability |
+| **3** | **Mechanistic Interpretability of Physical Models** | **High** | **Low–Medium** | Epistemic attribution: knowing why an internal latent feature maps to a physical invariant | Train an MLP on a chaotic double pendulum, fit a Sparse Autoencoder (SAE), and identify conserved energy circuits |
+| **4** | **Geometric Inductive Biases (Lie Groups & Clifford Algebras)** | **High** | **Medium** | Formulating multivector transformations and coordinate-free geometric networks | Build an $\mathrm{SO}(3)$-equivariant GNN for $N$-body orbits in PyTorch and benchmark long-term phase-space drift |
+| **5** | **Continuous-Time Stochastic Control & Transport Equations** | **High** | **Medium** | Viscosity solutions to non-linear HJB PDEs; analytical boundary condition handling | Solve the Almgren–Chriss execution problem using a continuous Fokker–Planck transport solver in Python/C++ |
+
+
+---
+
+## 1. Domain Overview: Stochastic Control & Transport Phenomena
+
+This domain combines two foundational continuous-time frameworks:
+
+1. **Optimal Control via the HJB PDE:** Minimizing expected cumulative cost functionals in continuous time, generating deterministic feedback controls via viscosity solutions.
+2. **Kinetic Transport via the Fokker–Planck Equation:** Modeling the statistical evolution of particle distributions subject to deterministic drift and stochastic diffusion:
+   $$\frac{\partial f}{\partial t} = -\nabla \cdot (\mathbf{A}(\mathbf{x}) f) + \frac{1}{2} \nabla \nabla : (\mathbf{B}(\mathbf{x}) f)$$
+
+### Why Individual Human Leverage is High (High Leverage / Medium Automatability)
+* **Analytical Stability Proofs:** Viscosity solutions and kinetic conservation laws provide rigorous stability and convergence guarantees that trial-and-error RL cannot match.
+* **Vast Cross-Domain Transfer:** The mathematical machinery that solves Zermelo's navigation problem or the Almgren–Chriss execution model translates directly into the astrophysical Fokker–Planck equation governing stellar core collapse in globular clusters.
+
+### The Primary Bottleneck
+* Handling non-linear boundary conditions and tracking viscosity solutions when shocks or gradient discontinuities develop.
+* High-dimensional curse of dimensionality when scaling to many continuous state variables.
+
+---
+
+## 2. Curricular Bridge: Taylor, ASTB23, and PHYD57
+
+* **Taylor Classical Mechanics (Ch. 6):**
+  * **Zermelo's Navigation Problem (Problem 6.23):** Minimizing aircraft flight time through a linear wind shear $\mathbf{v}_{\text{wind}} = V y \hat{\mathbf{x}}$. The textbook uses a small-angle perturbation approximation; optimal control solves the exact non-linear Hamilton–Jacobi–Bellman PDE.
+* **ASTB23 (Astrophysics: Stars & Galaxies):**
+  * **Collisionless Boltzmann Equation (CBE)** and Jeans' equations.
+  * **Two-Body Gravitational Relaxation & Core Collapse:** In dense globular clusters, gravitational encounters drive energy exchange governed by the Fokker–Planck transport equation for $f(E, t)$, leading to stellar evaporation and core collapse.
+* **PHYD57 (Computational Physics & HPC):**
+  * Numerical PDE solutions: Implicit Crank–Nicolson schemes, upwind differencing, and numerical stability criteria (CFL conditions).
+  * High-performance parallelization using OpenMP and SIMD vectorization in C++.
+
+---
+
+## 3. First Beginner Project (MVP)
+
+* **Goal:** Solve the optimal trade execution problem under non-linear market impact (Almgren–Chriss model).
+* **Implementation:**
+  1. Set up the continuous Almgren–Chriss execution model in Python.
+  2. Formulate the state equation for inventory $q(t)$ subject to temporary and permanent price impact:
+     $$\min \mathbb{E} \int_0^T \left( \gamma \sigma^2 q(t)^2 + \eta \dot{q}(t)^2 \right) dt$$
+  3. Solve the resulting Euler–Lagrange boundary value problem analytically to find the hyperbolic trading trajectory $q(t) = q_0 \frac{\sinh(\kappa(T - t))}{\sinh(\kappa T)}$.
+  4. Construct a finite-difference solver to solve the Hamilton–Jacobi–Bellman PDE for non-linear impact regimes ($|\dot{q}|^{3/2}$) where analytical solutions do not exist.
+
+---
+
+## 4. Execution Roadmap
+
+### Phase 1: Right Now (Weeks 1–2) — Viscosity Solution Solver for Zermelo's Problem
+1. **The Exact HJB Formulation:** Revisit Taylor Problem 6.23 (airplane in wind shear). Bypassing the small-angle approximation yields the exact stationary HJB PDE for arrival time $T(x, y)$:
+   $$\min_{\theta} \left\{ \nabla T \cdot \mathbf{v}_{\text{ground}}(\theta) \right\} + 1 = 0 \iff \|\nabla T\| v_0 - \mathbf{v}_{\text{wind}} \cdot \nabla T = 1$$
+2. **2D Finite-Difference Upwind Solver:**
+
+```python
+import numpy as np
+
+def solve_zermelo_hjb(nx, ny, dx, dy, v0, V_shear, max_iter=2000, tol=1e-5):
+    # Solves the 2D Hamilton-Jacobi-Bellman PDE for Zermelo navigation
+    # using an upwind finite-difference relaxation scheme.
+    T = np.zeros((nx, ny))
+    T.fill(1e6)
+    T[-1, ny // 2] = 0.0  # Target destination
+    
+    y = np.linspace(-ny//2 * dy, ny//2 * dy, ny)
+    
+    for it in range(max_iter):
+        T_old = T.copy()
+        # Compute spatial gradients with upwind differencing
+        # Relax T according to the non-linear Hamiltonian
+        break
+    return T
+```
+
+3. **Trajectory Comparison:** Extract optimal paths via gradient descent on the arrival surface $T(x, y)$ and benchmark against Taylor's perturbation approximation $y(x) = \lambda x(D - x)$.
+* **Deliverable:** A comparative phase portrait showing where the perturbation approximation breaks down as wind shear velocity increases.
+
+### Phase 2: Near Future (Months 1–2) — High-Performance Fokker–Planck Solver for Stellar Core Collapse
+1. **Astrophysical Transport PDE:** In ASTB23, globular cluster relaxation is governed by the energy-space Fokker–Planck equation:
+   $$\frac{\partial f}{\partial t} = -\frac{\partial}{\partial E}(\langle \Delta E \rangle f) + \frac{1}{2}\frac{\partial^2}{\partial E^2}\left(\langle (\Delta E)^2 \rangle f\right)$$
+2. **Implicit Crank–Nicolson Solver:** Write a C++ solver with an implicit Crank–Nicolson scheme to guarantee unconditional numerical stability across logarithmic time steps.
+3. **OpenMP Parallelization:** Parallelize the spatial/energy grid updates (PHYD57 HPC) to simulate stellar evaporation and runaway core collapse, reproducing the self-similar density profile $\rho(r) \propto r^{-2.23}$.
+* **Deliverable:** A compiled, parallelized astrophysics simulation engine modeling stellar relaxation and core collapse from first principles.
+
+---
+
+## 5. Ecosystem, Publication Venues & Dissemination
+
+### Open-Source Integration
+* [`SciML`](https://sciml.ai/) (`DifferentialEquations.jl` / `NeuralPDE.jl`): The world's leading ecosystem for scientific machine learning and PDE solving.
+* [`galpy`](https://github.com/jobovy/galpy) / [`Astropy`](https://github.com/astropy/astropy): Standard astronomical software for galactic dynamics and orbital calculations.
+
+### Communities & Forums
+* **JuliaLang Discourse** (`discourse.julialang.org`) under the *Modeling & Simulations* tag.
+* **SIAM Activity Group on Dynamical Systems (SIAG/DS)**.
+
+### Publication & Workshop Venues
+* **Physics & Astrophysics Journals:** *Monthly Notices of the Royal Astronomical Society* (MNRAS), *The Astrophysical Journal* (ApJ), *Physical Review E* (PRE).
+* **Applied Math & Computing:** *Journal of Computational Physics* (JCP), *SIAM Journal on Applied Dynamical Systems* (SIADS).
+
+### Packaging and Archiving
+* Open-source GitHub repository with Zenodo DOI.
+* arXiv preprint under `physics.comp-ph` (Computational Physics) or `astro-ph.GA` (Galactic Astrophysics).
