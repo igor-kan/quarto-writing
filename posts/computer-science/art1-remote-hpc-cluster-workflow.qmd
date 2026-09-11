@@ -318,22 +318,44 @@ rsync -avzP ./local_igor_dir/ art-1:~/igor-dir/
 
 ---
 
-### 3. Interactive `sftp` (Secure File Transfer Protocol)
+### 3. FTP & SFTP (Secure File Transfer Protocol)
 
-For an interactive FTP-like shell:
+Because `art-1` disables unencrypted FTP (port 21) for security reasons, all "FTP" connections must actually be routed via **SFTP (SSH File Transfer Protocol)** over port 22. You can achieve this either through standard graphical FTP clients or via an interactive terminal shell.
+
+#### Option A: Graphical FTP Clients (FileZilla, WinSCP, Cyberduck)
+If you prefer a drag-and-drop graphical interface instead of the command line, you can use any modern FTP client. 
+
+**Connection Configuration:**
+1. **Protocol:** Select **SFTP - SSH File Transfer Protocol** (Do *not* choose standard FTP).
+2. **Host:** `art-1.utsc.utoronto.ca`
+3. **Port:** `22`
+4. **Username:** `phyd57`
+5. **Password:** `in26itakeD57`
+
+> **Legacy Key Warning for GUI Clients:** Because of the CentOS 6.6 `ssh-dss` legacy keys, some strictly updated FTP clients (like the latest FileZilla) might refuse the connection out-of-the-box. If FileZilla drops the connection, you may need to explicitly allow legacy DSA keys in its connection settings. Alternatively, **WinSCP** (on Windows) or **Cyberduck** (macOS/Windows) often handle legacy enterprise SSH servers much more gracefully without manual tweaking.
+
+#### Option B: Interactive Command-Line FTP/SFTP
+For an interactive, terminal-based FTP shell, use the `sftp` command.
+
+If you have configured `~/.ssh/config`:
 ```bash
 sftp art-1
 ```
 
-Useful commands inside the `sftp>` prompt:
-* `ls` : List remote files.
-* `lls` : List local files.
-* `cd <dir>` : Change remote directory.
-* `lcd <dir>` : Change local directory.
-* `get <remote-file>` : Download file to local system.
-* `get -r <remote-dir>` : Download folder recursively.
-* `put <local-file>` : Upload file to remote system.
-* `exit` / `bye` : Terminate session.
+If connecting manually (which requires the legacy HostKey flag):
+```bash
+sftp -o HostKeyAlgorithms=+ssh-dss phyd57@art-1.utsc.utoronto.ca
+```
+
+**Essential `sftp>` Prompt Commands:**
+* `pwd` / `lpwd` : Print remote / print local working directory.
+* `ls` / `lls` : List files in remote / list local directory.
+* `cd <dir>` / `lcd <dir>` : Change remote / change local directory.
+* `get <remote-file>` : Download a file to your local machine.
+* `get -r <remote-dir>` : Download a folder recursively.
+* `put <local-file>` : Upload a file to the cluster.
+* `put -r <local-dir>` : Upload a folder recursively.
+* `exit` / `bye` : Close the FTP session.
 
 ---
 
