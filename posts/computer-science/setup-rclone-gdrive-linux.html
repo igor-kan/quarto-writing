@@ -8,9 +8,9 @@
 
 <meta name="author" content="Igor Kan">
 <meta name="dcterms.date" content="2026-09-10">
-<meta name="description" content="A complete cross-platform guide to installing rclone, authenticating Google Drive, and mounting it as a persistent local filesystem.">
+<meta name="description" content="A complete Linux-native guide to installing rclone, authenticating Google Drive, and mounting it as a persistent local filesystem.">
 
-<title>How to Set Up Rclone with Google Drive: Windows/WSL, Ubuntu &amp; Arch Linux – My Writings</title>
+<title>How to Set Up Rclone with Google Drive: Ubuntu, Fedora &amp; Arch Linux – My Writings</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -332,32 +332,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#cross-platform-installation" id="toc-cross-platform-installation" class="nav-link active" data-scroll-target="#cross-platform-installation">1. Cross-Platform Installation</a>
+  <li><a href="#native-linux-installation" id="toc-native-linux-installation" class="nav-link active" data-scroll-target="#native-linux-installation">1. Native Linux Installation</a>
   <ul class="collapse">
   <li><a href="#ubuntu-debian" id="toc-ubuntu-debian" class="nav-link" data-scroll-target="#ubuntu-debian">🐧 Ubuntu / Debian</a></li>
   <li><a href="#arch-linux" id="toc-arch-linux" class="nav-link" data-scroll-target="#arch-linux">🐉 Arch Linux</a></li>
-  <li><a href="#windows-native-wsl" id="toc-windows-native-wsl" class="nav-link" data-scroll-target="#windows-native-wsl">🪟 Windows (Native &amp; WSL)</a></li>
+  <li><a href="#fedora" id="toc-fedora" class="nav-link" data-scroll-target="#fedora">🎩 Fedora</a></li>
   </ul></li>
   <li><a href="#configuring-google-drive-rclone-config" id="toc-configuring-google-drive-rclone-config" class="nav-link" data-scroll-target="#configuring-google-drive-rclone-config">2. Configuring Google Drive (<code>rclone config</code>)</a></li>
   <li><a href="#mounting-google-drive-as-a-local-directory" id="toc-mounting-google-drive-as-a-local-directory" class="nav-link" data-scroll-target="#mounting-google-drive-as-a-local-directory">3. Mounting Google Drive as a Local Directory</a>
   <ul class="collapse">
-  <li><a href="#windows-native-mount" id="toc-windows-native-mount" class="nav-link" data-scroll-target="#windows-native-mount">🪟 Windows Native Mount</a></li>
-  <li><a href="#linux-mount-ubuntu-arch-wsl" id="toc-linux-mount-ubuntu-arch-wsl" class="nav-link" data-scroll-target="#linux-mount-ubuntu-arch-wsl">🐧 Linux Mount (Ubuntu, Arch, WSL)</a></li>
+  <li><a href="#linux-mount-ubuntu-fedora-arch" id="toc-linux-mount-ubuntu-fedora-arch" class="nav-link" data-scroll-target="#linux-mount-ubuntu-fedora-arch">🐧 Linux Mount (Ubuntu, Fedora, Arch)</a></li>
   </ul></li>
   <li><a href="#linux-automating-mount-on-boot-with-systemd" id="toc-linux-automating-mount-on-boot-with-systemd" class="nav-link" data-scroll-target="#linux-automating-mount-on-boot-with-systemd">4. Linux: Automating Mount on Boot with Systemd</a></li>
   <li><a href="#understanding-the-technologies-behind-the-mount" id="toc-understanding-the-technologies-behind-the-mount" class="nav-link" data-scroll-target="#understanding-the-technologies-behind-the-mount">5. Understanding the Technologies Behind the Mount</a>
   <ul class="collapse">
   <li><a href="#daemons-and-https-rest-changes-api" id="toc-daemons-and-https-rest-changes-api" class="nav-link" data-scroll-target="#daemons-and-https-rest-changes-api">1. Daemons and HTTPS REST / Changes API</a></li>
   <li><a href="#rclone-with-fuse3-and-its-mount-point" id="toc-rclone-with-fuse3-and-its-mount-point" class="nav-link" data-scroll-target="#rclone-with-fuse3-and-its-mount-point">2. Rclone with FUSE3 and its Mount Point</a></li>
-  <li><a href="#windows-network-drives-wsl2-and-the-9p-network-protocol" id="toc-windows-network-drives-wsl2-and-the-9p-network-protocol" class="nav-link" data-scroll-target="#windows-network-drives-wsl2-and-the-9p-network-protocol">3. Windows Network Drives, WSL2, and the 9P Network Protocol</a></li>
-  <li><a href="#virtual-filesystem-vfs-and-virtual-mounts" id="toc-virtual-filesystem-vfs-and-virtual-mounts" class="nav-link" data-scroll-target="#virtual-filesystem-vfs-and-virtual-mounts">4. Virtual Filesystem (VFS) and Virtual Mounts</a></li>
-  <li><a href="#vfs-cache-mode-sparse-file-caching-and-nvme" id="toc-vfs-cache-mode-sparse-file-caching-and-nvme" class="nav-link" data-scroll-target="#vfs-cache-mode-sparse-file-caching-and-nvme">5. VFS Cache Mode, Sparse-File Caching, and NVMe</a></li>
-  <li><a href="#posix-permission-virtualization" id="toc-posix-permission-virtualization" class="nav-link" data-scroll-target="#posix-permission-virtualization">6. POSIX Permission Virtualization</a></li>
-  <li><a href="#systemd-user-services" id="toc-systemd-user-services" class="nav-link" data-scroll-target="#systemd-user-services">7. Systemd User Services</a></li>
-  <li><a href="#systemd-timers-and-automated-background-sync-scripts" id="toc-systemd-timers-and-automated-background-sync-scripts" class="nav-link" data-scroll-target="#systemd-timers-and-automated-background-sync-scripts">8. Systemd Timers and Automated Background Sync Scripts</a></li>
-  <li><a href="#concurrency-control-readwrite-locks-and-asynchronous-updates" id="toc-concurrency-control-readwrite-locks-and-asynchronous-updates" class="nav-link" data-scroll-target="#concurrency-control-readwrite-locks-and-asynchronous-updates">9. Concurrency Control: Read/Write Locks and Asynchronous Updates</a></li>
-  <li><a href="#data-integrity-verification-scripts" id="toc-data-integrity-verification-scripts" class="nav-link" data-scroll-target="#data-integrity-verification-scripts">10. Data Integrity &amp; Verification Scripts</a></li>
-  <li><a href="#cross-platform-interoperability-and-methods" id="toc-cross-platform-interoperability-and-methods" class="nav-link" data-scroll-target="#cross-platform-interoperability-and-methods">11. Cross-Platform Interoperability and Methods</a></li>
+  <li><a href="#virtual-filesystem-vfs-and-virtual-mounts" id="toc-virtual-filesystem-vfs-and-virtual-mounts" class="nav-link" data-scroll-target="#virtual-filesystem-vfs-and-virtual-mounts">3. Virtual Filesystem (VFS) and Virtual Mounts</a></li>
+  <li><a href="#vfs-cache-mode-sparse-file-caching-and-nvme" id="toc-vfs-cache-mode-sparse-file-caching-and-nvme" class="nav-link" data-scroll-target="#vfs-cache-mode-sparse-file-caching-and-nvme">4. VFS Cache Mode, Sparse-File Caching, and NVMe</a></li>
+  <li><a href="#posix-permission-virtualization" id="toc-posix-permission-virtualization" class="nav-link" data-scroll-target="#posix-permission-virtualization">5. POSIX Permission Virtualization</a></li>
+  <li><a href="#systemd-user-services" id="toc-systemd-user-services" class="nav-link" data-scroll-target="#systemd-user-services">6. Systemd User Services</a></li>
+  <li><a href="#systemd-timers-and-automated-background-sync-scripts" id="toc-systemd-timers-and-automated-background-sync-scripts" class="nav-link" data-scroll-target="#systemd-timers-and-automated-background-sync-scripts">7. Systemd Timers and Automated Background Sync Scripts</a></li>
+  <li><a href="#concurrency-control-readwrite-locks-and-asynchronous-updates" id="toc-concurrency-control-readwrite-locks-and-asynchronous-updates" class="nav-link" data-scroll-target="#concurrency-control-readwrite-locks-and-asynchronous-updates">8. Concurrency Control: Read/Write Locks and Asynchronous Updates</a></li>
+  <li><a href="#data-integrity-verification-scripts" id="toc-data-integrity-verification-scripts" class="nav-link" data-scroll-target="#data-integrity-verification-scripts">9. Data Integrity &amp; Verification Scripts</a></li>
+  <li><a href="#filesystem-interoperability-and-methods" id="toc-filesystem-interoperability-and-methods" class="nav-link" data-scroll-target="#filesystem-interoperability-and-methods">10. Filesystem Interoperability and Methods</a></li>
   </ul></li>
   <li><a href="#performance-tuning-for-bulk-uploads" id="toc-performance-tuning-for-bulk-uploads" class="nav-link" data-scroll-target="#performance-tuning-for-bulk-uploads">6. Performance Tuning for Bulk Uploads</a></li>
   <li><a href="#re-connecting-an-expired-remote" id="toc-re-connecting-an-expired-remote" class="nav-link" data-scroll-target="#re-connecting-an-expired-remote">7. Re-connecting an Expired Remote</a></li>
@@ -370,20 +368,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">How to Set Up Rclone with Google Drive: Windows/WSL, Ubuntu &amp; Arch Linux</h1>
+<h1 class="title">How to Set Up Rclone with Google Drive: Ubuntu, Fedora &amp; Arch Linux</h1>
   <div class="quarto-categories">
     <div class="quarto-category">DevOps</div>
     <div class="quarto-category">Cloud</div>
     <div class="quarto-category">Storage</div>
     <div class="quarto-category">Systems</div>
     <div class="quarto-category">Linux</div>
-    <div class="quarto-category">Windows</div>
   </div>
   </div>
 
 <div>
   <div class="description">
-    A complete cross-platform guide to installing rclone, authenticating Google Drive, and mounting it as a persistent local filesystem.
+    A complete Linux-native guide to installing rclone, authenticating Google Drive, and mounting it as a persistent local filesystem.
   </div>
 </div>
 
@@ -413,10 +410,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p><strong>Rclone</strong> is an open-source command-line tool often described as <em>“rsync for cloud storage”</em>. It allows you to manage, sync, backup, and mount over 70 cloud storage providers—including Google Drive, Google Photos, Dropbox, S3, and OneDrive—directly on your system.</p>
-<p>Whether you need to sync files to Google Drive, back up local directories, or seamlessly mount your Drive as a local folder, this guide covers everything from initial setup to cross-platform installation and performance tuning.</p>
+<p>Whether you need to sync files to Google Drive, back up local directories, or seamlessly mount your Drive as a local folder, this guide covers everything from initial setup to native Linux installation and performance tuning.</p>
 <hr>
-<section id="cross-platform-installation" class="level2">
-<h2 class="anchored" data-anchor-id="cross-platform-installation">1. Cross-Platform Installation</h2>
+<section id="native-linux-installation" class="level2">
+<h2 class="anchored" data-anchor-id="native-linux-installation">1. Native Linux Installation</h2>
 <section id="ubuntu-debian" class="level3">
 <h3 class="anchored" data-anchor-id="ubuntu-debian">🐧 Ubuntu / Debian</h3>
 <p>Install <code>rclone</code> via the <code>apt</code> package manager:</p>
@@ -427,13 +424,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Install <code>rclone</code> via <code>pacman</code>:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> pacman <span class="at">-S</span> rclone</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-<section id="windows-native-wsl" class="level3">
-<h3 class="anchored" data-anchor-id="windows-native-wsl">🪟 Windows (Native &amp; WSL)</h3>
-<p>On Windows, you can install rclone using <code>winget</code> (Windows Package Manager). To support mounting Google Drive as a local drive letter (e.g., <code>G:\</code>), you must also install <strong>WinFsp</strong> (Windows File System Proxy).</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>winget install Rclone<span class="op">.</span><span class="fu">Rclone</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>winget install WinFsp<span class="op">.</span><span class="fu">WinFsp</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><em>(If you are using <strong>WSL2</strong> (Windows Subsystem for Linux), you can simply install <code>rclone</code> inside your Ubuntu WSL instance using the Ubuntu instructions above, though native Windows mounts can be accessed in WSL at <code>/mnt/c/</code> or similar).</em></p>
-<p>Verify the installation on any platform:</p>
+<section id="fedora" class="level3">
+<h3 class="anchored" data-anchor-id="fedora">🎩 Fedora</h3>
+<p>Install <code>rclone</code> via <code>dnf</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> dnf install rclone</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Verify the installation:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rclone</span> version</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
@@ -465,21 +460,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="mounting-google-drive-as-a-local-directory" class="level2">
 <h2 class="anchored" data-anchor-id="mounting-google-drive-as-a-local-directory">3. Mounting Google Drive as a Local Directory</h2>
 <p>One of <code>rclone</code>’s most powerful features is mounting cloud storage into your local directory tree.</p>
-<section id="windows-native-mount" class="level3">
-<h3 class="anchored" data-anchor-id="windows-native-mount">🪟 Windows Native Mount</h3>
-<p>Run this in PowerShell to mount Google Drive to the <code>G:</code> drive letter:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>rclone <span class="fu">mount</span> gdrive<span class="op">:</span> G<span class="op">:</span> <span class="op">--</span>vfs-cache-mode full</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</section>
-<section id="linux-mount-ubuntu-arch-wsl" class="level3">
-<h3 class="anchored" data-anchor-id="linux-mount-ubuntu-arch-wsl">🐧 Linux Mount (Ubuntu, Arch, WSL)</h3>
+<section id="linux-mount-ubuntu-fedora-arch" class="level3">
+<h3 class="anchored" data-anchor-id="linux-mount-ubuntu-fedora-arch">🐧 Linux Mount (Ubuntu, Fedora, Arch)</h3>
 <p>Create a mount point and start the mount process in the background using FUSE:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/gdrive</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ex">rclone</span> mount gdrive: ~/gdrive <span class="at">--vfs-cache-mode</span> full <span class="kw">&amp;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/gdrive</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">rclone</span> mount gdrive: ~/gdrive <span class="at">--vfs-cache-mode</span> full <span class="kw">&amp;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <blockquote class="blockquote">
 <p><strong>Note:</strong> The <code>--vfs-cache-mode full</code> flag caches reads/writes locally, allowing seamless access by applications like video players and text editors.</p>
 </blockquote>
 <p>To unmount on Linux:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">fusermount</span> <span class="at">-u</span> ~/gdrive</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">fusermount</span> <span class="at">-u</span> ~/gdrive</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
 </section>
@@ -488,35 +478,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>To automatically mount Google Drive in the background (even before interactive login), configure a systemd user service.</p>
 <ol type="1">
 <li><p><strong>Create the service file:</strong> <code>~/.config/systemd/user/rclone-gdrive.service</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[Unit]</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Description</span><span class="ot">=</span><span class="st">Rclone Google Drive Mount</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="dt">After</span><span class="ot">=</span><span class="st">network-online.target</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="dt">Wants</span><span class="ot">=</span><span class="st">network-online.target</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="kw">[Service]</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="dt">Type</span><span class="ot">=</span><span class="st">notify</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStart</span><span class="ot">=</span><span class="st">/usr/bin/rclone mount gdrive: %h/gdrive \</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="dt">  --config %h/.config/rclone/rclone.conf \</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-mode full \</span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-max-size 10G \</span></span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="dt">  --umask 022</span></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStop</span><span class="ot">=</span><span class="st">/bin/fusermount -u %h/gdrive</span></span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="dt">Restart</span><span class="ot">=</span><span class="st">on-failure</span></span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="dt">RestartSec</span><span class="ot">=</span><span class="dv">10</span></span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="kw">[Install]</span></span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="dt">WantedBy</span><span class="ot">=</span><span class="st">default.target</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[Unit]</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Description</span><span class="ot">=</span><span class="st">Rclone Google Drive Mount</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="dt">After</span><span class="ot">=</span><span class="st">network-online.target</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="dt">Wants</span><span class="ot">=</span><span class="st">network-online.target</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="kw">[Service]</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="dt">Type</span><span class="ot">=</span><span class="st">notify</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStart</span><span class="ot">=</span><span class="st">/usr/bin/rclone mount gdrive: %h/gdrive \</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="dt">  --config %h/.config/rclone/rclone.conf \</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-mode full \</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-max-size 10G \</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="dt">  --umask 022</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStop</span><span class="ot">=</span><span class="st">/bin/fusermount -u %h/gdrive</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="dt">Restart</span><span class="ot">=</span><span class="st">on-failure</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="dt">RestartSec</span><span class="ot">=</span><span class="dv">10</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="kw">[Install]</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="dt">WantedBy</span><span class="ot">=</span><span class="st">default.target</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p><strong>Enable and start the service:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> daemon-reload</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> enable <span class="at">--now</span> rclone-gdrive.service</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> daemon-reload</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> enable <span class="at">--now</span> rclone-gdrive.service</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p><strong>Enable Boot Lingering:</strong> This ensures the mount initializes at system boot, not just when you log in.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">loginctl</span> enable-linger <span class="va">$USER</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">loginctl</span> enable-linger <span class="va">$USER</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 </ol>
 <hr>
 </section>
 <section id="understanding-the-technologies-behind-the-mount" class="level2">
 <h2 class="anchored" data-anchor-id="understanding-the-technologies-behind-the-mount">5. Understanding the Technologies Behind the Mount</h2>
-<p>When you mount Google Drive using <code>rclone</code>, you are essentially running a <strong>cloud daemon</strong> that bridges local operating systems with remote <strong>cloud architecture</strong>. This eliminates the need for resource-heavy <strong>dual sync clients</strong> (e.g., running the official Google Drive app for work and the Dropbox app for personal files simultaneously, which wastes RAM and CPU) or <strong>clunky third-party Windows drivers</strong>.</p>
+<p>When you mount Google Drive using <code>rclone</code>, you are essentially running a <strong>cloud daemon</strong> that bridges local operating systems with remote <strong>cloud architecture</strong>. This eliminates the need for resource-heavy <strong>dual sync clients</strong> (e.g., running the official Google Drive app for work and the Dropbox app for personal files simultaneously, which wastes RAM and CPU) .</p>
 <p>Here is a breakdown of the underlying technologies and concepts:</p>
 <section id="daemons-and-https-rest-changes-api" class="level3">
 <h3 class="anchored" data-anchor-id="daemons-and-https-rest-changes-api">1. Daemons and HTTPS REST / Changes API</h3>
@@ -526,49 +516,45 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="rclone-with-fuse3-and-its-mount-point">2. Rclone with FUSE3 and its Mount Point</h3>
 <p>On Linux, Rclone uses <strong>FUSE3</strong> (Filesystem in Userspace) to attach the remote cloud to a local empty directory called a <strong>mount point</strong> (e.g., <code>~/gdrive</code>). * <strong>Example:</strong> When you open a PDF in <code>~/gdrive/report.pdf</code>, your PDF viewer thinks it’s a local file. The Linux kernel intercepts this read request, passes it to FUSE3, and FUSE3 hands it to the Rclone daemon, which seamlessly streams the PDF bytes from Google Drive.</p>
 </section>
-<section id="windows-network-drives-wsl2-and-the-9p-network-protocol" class="level3">
-<h3 class="anchored" data-anchor-id="windows-network-drives-wsl2-and-the-9p-network-protocol">3. Windows Network Drives, WSL2, and the 9P Network Protocol</h3>
-<p>On Windows, cloud storage is traditionally mapped as a <strong>network drive</strong> (like the <code>Z:</code> drive). However, modern Rclone on Windows, especially when interacting with <strong>WSL2</strong> (Windows Subsystem for Linux), leverages the <strong>Plan9 (9P) Network Protocol</strong>. * <strong>Example:</strong> Plan9 is a lightweight file protocol that allows a Linux-based FUSE mount running inside your Ubuntu WSL2 instance to be exposed directly to the Windows File Explorer (e.g., under <code>\\wsl$\Ubuntu\home\user\gdrive</code>). This bridges the gap between Linux’s FUSE and Windows’ NTFS natively without requiring unstable third-party Windows mounting drivers.</p>
-</section>
 <section id="virtual-filesystem-vfs-and-virtual-mounts" class="level3">
-<h3 class="anchored" data-anchor-id="virtual-filesystem-vfs-and-virtual-mounts">4. Virtual Filesystem (VFS) and Virtual Mounts</h3>
+<h3 class="anchored" data-anchor-id="virtual-filesystem-vfs-and-virtual-mounts">3. Virtual Filesystem (VFS) and Virtual Mounts</h3>
 <p>Google Drive does not have a true hierarchical “filesystem” (it uses raw database IDs for files, which is why you can have two files with the same name in the same Google Drive folder). Rclone creates a <strong>Virtual Filesystem (VFS)</strong> layer to translate these database IDs into a standard folder tree structure (<code>/folder/subfolder/file.txt</code>). The mount is “virtual” because the folder structure exists in RAM and is projected onto the OS, rather than being written to the physical hard drive.</p>
 </section>
 <section id="vfs-cache-mode-sparse-file-caching-and-nvme" class="level3">
-<h3 class="anchored" data-anchor-id="vfs-cache-mode-sparse-file-caching-and-nvme">5. VFS Cache Mode, Sparse-File Caching, and NVMe</h3>
+<h3 class="anchored" data-anchor-id="vfs-cache-mode-sparse-file-caching-and-nvme">4. VFS Cache Mode, Sparse-File Caching, and NVMe</h3>
 <p>When you use <code>--vfs-cache-mode full</code>, Rclone uses <strong>VFS local sparse-file caching</strong>. * <strong>Example:</strong> If you open a 50GB 4K video from your mount, Rclone does not download 50GB before playing. It creates a “sparse” (mostly empty) placeholder file on your local disk. As your media player requests specific chunks of the video, Rclone downloads only those blocks and caches them. If your local disk is a fast <strong>NVMe</strong> SSD, this caching process is so rapid that skipping around a massive cloud video feels completely indistinguishable from playing a local file.</p>
 </section>
 <section id="posix-permission-virtualization" class="level3">
-<h3 class="anchored" data-anchor-id="posix-permission-virtualization">6. POSIX Permission Virtualization</h3>
+<h3 class="anchored" data-anchor-id="posix-permission-virtualization">5. POSIX Permission Virtualization</h3>
 <p>Cloud providers don’t understand Linux ownership (UID/GID) or file permissions (like <code>chmod 755</code>). Rclone virtualizes these <strong>POSIX permissions</strong> locally. * <strong>Example:</strong> Using flags like <code>--umask 022</code>, Rclone pretends that all files on Google Drive have standard Linux read/execute permissions, preventing your local Linux applications from crashing with “Permission Denied” errors when trying to read the cloud files.</p>
 </section>
 <section id="systemd-user-services" class="level3">
-<h3 class="anchored" data-anchor-id="systemd-user-services">7. Systemd User Services</h3>
+<h3 class="anchored" data-anchor-id="systemd-user-services">6. Systemd User Services</h3>
 <p>Instead of running Rclone manually in an open terminal, we use <strong>systemd user services</strong> (as shown in Section 4) to manage it. This turns the mount command into a resilient background service that automatically starts when you boot the computer, automatically restarts if the network drops, and cleanly unmounts when you shut down.</p>
 </section>
 <section id="systemd-timers-and-automated-background-sync-scripts" class="level3">
-<h3 class="anchored" data-anchor-id="systemd-timers-and-automated-background-sync-scripts">8. Systemd Timers and Automated Background Sync Scripts</h3>
+<h3 class="anchored" data-anchor-id="systemd-timers-and-automated-background-sync-scripts">7. Systemd Timers and Automated Background Sync Scripts</h3>
 <p>Instead of relying on fragile <code>cron</code> jobs, you can use <strong>systemd timers</strong> to orchestrate your cloud architecture. Systemd timers can trigger automated bash scripts to run periodically in the background. A robust architecture separates the live FUSE mount (for daily interactive access) from scheduled background syncing (for data safety). * <strong>Example of a Sync Pipeline:</strong> <code>Systemd Timer (2:00 AM)</code> ──&gt; <code>Backup Script (rclone sync local to cloud)</code> ──&gt; <code>Prune Script (rclone delete files older than 30 days)</code> ──&gt; <code>Maintenance Script (rclone dedupe to fix duplicate filenames)</code></p>
 </section>
 <section id="concurrency-control-readwrite-locks-and-asynchronous-updates" class="level3">
-<h3 class="anchored" data-anchor-id="concurrency-control-readwrite-locks-and-asynchronous-updates">9. Concurrency Control: Read/Write Locks and Asynchronous Updates</h3>
+<h3 class="anchored" data-anchor-id="concurrency-control-readwrite-locks-and-asynchronous-updates">8. Concurrency Control: Read/Write Locks and Asynchronous Updates</h3>
 <ul>
 <li><strong>Read/Write Locks:</strong> When you edit a file, multiple processes might try to access it simultaneously. Rclone’s VFS layer enforces POSIX-compliant <strong>read/write locks</strong>, ensuring that if a text editor is saving a file, a background backup process cannot read it until the save completes, preventing data corruption.</li>
 <li><strong>Asynchronous Updates:</strong> When you hit “Save”, the write is committed instantly to your local sparse-file cache. Rclone then performs an <strong>asynchronous update</strong>, uploading the file to Google Drive in the background. Your application regains control instantly without freezing to wait for the network.</li>
 </ul>
 </section>
 <section id="data-integrity-verification-scripts" class="level3">
-<h3 class="anchored" data-anchor-id="data-integrity-verification-scripts">10. Data Integrity &amp; Verification Scripts</h3>
+<h3 class="anchored" data-anchor-id="data-integrity-verification-scripts">9. Data Integrity &amp; Verification Scripts</h3>
 <ul>
 <li><strong>Concept:</strong> Network drops or API timeouts can occasionally cause silent data corruption during massive transfers.</li>
 <li><strong>Verification Scripts:</strong> You can automate integrity checks using <code>rclone check</code> in your bash scripts. Rclone fetches cryptographic hashes (like MD5) from the cloud API and compares them against your local files. This provides mathematical verification that your remote backups are identical to your local copies without actually re-downloading the data.</li>
 </ul>
 </section>
-<section id="cross-platform-interoperability-and-methods" class="level3">
-<h3 class="anchored" data-anchor-id="cross-platform-interoperability-and-methods">11. Cross-Platform Interoperability and Methods</h3>
+<section id="filesystem-interoperability-and-methods" class="level3">
+<h3 class="anchored" data-anchor-id="filesystem-interoperability-and-methods">10. Filesystem Interoperability and Methods</h3>
 <ul>
-<li><strong>Concept:</strong> Interoperability ensures that files created in one environment (e.g., Windows GUI apps) can be seamlessly utilized in another (e.g., Linux command-line).</li>
-<li><strong>Methods:</strong> The architecture achieves this via abstraction layers. Windows native applications access the drive via the 9P protocol as a mapped network drive, while Linux tools see a standard POSIX filesystem via FUSE. Since Rclone treats file contents opaquely, you can use Linux <code>grep</code> to parse a log file stored on Google Drive while a Windows application is simultaneously appending new lines to it, with both systems maintaining complete interoperability.</li>
+<li><strong>Concept:</strong> Interoperability ensures that files created in one environment (e.g., Linux GUI apps like LibreOffice) can be seamlessly utilized in another (e.g., Linux command-line).</li>
+<li><strong>Methods:</strong> The architecture achieves this via abstraction layers. The Linux kernel’s Virtual File Switch (VFS) and FUSE allow standard GUI applications to access the cloud drive exactly as they would a local ext4 partition. Since Rclone treats file contents opaquely, you can use <code>grep</code> to parse a log file stored on Google Drive while a graphical application is simultaneously appending new lines to it, with the filesystem maintaining complete interoperability.</li>
 </ul>
 <hr>
 </section>
@@ -576,11 +562,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="performance-tuning-for-bulk-uploads" class="level2">
 <h2 class="anchored" data-anchor-id="performance-tuning-for-bulk-uploads">6. Performance Tuning for Bulk Uploads</h2>
 <p>If you need to backup hundreds of gigabytes (e.g., massive media or dataset folders), standard <code>copy</code> commands can be slow. Use these optimized flags to maximize bandwidth and minimize API overhead:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rclone</span> copy ~/Downloads gdrive:Downloads <span class="dt">\</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--fast-list</span> <span class="dt">\</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--transfers</span><span class="op">=</span>8 <span class="dt">\</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--checkers</span><span class="op">=</span>16 <span class="dt">\</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--stats</span> 10s</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rclone</span> copy ~/Downloads gdrive:Downloads <span class="dt">\</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--fast-list</span> <span class="dt">\</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--transfers</span><span class="op">=</span>8 <span class="dt">\</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--checkers</span><span class="op">=</span>16 <span class="dt">\</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--stats</span> 10s</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li><code>--fast-list</code>: Uses recursive API directory listings, significantly reducing HTTP request overhead.</li>
 <li><code>--transfers=8</code>: Uploads 8 files in parallel.</li>
@@ -591,7 +577,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="re-connecting-an-expired-remote" class="level2">
 <h2 class="anchored" data-anchor-id="re-connecting-an-expired-remote">7. Re-connecting an Expired Remote</h2>
 <p>Google Drive tokens expire periodically. If you receive an <code>invalid_grant</code> authentication error, reconnect quickly without deleting your configuration:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rclone</span> config reconnect gdrive:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rclone</span> config reconnect gdrive:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Follow the prompt to re-authenticate via your web browser.</p>
 
 
