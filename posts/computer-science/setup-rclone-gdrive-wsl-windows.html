@@ -336,6 +336,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#key-advantages" id="toc-key-advantages" class="nav-link" data-scroll-target="#key-advantages">Key Advantages:</a></li>
   </ul></li>
+  <li><a href="#architectural-deep-dive-terms-core-concepts" id="toc-architectural-deep-dive-terms-core-concepts" class="nav-link" data-scroll-target="#architectural-deep-dive-terms-core-concepts">Architectural Deep-Dive: Terms &amp; Core Concepts</a>
+  <ul class="collapse">
+  <li><a href="#rclone-and-cloud-daemons" id="toc-rclone-and-cloud-daemons" class="nav-link" data-scroll-target="#rclone-and-cloud-daemons">1. Rclone and Cloud Daemons</a></li>
+  <li><a href="#eliminating-dual-sync-clients-clunky-windows-drivers" id="toc-eliminating-dual-sync-clients-clunky-windows-drivers" class="nav-link" data-scroll-target="#eliminating-dual-sync-clients-clunky-windows-drivers">2. Eliminating Dual Sync Clients &amp; Clunky Windows Drivers</a></li>
+  <li><a href="#cloud-architecture-https-rest-changes-api" id="toc-cloud-architecture-https-rest-changes-api" class="nav-link" data-scroll-target="#cloud-architecture-https-rest-changes-api">3. Cloud Architecture &amp; HTTPS REST / Changes API</a></li>
+  <li><a href="#fuse3-and-mount-points" id="toc-fuse3-and-mount-points" class="nav-link" data-scroll-target="#fuse3-and-mount-points">4. FUSE3 and Mount Points</a></li>
+  <li><a href="#virtual-filesystem-vfs-and-virtual-mounts" id="toc-virtual-filesystem-vfs-and-virtual-mounts" class="nav-link" data-scroll-target="#virtual-filesystem-vfs-and-virtual-mounts">5. Virtual Filesystem (VFS) and Virtual Mounts</a></li>
+  <li><a href="#cache-modes-local-sparse-file-caching-and-nvme-ssds" id="toc-cache-modes-local-sparse-file-caching-and-nvme-ssds" class="nav-link" data-scroll-target="#cache-modes-local-sparse-file-caching-and-nvme-ssds">6. Cache Modes, Local Sparse-File Caching, and NVMe SSDs</a></li>
+  <li><a href="#posix-permission-virtualization" id="toc-posix-permission-virtualization" class="nav-link" data-scroll-target="#posix-permission-virtualization">7. POSIX Permission Virtualization</a></li>
+  <li><a href="#automated-background-sync-scripts-and-their-types" id="toc-automated-background-sync-scripts-and-their-types" class="nav-link" data-scroll-target="#automated-background-sync-scripts-and-their-types">8. Automated Background Sync Scripts and Their Types</a></li>
+  <li><a href="#windows-drives-drive-letters-vs.-network-drives-wsl2" id="toc-windows-drives-drive-letters-vs.-network-drives-wsl2" class="nav-link" data-scroll-target="#windows-drives-drive-letters-vs.-network-drives-wsl2">9. Windows Drives (Drive Letters vs.&nbsp;Network Drives) &amp; WSL2</a></li>
+  <li><a href="#the-plan9-9p-network-protocol" id="toc-the-plan9-9p-network-protocol" class="nav-link" data-scroll-target="#the-plan9-9p-network-protocol">10. The Plan9 (9P) Network Protocol</a></li>
+  <li><a href="#systemd-user-services-systemd-timers-backup-prune-maintenance" id="toc-systemd-user-services-systemd-timers-backup-prune-maintenance" class="nav-link" data-scroll-target="#systemd-user-services-systemd-timers-backup-prune-maintenance">11. Systemd User Services &amp; Systemd Timers (Backup, Prune, Maintenance)</a></li>
+  </ul></li>
   <li><a href="#step-1-enable-systemd-in-wsl2" id="toc-step-1-enable-systemd-in-wsl2" class="nav-link" data-scroll-target="#step-1-enable-systemd-in-wsl2">Step 1: Enable Systemd in WSL2</a></li>
   <li><a href="#step-2-install-rclone-and-fuse3" id="toc-step-2-install-rclone-and-fuse3" class="nav-link" data-scroll-target="#step-2-install-rclone-and-fuse3">Step 2: Install Rclone and FUSE3</a></li>
   <li><a href="#step-3-configure-fuse-multi-user-permissions" id="toc-step-3-configure-fuse-multi-user-permissions" class="nav-link" data-scroll-target="#step-3-configure-fuse-multi-user-permissions">Step 3: Configure FUSE Multi-User Permissions</a></li>
@@ -442,20 +456,124 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <hr>
 </section>
 </section>
+<section id="architectural-deep-dive-terms-core-concepts" class="level2">
+<h2 class="anchored" data-anchor-id="architectural-deep-dive-terms-core-concepts">Architectural Deep-Dive: Terms &amp; Core Concepts</h2>
+<p>To understand why this architecture is far superior to standard commercial sync tools, let us break down each underlying concept, technology, and protocol:</p>
+<section id="rclone-and-cloud-daemons" class="level3">
+<h3 class="anchored" data-anchor-id="rclone-and-cloud-daemons">1. Rclone and Cloud Daemons</h3>
+<ul>
+<li><strong>Concept:</strong> While standard Rclone is a synchronous CLI tool (like <code>rsync</code>), running <code>rclone mount</code> transforms it into a long-running <strong>daemon</strong>—a background service with no graphical user interface that runs continuously.</li>
+<li><strong>How it Works:</strong> The daemon intercepts local operating system system calls (such as <code>open()</code>, <code>read()</code>, <code>write()</code>, <code>close()</code>) and translates them into cloud API actions. It maintains active worker threads to process asynchronous background uploads and downloads.</li>
+<li><strong>Example:</strong> Opening <code>notes.txt</code> in a local text editor makes the editor issue standard POSIX <code>read()</code> calls. The Rclone daemon streams only the required bytes over HTTPS, making remote files feel local.</li>
+</ul>
+</section>
+<section id="eliminating-dual-sync-clients-clunky-windows-drivers" class="level3">
+<h3 class="anchored" data-anchor-id="eliminating-dual-sync-clients-clunky-windows-drivers">2. Eliminating Dual Sync Clients &amp; Clunky Windows Drivers</h3>
+<ul>
+<li><strong>The Problem:</strong> Many users run multiple official sync clients simultaneously—such as Google Drive for Desktop alongside Dropbox or OneDrive. Each client runs its own separate background process, consumes hundreds of megabytes of RAM, runs redundant disk indexing services, and competes for filesystem locks.</li>
+<li><strong>The Driver Problem:</strong> Native Windows mounting utilities (like WinFsp or Dokan) require low-level Windows kernel filesystem filter drivers. These third-party drivers frequently break after major Windows Updates, introduce memory leaks, or trigger Blue Screens of Death (BSOD).</li>
+<li><strong>The Solution:</strong> Isolating the mount inside WSL2 completely eliminates the need for Windows kernel drivers. A single Rclone daemon handles all cloud remotes, consuming minimal RAM and zero Windows kernel attack surface.</li>
+</ul>
+</section>
+<section id="cloud-architecture-https-rest-changes-api" class="level3">
+<h3 class="anchored" data-anchor-id="cloud-architecture-https-rest-changes-api">3. Cloud Architecture &amp; HTTPS REST / Changes API</h3>
+<ul>
+<li><strong>Cloud Architecture:</strong> Cloud providers like Google Drive do not store files in standard filesystem blocks or inodes; they operate as object databases where each file is an opaque blob addressed by a unique alphanumeric ID string.</li>
+<li><strong>HTTPS REST API:</strong> When your application requests a file, Rclone executes HTTPS REST requests (e.g., <code>GET https://www.googleapis.com/drive/v3/files/{fileId}?alt=media</code>).</li>
+<li><strong>Changes API:</strong> Rather than crawling through thousands of directories every few seconds to detect changes (which quickly exhausts API rate limits), Rclone polls Google’s <strong>Changes API</strong> (<code>drive.changes.list</code>). This returns an incremental stream of delta changes (new files, modified timestamps, deleted IDs), updating the local directory view in near real-time with negligible network overhead.</li>
+</ul>
+</section>
+<section id="fuse3-and-mount-points" class="level3">
+<h3 class="anchored" data-anchor-id="fuse3-and-mount-points">4. FUSE3 and Mount Points</h3>
+<ul>
+<li><strong>FUSE (Filesystem in Userspace):</strong> In traditional Unix systems, filesystems must be written as privileged kernel modules. FUSE allows unprivileged user programs to create custom filesystems. <strong>FUSE3</strong> is the modern iteration offering enhanced multithreading and asynchronous I/O capabilities.</li>
+<li><strong>Mount Point:</strong> A standard, empty directory in your Linux tree (e.g., <code>~/gdrive</code>) designated as the attachment point for the virtual filesystem.</li>
+<li><strong>Mechanism:</strong> When an application accesses <code>~/gdrive</code>, the Linux Virtual File Switch (VFS) routes the request through <code>/dev/fuse</code> to the user-space Rclone process, which serves the file from memory, cache, or the cloud.</li>
+</ul>
+</section>
+<section id="virtual-filesystem-vfs-and-virtual-mounts" class="level3">
+<h3 class="anchored" data-anchor-id="virtual-filesystem-vfs-and-virtual-mounts">5. Virtual Filesystem (VFS) and Virtual Mounts</h3>
+<ul>
+<li><strong>Concept:</strong> A <strong>virtual mount</strong> creates the illusion of a full filesystem hierarchy without allocating corresponding disk blocks on physical storage.</li>
+<li><strong>VFS Translation Layer:</strong> Because Google Drive permits multiple files with identical names in the same parent folder and organizes data by database IDs, Rclone’s VFS layer builds an in-memory directory tree that conforms to standard POSIX hierarchy rules (<code>/path/to/filename.ext</code>).</li>
+</ul>
+</section>
+<section id="cache-modes-local-sparse-file-caching-and-nvme-ssds" class="level3">
+<h3 class="anchored" data-anchor-id="cache-modes-local-sparse-file-caching-and-nvme-ssds">6. Cache Modes, Local Sparse-File Caching, and NVMe SSDs</h3>
+<ul>
+<li><strong>Cache Modes:</strong>
+<ul>
+<li><code>--vfs-cache-mode off</code>: Direct streaming; no seek support and read-only for many applications.</li>
+<li><code>--vfs-cache-mode writes</code>: Caches files only when modified locally.</li>
+<li><code>--vfs-cache-mode full</code>: The gold standard. Supports full random reads, writes, memory mapping (<code>mmap</code>), and append operations.</li>
+</ul></li>
+<li><strong>Local Sparse-File Caching:</strong> Under <code>full</code> cache mode, Rclone does not download an entire file before opening it. If you open a 20 GB video file to check the final 10 seconds, Rclone creates a <strong>sparse file</strong> on your local drive. It allocates disk blocks <em>only</em> for the requested 10-second segment, leaving the rest as unallocated “holes”.</li>
+<li><strong>NVMe Integration:</strong> Storing this cache (<code>~/.cache/rclone/</code>) on a fast NVMe SSD ensures that chunk lookups, hash verifications, and buffer flushes operate at multi-gigabyte-per-second bus speeds, making remote cloud access indistinguishable from local drive performance.</li>
+</ul>
+</section>
+<section id="posix-permission-virtualization" class="level3">
+<h3 class="anchored" data-anchor-id="posix-permission-virtualization">7. POSIX Permission Virtualization</h3>
+<ul>
+<li><strong>Concept:</strong> Google Drive possesses no native awareness of Linux users, groups, or POSIX mode bits (<code>rwxr-xr-x</code>).</li>
+<li><strong>Virtualization:</strong> When mounting, Rclone virtualizes these permissions dynamically. Passing <code>--umask 022</code> ensures files appear with standard <code>0644</code> (read/write for owner, read for others) and directories with <code>0755</code> permissions. Local Linux scripts, daemons, and SSH servers can interact with these files without triggering permission errors.</li>
+</ul>
+</section>
+<section id="automated-background-sync-scripts-and-their-types" class="level3">
+<h3 class="anchored" data-anchor-id="automated-background-sync-scripts-and-their-types">8. Automated Background Sync Scripts and Their Types</h3>
+<p>While a live FUSE mount is optimal for interactive browsing, scheduled background sync scripts provide deterministic backup guarantees. Common script patterns include: 1. <strong>One-Way Mirror (<code>rclone sync</code>):</strong> Modifies destination to match source precisely, adding new files and deleting removed ones. * <em>Example:</em> Nightly sync of <code>~/Documents</code> to <code>gdrive:Backup/Documents</code>. 2. <strong>Incremental Snapshot Backup (<code>--backup-dir</code>):</strong> Moves overwritten or deleted files into a date-stamped folder, creating an immutable historic archive. * <em>Example:</em> <code>rclone sync ~/Code gdrive:Code --backup-dir gdrive:Archive/$(date +%Y-%m-%d)</code>. 3. <strong>Bidirectional Synchronization (<code>rclone bisync</code>):</strong> Propagates changes made on either side with conflict-detection heuristics. 4. <strong>Maintenance &amp; Deduplication (<code>rclone dedupe</code>):</strong> Resolves duplicate filenames that may occur on Google Drive due to concurrent web uploads.</p>
+</section>
+<section id="windows-drives-drive-letters-vs.-network-drives-wsl2" class="level3">
+<h3 class="anchored" data-anchor-id="windows-drives-drive-letters-vs.-network-drives-wsl2">9. Windows Drives (Drive Letters vs.&nbsp;Network Drives) &amp; WSL2</h3>
+<ul>
+<li><strong>Windows Drive Architecture:</strong> Windows traditionally identifies storage volumes by single drive letters (<code>C:\</code> for the system NTFS partition, <code>D:\</code> for secondary drives).</li>
+<li><strong>Local vs.&nbsp;Network Drives:</strong> While <code>C:\</code> represents a local physical drive controlled by an internal storage controller, drive letters can also be mapped to network resources (Network Drives) defined by UNC paths (Universal Naming Convention, e.g., <code>\\server\share</code>).</li>
+<li><strong>WSL2 Integration:</strong> WSL2 runs inside an optimized Hyper-V utility virtual machine with its own Linux kernel. Windows File Explorer accesses the WSL2 virtual disk via the special UNC network provider <code>\\wsl$\&lt;DistroName&gt;\</code>. Mapping this path to a drive letter like <code>G:\</code> lets legacy Windows applications (like Office, MATLAB, or Adobe) access your cloud files as if they were on a physical local disk.</li>
+</ul>
+</section>
+<section id="the-plan9-9p-network-protocol" class="level3">
+<h3 class="anchored" data-anchor-id="the-plan9-9p-network-protocol">10. The Plan9 (9P) Network Protocol</h3>
+<ul>
+<li><strong>Origin &amp; Architecture:</strong> Originally developed at Bell Labs as part of the Plan 9 operating system, the <strong>9P network protocol</strong> treats all system resources, devices, and files as network-accessible file systems.</li>
+<li><strong>Role in WSL2:</strong> Microsoft chose the 9P protocol to bridge the boundary between the Windows host kernel and the WSL2 guest Linux kernel.</li>
+<li><strong>Mechanism:</strong> A 9P server runs inside the WSL2 guest, exposing the Linux VFS (including Rclone’s FUSE mount). The Windows NT kernel runs an internal 9P client that communicates with this server across Hyper-V’s lightning-fast virtual VM bus (VMBus). This allows Windows applications to read and write to the Linux-mounted Google Drive at RAM-bus speed without any physical network interface overhead.</li>
+</ul>
+</section>
+<section id="systemd-user-services-systemd-timers-backup-prune-maintenance" class="level3">
+<h3 class="anchored" data-anchor-id="systemd-user-services-systemd-timers-backup-prune-maintenance">11. Systemd User Services &amp; Systemd Timers (Backup, Prune, Maintenance)</h3>
+<ul>
+<li><p><strong>Systemd User Services (<code>systemctl --user</code>):</strong> Manage user-level background daemons that run independently of root. When session lingering is enabled (<code>loginctl enable-linger</code>), these services start automatically during boot and continue running even when no shell is open.</p></li>
+<li><p><strong>Systemd Timers:</strong> The modern, robust successor to cron. Timers provide precise scheduling, monotonic time delays, wake-on-event triggers, and integrated logging via <code>journalctl</code>.</p></li>
+<li><p><strong>The Automated Lifecycle Pipeline:</strong></p>
+<pre><code>┌──────────────────────────────────────────────────────────────┐
+│                   Daily Maintenance Pipeline                 │
+└──────────────────────────────────────────────────────────────┘
+  │
+  ├── 1. Backup Timer (02:00) ──&gt; rclone sync --backup-dir
+  │      Creates date-stamped differential backup of local work
+  │
+  ├── 2. Prune Timer (03:00)  ──&gt; rclone delete --min-age 30d
+  │      Purges snapshots older than retention policy (e.g. 30 days)
+  │
+  └── 3. Maint Timer (04:00)  ──&gt; rclone cleanup &amp; vfs purge
+         Flushes orphaned cache chunks and cleans Google Drive trash</code></pre></li>
+</ul>
+<hr>
+</section>
+</section>
 <section id="step-1-enable-systemd-in-wsl2" class="level2">
 <h2 class="anchored" data-anchor-id="step-1-enable-systemd-in-wsl2">Step 1: Enable Systemd in WSL2</h2>
 <p>Modern WSL2 includes native support for <code>systemd</code>, which is essential for user services (<code>systemctl --user</code>), timers, and lingering daemons.</p>
 <ol type="1">
 <li><p>In your WSL terminal, open or create <code>/etc/wsl.conf</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> nano /etc/wsl.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> nano /etc/wsl.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p>Add the <code>[boot]</code> section to enable systemd:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[boot]</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="dt">systemd</span><span class="ot">=</span><span class="kw">true</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[boot]</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="dt">systemd</span><span class="ot">=</span><span class="kw">true</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p>Save the file (<code>Ctrl+O</code>, <code>Enter</code>, <code>Ctrl+X</code>).</p></li>
 <li><p>Open <strong>PowerShell on Windows</strong> and issue a full shutdown to apply the configuration:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>wsl <span class="op">--</span>shutdown</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>wsl <span class="op">--</span>shutdown</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p>Reopen your WSL terminal. Verify that systemd is active:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> is-system-running</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> is-system-running</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><em>(It should report <code>running</code> or <code>degraded</code> if some optional system units are skipped—both are completely fine for user services).</em></p></li>
 </ol>
 <hr>
@@ -463,8 +581,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="step-2-install-rclone-and-fuse3" class="level2">
 <h2 class="anchored" data-anchor-id="step-2-install-rclone-and-fuse3">Step 2: Install Rclone and FUSE3</h2>
 <p>Install the required packages in your WSL distribution:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install rclone fuse3 <span class="at">-y</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install rclone fuse3 <span class="at">-y</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <blockquote class="blockquote">
 <p><strong>Note on dpkg locks:</strong> If you receive an error stating <code>dpkg was interrupted</code>, recover the package manager by running <code>sudo dpkg --configure -a</code> before re-running <code>apt install</code>.</p>
 </blockquote>
@@ -475,11 +593,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Because Windows accesses WSL filesystems through a 9P network redirector under a distinct user mapping, FUSE mounts must allow other users to traverse the mount point.</p>
 <ol type="1">
 <li><p>Open <code>/etc/fuse.conf</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> nano /etc/fuse.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> nano /etc/fuse.conf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p>Locate the commented-out directive:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#user_allow_other</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">#user_allow_other</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p>Uncomment the line by removing the <code>#</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="dt">user_allow_other</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="dt">user_allow_other</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p>Save and exit.</p></li>
 </ol>
 <hr>
@@ -512,7 +630,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="running-the-wizard" class="level3">
 <h3 class="anchored" data-anchor-id="running-the-wizard">Running the Wizard</h3>
 <p>In WSL, run:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rclone</span> config</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rclone</span> config</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ol type="1">
 <li>Press <code>n</code> for <strong>New remote</strong>.</li>
 <li>Name: <code>gdrive</code>.</li>
@@ -527,46 +645,46 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Confirm the remote and quit (<code>q</code>).</li>
 </ol>
 <p>Verify connectivity:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rclone</span> lsd gdrive:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rclone</span> lsd gdrive:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
 </section>
 <section id="step-5-construct-the-rclone-vfs-systemd-service" class="level2">
 <h2 class="anchored" data-anchor-id="step-5-construct-the-rclone-vfs-systemd-service">Step 5: Construct the Rclone VFS Systemd Service</h2>
 <p>Create a dedicated mount directory in your WSL home folder:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/gdrive</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/gdrive</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Next, establish a systemd user unit that mounts the drive automatically on boot:</p>
 <ol type="1">
 <li><p>Create the user service directory:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/.config/systemd/user</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/.config/systemd/user</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p>Create <code>~/.config/systemd/user/rclone-gdrive.service</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> ~/.config/systemd/user/rclone-gdrive.service</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> ~/.config/systemd/user/rclone-gdrive.service</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p>Insert the production-tuned service configuration:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[Unit]</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Description</span><span class="ot">=</span><span class="st">Rclone Google Drive VFS Mount</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="dt">Documentation</span><span class="ot">=</span><span class="st">https://rclone.org/commands/rclone_mount/</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="dt">After</span><span class="ot">=</span><span class="st">network-online.target</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="dt">Wants</span><span class="ot">=</span><span class="st">network-online.target</span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="kw">[Service]</span></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="dt">Type</span><span class="ot">=</span><span class="st">notify</span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStart</span><span class="ot">=</span><span class="st">/usr/bin/rclone mount gdrive: %h/gdrive \</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="dt">  --config %h/.config/rclone/rclone.conf \</span></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-mode full \</span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-max-size 10G \</span></span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-max-age 24h \</span></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-write-back 5s \</span></span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="dt">  --dir-cache-time 24h \</span></span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="dt">  --poll-interval 1m \</span></span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="dt">  --drive-chunk-size 64M \</span></span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="dt">  --umask 022 \</span></span>
-<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a><span class="dt">  --allow-other</span></span>
-<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStop</span><span class="ot">=</span><span class="st">/bin/fusermount -u %h/gdrive</span></span>
-<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a><span class="dt">Restart</span><span class="ot">=</span><span class="st">on-failure</span></span>
-<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="dt">RestartSec</span><span class="ot">=</span><span class="dv">10</span></span>
-<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a><span class="kw">[Install]</span></span>
-<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a><span class="dt">WantedBy</span><span class="ot">=</span><span class="st">default.target</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[Unit]</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Description</span><span class="ot">=</span><span class="st">Rclone Google Drive VFS Mount</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="dt">Documentation</span><span class="ot">=</span><span class="st">https://rclone.org/commands/rclone_mount/</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="dt">After</span><span class="ot">=</span><span class="st">network-online.target</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="dt">Wants</span><span class="ot">=</span><span class="st">network-online.target</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="kw">[Service]</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="dt">Type</span><span class="ot">=</span><span class="st">notify</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStart</span><span class="ot">=</span><span class="st">/usr/bin/rclone mount gdrive: %h/gdrive \</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="dt">  --config %h/.config/rclone/rclone.conf \</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-mode full \</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-max-size 10G \</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-max-age 24h \</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-write-back 5s \</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="dt">  --dir-cache-time 24h \</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="dt">  --poll-interval 1m \</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="dt">  --drive-chunk-size 64M \</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="dt">  --umask 022 \</span></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="dt">  --allow-other</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStop</span><span class="ot">=</span><span class="st">/bin/fusermount -u %h/gdrive</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="dt">Restart</span><span class="ot">=</span><span class="st">on-failure</span></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="dt">RestartSec</span><span class="ot">=</span><span class="dv">10</span></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a><span class="kw">[Install]</span></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="dt">WantedBy</span><span class="ot">=</span><span class="st">default.target</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 </ol>
 <section id="vfs-flag-reference" class="level3">
 <h3 class="anchored" data-anchor-id="vfs-flag-reference">VFS Flag Reference</h3>
@@ -583,11 +701,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="step-6-enable-and-start-the-service" class="level2">
 <h2 class="anchored" data-anchor-id="step-6-enable-and-start-the-service">Step 6: Enable and Start the Service</h2>
 <p>Reload the user daemon, enable the service, and turn on session lingering:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> daemon-reload</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> enable <span class="at">--now</span> rclone-gdrive.service</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> loginctl enable-linger <span class="va">$USER</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> daemon-reload</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> enable <span class="at">--now</span> rclone-gdrive.service</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> loginctl enable-linger <span class="va">$USER</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Check the active status:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> status rclone-gdrive.service</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> status rclone-gdrive.service</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>You should see an active status with <code>Mounted gdrive: at /home/&lt;user&gt;/gdrive</code>.</p>
 <hr>
 </section>
