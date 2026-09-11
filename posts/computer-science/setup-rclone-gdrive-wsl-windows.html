@@ -349,6 +349,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#windows-drives-drive-letters-vs.-network-drives-wsl2" id="toc-windows-drives-drive-letters-vs.-network-drives-wsl2" class="nav-link" data-scroll-target="#windows-drives-drive-letters-vs.-network-drives-wsl2">9. Windows Drives (Drive Letters vs.&nbsp;Network Drives) &amp; WSL2</a></li>
   <li><a href="#the-plan9-9p-network-protocol" id="toc-the-plan9-9p-network-protocol" class="nav-link" data-scroll-target="#the-plan9-9p-network-protocol">10. The Plan9 (9P) Network Protocol</a></li>
   <li><a href="#systemd-user-services-systemd-timers-backup-prune-maintenance" id="toc-systemd-user-services-systemd-timers-backup-prune-maintenance" class="nav-link" data-scroll-target="#systemd-user-services-systemd-timers-backup-prune-maintenance">11. Systemd User Services &amp; Systemd Timers (Backup, Prune, Maintenance)</a></li>
+  <li><a href="#concurrency-control-readwrite-locks-and-asynchronous-updates" id="toc-concurrency-control-readwrite-locks-and-asynchronous-updates" class="nav-link" data-scroll-target="#concurrency-control-readwrite-locks-and-asynchronous-updates">12. Concurrency Control: Read/Write Locks and Asynchronous Updates</a></li>
+  <li><a href="#data-integrity-verification-scripts" id="toc-data-integrity-verification-scripts" class="nav-link" data-scroll-target="#data-integrity-verification-scripts">13. Data Integrity &amp; Verification Scripts</a></li>
+  <li><a href="#cross-platform-interoperability-and-methods" id="toc-cross-platform-interoperability-and-methods" class="nav-link" data-scroll-target="#cross-platform-interoperability-and-methods">14. Cross-Platform Interoperability and Methods</a></li>
   </ul></li>
   <li><a href="#step-1-enable-systemd-in-wsl2" id="toc-step-1-enable-systemd-in-wsl2" class="nav-link" data-scroll-target="#step-1-enable-systemd-in-wsl2">Step 1: Enable Systemd in WSL2</a></li>
   <li><a href="#step-2-install-rclone-and-fuse3" id="toc-step-2-install-rclone-and-fuse3" class="nav-link" data-scroll-target="#step-2-install-rclone-and-fuse3">Step 2: Install Rclone and FUSE3</a></li>
@@ -556,6 +559,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   │
   └── 3. Maint Timer (04:00)  ──&gt; rclone cleanup &amp; vfs purge
          Flushes orphaned cache chunks and cleans Google Drive trash</code></pre></li>
+</ul>
+</section>
+<section id="concurrency-control-readwrite-locks-and-asynchronous-updates" class="level3">
+<h3 class="anchored" data-anchor-id="concurrency-control-readwrite-locks-and-asynchronous-updates">12. Concurrency Control: Read/Write Locks and Asynchronous Updates</h3>
+<ul>
+<li><strong>Read/Write Locks:</strong> When you edit a file, multiple processes might try to read or write to it simultaneously. Rclone’s VFS layer enforces POSIX-compliant <strong>read/write locks</strong>, ensuring that if a text editor is writing to a file, a background backup process cannot read it until the write is complete, preventing data corruption.</li>
+<li><strong>Asynchronous Updates:</strong> When you hit “Save” on a large document, the write operation is committed instantly to your local VFS cache. The Rclone daemon then performs an <strong>asynchronous update</strong>—uploading the file to Google Drive in the background. Your text editor regains control instantly without freezing to wait for the network upload to finish.</li>
+</ul>
+</section>
+<section id="data-integrity-verification-scripts" class="level3">
+<h3 class="anchored" data-anchor-id="data-integrity-verification-scripts">13. Data Integrity &amp; Verification Scripts</h3>
+<ul>
+<li><strong>Concept:</strong> Network drops or API errors can silently corrupt uploads. Verification scripts automate the checking of file integrity between local and remote endpoints without re-downloading files.</li>
+<li><strong>How it Works:</strong> Scripts leveraging <code>rclone check</code> or custom Python automation fetch cryptographic hashes (MD5, SHA1) directly from the Google Drive API and compare them against the local cache. If a mismatch is detected, the script can trigger a re-upload, guaranteeing mathematical data parity.</li>
+</ul>
+</section>
+<section id="cross-platform-interoperability-and-methods" class="level3">
+<h3 class="anchored" data-anchor-id="cross-platform-interoperability-and-methods">14. Cross-Platform Interoperability and Methods</h3>
+<ul>
+<li><strong>Concept:</strong> Working simultaneously with Linux CLI tools and Windows graphical applications creates pathing and permission conflicts.</li>
+<li><strong>Interoperability Methods:</strong> The architecture handles this via translation layers. Windows paths (<code>C:\</code>) and WSL network paths (<code>\wsl$</code>) are unified through the 9P protocol. Line endings (CRLF vs LF) are preserved perfectly because Rclone treats files as binary objects. This means you can run a <code>sed</code> script against <code>~/gdrive/config.txt</code> in Linux, and subsequently edit the exact same file in Windows Notepad via <code>G:\config.txt</code> without corrupting formatting.</li>
 </ul>
 <hr>
 </section>
