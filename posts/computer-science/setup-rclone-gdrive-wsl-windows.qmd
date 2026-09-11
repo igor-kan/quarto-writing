@@ -126,6 +126,18 @@ While a live FUSE mount is optimal for interactive browsing, scheduled backgroun
            Flushes orphaned cache chunks and cleans Google Drive trash
   ```
 
+### 12. Concurrency Control: Read/Write Locks and Asynchronous Updates
+* **Read/Write Locks:** When you edit a file, multiple processes might try to read or write to it simultaneously. Rclone's VFS layer enforces POSIX-compliant **read/write locks**, ensuring that if a text editor is writing to a file, a background backup process cannot read it until the write is complete, preventing data corruption.
+* **Asynchronous Updates:** When you hit "Save" on a large document, the write operation is committed instantly to your local VFS cache. The Rclone daemon then performs an **asynchronous update**—uploading the file to Google Drive in the background. Your text editor regains control instantly without freezing to wait for the network upload to finish.
+
+### 13. Data Integrity & Verification Scripts
+* **Concept:** Network drops or API errors can silently corrupt uploads. Verification scripts automate the checking of file integrity between local and remote endpoints without re-downloading files.
+* **How it Works:** Scripts leveraging `rclone check` or custom Python automation fetch cryptographic hashes (MD5, SHA1) directly from the Google Drive API and compare them against the local cache. If a mismatch is detected, the script can trigger a re-upload, guaranteeing mathematical data parity.
+
+### 14. Cross-Platform Interoperability and Methods
+* **Concept:** Working simultaneously with Linux CLI tools and Windows graphical applications creates pathing and permission conflicts.
+* **Interoperability Methods:** The architecture handles this via translation layers. Windows paths (`C:\`) and WSL network paths (`\wsl$`) are unified through the 9P protocol. Line endings (CRLF vs LF) are preserved perfectly because Rclone treats files as binary objects. This means you can run a `sed` script against `~/gdrive/config.txt` in Linux, and subsequently edit the exact same file in Windows Notepad via `G:\config.txt` without corrupting formatting.
+
 ---
 
 ## Step 1: Enable Systemd in WSL2
