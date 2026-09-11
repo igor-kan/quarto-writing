@@ -364,6 +364,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#step-5-construct-the-rclone-vfs-systemd-service" id="toc-step-5-construct-the-rclone-vfs-systemd-service" class="nav-link" data-scroll-target="#step-5-construct-the-rclone-vfs-systemd-service">Step 5: Construct the Rclone VFS Systemd Service</a>
   <ul class="collapse">
   <li><a href="#vfs-flag-reference" id="toc-vfs-flag-reference" class="nav-link" data-scroll-target="#vfs-flag-reference">VFS Flag Reference</a></li>
+  <li><a href="#understanding-vfs-mechanics-locks-and-asynchronous-io" id="toc-understanding-vfs-mechanics-locks-and-asynchronous-io" class="nav-link" data-scroll-target="#understanding-vfs-mechanics-locks-and-asynchronous-io">Understanding VFS Mechanics: Locks and Asynchronous IO</a></li>
   </ul></li>
   <li><a href="#step-6-enable-and-start-the-service" id="toc-step-6-enable-and-start-the-service" class="nav-link" data-scroll-target="#step-6-enable-and-start-the-service">Step 6: Enable and Start the Service</a></li>
   <li><a href="#step-7-map-the-mount-as-a-native-windows-drive" id="toc-step-7-map-the-mount-as-a-native-windows-drive" class="nav-link" data-scroll-target="#step-7-map-the-mount-as-a-native-windows-drive">Step 7: Map the Mount as a Native Windows Drive</a></li>
@@ -719,7 +720,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>--dir-cache-time 24h</code> &amp; <code>--poll-interval 1m</code>: Caches directory hierarchies in RAM and polls Google’s Changes API every 60 seconds to keep listings updated without expensive rescanning.</li>
 <li><code>--allow-other</code>: Permits non-root processes and Windows 9P shares to access the mount.</li>
 </ul>
+</section>
+<section id="understanding-vfs-mechanics-locks-and-asynchronous-io" class="level3">
+<h3 class="anchored" data-anchor-id="understanding-vfs-mechanics-locks-and-asynchronous-io">Understanding VFS Mechanics: Locks and Asynchronous IO</h3>
+<p>When integrating a cloud backend (like Google Drive) into a local POSIX-compliant filesystem via FUSE, two critical mechanics come into play: <strong>Read/Write Locks</strong> and <strong>Asynchronous Uploads</strong>.</p>
+<section id="readwrite-locks" class="level4">
+<h4 class="anchored" data-anchor-id="readwrite-locks">Read/Write Locks</h4>
+<p>Native filesystems (like <code>ext4</code> on Linux or <code>NTFS</code> on Windows) use strict file locking mechanisms to prevent data corruption. If Program A is writing to a file, the operating system places a “write lock” on that file so Program B cannot overwrite the data simultaneously.</p>
+<p>Cloud storage APIs (like Google Drive, Dropbox, or S3) <strong>do not support POSIX file locking natively</strong>—they simply accept REST API HTTP uploads. When multiple remote clients edit the same file simultaneously, the last upload silently overwrites the previous ones, potentially causing data loss.</p>
+<p>When using Rclone with FUSE, the local <code>rclone mount</code> daemon “fakes” POSIX locks for the local operating system. If two local applications try to write to <code>~/gdrive/document.txt</code> simultaneously, Rclone respects the OS lock semantics and blocks the conflicting request at the local FUSE layer. However, <strong>this lock is strictly local to your machine</strong>. If you edit the file from your WSL mount while a collaborator edits the same file via the Google Drive web interface, the cloud server will not reject either write, and version conflicts may occur.</p>
+</section>
+<section id="asynchronous-uploads---vfs-cache-mode-writes-or-full" class="level4">
+<h4 class="anchored" data-anchor-id="asynchronous-uploads---vfs-cache-mode-writes-or-full">Asynchronous Uploads (<code>--vfs-cache-mode writes</code> or <code>full</code>)</h4>
+<p>Uploading data to the cloud is bottlenecked by your ISP upload speed and HTTP latency. Without a VFS cache, if a local application attempts to save a 50 MB video edit directly to the mounted network drive, the application UI would completely freeze (hang) until the entire HTTP <code>POST</code> upload finishes.</p>
+<p>By setting <code>--vfs-cache-mode full</code> (or <code>writes</code>), Rclone completely detaches the local application’s file I/O operations from the network transfer: 1. The application writes the 50 MB file directly to your local SSD cache (<code>~/.cache/rclone/vfs/gdrive/</code>). 2. FUSE immediately reports back to the application: <em>“Success! File written.”</em> 3. The application resumes functioning instantly without any lag, freezing, or I/O bottleneck. 4. In the background, Rclone adds the file to a queue and <strong>asynchronously uploads</strong> it to Google Drive using the delay defined by <code>--vfs-write-back 5s</code> (waiting 5 seconds to see if the application makes further rapid changes before initiating the upload).</p>
+<p>This architecture guarantees native NVMe SSD performance for local software while providing seamless, invisible cloud synchronization.</p>
 <hr>
+</section>
 </section>
 </section>
 <section id="step-6-enable-and-start-the-service" class="level2">
