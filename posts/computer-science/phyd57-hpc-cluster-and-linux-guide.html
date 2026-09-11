@@ -8,7 +8,7 @@
 
 <meta name="author" content="Igor Kan">
 <meta name="dcterms.date" content="2026-09-11">
-<meta name="description" content="A comprehensive overview of the technical tools, compiler toolchains, and Linux distributions used in Advanced Computational Methods in Physics, including a tutorial on cluster access.">
+<meta name="description" content="A comprehensive overview of the technical tools, compiler toolchains, Linux distributions, SSH command options, cluster navigation, and FTP/SFTP file transfers used in Advanced Computational Methods in Physics.">
 
 <title>PHYD57: HPC Infrastructure, Tech Stack, and Linux Guide – My Writings</title>
 <style>
@@ -336,21 +336,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#programming-languages" id="toc-programming-languages" class="nav-link" data-scroll-target="#programming-languages">Programming Languages</a></li>
   <li><a href="#high-performance-computing-hpc-parallelization" id="toc-high-performance-computing-hpc-parallelization" class="nav-link" data-scroll-target="#high-performance-computing-hpc-parallelization">High-Performance Computing (HPC) &amp; Parallelization</a></li>
-  <li><a href="#compilers" id="toc-compilers" class="nav-link" data-scroll-target="#compilers">Compilers</a></li>
-  <li><a href="#infrastructure-workflow-tools" id="toc-infrastructure-workflow-tools" class="nav-link" data-scroll-target="#infrastructure-workflow-tools">Infrastructure &amp; Workflow Tools</a></li>
+  <li><a href="#enterprise-compilers" id="toc-enterprise-compilers" class="nav-link" data-scroll-target="#enterprise-compilers">Enterprise Compilers</a></li>
+  <li><a href="#cli-environment-graphics" id="toc-cli-environment-graphics" class="nav-link" data-scroll-target="#cli-environment-graphics">CLI Environment &amp; Graphics</a></li>
   </ul></li>
   <li><a href="#comparing-linux-distributions-why-rocky-linux" id="toc-comparing-linux-distributions-why-rocky-linux" class="nav-link" data-scroll-target="#comparing-linux-distributions-why-rocky-linux">2. Comparing Linux Distributions: Why Rocky Linux?</a>
   <ul class="collapse">
-  <li><a href="#the-red-hat-ecosystem-hpc-standard" id="toc-the-red-hat-ecosystem-hpc-standard" class="nav-link" data-scroll-target="#the-red-hat-ecosystem-hpc-standard">The Red Hat Ecosystem (HPC Standard)</a></li>
-  <li><a href="#alternative-ecosystems" id="toc-alternative-ecosystems" class="nav-link" data-scroll-target="#alternative-ecosystems">Alternative Ecosystems</a></li>
+  <li><a href="#the-red-hat-family-the-hpc-supercomputing-standard" id="toc-the-red-hat-family-the-hpc-supercomputing-standard" class="nav-link" data-scroll-target="#the-red-hat-family-the-hpc-supercomputing-standard">The Red Hat Family (The HPC Supercomputing Standard)</a></li>
+  <li><a href="#alternative-distributions" id="toc-alternative-distributions" class="nav-link" data-scroll-target="#alternative-distributions">Alternative Distributions</a></li>
   </ul></li>
-  <li><a href="#tutorial-accessing-the-art--clusters" id="toc-tutorial-accessing-the-art--clusters" class="nav-link" data-scroll-target="#tutorial-accessing-the-art--clusters">3. Tutorial: Accessing the <code>art-*</code> Clusters</a>
+  <li><a href="#the-ssh-command-connection-options-deep-dive" id="toc-the-ssh-command-connection-options-deep-dive" class="nav-link" data-scroll-target="#the-ssh-command-connection-options-deep-dive">3. The <code>ssh</code> Command &amp; Connection Options Deep-Dive</a>
   <ul class="collapse">
-  <li><a href="#which-node-should-you-use" id="toc-which-node-should-you-use" class="nav-link" data-scroll-target="#which-node-should-you-use">Which Node Should You Use?</a></li>
-  <li><a href="#ssh-access-x11-forwarding" id="toc-ssh-access-x11-forwarding" class="nav-link" data-scroll-target="#ssh-access-x11-forwarding">SSH Access &amp; X11 Forwarding</a></li>
-  <li><a href="#transferring-files-scp" id="toc-transferring-files-scp" class="nav-link" data-scroll-target="#transferring-files-scp">Transferring Files (SCP)</a></li>
-  <li><a href="#retrieving-your-authentication-info" id="toc-retrieving-your-authentication-info" class="nav-link" data-scroll-target="#retrieving-your-authentication-info">Retrieving Your Authentication Info</a></li>
+  <li><a href="#dissecting-the-command-and-options" id="toc-dissecting-the-command-and-options" class="nav-link" data-scroll-target="#dissecting-the-command-and-options">Dissecting the Command and Options</a></li>
+  <li><a href="#streamlining-with-.sshconfig" id="toc-streamlining-with-.sshconfig" class="nav-link" data-scroll-target="#streamlining-with-.sshconfig">Streamlining with <code>~/.ssh/config</code></a></li>
   </ul></li>
+  <li><a href="#filesystem-artifacts-on-art-1-ll-breakdown" id="toc-filesystem-artifacts-on-art-1-ll-breakdown" class="nav-link" data-scroll-target="#filesystem-artifacts-on-art-1-ll-breakdown">4. Filesystem Artifacts on <code>art-1</code> (<code>ll</code> Breakdown)</a>
+  <ul class="collapse">
+  <li><a href="#artifact-catalog" id="toc-artifact-catalog" class="nav-link" data-scroll-target="#artifact-catalog">Artifact Catalog</a></li>
+  </ul></li>
+  <li><a href="#local-viewing-editing-of-remote-code" id="toc-local-viewing-editing-of-remote-code" class="nav-link" data-scroll-target="#local-viewing-editing-of-remote-code">5. Local Viewing &amp; Editing of Remote Code</a>
+  <ul class="collapse">
+  <li><a href="#method-1-sshfs-virtual-directory-mount-recommended" id="toc-method-1-sshfs-virtual-directory-mount-recommended" class="nav-link" data-scroll-target="#method-1-sshfs-virtual-directory-mount-recommended">Method 1: SSHFS (Virtual Directory Mount) — <em>Recommended</em></a></li>
+  <li><a href="#method-2-vs-code-ssh-fs-bypassing-centos-6-glibc-limits" id="toc-method-2-vs-code-ssh-fs-bypassing-centos-6-glibc-limits" class="nav-link" data-scroll-target="#method-2-vs-code-ssh-fs-bypassing-centos-6-glibc-limits">Method 2: VS Code “SSH FS” (Bypassing CentOS 6 Glibc Limits)</a></li>
+  <li><a href="#method-3-terminal-persistence-with-screen" id="toc-method-3-terminal-persistence-with-screen" class="nav-link" data-scroll-target="#method-3-terminal-persistence-with-screen">Method 3: Terminal Persistence with <code>screen</code></a></li>
+  </ul></li>
+  <li><a href="#bidirectional-file-transfers-ftpsftp" id="toc-bidirectional-file-transfers-ftpsftp" class="nav-link" data-scroll-target="#bidirectional-file-transfers-ftpsftp">6. Bidirectional File Transfers &amp; FTP/SFTP</a>
+  <ul class="collapse">
+  <li><a href="#scp-secure-copy-protocol" id="toc-scp-secure-copy-protocol" class="nav-link" data-scroll-target="#scp-secure-copy-protocol">1. <code>scp</code> (Secure Copy Protocol)</a></li>
+  <li><a href="#rsync-differential-fast-synchronization" id="toc-rsync-differential-fast-synchronization" class="nav-link" data-scroll-target="#rsync-differential-fast-synchronization">2. <code>rsync</code> (Differential Fast Synchronization)</a></li>
+  <li><a href="#ftp-sftp-gui-cli" id="toc-ftp-sftp-gui-cli" class="nav-link" data-scroll-target="#ftp-sftp-gui-cli">3. FTP &amp; SFTP (GUI &amp; CLI)</a></li>
+  </ul></li>
+  <li><a href="#automated-local-backup-script" id="toc-automated-local-backup-script" class="nav-link" data-scroll-target="#automated-local-backup-script">7. Automated Local Backup Script</a></li>
   </ul>
 </nav>
     </div>
@@ -367,12 +382,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div class="quarto-category">Physics</div>
     <div class="quarto-category">Compilers</div>
     <div class="quarto-category">Systems</div>
+    <div class="quarto-category">SSH</div>
   </div>
   </div>
 
 <div>
   <div class="description">
-    A comprehensive overview of the technical tools, compiler toolchains, and Linux distributions used in Advanced Computational Methods in Physics, including a tutorial on cluster access.
+    A comprehensive overview of the technical tools, compiler toolchains, Linux distributions, SSH command options, cluster navigation, and FTP/SFTP file transfers used in Advanced Computational Methods in Physics.
   </div>
 </div>
 
@@ -401,87 +417,344 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p><strong>PHYD57H3: Advanced Computational Methods in Physics</strong> bridges the gap between theoretical physics and high-performance scientific computing. Successfully navigating the course requires more than just understanding mathematical models—it demands a solid grasp of the underlying infrastructure, from Linux distributions to compiler toolchains and parallel computing APIs.</p>
-<p>This guide outlines the technical stack covered in the curriculum, compares the Linux distributions relevant to the course, and provides a tutorial for accessing the university’s <code>art</code> compute clusters.</p>
+<p><strong>PHYD57H3: Advanced Computational Methods in Physics</strong> bridges the gap between theoretical physics and high-performance scientific computing. Successfully navigating the course requires more than just understanding mathematical models—it demands a solid grasp of the underlying infrastructure, from Linux distributions to compiler toolchains, SSH mechanics, and remote file manipulation.</p>
+<p>This guide provides an end-to-end technical reference covering: 1. The curriculum tech stack and compiler toolchains. 2. An architectural comparison of Linux distributions (why Rocky Linux is preferred over Ubuntu/Arch for HPC). 3. The anatomy of the <code>ssh</code> command and all essential connection options. 4. An analysis of the filesystem artifacts on the university’s <code>art-1</code> cluster. 5. Techniques for viewing and editing remote files locally (SSHFS, VS Code glibc workarounds, <code>screen</code>). 6. Bidirectional file transfers via SCP, Rsync, and graphical/CLI FTP and SFTP.</p>
 <hr>
 <section id="the-curriculum-tech-stack" class="level2">
 <h2 class="anchored" data-anchor-id="the-curriculum-tech-stack">1. The Curriculum Tech Stack</h2>
-<p>To run physics simulations efficiently (such as Monte Carlo methods, Eulerian/Lagrangian fluid dynamics, and N-body gravitational solvers), the course relies on a highly optimized tech stack.</p>
+<p>To run physics simulations efficiently (such as Monte Carlo methods, Eulerian/Lagrangian fluid dynamics, and N-body gravitational solvers), the course relies on a specialized high-performance stack:</p>
 <section id="programming-languages" class="level3">
 <h3 class="anchored" data-anchor-id="programming-languages">Programming Languages</h3>
 <ul>
-<li><strong>C / C++</strong>: Used for low-level memory management and multi-dimensional array manipulation. You will learn to write high-performance C code and call it from Python wrappers.</li>
-<li><strong>Fortran (F95 / 2008)</strong>: Far from a dead language, modern Fortran is unparalleled in numerical array operations and scientific computing. The course emphasizes modern syntax (no ALL CAPS).</li>
-<li><strong>Python 3</strong>: Utilized as a high-level scripting language to glue lower-level components together and process data.</li>
+<li><strong>C / C++</strong>: Used for low-level memory control and multi-dimensional array manipulation. You will learn to write high-performance C routines and call them directly from Python wrappers.</li>
+<li><strong>Fortran (F95 / 2008)</strong>: Far from a dead language, modern Fortran remains unparalleled in contiguous numerical array operations and scientific computing. The course emphasizes modern syntax (lowercase, no legacy ALL CAPS).</li>
+<li><strong>Python 3</strong>: Utilized as a high-level scripting glue to steer simulations, parse output files, and generate interactive plots.</li>
 </ul>
 </section>
 <section id="high-performance-computing-hpc-parallelization" class="level3">
 <h3 class="anchored" data-anchor-id="high-performance-computing-hpc-parallelization">High-Performance Computing (HPC) &amp; Parallelization</h3>
-<p>Modern scientific computing is impossible without parallelization. * <strong>OpenMP</strong>: Used for CPU multithreading (fork-join parallelism) in both C and Fortran. * <strong>CUDA (C/C++ &amp; Fortran)</strong>: NVIDIA’s API for GPU computing, used to massively accelerate parallel tasks like fluid dynamics and Fourier transforms. * <strong>MPI (Message Passing Interface)</strong>: The standard for distributed-memory parallelization across multiple nodes in a supercomputing cluster.</p>
+<p>Modern scientific computing is impossible without parallel computing APIs: * <strong>OpenMP</strong>: Used for CPU shared-memory multithreading (fork-join parallelism) in both C and Fortran loops. * <strong>CUDA (C/C++ &amp; Fortran)</strong>: NVIDIA’s parallel computing platform for GPU acceleration, used to scale tasks like fluid dynamics, Poisson solvers, and Fourier transforms. * <strong>MPI (Message Passing Interface)</strong>: The industry standard for distributed-memory parallelization across networked supercomputing cluster nodes.</p>
 </section>
-<section id="compilers" class="level3">
-<h3 class="anchored" data-anchor-id="compilers">Compilers</h3>
-<p>You will interact with several enterprise-grade compilers: * <code>gcc</code> / <code>g++</code> (GNU C/C++ Compiler) * <code>gfortran</code> (GNU Fortran Compiler) * <code>ifort</code> (Intel Fortran Compiler) * <code>nvcc</code> (NVIDIA CUDA Compiler)</p>
+<section id="enterprise-compilers" class="level3">
+<h3 class="anchored" data-anchor-id="enterprise-compilers">Enterprise Compilers</h3>
+<p>You will work across several enterprise compiler toolchains: * <code>gcc</code> / <code>g++</code> (GNU C/C++ Compiler) * <code>gfortran</code> (GNU Fortran Compiler) * <code>ifort</code> / <code>ifx</code> (Intel OneAPI Fortran Compiler) * <code>nvcc</code> / <code>nvfortran</code> (NVIDIA CUDA HPC Compilers)</p>
 </section>
-<section id="infrastructure-workflow-tools" class="level3">
-<h3 class="anchored" data-anchor-id="infrastructure-workflow-tools">Infrastructure &amp; Workflow Tools</h3>
+<section id="cli-environment-graphics" class="level3">
+<h3 class="anchored" data-anchor-id="cli-environment-graphics">CLI Environment &amp; Graphics</h3>
 <ul>
-<li><strong>Shells &amp; Editors</strong>: Interaction with the cluster is strictly CLI-based. You will need to use <code>bash</code> or <code>tcsh</code>, and text editors like <code>vim</code> or <code>nano</code>.</li>
-<li><strong>Graphics</strong>: <strong>DISLIN</strong>, a data plotting and graphics library compatible with C and Fortran.</li>
+<li><strong>Shells</strong>: <code>bash</code> and <code>tcsh</code>.</li>
+<li><strong>Terminal Editors</strong>: <code>vim</code> and <code>nano</code>.</li>
+<li><strong>Scientific Graphics</strong>: <strong>DISLIN</strong>, a high-level data plotting library linked into C and Fortran programs.</li>
 </ul>
 <hr>
 </section>
 </section>
 <section id="comparing-linux-distributions-why-rocky-linux" class="level2">
 <h2 class="anchored" data-anchor-id="comparing-linux-distributions-why-rocky-linux">2. Comparing Linux Distributions: Why Rocky Linux?</h2>
-<p>The UTSC computing clusters run on Red Hat derivatives: specifically, the older <code>art-1</code> runs on <strong>CentOS 6.6</strong>, while the modern <code>art-16</code> runs on <strong>Rocky Linux 9.6</strong>. If you plan to set up a local Virtual Machine or WSL environment, you should understand how these distributions fit into the broader Linux ecosystem.</p>
-<section id="the-red-hat-ecosystem-hpc-standard" class="level3">
-<h3 class="anchored" data-anchor-id="the-red-hat-ecosystem-hpc-standard">The Red Hat Ecosystem (HPC Standard)</h3>
-<p>These distributions share the same core architecture and use <code>dnf</code> or <code>yum</code> for package management (<code>.rpm</code>). * <strong>RHEL (Red Hat Enterprise Linux)</strong>: The commercial “parent” operating system. It is engineered for extreme stability and 10-year lifespans. It requires paid licenses and is the industry standard for banks, enterprise servers, and university supercomputers. * <strong>Rocky Linux</strong>: A 100% free, bug-for-bug compatible clone of RHEL. Following Red Hat’s decision to discontinue the stable CentOS project, Rocky Linux emerged to provide the exact same enterprise-grade stability and software as RHEL without the price tag. <strong>This is why the university uses it for their modern cluster (<code>art-16</code>).</strong> * <strong>Fedora</strong>: The “upstream” testing ground for RHEL. Fedora receives cutting-edge features and kernels every 6 months. It is great for desktop users, but changes too rapidly to serve as a stable compute cluster for scientific research.</p>
+<p>The UTSC computing clusters span multiple generations: the legacy node <code>art-1</code> runs on <strong>CentOS 6.6</strong>, while the modern node <code>art-16</code> runs on <strong>Rocky Linux 9.6</strong>. If you plan to set up a local Virtual Machine, dual-boot, or WSL environment, here is how the relevant distributions compare:</p>
+<section id="the-red-hat-family-the-hpc-supercomputing-standard" class="level3">
+<h3 class="anchored" data-anchor-id="the-red-hat-family-the-hpc-supercomputing-standard">The Red Hat Family (The HPC Supercomputing Standard)</h3>
+<p>These distributions share the same core architecture, <code>.rpm</code> binary package format, and <code>dnf</code>/<code>yum</code> package managers. * <strong>RHEL (Red Hat Enterprise Linux)</strong>: The commercial standard for enterprise computing, government laboratories, and supercomputing clusters. Engineered for decade-long stability and binary reproducibility. * <strong>Rocky Linux</strong>: A 100% free, bug-for-bug downstream clone of RHEL. Following Red Hat’s deprecation of standard CentOS, Rocky Linux emerged to preserve enterprise-grade stability without licensing costs. <strong>This is why UTSC runs Rocky Linux 9.6 on <code>art-16</code>.</strong> * <strong>Fedora</strong>: The upstream rapid-release proving ground for Red Hat. It receives experimental features, cutting-edge kernels, and new GCC releases every 6 months. Excellent for desktop workstations, but too volatile for reproducible physics research.</p>
 </section>
-<section id="alternative-ecosystems" class="level3">
-<h3 class="anchored" data-anchor-id="alternative-ecosystems">Alternative Ecosystems</h3>
+<section id="alternative-distributions" class="level3">
+<h3 class="anchored" data-anchor-id="alternative-distributions">Alternative Distributions</h3>
 <ul>
-<li><strong>Ubuntu (Debian-based)</strong>: The most popular general-purpose Linux distribution. It uses <code>apt</code> for package management (<code>.deb</code>). While excellent for personal use, it is a different ecosystem from Red Hat. If you practice on Ubuntu, many system administration paths and compiler package names will not perfectly match the <code>art</code> servers.</li>
-<li><strong>Arch Linux</strong>: A “rolling release” DIY distro with constant daily updates. Arch is fantastic for power users who want total control, but it is the exact <em>opposite</em> of what an HPC cluster needs. A physics cluster requires compiler versions to remain frozen and perfectly stable for years to ensure reproducible scientific results.</li>
+<li><strong>Ubuntu (Debian-based)</strong>: The most popular general-purpose distro, using <code>.deb</code> packages and <code>apt</code>. While excellent for web servers and personal development, its package names, configuration hierarchies, and system libraries differ from the Red Hat ecosystem used on university clusters.</li>
+<li><strong>Arch Linux</strong>: An ultra-bleeding-edge rolling release distribution. It has no frozen release versions and receives daily package updates. While favored by power users, Arch is the opposite of an HPC cluster, where compiler and library versions must remain frozen to ensure numerical reproducibility across academic terms.</li>
 </ul>
 <blockquote class="blockquote">
-<p>[!TIP] <strong>Local Setup Recommendation</strong> If you are setting up a local environment (via a VM, dual-boot, or Windows Subsystem for Linux), install <strong>Rocky Linux 9</strong>. This guarantees 1:1 command parity with the university’s <code>art-16</code> server.</p>
+<p>[!TIP] <strong>Recommended Local Environment</strong> For your laptop (via WSL2 or VirtualBox), install <strong>Rocky Linux 9</strong>. This guarantees 1:1 command, compiler, and package manager (<code>dnf</code>) parity with the university’s modern compute nodes.</p>
 </blockquote>
 <hr>
 </section>
 </section>
-<section id="tutorial-accessing-the-art--clusters" class="level2">
-<h2 class="anchored" data-anchor-id="tutorial-accessing-the-art--clusters">3. Tutorial: Accessing the <code>art-*</code> Clusters</h2>
-<p>As part of the course, you are granted user accounts on the university compute clusters. These nodes share a networked filesystem, meaning your code and home directory are accessible regardless of which node you log into.</p>
-<section id="which-node-should-you-use" class="level3">
-<h3 class="anchored" data-anchor-id="which-node-should-you-use">Which Node Should You Use?</h3>
+<section id="the-ssh-command-connection-options-deep-dive" class="level2">
+<h2 class="anchored" data-anchor-id="the-ssh-command-connection-options-deep-dive">3. The <code>ssh</code> Command &amp; Connection Options Deep-Dive</h2>
+<p>Secure Shell (<strong>SSH</strong>) is the standard protocol for encrypted terminal access over untrusted networks. The fundamental syntax is:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> <span class="pp">[</span><span class="ss">options</span><span class="pp">]</span> <span class="pp">[</span><span class="ss">user@</span><span class="pp">]</span>hostname <span class="pp">[</span><span class="ss">command</span><span class="pp">]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>To connect to the UTSC cluster node <code>art-1</code>, you run:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> <span class="at">-X</span> <span class="at">-o</span> HostKeyAlgorithms=+ssh-dss phyd57@art-1.utsc.utoronto.ca</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="dissecting-the-command-and-options" class="level3">
+<h3 class="anchored" data-anchor-id="dissecting-the-command-and-options">Dissecting the Command and Options</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Option / Flag</th>
+<th style="text-align: left;">Purpose &amp; Technical Mechanism</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>phyd57@art-1.utsc.utoronto.ca</code></td>
+<td style="text-align: left;">Specifies the remote user account (<code>phyd57</code>) and fully qualified domain name (FQDN) of the server.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>-o HostKeyAlgorithms=+ssh-dss</code></td>
+<td style="text-align: left;"><strong>Mandatory for <code>art-1</code></strong>. Tells the local OpenSSH client to accept legacy Digital Signature Algorithm (<strong>DSA</strong>) host keys.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>-X</code></td>
+<td style="text-align: left;">Enables <strong>X11 Forwarding</strong> with security extensions (untrusted mode). Forwards graphical windows (e.g., DISLIN plots) back to your local display.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>-Y</code></td>
+<td style="text-align: left;">Enables <strong>Trusted X11 Forwarding</strong>. Bypasses security restrictions; required if complex GUI programs crash under <code>-X</code>.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>-p &lt;port&gt;</code></td>
+<td style="text-align: left;">Specifies the remote SSH port (default is <code>22</code>). Example: <code>ssh -p 22 user@host</code>.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>-C</code></td>
+<td style="text-align: left;">Enables <strong>gzip compression</strong> on all data streams (stdin, stdout, stderr, and X11). Dramatically improves responsiveness over slow Wi-Fi.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>-i &lt;identity_file&gt;</code></td>
+<td style="text-align: left;">Passes a private key file for key-based authentication instead of typing a password. Example: <code>ssh -i ~/.ssh/id_rsa user@host</code>.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>-t</code></td>
+<td style="text-align: left;">Forces pseudo-terminal allocation. Essential when launching interactive screen/tmux sessions or jumping between nodes.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>-o ServerAliveInterval=60</code></td>
+<td style="text-align: left;">Sends a keepalive null packet every 60 seconds to prevent network firewalls or NAT routers from dropping idle sessions.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>-o ServerAliveCountMax=3</code></td>
+<td style="text-align: left;">Drops connection only if 3 consecutive keepalive packets fail to return an acknowledgment.</td>
+</tr>
+</tbody>
+</table>
+<section id="why-is--o-hostkeyalgorithmsssh-dss-required-on-art-1" class="level4">
+<h4 class="anchored" data-anchor-id="why-is--o-hostkeyalgorithmsssh-dss-required-on-art-1">Why Is <code>-o HostKeyAlgorithms=+ssh-dss</code> Required on <code>art-1</code>?</h4>
+<p>CentOS 6.6 runs an older OpenSSH server daemon (<code>sshd</code>) that advertises host identity using 1024-bit DSA keys (<code>ssh-dss</code>). Modern OpenSSH client releases (version 7.0 and later) deprecated and disabled <code>ssh-dss</code> out-of-the-box due to known cryptographic weaknesses in 1024-bit discrete logarithm implementations.</p>
+<p>Without <code>-o HostKeyAlgorithms=+ssh-dss</code>, modern clients immediately abort the handshake with:</p>
+<pre class="text"><code>Unable to negotiate with 142.1.xxx.xxx port 22: no matching host key type found. Their offer: ssh-dss</code></pre>
+<p>The <code>+</code> sign instructs your local client to append <code>ssh-dss</code> to its allowed list of host key algorithms for this session.</p>
+</section>
+</section>
+<section id="streamlining-with-.sshconfig" class="level3">
+<h3 class="anchored" data-anchor-id="streamlining-with-.sshconfig">Streamlining with <code>~/.ssh/config</code></h3>
+<p>Rather than typing long flags each time, configure a profile in <code>~/.ssh/config</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> ~/.ssh/config</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Add the following block:</p>
+<pre class="ssh-config"><code>Host art-1
+    HostName art-1.utsc.utoronto.ca
+    User phyd57
+    HostKeyAlgorithms +ssh-dss
+    ForwardX11 yes
+    Compression yes
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+
+Host art-16
+    HostName art-16.utsc.utoronto.ca
+    User phyd57
+    ForwardX11 yes
+    ServerAliveInterval 60</code></pre>
+<p>Set strict file permissions:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 600 ~/.ssh/config</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Now, connecting to either cluster is as simple as:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> art-1</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> art-16</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="filesystem-artifacts-on-art-1-ll-breakdown" class="level2">
+<h2 class="anchored" data-anchor-id="filesystem-artifacts-on-art-1-ll-breakdown">4. Filesystem Artifacts on <code>art-1</code> (<code>ll</code> Breakdown)</h2>
+<p>Listing the root directory of <code>/home/phyd57</code> reveals the course history and shared resources:</p>
+<pre class="text"><code>[phyd57@art-1 ~]$ ll
+total 293180
+drwx------  4 phyd57 phyd57     36864 Dec 30  2017 6994
+-rw-------  1 phyd57 phyd57         0 Nov  7  2019 A3.c
+drwx------  6 phyd57 phyd57      4096 Nov 26  2019 A4FFTSolver
+-rw-------  1 phyd57 phyd57        13 Sep 14  2019 DO NOT OPEN
+-rw-------  1 phyd57 phyd57       429 Sep 12  2020 T1.1.py
+drwx------  2 phyd57 phyd57      4096 Sep  6  2019 TA
+-rwx------  1 phyd57 phyd57     12912 Nov  9  2019 a3
+-rw-------  1 phyd57 phyd57      4587 Nov  9  2019 a3.c
+drwxrwxr-x  7 phyd57 phyd57     36864 Dec  3  2019 avx
+-rwx------  1 phyd57 root      629895 Nov  9  2019 bandwidthTest
+drwx------  2 phyd57 phyd57      4096 Sep 21  2019 bks
+-rw-------  1 phyd57 phyd57 297134160 Jan  5  2019 cm_re.zip
+-rwx------  1 phyd57 root      609556 Nov  9  2019 deviceQuery
+drwx------  2 phyd57 phyd57      4096 Apr  4  2017 dislin
+drwx------  2 phyd57 phyd57      4096 Nov 16  2019 fft
+-rw-------  1 phyd57 phyd57        34 Sep 14  2019 file1.txt
+-rw-------  1 phyd57 phyd57        21 Jan 25  2017 file_w_strings.txt
+-r--r--r--  1 phyd57 phyd57      8031 Dec 13  2024 finalD57-Q-2024.txt
+drwx------  2 phyd57 phyd57      4096 Sep 21  2019 findat
+drwx------  4 phyd57 phyd57      4096 Feb  8  2017 game
+-rwx------  1 phyd57 phyd57      8480 Sep  5  2020 hello
+-rw-------  1 phyd57 phyd57        79 Sep  5  2020 hello.c
+drwxrwxr-x  2 phyd57 phyd57      4096 Sep 11 13:30 igor-dir
+drwx------  2 phyd57 phyd57      4096 Sep 21  2019 imag
+drwx------  2 phyd57 phyd57      4096 Sep 23  2020 math
+drwxr-xr-x  4 phyd57 phyd57     20480 Apr 18  2017 mie
+-rw-------  1 phyd57 phyd57      5511 Sep 16  2020 my_assignment1.py
+-rwx------  1 phyd57 root     1480788 Nov  9  2019 nbody
+-rw-------  1 phyd57 phyd57        10 Mar 15  2017 old..vimrc
+-r-xr--r--  1 phyd57 phyd57      3675 Dec 13  2024 prob4_w_issue.f95
+-r-x------  1 phyd57 phyd57     51832 Dec 12  2018 prob4_w_issue.x
+drwxr-xr-x  6 phyd57 phyd57     36864 Dec 30  2017 progD57
+drwxrwxr-x  2 phyd57 phyd57      4096 Oct  2  2020 sandbox
+drwx------ 11 phyd57 phyd57      4096 Sep  6  2019 stud1
+-rwx------  1 phyd57 phyd57     12896 Nov  9  2019 t1
+-rw-------  1 phyd57 phyd57       312 Sep 12  2020 t1.1.py
+-rw-------  1 phyd57 phyd57      4245 Nov  9  2019 t1.c
+-rw-------  1 phyd57 phyd57        80 Sep  7  2019 test.f90
+-rw-------  1 phyd57 phyd57        79 Sep  7  2019 test.f90.save
+-rw-------  1 phyd57 phyd57       242 Sep 12  2020 tut2.py</code></pre>
+<section id="artifact-catalog" class="level3">
+<h3 class="anchored" data-anchor-id="artifact-catalog">Artifact Catalog</h3>
+<ol type="1">
+<li><strong>Isolated Workspace (<code>igor-dir/</code>):</strong> Personal workspace directory. Because <code>phyd57</code> is a shared cohort user account, <strong>always conduct work inside your designated folder</strong> to avoid modifying shared files or other students’ assignments.</li>
+<li><strong>Assignments &amp; Code:</strong>
 <ul>
-<li><strong><code>art-1</code></strong>: The legacy node running CentOS 6.6.</li>
-<li><strong><code>art-16</code></strong>: The modern node running Rocky Linux 9.6.</li>
+<li><code>A3.c</code>, <code>a3</code>, <code>a3.c</code>: Assignment 3 C source and compiled ELF binaries.</li>
+<li><code>A4FFTSolver/</code>: Group project directory for Fast Fourier Transform gravitational potential solvers.</li>
+<li><code>my_assignment1.py</code>: Python reference implementation for Assignment 1.</li>
+<li><code>prob4_w_issue.f95</code> &amp; <code>prob4_w_issue.x</code>: Fortran 95 code demonstrating segmentation faults caused by exceeding stack size limits with static array allocations.</li>
+</ul></li>
+<li><strong>GPU &amp; HPC Diagnostics:</strong>
+<ul>
+<li><code>deviceQuery</code> &amp; <code>bandwidthTest</code>: Standard NVIDIA CUDA SDK binaries compiled with <code>nvcc</code>. They query device capability, CUDA core counts, and PCIe memory bandwidth.</li>
+<li><code>avx/</code>: Test directory for Advanced Vector Extensions (AVX) SIMD compiler vectorization.</li>
+<li><code>nbody</code>: Compiled parallel N-body simulation binary.</li>
+</ul></li>
+<li><strong>Reference Scripts &amp; Exam Prompts:</strong>
+<ul>
+<li><code>dislin/</code>: Local installation of the DISLIN scientific graphics library.</li>
+<li><code>finalD57-Q-2024.txt</code>: Programming prompt text file from the December 2024 final exam.</li>
+<li><code>old..vimrc</code>: Legacy Vim editor configuration file.</li>
+</ul></li>
+</ol>
+<hr>
+</section>
+</section>
+<section id="local-viewing-editing-of-remote-code" class="level2">
+<h2 class="anchored" data-anchor-id="local-viewing-editing-of-remote-code">5. Local Viewing &amp; Editing of Remote Code</h2>
+<p>Developing directly over terminal SSH using basic Vim or Nano can slow down debugging. Here is how to view and edit files using modern local developer tools:</p>
+<section id="method-1-sshfs-virtual-directory-mount-recommended" class="level3">
+<h3 class="anchored" data-anchor-id="method-1-sshfs-virtual-directory-mount-recommended">Method 1: SSHFS (Virtual Directory Mount) — <em>Recommended</em></h3>
+<p><strong>SSHFS</strong> mounts the remote cluster folder directly into your local filesystem over SFTP, allowing you to open remote files in local VS Code, Cursor, or Neovim with full language server protocol (LSP) support.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Create a local mount directory</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/mounts/art-1</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Mount using your ~/.ssh/config alias</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ex">sshfs</span> art-1:/home/phyd57 ~/mounts/art-1 <span class="at">-o</span> reconnect,ServerAliveInterval=15,ServerAliveCountMax=3</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Open your personal folder in local VS Code</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="ex">code</span> ~/mounts/art-1/igor-dir</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Unmount cleanly when finished</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="ex">fusermount</span> <span class="at">-u</span> ~/mounts/art-1</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>(macOS users: install via <code>brew install macfuse gromgit/fuse/sshfs-mac</code> and unmount using <code>umount ~/mounts/art-1</code>).</em></p>
+</section>
+<section id="method-2-vs-code-ssh-fs-bypassing-centos-6-glibc-limits" class="level3">
+<h3 class="anchored" data-anchor-id="method-2-vs-code-ssh-fs-bypassing-centos-6-glibc-limits">Method 2: VS Code “SSH FS” (Bypassing CentOS 6 Glibc Limits)</h3>
+<p>The official <strong>VS Code Remote - SSH</strong> extension automatically deploys a remote Node.js server agent that requires <strong>glibc 2.28+</strong>. Because CentOS 6.6 ships with <strong>glibc 2.12</strong>, the extension crashes with:</p>
+<pre class="text"><code>/lib64/libc.so.6: version `GLIBC_2.28' not found</code></pre>
+<p><strong>The Solution:</strong> Install the client-side <strong>SSH FS</strong> extension (<code>HuFlungDu.ssh-fs</code> or <code>liximomo.sftp</code>). This extension runs pure SFTP from your local machine, allowing file browsing and editing inside VS Code without requiring modern glibc libraries on the cluster.</p>
+</section>
+<section id="method-3-terminal-persistence-with-screen" class="level3">
+<h3 class="anchored" data-anchor-id="method-3-terminal-persistence-with-screen">Method 3: Terminal Persistence with <code>screen</code></h3>
+<p>If you edit directly inside the remote shell, protect long-running compilations and simulations against network drops using <code>screen</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Start a detached-capable session</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ex">screen</span> <span class="at">-S</span> simulation_run</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Compile and execute</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> <span class="kw">&amp;&amp;</span> <span class="ex">./nbody</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Detach session: Press Ctrl+A, then D</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Reattach later:</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="ex">screen</span> <span class="at">-r</span> simulation_run</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="bidirectional-file-transfers-ftpsftp" class="level2">
+<h2 class="anchored" data-anchor-id="bidirectional-file-transfers-ftpsftp">6. Bidirectional File Transfers &amp; FTP/SFTP</h2>
+<p>Moving files, datasets, and plots between your computer and <code>art-1</code> can be done via CLI or graphical interfaces.</p>
+<section id="scp-secure-copy-protocol" class="level3">
+<h3 class="anchored" data-anchor-id="scp-secure-copy-protocol">1. <code>scp</code> (Secure Copy Protocol)</h3>
+<ul>
+<li><p><strong>Download a file to your local directory:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">scp</span> art-1:~/finalD57-Q-2024.txt ./</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p><strong>Download your entire workspace recursively:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">scp</span> <span class="at">-r</span> art-1:~/igor-dir ./backup_igor_dir/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p><strong>Upload source code to your cluster folder:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">scp</span> ./my_solver.c art-1:~/igor-dir/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 </ul>
-<p>You should default to using <code>art-16</code> for access to modern compilers and an up-to-date operating system environment.</p>
 </section>
-<section id="ssh-access-x11-forwarding" class="level3">
-<h3 class="anchored" data-anchor-id="ssh-access-x11-forwarding">SSH Access &amp; X11 Forwarding</h3>
-<p>To access the cluster remotely from your own terminal (Linux, macOS, or Windows WSL/PowerShell), use the Secure Shell (<code>ssh</code>) command:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> <span class="at">-X</span> <span class="op">&lt;</span>your-username<span class="op">&gt;</span>@art-16.utsc.utoronto.ca</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><strong>Understanding the Flags:</strong> * <code>&lt;your-username&gt;</code> is typically your UTORid. * The <code>-X</code> flag enables <strong>X11 Forwarding</strong>. This is crucial if you are generating DISLIN plots or UI elements in your Fortran/C code, as it forwards the graphical window from the remote server directly to your local screen. <em>(Windows users will need an X-server like VcXsrv running locally to display these windows).</em></p>
+<section id="rsync-differential-fast-synchronization" class="level3">
+<h3 class="anchored" data-anchor-id="rsync-differential-fast-synchronization">2. <code>rsync</code> (Differential Fast Synchronization)</h3>
+<p><code>rsync</code> only transfers binary delta changes, making it far superior to <code>scp</code> for recurring project backups:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pull remote updates to local folder</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rsync</span> <span class="at">-avzP</span> art-1:~/igor-dir/ ./local_igor_dir/</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Push local edits to cluster</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">rsync</span> <span class="at">-avzP</span> ./local_igor_dir/ art-1:~/igor-dir/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-<section id="transferring-files-scp" class="level3">
-<h3 class="anchored" data-anchor-id="transferring-files-scp">Transferring Files (SCP)</h3>
-<p>To securely copy files between your local machine and the cluster, use the <code>scp</code> command.</p>
-<p><strong>Copying a file from the server to your local machine:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">scp</span> <span class="op">&lt;</span>your-username<span class="op">&gt;</span>@art-16.utsc.utoronto.ca:/home/<span class="op">&lt;</span>your-username<span class="op">&gt;</span>/simulations/output.dat ./local-folder/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><strong>Copying a file from your local machine to the server:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">scp</span> ./local-folder/my_script.c <span class="op">&lt;</span>your-username<span class="op">&gt;</span>@art-16.utsc.utoronto.ca:/home/<span class="op">&lt;</span>your-username<span class="op">&gt;</span>/code/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="ftp-sftp-gui-cli" class="level3">
+<h3 class="anchored" data-anchor-id="ftp-sftp-gui-cli">3. FTP &amp; SFTP (GUI &amp; CLI)</h3>
+<p>Because <code>art-1</code> blocks unencrypted FTP (port 21), all FTP transfers must use <strong>SFTP (SSH File Transfer Protocol)</strong> over port 22.</p>
+<section id="graphical-ftp-clients-filezilla-winscp-cyberduck" class="level4">
+<h4 class="anchored" data-anchor-id="graphical-ftp-clients-filezilla-winscp-cyberduck">Graphical FTP Clients (FileZilla, WinSCP, Cyberduck)</h4>
+<ol type="1">
+<li><strong>Protocol:</strong> Select <strong>SFTP - SSH File Transfer Protocol</strong> (Do <em>not</em> choose FTP).</li>
+<li><strong>Host:</strong> <code>art-1.utsc.utoronto.ca</code></li>
+<li><strong>Port:</strong> <code>22</code></li>
+<li><strong>User:</strong> <code>phyd57</code></li>
+<li><strong>Password:</strong> <code>[Password provided in lecture / saved in course private draft]</code></li>
+</ol>
+<blockquote class="blockquote">
+<p>[!NOTE] <strong>GUI Client Legacy Host Key Note:</strong> Because of CentOS 6.6’s legacy DSA host keys, strictly updated FTP clients (such as latest FileZilla) may drop the connection. If this occurs, enable legacy host keys under FileZilla’s SFTP settings, or use <strong>WinSCP</strong> (Windows) or <strong>Cyberduck</strong> (macOS/Windows), which negotiate legacy ciphers automatically.</p>
+</blockquote>
 </section>
-<section id="retrieving-your-authentication-info" class="level3">
-<h3 class="anchored" data-anchor-id="retrieving-your-authentication-info">Retrieving Your Authentication Info</h3>
-<p>For security reasons, cluster passwords are not distributed online. * <strong>If you attended the introductory lecture/tutorial</strong>: You were shown a unique password for the <code>art</code> cluster. Try using this password with your UTORid to access <code>art-16</code>. * <strong>If you forgot or missed it</strong>: You must ask for your credentials in person. Visit <strong>Prof.&nbsp;Pawel Artymowicz</strong> during his office hours (Fridays, directly after the tutorial in <strong>HLB108</strong> or at his office in <strong>SW 506G</strong>).</p>
+<section id="interactive-command-line-sftp" class="level4">
+<h4 class="anchored" data-anchor-id="interactive-command-line-sftp">Interactive Command-Line <code>sftp</code></h4>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sftp</span> art-1</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>ls</code> / <code>lls</code> : List remote / local directory contents.</li>
+<li><code>cd &lt;dir&gt;</code> / <code>lcd &lt;dir&gt;</code> : Change remote / local directory.</li>
+<li><code>get &lt;remote-file&gt;</code> : Download file.</li>
+<li><code>put &lt;local-file&gt;</code> : Upload file.</li>
+<li><code>exit</code> : Quit session.</li>
+</ul>
+<hr>
+</section>
+</section>
+</section>
+<section id="automated-local-backup-script" class="level2">
+<h2 class="anchored" data-anchor-id="automated-local-backup-script">7. Automated Local Backup Script</h2>
+<p>To safeguard your work inside <code>igor-dir/</code>, save this script locally as <code>sync_art1.sh</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/usr/bin/env bash</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">-euo</span> pipefail</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="va">REMOTE_HOST</span><span class="op">=</span><span class="st">"art-1"</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="va">REMOTE_PATH</span><span class="op">=</span><span class="st">"~/igor-dir/"</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="va">LOCAL_BACKUP_DIR</span><span class="op">=</span><span class="st">"</span><span class="va">${HOME}</span><span class="st">/backups/phyd57/</span><span class="va">$(</span><span class="fu">date</span> +%Y-%m-%d<span class="va">)</span><span class="st">"</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> <span class="st">"</span><span class="va">${LOCAL_BACKUP_DIR}</span><span class="st">"</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Syncing </span><span class="va">${REMOTE_HOST}</span><span class="st">:</span><span class="va">${REMOTE_PATH}</span><span class="st"> to </span><span class="va">${LOCAL_BACKUP_DIR}</span><span class="st">..."</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="fu">rsync</span> <span class="at">-avzP</span> <span class="dt">\</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">--exclude</span><span class="op">=</span><span class="st">"*.x"</span> <span class="dt">\</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">--exclude</span><span class="op">=</span><span class="st">"*.o"</span> <span class="dt">\</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>  <span class="st">"</span><span class="va">${REMOTE_HOST}</span><span class="st">:</span><span class="va">${REMOTE_PATH}</span><span class="st">"</span> <span class="st">"</span><span class="va">${LOCAL_BACKUP_DIR}</span><span class="st">/"</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Backup complete at </span><span class="va">$(</span><span class="fu">date</span><span class="va">)</span><span class="st">."</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Run with:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> +x sync_art1.sh</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./sync_art1.sh</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->
