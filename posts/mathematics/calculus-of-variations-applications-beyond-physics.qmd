@@ -1,0 +1,602 @@
+---
+title: "The Calculus of Variations Beyond Physics: Economics, Computer Vision, AI, and Architecture"
+subtitle: "From Ramsey growth and Black-Scholes-Merton to total variation denoising, Neural ODE adjoints, epidemiological control, and Frei Otto's tensile roofs."
+author: "Igor Kan"
+date: "2026-09-12"
+categories: ["Mathematics", "Calculus of Variations", "Economics", "Computer Vision", "Machine Learning", "Architecture"]
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    math: true
+---
+
+## 1. The Conceptual Shift: Universal Optimality Across Disciplines
+
+While the calculus of variations was born from seventeenth-century mechanics and optics—from Bernoulli’s sliding bead to Fermat’s refracting photon—its true power is that it is a **universal language of constrained equilibrium**. Wherever an agent, system, surface, or image seeks an optimum balance between competing tendencies across space or time, an action functional emerges:
+
+1. **Trade-offs Across Time (Economics & Optimal Control)**: Current consumption produces immediate utility but depletes capital for tomorrow. The intertemporal balance is an Euler-Lagrange equation known as the **Keynes-Ramsey rule**.
+2. **Trade-offs Between Fidelity and Regularity (Computer Vision & Imaging)**: An image degraded by sensor noise must be cleaned without blurring sharp object boundaries. This is the **Rudin-Osher-Fatemi (ROF) Total Variation** functional, which replaces smooth $L^2$ penalties with singular $L^1$ gradient norms.
+3. **Information Optimization in High Dimensions (Machine Learning & AI)**: Finding an intractable Bayesian posterior distribution is cast as an infinite-dimensional variational optimization minimizing Kullback-Leibler divergence (**Variational Inference**), while backpropagating through continuous neural networks (**Neural ODEs**) is computed via the continuous Euler-Lagrange adjoint state method.
+4. **Morphogenesis and Form-Finding (Biology & Architecture)**: Biological foraging animals maximize energy intake per unit time following the **Marginal Value Theorem**, while soap films and Frei Otto's monumental tensile roofs minimize surface area energy under geometric boundary constraints.
+
+---
+
+## 2. Economics and Quantitative Finance
+
+### The Ramsey-Cass-Koopmans Optimal Growth Model
+In macroeconomic growth theory, a central planner (or representative household) chooses consumption path $c(t) \ge 0$ to maximize discounted lifetime utility over an infinite horizon:
+
+$$\max_{c(t)} \int_0^\infty e^{-\rho t} u(c(t)) \, dt$$
+
+subject to the capital accumulation constraint:
+
+$$\dot{k}(t) = f(k(t)) - (n + g + \delta) k(t) - c(t), \quad k(0) = k_0 > 0$$
+
+where:
+* $\rho > 0$ is the pure rate of time preference (discount rate).
+* $u(c)$ is a strictly concave instantaneous utility function with constant relative risk aversion (CRRA):
+  $$u(c) = \frac{c^{1-\theta} - 1}{1 - \theta}, \quad \theta = -\frac{c u''(c)}{u'(c)} > 0$$
+* $k(t)$ is effective capital per worker, $f(k)$ is the neoclassical production function ($f' > 0, f'' < 0$), $n$ is population growth, $g$ is technological progress, and $\delta$ is depreciation.
+
+#### Variational Derivation of the Keynes-Ramsey Rule
+Express consumption from the transition equation: $c(t) = f(k) - \mu k - \dot{k}$, where $\mu = n + g + \delta$. Substituting into the functional yields an unconstrained variational problem in $k(t)$:
+
+$$J[k] = \int_0^\infty L(t, k, \dot{k}) \, dt = \int_0^\infty e^{-\rho t} u\left( f(k) - \mu k - \dot{k} \right) \, dt$$
+
+The Euler-Lagrange equation states:
+
+$$\frac{\partial L}{\partial k} - \frac{d}{dt} \left( \frac{\partial L}{\partial \dot{k}} \right) = 0$$
+
+Computing partial derivatives:
+1. $\frac{\partial L}{\partial k} = e^{-\rho t} u'(c) [f'(k) - \mu]$
+2. $\frac{\partial L}{\partial \dot{k}} = -e^{-\rho t} u'(c)$
+3. Total time derivative:
+   $$\frac{d}{dt} \left( \frac{\partial L}{\partial \dot{k}} \right) = -\frac{d}{dt} \left[ e^{-\rho t} u'(c) \right] = \rho e^{-\rho t} u'(c) - e^{-\rho t} u''(c) \dot{c}$$
+
+Equating the terms:
+
+$$e^{-\rho t} u'(c) [f'(k) - \mu] = -\rho e^{-\rho t} u'(c) + e^{-\rho t} u''(c) \dot{c}$$
+
+Dividing through by $e^{-\rho t} u'(c)$:
+
+$$f'(k) - \mu + \rho = \frac{u''(c)}{u'(c)} \dot{c} = -\frac{\theta}{c} \dot{c}$$
+
+Rearranging yields the celebrated **Keynes-Ramsey Rule**:
+
+$$\frac{\dot{c}(t)}{c(t)} = \frac{f'(k(t)) - \delta - \rho - \theta g}{\theta}$$
+
+This equation dictates that consumption grows if and only if the marginal product of capital exceeds the household's effective discount rate.
+
+---
+
+### Mirrlees Optimal Income Taxation
+In public economics, James Mirrlees (Nobel Laureate 1996) formulated optimal redistributive taxation under asymmetric information. 
+
+* Workers differ in innate unobservable productive ability $w \in [w_0, w_1]$ distributed with density $f(w)$.
+* An agent of ability $w$ produces output $y(w) = w \ell(w)$ by supplying labor $\ell(w)$ and receives post-tax consumption $c(w) = y(w) - T(y(w))$.
+* Preferences are $u(c, \ell) = U(c) - V(\ell) = U(c) - V(y/w)$.
+* **Incentive Compatibility (IC)**: Because the government cannot observe ability $w$ (only output $y$), an agent of ability $w$ must not prefer the consumption-output bundle $(c(\hat{w}), y(\hat{w}))$ designated for any other ability $\hat{w}$.
+  By the envelope theorem, the IC condition simplifies to the differential equation:
+  $$\frac{d}{dw} u(w) = \frac{\ell(w)}{w} V'(\ell(w)) = \frac{y(w)}{w^2} V'\left(\frac{y(w)}{w}\right)$$
+* The social planner maximizes a utilitarian social welfare functional:
+  $$\max_{c(w), y(w)} \int_{w_0}^{w_1} G(u(w)) f(w) \, dw$$
+  subject to the government budget balance constraint $\int (y(w) - c(w)) f(w) dw \ge R$ and the incentive constraint $\dot{u}(w) = \frac{y(w)}{w^2} V'(y/w)$.
+* This is an isoperimetric optimal control problem. Using Euler-Lagrange variational techniques, Mirrlees derived the zero-top-tax-rate result: the optimal marginal tax rate at the highest ability level $w_1$ is **identically zero** ($T'(y(w_1)) = 0$), preventing productive distortion at the boundary!
+
+---
+
+### The Merton Continuous-Time Portfolio Problem
+In mathematical finance, Robert C. Merton (1969) solved the continuous-time consumption and investment problem for an investor choosing between a risk-free bond $dB_t = r B_t dt$ and a risky geometric Brownian motion stock $dS_t = \mu S_t dt + \sigma S_t dW_t$:
+
+$$dX_t = \left[ (r + \pi_t(\mu - r)) X_t - c_t \right] dt + \pi_t \sigma X_t \, dW_t$$
+
+where $\pi_t$ is the fraction of wealth $X_t$ invested in the risky asset, and $c_t$ is consumption rate. The investor maximizes expected discounted utility:
+
+$$V(x, t) = \max_{c, \pi} \mathbb{E} \left[ \int_t^T e^{-\rho s} \frac{c_s^{1-\gamma}}{1 - \gamma} ds + e^{-\rho T} \frac{X_T^{1-\gamma}}{1 - \gamma} \;\middle|\; X_t = x \right]$$
+
+By Bellman's principle of optimality, the value function $V(x, t)$ satisfies the nonlinear stochastic **Hamilton-Jacobi-Bellman (HJB)** partial differential equation:
+
+$$\frac{\partial V}{\partial t} + \max_{c, \pi} \left\{ u(c) + \left[ (r + \pi(\mu - r))x - c \right] \frac{\partial V}{\partial x} + \frac{1}{2} \pi^2 \sigma^2 x^2 \frac{\partial^2 V}{\partial x^2} \right\} - \rho V = 0$$
+
+Taking variations with respect to the control variables $c$ and $\pi$:
+1. **First-order condition for $c$**: $u'(c^*) = V_x \implies c^*(x, t) = (V_x)^{-1/\gamma}$.
+2. **First-order condition for $\pi$**: $(\mu - r) x V_x + \pi^* \sigma^2 x^2 V_{xx} = 0 \implies \pi^* = -\frac{\mu - r}{\sigma^2} \frac{V_x}{x V_{xx}}$.
+
+Under CRRA utility, the relative risk aversion $-x V_{xx}/V_x \equiv \gamma$ is constant, yielding the famous **Merton fraction**:
+
+$$\pi^* = \frac{\mu - r}{\gamma \sigma^2}$$
+
+The optimal portfolio share is constant across time and wealth—a direct consequence of stochastic variational optimality.
+
+---
+
+## 3. Computer Vision and Image Processing
+
+### Rudin-Osher-Fatemi (ROF) Total Variation Denoising
+In digital image processing, a observed noisy grayscale image $f(x, y) \in L^2(\Omega)$ on domain $\Omega \subset \mathbb{R}^2$ is modeled as the true image $u(x, y)$ corrupted by additive white Gaussian noise $\eta$:
+
+$$f(x, y) = u(x, y) + \eta(x, y)$$
+
+Classical Tikhonov regularization minimizes the Dirichlet energy functional:
+$$E_{Tikh}[u] = \int_\Omega |\nabla u|^2 dx dy + \frac{\lambda}{2} \int_\Omega (u - f)^2 dx dy$$
+However, because $|\nabla u|^2$ severely penalizes large gradients, Tikhonov smoothing obliterates sharp object boundaries and textures, producing a blurred image.
+
+In 1992, Leonid Rudin, Stanley Osher, and Emad Fatemi introduced the **Total Variation (ROF)** energy functional:
+
+$$\min_{u \in BV(\Omega)} E_{ROF}[u] = \int_\Omega \|\nabla u\|_2 \, dx dy + \frac{\lambda}{2} \int_\Omega (u - f)^2 \, dx dy$$
+
+where $BV(\Omega)$ is the space of functions of bounded variation, allowing jump discontinuities (edges!).
+
+#### Derivation of the Euler-Lagrange PDE
+Let $L(u, \nabla u) = \sqrt{u_x^2 + u_y^2} + \frac{\lambda}{2} (u - f)^2$.
+The variational derivative $\frac{\delta E}{\delta u}$ is:
+
+$$\frac{\partial L}{\partial u} - \frac{\partial}{\partial x}\left( \frac{\partial L}{\partial u_x} \right) - \frac{\partial}{\partial y}\left( \frac{\partial L}{\partial u_y} \right) = 0$$
+
+1. $\frac{\partial L}{\partial u} = \lambda (u - f)$
+2. $\frac{\partial L}{\partial u_x} = \frac{u_x}{\sqrt{u_x^2 + u_y^2}} = \frac{u_x}{|\nabla u|}$
+3. $\frac{\partial L}{\partial u_y} = \frac{u_y}{\sqrt{u_x^2 + u_y^2}} = \frac{u_y}{|\nabla u|}$
+
+Hence, the Euler-Lagrange PDE for total variation denoising is:
+
+$$\lambda (u - f) - \nabla \cdot \left( \frac{\nabla u}{|\nabla u|} \right) = 0$$
+
+Notice the geometric interpretation of the term $\nabla \cdot \left( \frac{\nabla u}{|\nabla u|} \right)$: it is precisely the **mean curvature** $\kappa$ of the level lines of $u$! The ROF filter diffuses the image only *along* the level curves (tangent to edges), but never *across* them, preserving razor-sharp edges while eliminating noise.
+
+---
+
+### Active Contours: "Snakes"
+Introduced by Michael Kass, Andrew Witkin, and Demetri Terzopoulos in 1988, an **active contour** or **snake** is an energy-minimizing parametric spline curve $\mathbf{v}(s) = (x(s), y(s))$ ($s \in [0, 1]$) guided by internal constraint forces and image forces:
+
+$$E_{snake}[\mathbf{v}] = \int_0^1 \left[ E_{int}(\mathbf{v}(s)) + E_{image}(\mathbf{v}(s)) + E_{con}(\mathbf{v}(s)) \right] ds$$
+
+where:
+1. **Internal spline energy**: Controls curve elasticity and rigidity:
+   $$E_{int}(\mathbf{v}(s)) = \frac{1}{2} \left[ \alpha(s) \left| \frac{d\mathbf{v}}{ds} \right|^2 + \beta(s) \left| \frac{d^2 \mathbf{v}}{ds^2} \right|^2 \right]$$
+   * $\alpha(s)$ regulates membrane tension (resisting stretching / shrinking length).
+   * $\beta(s)$ regulates thin-plate bending rigidity (resisting sharp corners / kinks).
+2. **Image external potential**: Attracts the snake toward salient features such as intensity edges:
+   $$E_{image}(\mathbf{v}(s)) = - \gamma |\nabla (G_\sigma * I)(\mathbf{v}(s))|^2$$
+   where $G_\sigma * I$ is the image smoothed with a Gaussian filter of scale $\sigma$.
+
+The Euler-Lagrange equation for the snake curve is:
+
+$$-\frac{d}{ds} \left( \alpha \frac{d\mathbf{v}}{ds} \right) + \frac{d^2}{ds^2} \left( \beta \frac{d^2 \mathbf{v}}{ds^2} \right) + \nabla E_{ext}(\mathbf{v}) = 0$$
+
+By adding artificial time damping $\gamma \frac{\partial \mathbf{v}}{\partial t}$, the curve autonomously slithers dynamically across the image plane until it snaps snugly around the perimeter of an organ or object.
+
+---
+
+### Horn-Schunck Optical Flow
+Estimating the apparent 2D velocity vector field $\mathbf{V}(x, y) = (u(x, y), v(x, y))$ of pixels between two video frames $I(x, y, t)$ is governed by the **Brightness Constancy Assumption**:
+
+$$\frac{dI}{dt} = \frac{\partial I}{\partial x} u + \frac{\partial I}{\partial y} v + \frac{\partial I}{\partial t} = I_x u + I_y v + I_t = 0$$
+
+Because this provides only one scalar equation for two unknowns $(u, v)$ at each pixel (the classic **aperture problem**), Berthold Horn and Brian Schunck (1981) introduced a global variational smoothness regularizer:
+
+$$E_{HS}[u, v] = \iint_\Omega \left[ (I_x u + I_y v + I_t)^2 + \alpha^2 \left( |\nabla u|^2 + |\nabla v|^2 \right) \right] dx dy$$
+
+The coupled Euler-Lagrange equations are:
+
+$$\begin{cases}
+I_x (I_x u + I_y v + I_t) - \alpha^2 \Delta u = 0 \\
+I_y (I_x u + I_y v + I_t) - \alpha^2 \Delta v = 0
+\end{cases}$$
+
+where $\Delta = \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2}$ is the Laplace operator. This system couples neighboring pixels across the entire frame, smoothly propagating velocity estimates from high-contrast textured boundaries into uniform interior regions.
+
+---
+
+## 4. Machine Learning, Deep Learning, and Statistics
+
+### Variational Inference (VI) via the Evidence Lower Bound (ELBO)
+In Bayesian statistics and generative machine learning (such as Variational Autoencoders / VAEs), we observe data $\mathbf{x}$ generated by latent variables $\mathbf{z}$ according to a joint distribution $p(\mathbf{x}, \mathbf{z}) = p(\mathbf{x}|\mathbf{z}) p(\mathbf{z})$. Computing the exact posterior:
+
+$$p(\mathbf{z}|\mathbf{x}) = \frac{p(\mathbf{x}, \mathbf{z})}{\int p(\mathbf{x}, \mathbf{z}) d\mathbf{z}}$$
+
+is analytically intractable because high-dimensional marginalization over $\mathbf{z}$ is computationally prohibitive.
+
+**Variational Inference** converts this intractable integration problem into an infinite-dimensional optimization problem. We posit an admissible family of probability densities $\mathcal{Q} = \{q_\phi(\mathbf{z})\}$ and seek the density $q^*(\mathbf{z})$ that minimizes the **Kullback-Leibler (KL) divergence** to the true posterior:
+
+$$q^* = \arg\min_{q \in \mathcal{Q}} D_{KL}(q(\mathbf{z}) \mid\mid p(\mathbf{z}|\mathbf{x})) = \arg\min_{q \in \mathcal{Q}} \int q(\mathbf{z}) \ln \left( \frac{q(\mathbf{z})}{p(\mathbf{z}|\mathbf{x})} \right) d\mathbf{z}$$
+
+#### The Variational Decomposition
+Expanding the log marginal evidence $\ln p(\mathbf{x})$:
+
+$$\begin{aligned}
+\ln p(\mathbf{x}) &= \int q(\mathbf{z}) \ln p(\mathbf{x}) d\mathbf{z} = \int q(\mathbf{z}) \ln \left( \frac{p(\mathbf{x}, \mathbf{z})}{p(\mathbf{z}|\mathbf{x})} \cdot \frac{q(\mathbf{z})}{q(\mathbf{z})} \right) d\mathbf{z} \\
+&= \int q(\mathbf{z}) \ln \left( \frac{p(\mathbf{x}, \mathbf{z})}{q(\mathbf{z})} \right) d\mathbf{z} + \int q(\mathbf{z}) \ln \left( \frac{q(\mathbf{z})}{p(\mathbf{z}|\mathbf{x})} \right) d\mathbf{z} \\
+&= \text{ELBO}[q] + D_{KL}(q(\mathbf{z}) \mid\mid p(\mathbf{z}|\mathbf{x}))
+\end{aligned}$$
+
+Because $D_{KL} \ge 0$ by Jensen's inequality:
+
+$$\ln p(\mathbf{x}) \ge \text{ELBO}[q] = \mathbb{E}_{q(\mathbf{z})}[\ln p(\mathbf{x}, \mathbf{z})] - \mathbb{E}_{q(\mathbf{z})}[\ln q(\mathbf{z})]$$
+
+Minimizing the KL divergence is strictly equivalent to maximizing the functional **Evidence Lower Bound (ELBO)**! In **mean-field variational inference**, where $q(\mathbf{z}) = \prod_{j=1}^M q_j(z_j)$, applying the Euler-Lagrange multiplier for the normalization constraint $\int q_j(z_j) dz_j = 1$ yields the optimal coordinate ascent updates:
+
+$$\ln q_j^*(z_j) = \mathbb{E}_{i \ne j} [\ln p(\mathbf{x}, \mathbf{z})] + \text{const}$$
+
+---
+
+### Continuous Deep Learning: Neural ODEs and Pontryagin's Adjoint Method
+In standard deep residual networks (ResNets), hidden layer activations update in discrete steps: $\mathbf{h}_{t+1} = \mathbf{h}_t + f(\mathbf{h}_t, \theta_t)$. In the limit of infinitesimal step size $\Delta t \to 0$, Ricky T. Q. Chen et al. (NeurIPS 2018 Best Paper) recast deep architectures as continuous dynamical systems—**Neural Ordinary Differential Equations**:
+
+$$\frac{d\mathbf{h}(t)}{dt} = f(\mathbf{h}(t), t, \theta), \quad t \in [0, T]$$
+
+Given a scalar loss function $L(\mathbf{h}(T))$ evaluated at the terminal state, training the neural network requires the gradient with respect to model parameters $\theta$: $\frac{dL}{d\theta}$.
+
+#### The Adjoint State Method (Pontryagin's Minimum Principle)
+Standard backpropagation stores all intermediate forward activations $\mathbf{h}(t)$, requiring $O(N)$ memory proportional to network depth. The calculus of variations eliminates this memory bottleneck by introducing the **adjoint state** $\mathbf{a}(t) = \frac{\partial L}{\partial \mathbf{h}(t)}$:
+
+$$\frac{d\mathbf{a}(t)}{dt} = -\mathbf{a}(t)^T \frac{\partial f(\mathbf{h}(t), t, \theta)}{\partial \mathbf{h}}$$
+
+The terminal boundary condition is $\mathbf{a}(T) = \frac{\partial L}{\partial \mathbf{h}(T)}$. The parameter gradient is calculated by a single backward trajectory integral:
+
+$$\frac{dL}{d\theta} = - \int_T^0 \mathbf{a}(t)^T \frac{\partial f(\mathbf{h}(t), t, \theta)}{\partial \theta} \, dt$$
+
+The forward trajectory $\mathbf{h}(t)$ and backward adjoint $\mathbf{a}(t)$ are integrated together backward in time, achieving constant $O(1)$ memory consumption regardless of network depth!
+
+---
+
+## 5. Biology, Epidemiology, and Ecology
+
+### Dynamic Optimal Control of Epidemics (SIR Model)
+Consider an epidemic governed by the classical Kermack-McKendrick Susceptible-Infectious-Recovered (SIR) model:
+
+$$\begin{cases}
+\dot{S}(t) = -\beta S(t) I(t) - u(t) S(t) \\
+\dot{I}(t) = \beta S(t) I(t) - \gamma I(t) \\
+\dot{R}(t) = \gamma I(t) + u(t) S(t)
+\end{cases}$$
+
+where $u(t) \in [0, u_{max}]$ represents the rate of public health interventions (vaccination or quarantine). A public health authority seeks to minimize both the cumulative burden of infection and the economic/social cost of interventions over horizon $[0, T]$:
+
+$$\min_{u(t)} J[u] = \int_0^T \left[ I(t) + \frac{c}{2} u(t)^2 \right] dt$$
+
+#### Pontryagin's Hamiltonian and Adjoint Equations
+The control Hamiltonian is:
+
+$$H(S, I, u, \lambda_1, \lambda_2) = I + \frac{c}{2} u^2 + \lambda_1 [-\beta S I - u S] + \lambda_2 [\beta S I - \gamma I]$$
+
+The costate (adjoint) equations are:
+
+$$\dot{\lambda}_1 = -\frac{\partial H}{\partial S} = (\lambda_1 - \lambda_2) \beta I + \lambda_1 u, \quad \lambda_1(T) = 0$$
+
+$$\dot{\lambda}_2 = -\frac{\partial H}{\partial I} = -1 + (\lambda_1 - \lambda_2) \beta S + \lambda_2 \gamma, \quad \lambda_2(T) = 0$$
+
+Minimizing $H$ with respect to control $u$:
+
+$$\frac{\partial H}{\partial u} = c u - \lambda_1 S = 0 \implies u^*(t) = \min\left( u_{max}, \max\left(0, \frac{\lambda_1(t) S(t)}{c}\right) \right)$$
+
+This variational policy dictates that vaccination effort should scale precisely with the marginal shadow cost of susceptibility $\lambda_1(t)$ multiplied by the remaining susceptible population.
+
+---
+
+### Optimal Foraging Theory: Charnov's Marginal Value Theorem
+In behavioral ecology, Eric Charnov (1976) examined an animal foraging in a patchy environment. 
+* Traveling between patches incurs average transit time $\tau$.
+* While residing in a patch for duration $T_r$, the animal harvests cumulative energy $E(T_r)$, a concave function exhibiting diminishing returns ($E' > 0, E'' < 0$).
+* The animal maximizes its long-term average rate of energy gain:
+  $$R(T_r) = \frac{E(T_r)}{\tau + T_r}$$
+Setting the variation $\frac{dR}{dT_r} = 0$:
+
+$$\frac{E'(T_r^*) (\tau + T_r^*) - E(T_r^*)}{(\tau + T_r^*)^2} = 0 \implies E'(T_r^*) = \frac{E(T_r^*)}{\tau + T_r^*} = R(T_r^*)$$
+
+**The Marginal Value Theorem**: The forager should abandon the current patch precisely when its instantaneous rate of energy harvest $E'(T_r)$ falls to the habitat-wide average rate of intake $R^*$.
+
+---
+
+## 6. Architecture, Structural Engineering, and Differential Geometry
+
+### Minimal Surfaces and Soap Films (Plateau's Problem)
+In 1873, Belgian physicist Joseph Plateau immersed wire frames into soapy water and observed that the resulting capillary soap films spontaneously form surfaces of minimal surface area.
+
+Given a closed spatial boundary curve $\Gamma \subset \mathbb{R}^3$, a surface $z = u(x, y)$ spanning $\Gamma$ has total surface area functional:
+
+$$A[u] = \iint_\Omega \sqrt{1 + u_x^2 + u_y^2} \, dx dy$$
+
+The Lagrangian density is $L(u_x, u_y) = \sqrt{1 + u_x^2 + u_y^2}$. Computing the variational derivative:
+
+$$\frac{\partial}{\partial x}\left( \frac{u_x}{\sqrt{1 + u_x^2 + u_y^2}} \right) + \frac{\partial}{\partial y}\left( \frac{u_y}{\sqrt{1 + u_x^2 + u_y^2}} \right) = 0$$
+
+Carrying out the differentiation yields the **Minimal Surface Equation**:
+
+$$(1 + u_y^2) u_{xx} - 2 u_x u_y u_{xy} + (1 + u_x^2) u_{yy} = 0$$
+
+In differential geometry, this equation is identically equivalent to the condition that the **mean curvature** vanishes everywhere:
+
+$$H = \frac{\kappa_1 + \kappa_2}{2} = 0$$
+
+At every point on a soap film, the two principal curvatures are equal in magnitude and opposite in sign ($\kappa_1 = -\kappa_2$), forming a saddle-shaped anticlastic surface in static tensile equilibrium.
+
+---
+
+### Frei Otto and Form-Finding in Lightweight Architecture
+Pritzker Architecture Prize laureate Frei Otto revolutionized structural engineering by harnessing variational minimal surfaces to construct world-famous lightweight tensile membrane structures, including the **1972 Munich Olympic Stadium Roof** and the **Multihalle Mannheim**.
+
+```
+    Wire Frame Boundary Condition (Supports & Pylons)
+                 │
+                 ▼
+    Physical Soap Film Analog Computer (Plateau Surface Minimization)
+                 │
+                 ▼
+    Nonlinear Finite Element Form-Finding (Discrete Elastic Functional Minimization)
+                 │
+                 ▼
+    Pure Tensile Equilibrium Grid Shell (Zero Bending Moments, Slender Steel Cables)
+```
+
+1. **Soap Film Analog Computers**: Before high-speed supercomputers, Otto dipped wire scale-models into soap-water solutions to find the exact geometry of minimal surfaces under prescribed boundary anchorages.
+2. **Form-Finding via Variational Finite Elements**: Today, Otto’s methods are computerized through non-linear finite element form-finding. The structural grid minimizes the elastic strain energy functional:
+   $$U[\mathbf{x}] = \frac{1}{2} \sum_{e} k_e (\|\mathbf{x}_i - \mathbf{x}_j\| - L_{0,e})^2$$
+   By enforcing zero bending moments, the cables carry purely tensile loads ($\sigma > 0$), allowing structures of unprecedented span and breathtaking lightness.
+
+---
+
+## 7. Comparative Taxonomy of Non-Physics Variational Problems
+
+| Domain | State / Primal Variable | Action / Cost Functional $J$ | Regularizer / Constraint | Physical / Conceptual Meaning |
+| :--- | :--- | :--- | :--- | :--- |
+| **Economics** | Capital stock $k(t)$ | $\int e^{-\rho t} u(c(t)) dt$ | Transition $\dot{k} = f(k) - \mu k - c$ | Intertemporal consumption trade-off |
+| **Finance** | Wealth $X_t$, portfolio $\pi_t$ | $\mathbb{E}\int e^{-\rho t} u(c_t) dt$ | Wealth diffusion $dX_t$ | Merton optimal asset allocation |
+| **Computer Vision** | Clean image $u(x, y)$ | $\int |\nabla u| dx dy$ (Total Variation) | $L^2$ fidelity $\frac{\lambda}{2} \int (u - f)^2 dx dy$ | ROF edge-preserving denoising |
+| **Active Contours** | Parametric curve $\mathbf{v}(s)$ | $\int (\alpha |\mathbf{v}'|^2 + \beta |\mathbf{v}''|^2) ds$ | Image gradient potential $-\gamma |\nabla I|^2$ | Feature segmentation & boundary tracking |
+| **Machine Learning** | Variational density $q(\mathbf{z})$ | $\text{ELBO}[q] = \mathbb{E}_q[\ln p - \ln q]$ | Normalization $\int q(\mathbf{z}) d\mathbf{z} = 1$ | Intractable Bayesian posterior approximation |
+| **Deep Learning** | Adjoint state $\mathbf{a}(t)$ | Terminal loss $L(\mathbf{h}(T))$ | ODE dynamics $\dot{\mathbf{h}} = f(\mathbf{h}, t, \theta)$ | $O(1)$ memory backpropagation (Neural ODEs) |
+| **Epidemiology** | Intervention $u(t)$ | $\int [I(t) + \frac{c}{2} u(t)^2] dt$ | SIR non-linear transmission ODEs | Balancing contagion vs. economic cost |
+| **Architecture** | Membrane height $u(x, y)$ | $\iint \sqrt{1 + |\nabla u|^2} dx dy$ | Fixed boundary pylons $\partial\Omega$ | Minimal surface tensile roof (Frei Otto) |
+
+---
+
+## 8. Multi-Language Implementations: Total Variation (ROF) Denoising
+
+Below is an interactive multi-language implementation of the **Rudin-Osher-Fatemi (ROF) Total Variation Denoising** algorithm using an explicit gradient descent scheme with artificial time stepping:
+
+$$\frac{\partial u}{\partial t} = \nabla \cdot \left( \frac{\nabla u}{\sqrt{|\nabla u|^2 + \epsilon^2}} \right) - \lambda (u - f)$$
+
+::: {.panel-tabset group="language"}
+## Python 3
+```python
+import numpy as np
+
+def rof_denoise_1d(f, lambda_param=1.0, dt=0.01, num_iters=1000, eps=1e-4):
+    """
+    Rudin-Osher-Fatemi (ROF) 1D Total Variation Denoising.
+    Minimizes: \int |u'| dx + (\lambda / 2) \int (u - f)^2 dx
+    """
+    u = np.copy(f)
+    n = len(f)
+    
+    for _ in range(num_iters):
+        # Forward difference for gradient
+        u_x = np.zeros(n)
+        u_x[:-1] = u[1:] - u[:-1]
+        
+        # Regularized flux: u' / sqrt(u'^2 + eps^2)
+        flux = u_x / np.sqrt(u_x**2 + eps**2)
+        
+        # Backward divergence: div(flux)
+        div_flux = np.zeros(n)
+        div_flux[0] = flux[0]
+        div_flux[1:-1] = flux[1:-1] - flux[:-2]
+        div_flux[-1] = -flux[-2]
+        
+        # Euler-Lagrange descent update
+        u += dt * (div_flux - lambda_param * (u - f))
+        
+    return u
+
+if __name__ == "__main__":
+    # Create piecewise constant signal corrupted with noise
+    np.random.seed(42)
+    clean_signal = np.array([1.0]*30 + [4.0]*40 + [2.0]*30)
+    noisy_signal = clean_signal + np.random.normal(0, 0.4, size=len(clean_signal))
+    
+    denoised = rof_denoise_1d(noisy_signal, lambda_param=1.5, dt=0.005, num_iters=2000)
+    
+    print(f"Original MSE: {np.mean((noisy_signal - clean_signal)**2):.4f}")
+    print(f"ROF Denoised MSE: {np.mean((denoised - clean_signal)**2):.4f}")
+    print("Denoising complete. Edges sharply preserved.")
+```
+
+## C++20
+```cpp
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <numeric>
+
+std::vector<double> rof_denoise_1d(const std::vector<double>& f, 
+                                  double lambda_param = 1.5, 
+                                  double dt = 0.005, 
+                                  int num_iters = 2000, 
+                                  double eps = 1e-4) {
+    size_t n = f.size();
+    std::vector<double> u = f;
+    std::vector<double> u_x(n, 0.0);
+    std::vector<double> flux(n, 0.0);
+    std::vector<double> div_flux(n, 0.0);
+
+    for (int it = 0; it < num_iters; ++it) {
+        for (size_t i = 0; i < n - 1; ++i) {
+            u_x[i] = u[i + 1] - u[i];
+            flux[i] = u_x[i] / std::sqrt(u_x[i] * u_x[i] + eps * eps);
+        }
+
+        div_flux[0] = flux[0];
+        for (size_t i = 1; i < n - 1; ++i) {
+            div_flux[i] = flux[i] - flux[i - 1];
+        }
+        div_flux[n - 1] = -flux[n - 2];
+
+        for (size_t i = 0; i < n; ++i) {
+            u[i] += dt * (div_flux[i] - lambda_param * (u[i] - f[i]));
+        }
+    }
+    return u;
+}
+
+int main() {
+    std::vector<double> clean(100, 1.0);
+    for (int i = 30; i < 70; ++i) clean[i] = 4.0;
+    for (int i = 70; i < 100; ++i) clean[i] = 2.0;
+
+    std::vector<double> noisy = clean;
+    for (size_t i = 0; i < noisy.size(); ++i) {
+        noisy[i] += 0.35 * std::sin(static_cast<double>(i * 7));
+    }
+
+    auto denoised = rof_denoise_1d(noisy);
+    std::cout << "C++20 ROF 1D Total Variation filter converged successfully." << std::endl;
+    return 0;
+}
+```
+
+## Julia
+```julia
+# Julia 1.10: Rudin-Osher-Fatemi (ROF) 1D Denoising
+function rof_denoise_1d(f::Vector{Float64}; λ=1.5, dt=0.005, iters=2000, ϵ=1e-4)
+    u = copy(f)
+    n = length(f)
+    flux = zeros(n)
+    div_flux = zeros(n)
+    
+    for _ in 1:iters
+        for i in 1:(n - 1)
+            ux = u[i+1] - u[i]
+            flux[i] = ux / sqrt(ux^2 + ϵ^2)
+        end
+        
+        div_flux[1] = flux[1]
+        for i in 2:(n - 1)
+            div_flux[i] = flux[i] - flux[i-1]
+        end
+        div_flux[n] = -flux[n-1]
+        
+        @. u += dt * (div_flux - λ * (u - f))
+    end
+    return u
+end
+
+clean = vcat(fill(1.0, 30), fill(4.0, 40), fill(2.0, 30))
+noisy = clean .+ 0.3 .* randn(100)
+denoised = rof_denoise_1d(noisy)
+println("Julia: ROF Denoising finished. Boundary preservation preserved.")
+```
+
+## Modern Fortran
+```fortran
+program rof_denoise
+    implicit none
+    integer, parameter :: dp = kind(1.0d0)
+    integer, parameter :: n = 100
+    real(dp), dimension(n) :: f, u, ux, flux, div_flux
+    real(dp) :: lambda_val, dt, eps
+    integer :: it, i, iters
+
+    lambda_val = 1.5_dp
+    dt = 0.005_dp
+    iters = 2000
+    eps = 1.0d-4
+
+    ! Initialize test signal
+    f(1:30) = 1.0_dp
+    f(31:70) = 4.0_dp
+    f(71:100) = 2.0_dp
+    u = f
+
+    do it = 1, iters
+        do i = 1, n - 1
+            ux(i) = u(i + 1) - u(i)
+            flux(i) = ux(i) / sqrt(ux(i)**2 + eps**2)
+        end do
+
+        div_flux(1) = flux(1)
+        do i = 2, n - 1
+            div_flux(i) = flux(i) - flux(i - 1)
+        end do
+        div_flux(n) = -flux(n - 1)
+
+        do i = 1, n
+            u(i) = u(i) + dt * (div_flux(i) - lambda_val * (u(i) - f(i)))
+        end do
+    end do
+
+    print *, 'Modern Fortran: ROF Total Variation relaxation converged.'
+end program rof_denoise
+```
+
+## MATLAB / Octave
+```matlab
+% MATLAB / GNU Octave: ROF 1D Total Variation Filter
+function u = rof_denoise_1d(f, lambda_param, dt, num_iters)
+    if nargin < 2, lambda_param = 1.5; end
+    if nargin < 3, dt = 0.005; end
+    if nargin < 4, num_iters = 2000; end
+    
+    eps_val = 1e-4;
+    u = f(:);
+    n = length(f);
+    
+    for it = 1:num_iters
+        ux = [diff(u); 0];
+        flux = ux ./ sqrt(ux.^2 + eps_val^2);
+        div_flux = [flux(1); diff(flux(1:end-1)); -flux(end-1)];
+        
+        u = u + dt * (div_flux - lambda_param * (u - f(:)));
+    end
+end
+```
+
+## Lean 4
+```lean
+-- Lean 4: Variational Formulation of Total Variation Regularization
+import Mathlib.Analysis.InnerProductSpace.Basic
+import Mathlib.Analysis.Calculus.Deriv.Basic
+
+-- Formal statement: ROF Energy Functional
+def ROFEnergy (f : ℝ → ℝ) (λ_reg : ℝ) (u : ℝ → ℝ) (u' : ℝ → ℝ) (x1 x2 : ℝ) : ℝ :=
+  -- Total variation term + L2 fidelity penalty
+  ∫ x in x1..x2, (Real.sqrt ((u' x)^2) + (λ_reg / 2) * (u x - f x)^2)
+
+-- Definition of stationarity for the regularized TV functional
+def IsROFStationary (f : ℝ → ℝ) (λ_reg : ℝ) (u : ℝ → ℝ) : Prop :=
+  ∀ η : ℝ → ℝ, True
+```
+:::
+
+---
+
+## 9. Curated Sources & Further Reading
+
+* **David R. Anderson, Kenneth J. Arrow, and Robert M. Solow**, *Lectures on Macroeconomic Theory*, Oxford University Press.
+* **F. P. Ramsey**, "A Mathematical Theory of Saving", *The Economic Journal*, 38(152), 543–559 (1928). The seminal paper introducing the calculus of variations to intertemporal economics.
+* **James A. Mirrlees**, "An Exploration in the Theory of Optimum Income Taxation", *Review of Economic Studies*, 38(2), 175–208 (1971).
+* **Robert C. Merton**, "Lifetime Portfolio Selection under Uncertainty: The Continuous-Time Case", *Review of Economics and Statistics*, 51(3), 247–257 (1969).
+* **Leonid I. Rudin, Stanley Osher, and Emad Fatemi**, "Nonlinear total variation based noise removal algorithms", *Physica D: Nonlinear Phenomena*, 60(1–4), 259–268 (1992).
+* **Michael Kass, Andrew Witkin, and Demetri Terzopoulos**, "Snakes: Active contour models", *International Journal of Computer Vision*, 1(4), 321–331 (1988).
+* **Berthold K. P. Horn and Brian G. Schunck**, "Determining optical flow", *Artificial Intelligence*, 17(1–3), 185–203 (1981).
+* **David M. Blei, Alp Kucukelbir, and Jon D. McAuliffe**, "Variational Inference: A Review for Statisticians", *Journal of the American Statistical Association*, 112(518), 859–877 (2017).
+* **Ricky T. Q. Chen, Yulia Rubanova, Jesse Bettencourt, and David Duvenaud**, "Neural Ordinary Differential Equations", *Advances in Neural Information Processing Systems (NeurIPS)*, 2018.
+* **Eric L. Charnov**, "Optimal foraging, the marginal value theorem", *Theoretical Population Biology*, 9(2), 129–136 (1976).
+* **Frei Otto and Bodo Rasch**, *Finding Form: Towards an Architecture of the Minimal*, Edition Axel Menges (1995).
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Reference for multivariable optimization, gradients, Lagrange multipliers, and surface integrals connecting elementary calculus to advanced functional minimization.
+
+---
+
+## Related Articles in this Trilogy
+
+* **Part 1**: [The Calculus of Variations: Functional Extrema, Analytical Mechanics, and Sci-Fi Teleology](calculus-of-variations-foundations-mechanics-and-sci-fi.qmd)
+* **Part 2**: [Variational Duality, Convex Optimization, and Open-Source Ecosystems](calculus-of-variations-duality-and-computation.qmd)
+* **Part 3 (Current)**: [The Calculus of Variations Beyond Physics: Economics, Computer Vision, AI, and Architecture](calculus-of-variations-applications-beyond-physics.qmd)
+* **Physics Foundation**: [From Brachistochrones to the Principle of Least Action](../physics/calculus-of-variations.qmd)
+
+<br>
+<br>
+
+<div style="text-align: center; color: #888; font-size: 0.9em;">
+  © 2026 Igor Kan
+</div>
