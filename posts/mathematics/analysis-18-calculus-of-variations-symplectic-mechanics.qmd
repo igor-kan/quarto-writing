@@ -1,6 +1,6 @@
 ---
 title: "Variational Mechanics: The Euler-Lagrange Functional, Legendre Duality, and Symplectic Geometry"
-subtitle: "Bridging calculus of variations to theoretical physics: Hamilton's action principle, Legendre transforms, Poisson brackets, and symplectic 2-forms."
+subtitle: "Hamilton's action principle, the fundamental lemma of calculus of variations, Legendre duality, and symplectic 2-forms."
 author: "Igor Kan"
 date: "2026-09-12"
 categories: ["Mathematics", "Calculus of Variations", "Classical Mechanics", "Differential Geometry", "Physics"]
@@ -12,115 +12,347 @@ format:
 
 ## 1. The Conceptual Shift: From Forces to Stationary Action
 
-Hamilton’s Principle dictates that trajectories extremize the action functional $S[q] = \int L(t, q, \dot{q}) dt \implies \delta S = 0$. The Legendre transform maps velocity $\dot{q}$ to momentum $p = \frac{\partial L}{\partial \dot{q}}$, inducing the canonical **symplectic 2-form** $\omega = \sum dp_i \wedge dq_i$.
+In introductory physics and elementary calculus, mechanics is taught via Isaac Newton's second law: $\mathbf{F} = m\mathbf{a}$. Trajectories are determined by integrating differential equations driven by instantaneous vector forces.
+
+In modern theoretical physics and differential geometry, this framework is superseded by the **Principle of Stationary Action**:
+1. **Hamilton's Principle**: Physical trajectories do not respond to instantaneous vector pushes; rather, they globally extremize the **action functional** on path space:
+   $$S[q] = \int_{t_1}^{t_2} L(t, q(t), \dot{q}(t)) dt, \quad \delta S[q] = 0$$
+2. **The Fundamental Lemma of Calculus of Variations (FLCV)**: Converting the infinite-dimensional functional variation $\delta S = 0$ into localized differential equations requires integrating by parts and testing against arbitrary compact test variations $\eta(t) \in C^\infty_c(t_1, t_2)$.
+3. **The Legendre Transform & Phase Space Duality**: The **Legendre transform** converts the Lagrangian $L(q, \dot{q})$ on the tangent bundle $TQ$ into the Hamiltonian $H(q, p)$ on the cotangent bundle $T^*Q$, replacing velocities $\dot{q}$ with conjugate momenta $p_i = \frac{\partial L}{\partial \dot{q}_i}$.
+4. **Symplectic Geometry & Phase Volume Conservation**: Hamilton's canonical equations are not arbitrary ODEs; they are Hamiltonian vector fields driven by the non-degenerate, closed **symplectic 2-form**:
+   $$\omega = \sum_{i=1}^n dp_i \wedge dq^i$$
+   The flow $\phi_t$ preserves $\omega$ ($\phi_t^* \omega = \omega$), which guarantees that numerical **symplectic integrators** (Verlet / Leapfrog) conserve shadow Hamiltonians without artificial energy dissipation or unbounded drift.
 
 ---
 
-## 2. Numerical Computation: Symplectic Velocity-Verlet vs. Standard Forward Euler
+## 2. Foundational Definitions & Elementary Properties
+
+### The Action Functional and Variations
+Let $\mathcal{A} = \{q \in C^2([t_1, t_2], \mathbb{R}^n) : q(t_1) = q_a, q(t_2) = q_b\}$ be the affine space of admissible trajectories satisfying fixed boundary conditions.
+* The **Lagrangian** is a $C^2$ function $L: [t_1, t_2] \times \mathbb{R}^n \times \mathbb{R}^n \to \mathbb{R}$, typically $L(t, q, \dot{q}) = T(\dot{q}) - V(q)$ (kinetic minus potential energy).
+* The **action functional** is:
+  $$S[q] = \int_{t_1}^{t_2} L(t, q(t), \dot{q}(t)) dt$$
+* A **variation** is a family $q_\epsilon(t) = q(t) + \epsilon \eta(t)$, where $\eta \in C^\infty([t_1, t_2], \mathbb{R}^n)$ satisfies $\eta(t_1) = \eta(t_2) = \mathbf{0}$.
+* The **first variation** (Gateaux functional derivative) is:
+  $$\delta S[q; \eta] = \left. \frac{d}{d\epsilon} S[q + \epsilon \eta] \right|_{\epsilon=0}$$
+* A trajectory $q \in \mathcal{A}$ is a **stationary path** if $\delta S[q; \eta] = 0$ for all admissible test variations $\eta$.
+
+### Canonical Momenta and the Hamiltonian
+* The **generalized conjugate momentum** is:
+  $$p_i = \frac{\partial L}{\partial \dot{q}_i}(t, q, \dot{q})$$
+* If the Hessian matrix $\left( \frac{\partial^2 L}{\partial \dot{q}_i \partial \dot{q}_j} \right)$ is non-singular (the Lagrangian is regular), velocities can be inverted: $\dot{q} = v(t, q, p)$.
+* The **Hamiltonian** is defined by the Legendre transformation:
+  $$H(t, q, p) = \sum_{i=1}^n p_i \dot{q}_i - L(t, q, \dot{q}) = p \cdot v(t, q, p) - L(t, q, v(t, q, p))$$
+
+---
+
+## 3. Intermediate Lemmas & Rigorous Proofs
+
+> **Lemma 18.1 (The Fundamental Lemma of Calculus of Variations — FLCV)**: Let $f: [a, b] \to \mathbb{R}$ be continuous. If:
+> $$\int_a^b f(t) \eta(t) dt = 0$$
+> for every smooth test function $\eta \in C^\infty[a, b]$ satisfying $\eta(a) = \eta(b) = 0$, then $f(t) = 0$ for all $t \in [a, b]$.
+
+*Proof*:
+Suppose for contradiction that $f(t_0) \neq 0$ for some $t_0 \in (a, b)$.
+Without loss of generality, assume $f(t_0) > 0$.
+Since $f$ is continuous, there exists $\delta > 0$ such that $f(t) > \frac{1}{2} f(t_0) > 0$ for all $t \in [t_0 - \delta, t_0 + \delta] \subset (a, b)$.
+Construct a smooth non-negative bump test function supported inside this interval (Lemma 15.2):
+$$\eta(t) = \begin{cases} \exp\left( -\frac{1}{\delta^2 - (t - t_0)^2} \right), & |t - t_0| < \delta \\ 0, & |t - t_0| \ge \delta \end{cases}$$
+Then $\eta \in C^\infty[a, b]$, $\eta(t) \ge 0$, $\eta(a) = \eta(b) = 0$, and $\eta(t) > 0$ strictly for $t \in (t_0 - \delta, t_0 + \delta)$.
+Evaluate the integral:
+$$\int_a^b f(t) \eta(t) dt = \int_{t_0 - \delta}^{t_0 + \delta} f(t) \eta(t) dt \ge \frac{1}{2} f(t_0) \int_{t_0 - \delta}^{t_0 + \delta} \eta(t) dt > 0$$
+This strictly contradicts the hypothesis that $\int_a^b f(t) \eta(t) dt = 0$.
+Hence $f(t) \equiv 0$ everywhere on $[a, b]$. $\blacksquare$
+
+> **Lemma 18.2 (The Beltrami Identity for Autonomous Lagrangians)**: If the Lagrangian does not depend explicitly on time ($\frac{\partial L}{\partial t} = 0$), then along any solution to the Euler-Lagrange equations, the energy function:
+> $$E = \sum_{i=1}^n \dot{q}_i \frac{\partial L}{\partial \dot{q}_i} - L$$
+> is a constant of motion ($\frac{dE}{dt} = 0$).
+
+*Proof*:
+Differentiate $E$ with respect to time $t$:
+$$\frac{dE}{dt} = \sum_{i=1}^n \left( \ddot{q}_i \frac{\partial L}{\partial \dot{q}_i} + \dot{q}_i \frac{d}{dt}\left(\frac{\partial L}{\partial \dot{q}_i}\right) \right) - \frac{dL}{dt}$$
+Compute the total time derivative $\frac{dL}{dt}$ using the multivariable chain rule (since $\frac{\partial L}{\partial t} = 0$):
+$$\frac{dL}{dt} = \sum_{i=1}^n \left( \frac{\partial L}{\partial q_i} \dot{q}_i + \frac{\partial L}{\partial \dot{q}_i} \ddot{q}_i \right)$$
+Substitute $\frac{dL}{dt}$ into $\frac{dE}{dt}$:
+$$\frac{dE}{dt} = \sum_{i=1}^n \left[ \ddot{q}_i \frac{\partial L}{\partial \dot{q}_i} + \dot{q}_i \frac{d}{dt}\left(\frac{\partial L}{\partial \dot{q}_i}\right) - \frac{\partial L}{\partial q_i} \dot{q}_i - \frac{\partial L}{\partial \dot{q}_i} \ddot{q}_i \right] = \sum_{i=1}^n \dot{q}_i \left[ \frac{d}{dt}\left(\frac{\partial L}{\partial \dot{q}_i}\right) - \frac{\partial L}{\partial q_i} \right]$$
+Along an Euler-Lagrange trajectory, the bracketed term is identically zero: $\frac{d}{dt}\left(\frac{\partial L}{\partial \dot{q}_i}\right) - \frac{\partial L}{\partial q_i} = 0$.
+Therefore, $\frac{dE}{dt} = 0$, so $E$ is conserved. $\blacksquare$
+
+---
+
+## 4. Rigorous Construction & Advanced Theorems
+
+### The Euler-Lagrange Equations
+> **Theorem 18.1 (The Euler-Lagrange Equations)**: A curve $q \in \mathcal{A}$ is a stationary point of the action functional $S[q]$ if and only if it satisfies the Euler-Lagrange system:
+> $$\frac{d}{dt}\left( \frac{\partial L}{\partial \dot{q}_i} \right) - \frac{\partial L}{\partial q_i} = 0, \quad \forall i \in \{1, \dots, n\}$$
+
+*Proof*:
+1. Differentiate the action under the integral sign:
+   $$\delta S[q; \eta] = \left. \frac{d}{d\epsilon} \int_{t_1}^{t_2} L(t, q + \epsilon \eta, \dot{q} + \epsilon \dot{\eta}) dt \right|_{\epsilon=0} = \int_{t_1}^{t_2} \sum_{i=1}^n \left( \frac{\partial L}{\partial q_i} \eta_i(t) + \frac{\partial L}{\partial \dot{q}_i} \dot{\eta}_i(t) \right) dt$$
+2. Integrate the second term by parts:
+   $$\int_{t_1}^{t_2} \frac{\partial L}{\partial \dot{q}_i} \dot{\eta}_i(t) dt = \left[ \frac{\partial L}{\partial \dot{q}_i} \eta_i(t) \right]_{t_1}^{t_2} - \int_{t_1}^{t_2} \frac{d}{dt}\left( \frac{\partial L}{\partial \dot{q}_i} \right) \eta_i(t) dt$$
+   Because $\eta(t_1) = \eta(t_2) = \mathbf{0}$, the boundary term vanishes.
+3. Regrouping the integral:
+   $$\delta S[q; \eta] = \int_{t_1}^{t_2} \sum_{i=1}^n \left( \frac{\partial L}{\partial q_i} - \frac{d}{dt}\left( \frac{\partial L}{\partial \dot{q}_i} \right) \right) \eta_i(t) dt = 0$$
+4. Since this must hold for every arbitrary smooth test variation $\eta_i(t)$, by the Fundamental Lemma of Calculus of Variations (Lemma 18.1 applied componentwise), the integrand must vanish identically:
+   $$\frac{\partial L}{\partial q_i} - \frac{d}{dt}\left( \frac{\partial L}{\partial \dot{q}_i} \right) = 0 \iff \frac{d}{dt}\left( \frac{\partial L}{\partial \dot{q}_i} \right) - \frac{\partial L}{\partial q_i} = 0 \quad \blacksquare$$
+
+### Hamilton's Canonical Equations and Symplectic Structure
+> **Theorem 18.2 (Hamilton's Equations & Symplectic Invariance)**:
+> 1. The Euler-Lagrange equations are equivalent to **Hamilton's Canonical Equations**:
+>    $$\dot{q}_i = \frac{\partial H}{\partial p_i}, \quad \dot{p}_i = -\frac{\partial H}{\partial q_i}$$
+> 2. The phase space flow $\phi_t: (q(0), p(0)) \mapsto (q(t), p(t))$ preserves the canonical symplectic 2-form:
+>    $$\phi_t^* \omega = \omega, \quad \omega = \sum_{i=1}^n dp_i \wedge dq^i$$
+
+*Proof*:
+1. By definition $H(q, p) = \sum p_k \dot{q}_k - L(q, \dot{q})$.
+   Taking the total differential of $H$:
+   $$dH = \sum (\dot{q}_k dp_k + p_k d\dot{q}_k) - \sum \left( \frac{\partial L}{\partial q_k} dq_k + \frac{\partial L}{\partial \dot{q}_k} d\dot{q}_k \right)$$
+   Since $p_k = \frac{\partial L}{\partial \dot{q}_k}$, the terms $p_k d\dot{q}_k$ cancel:
+   $$dH = \sum \dot{q}_k dp_k - \sum \frac{\partial L}{\partial q_k} dq_k$$
+   Equating coefficients with $dH = \sum \frac{\partial H}{\partial q_k} dq_k + \sum \frac{\partial H}{\partial p_k} dp_k$:
+   $$\frac{\partial H}{\partial p_k} = \dot{q}_k, \quad \frac{\partial H}{\partial q_k} = -\frac{\partial L}{\partial q_k} = -\dot{p}_k \implies \dot{p}_k = -\frac{\partial H}{\partial q_k}$$
+2. Symplectic preservation: In exterior calculus notation, Hamilton's equations are $\iota_{X_H} \omega = -dH$.
+   By Cartan's magic formula, the Lie derivative of $\omega$ along the Hamiltonian flow $X_H$ is:
+   $$\mathcal{L}_{X_H} \omega = d(\iota_{X_H} \omega) + \iota_{X_H}(d\omega) = d(-dH) + \iota_{X_H}(0) = -d^2 H = 0$$
+   Since $\mathcal{L}_{X_H} \omega = 0$, the flow strictly preserves the symplectic form: $\phi_t^* \omega = \omega$. $\blacksquare$
+
+---
+
+## 5. Concrete Worked Examples & Step-by-Step Calculations
+
+### Worked Example 18.1: The Brachistochrone Problem (The Cycloid)
+Find the curve $y(x)$ connecting $(0, 0)$ to $(x_1, y_1)$ along which a frictionless bead slides under gravity $g$ in minimal time.
+
+1. **Travel Time Functional**:
+   By conservation of energy, $\frac{1}{2} m v^2 = m g y \implies v = \sqrt{2gy}$ (taking the $y$-axis pointing downward).
+   The arc length element is $ds = \sqrt{1 + (y')^2} dx$.
+   The time functional is:
+   $$T[y] = \int_0^{x_1} \frac{ds}{v} = \frac{1}{\sqrt{2g}} \int_0^{x_1} \frac{\sqrt{1 + (y')^2}}{\sqrt{y}} dx$$
+   The Lagrangian is $L(y, y') = \frac{\sqrt{1 + (y')^2}}{\sqrt{y}}$.
+
+2. **Application of the Beltrami Identity**:
+   Because $L$ does not depend explicitly on $x$, Lemma 18.2 guarantees:
+   $$L - y' \frac{\partial L}{\partial y'} = C$$
+   Compute the partial derivative:
+   $$\frac{\partial L}{\partial y'} = \frac{1}{\sqrt{y}} \frac{y'}{\sqrt{1 + (y')^2}}$$
+   Substitute:
+   $$\frac{\sqrt{1 + (y')^2}}{\sqrt{y}} - y' \left( \frac{y'}{\sqrt{y}\sqrt{1 + (y')^2}} \right) = \frac{(1 + (y')^2) - (y')^2}{\sqrt{y(1 + (y')^2)}} = \frac{1}{\sqrt{y(1 + (y')^2)}} = C$$
+
+3. **Solving the Differential Equation**:
+   Squaring both sides:
+   $$y(1 + (y')^2) = \frac{1}{C^2} = 2 R \implies (y')^2 = \frac{2R - y}{y} \implies \frac{dy}{dx} = \sqrt{\frac{2R - y}{y}}$$
+   Separate variables:
+   $$dx = \sqrt{\frac{y}{2R - y}} dy$$
+   Substitute $y = R(1 - \cos \theta)$, so $dy = R \sin \theta d\theta$:
+   $$dx = \sqrt{\frac{R(1 - \cos \theta)}{R(1 + \cos \theta)}} R \sin \theta d\theta = \tan\left(\frac{\theta}{2}\right) \cdot \left(2 R \sin\left(\frac{\theta}{2}\right)\cos\left(\frac{\theta}{2}\right)\right) d\theta = 2 R \sin^2\left(\frac{\theta}{2}\right) d\theta = R(1 - \cos \theta) d\theta$$
+   Integrating with $x(0) = 0$:
+   $$x(\theta) = R(\theta - \sin \theta), \quad y(\theta) = R(1 - \cos \theta)$$
+   This is the parametric equation of a **cycloid**—the curve traced by a point on the rim of a rolling circle of radius $R$.
+
+### Worked Example 18.2: Symplectic Energy Conservation vs. Forward Euler Drift
+Consider the simple harmonic oscillator $H(q, p) = \frac{1}{2}p^2 + \frac{1}{2}q^2$ with $\dot{q} = p, \dot{p} = -q$.
+
+1. **Forward (Explicit) Euler**:
+   $$q_{k+1} = q_k + \Delta t \, p_k, \quad p_{k+1} = p_k - \Delta t \, q_k$$
+   Compute energy at step $k+1$:
+   $$E_{k+1} = \frac{1}{2}(q_{k+1}^2 + p_{k+1}^2) = \frac{1}{2} [ (q_k + \Delta t p_k)^2 + (p_k - \Delta t q_k)^2 ] = \frac{1}{2}(1 + \Delta t^2)(q_k^2 + p_k^2) = (1 + \Delta t^2) E_k$$
+   The energy **grows exponentially**: $E_n = (1 + \Delta t^2)^n E_0 \to \infty$. Trajectories spiral out to infinity!
+
+2. **Symplectic Euler (Semi-Implicit)**:
+   $$p_{k+1} = p_k - \Delta t \, q_k, \quad q_{k+1} = q_k + \Delta t \, p_{k+1}$$
+   The Jacobian matrix of the transformation $(q_k, p_k) \mapsto (q_{k+1}, p_{k+1})$ is:
+   $$J = \begin{pmatrix} 1 - \Delta t^2 & \Delta t \\ -\Delta t & 1 \end{pmatrix} \implies \det J = (1 - \Delta t^2) - (-\Delta t^2) = 1$$
+   Because $\det J \equiv 1$, phase space area is **exactly conserved**!
+   Symplectic Euler strictly conserves the shadow Hamiltonian:
+   $$\tilde{H}(q, p) = \frac{1}{2}p^2 + \frac{1}{2}q^2 - \frac{\Delta t}{2} p q$$
+   Energy oscillates with bounded amplitude $\mathcal{O}(\Delta t)$ for all time without secular drift.
+
+---
+
+## 6. Multi-Disciplinary Applications
+
+* **Molecular Dynamics Simulations**: Long-timescale protein folding simulations (AMBER, GROMACS) integrate millions of atomic degrees of freedom over billions of timesteps. Symplectic integrators (Verlet / Leapfrog) prevent numerical heat buildup that would otherwise artificially denature proteins.
+* **Quantum Mechanics (Path Integrals)**: Richard Feynman showed that the quantum transition amplitude is the path integral over all possible trajectories:
+  $$\langle q_f, t_f \mid q_i, t_i \rangle = \int \mathcal{D}q(t) \exp\left( \frac{i}{\hbar} S[q] \right)$$
+  In the classical limit $\hbar \to 0$, destructive phase interference cancels all paths except the stationary path $\delta S = 0$, recovering classical Euler-Lagrange mechanics!
+* **Optimal Control & Robotics**: Pontryagin's Minimum Principle applies Hamiltonian mechanics to robot trajectory planning, minimizing fuel or time subject to control torque limits.
+
+---
+
+## 7. Numerical Computation: Symplectic Velocity-Verlet vs. Standard Forward Euler
+
+Below are complete implementations comparing **Symplectic Velocity-Verlet Integration vs. Forward Euler Energy Drift** across six scientific environments:
 
 ::: {.panel-tabset group="language"}
 ## Python 3
 ```python
 import numpy as np
 
-dt = 0.1; n = 1000
-# Symplectic Euler: p_{k+1} = p_k - q_k*dt, q_{k+1} = q_k + p_{k+1}*dt
-q = 1.0; p = 0.0
-for _ in range(n):
-    p -= q * dt
-    q += p * dt
+def run_simulation(dt: float = 0.05, n_steps: int = 2000):
+    # Forward Euler
+    q_fe, p_fe = 1.0, 0.0
+    for _ in range(n_steps):
+        q_next = q_fe + dt * p_fe
+        p_next = p_fe - dt * q_fe
+        q_fe, p_fe = q_next, p_next
+    E_fe = 0.5 * (q_fe**2 + p_fe**2)
 
-E = 0.5 * (p**2 + q**2)
-print(f"Python 3: Final Symplectic Energy = {E:.4f} (Exact bounded preservation)")
+    # Symplectic Euler (Velocity-Verlet type)
+    q_sym, p_sym = 1.0, 0.0
+    for _ in range(n_steps):
+        p_sym -= dt * q_sym
+        q_sym += dt * p_sym
+    E_sym = 0.5 * (q_sym**2 + p_sym**2)
+
+    return E_fe, E_sym
+
+E_fe, E_sym = run_simulation()
+print(f"Python 3: Initial Energy = 0.5000")
+print(f"  Forward Euler Final Energy = {E_fe:.4f} (Unstable blowup)")
+print(f"  Symplectic Final Energy    = {E_sym:.4f} (Bounded oscillation)")
 ```
 
 ## C++20
 ```cpp
 #include <iostream>
+#include <iomanip>
 
 int main() {
-    double dt = 0.1;
-    int n = 1000;
-    double q = 1.0, p = 0.0;
+    double dt = 0.05;
+    int n_steps = 2000;
 
-    for (int i = 0; i < n; ++i) {
-        p -= q * dt;
-        q += p * dt;
+    // Forward Euler
+    double q_fe = 1.0, p_fe = 0.0;
+    for (int i = 0; i < n_steps; ++i) {
+        double q_next = q_fe + dt * p_fe;
+        double p_next = p_fe - dt * q_fe;
+        q_fe = q_next; p_fe = p_next;
     }
-    double E = 0.5 * (p * p + q * q);
-    std::cout << "C++20:    Final Symplectic Energy = " << E << "\n";
+    double E_fe = 0.5 * (q_fe * q_fe + p_fe * p_fe);
+
+    // Symplectic Euler
+    double q_sym = 1.0, p_sym = 0.0;
+    for (int i = 0; i < n_steps; ++i) {
+        p_sym -= dt * q_sym;
+        q_sym += dt * p_sym;
+    }
+    double E_sym = 0.5 * (q_sym * q_sym + p_sym * p_sym);
+
+    std::cout << std::fixed << std::setprecision(4);
+    std::cout << "C++20:    Forward Euler Final Energy = " << E_fe << "\n"
+              << "          Symplectic Final Energy    = " << E_sym << "\n";
     return 0;
 }
 ```
 
 ## Julia
 ```julia
-dt = 0.1; n = 1000
-q = 1.0; p = 0.0
+dt = 0.05
+steps = 2000
 
-for _ in 1:n
-    global p -= q * dt
-    global q += p * dt
+# Forward Euler
+q_fe, p_fe = 1.0, 0.0
+for _ in 1:steps
+    q_n = q_fe + dt * p_fe
+    p_n = p_fe - dt * q_fe
+    global q_fe, p_fe = q_n, p_n
 end
 
-E = 0.5 * (p^2 + q^2)
-println("Julia:    Final Symplectic Energy = $(round(E, digits=4))")
+# Symplectic Euler
+q_sym, p_sym = 1.0, 0.0
+for _ in 1:steps
+    global p_sym -= dt * q_sym
+    global q_sym += dt * p_sym
+end
+
+println("Julia:    Forward Euler = $(round(0.5*(q_fe^2 + p_fe^2), digits=4)), Symplectic = $(round(0.5*(q_sym^2 + p_sym^2), digits=4))")
 ```
 
 ## Modern Fortran
 ```fortran
-program symplectic_verlet
+program test_symplectic
   implicit none
-  real(8) :: dt, q, p, E
-  integer :: i, n
+  real(8) :: dt, q_fe, p_fe, q_next, p_next, E_fe
+  real(8) :: q_sym, p_sym, E_sym
+  integer :: i, steps
 
-  dt = 0.1d0; n = 1000
-  q = 1.0d0; p = 0.0d0
+  dt = 0.05d0
+  steps = 2000
 
-  do i = 1, n
-    p = p - q * dt
-    q = q + p * dt
+  ! Forward Euler
+  q_fe = 1.0d0; p_fe = 0.0d0
+  do i = 1, steps
+     q_next = q_fe + dt * p_fe
+     p_next = p_fe - dt * q_fe
+     q_fe = q_next
+     p_fe = p_next
   end do
+  E_fe = 0.5d0 * (q_fe**2 + p_fe**2)
 
-  E = 0.5d0 * (p*p + q*q)
-  print '(A,F8.4)', "Fortran:  Final Symplectic Energy = ", E
-end program symplectic_verlet
+  ! Symplectic Euler
+  q_sym = 1.0d0; p_sym = 0.0d0
+  do i = 1, steps
+     p_sym = p_sym - dt * q_sym
+     q_sym = q_sym + dt * p_sym
+  end do
+  E_sym = 0.5d0 * (q_sym**2 + p_sym**2)
+
+  print '(A,F10.4,A,F10.4)', "Fortran:  Forward Euler = ", E_fe, ", Symplectic = ", E_sym
+end program test_symplectic
 ```
 
 ## MATLAB / Octave
 ```matlab
-dt = 0.1; n = 1000;
-q = 1.0; p = 0.0;
+% Symplectic vs Forward Euler comparison
+dt = 0.05; steps = 2000;
 
-for i = 1:n
-    p = p - q * dt;
-    q = q + p * dt;
+% Forward Euler
+q_fe = 1; p_fe = 0;
+for i = 1:steps
+    qn = q_fe + dt * p_fe;
+    pn = p_fe - dt * q_fe;
+    q_fe = qn; p_fe = pn;
 end
+E_fe = 0.5 * (q_fe^2 + p_fe^2);
 
-E = 0.5 * (p^2 + q^2);
-fprintf('MATLAB:   Final Symplectic Energy = %.4f\n', E);
+% Symplectic
+q_sym = 1; p_sym = 0;
+for i = 1:steps
+    p_sym = p_sym - dt * q_sym;
+    q_sym = q_sym + dt * p_sym;
+end
+E_sym = 0.5 * (q_sym^2 + p_sym^2);
+
+fprintf('MATLAB:   Forward Euler = %.4f, Symplectic = %.4f\n', E_fe, E_sym);
 ```
+
 ## Lean 4
 ```lean
--- Lean 4: Symplectic 2-Forms and Hamilton's Principle
-import Mathlib.Data.Real.Basic
+-- Lean 4: Symplectic 2-Form Matrix in R^(2n)
+import Mathlib.Data.Matrix.Basic
 
--- The symplectic 2-form ω = ∑ dp_i ∧ dq_i is closed: dω = 0
-axiom symplectic_form_is_closed (ω : Differential2Form) : d ω = 0
+-- The standard symplectic block matrix J = [[0, I], [-I, 0]]
+def SymplecticMatrix2D : Matrix (Fin 2) (Fin 2) ℝ :=
+  ![![0,  1],
+    ![-1, 0]]
 
--- Euler-Lagrange extremality: variation of action δS = 0
-axiom euler_lagrange_stationary (S : Path → ℝ) (q_optimal : Path) :
-    HasStationaryPoint S q_optimal
+-- Theorem: The determinant of the canonical symplectic matrix is exactly 1
+theorem symplectic_det_one :
+    Matrix.det SymplecticMatrix2D = 1 := by
+  dsimp [Matrix.det, SymplecticMatrix2D]
+  ring
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 8. Curated Primary Literature & Canonical Syllabi
 
-* **V. I. Arnold**, *Mathematical Methods of Classical Mechanics*, Springer (1989), Ch 3 & 4.
-* **Herbert Goldstein**, *Classical Mechanics*, Addison-Wesley (2001).
+* **V. I. Arnold**, *Mathematical Methods of Classical Mechanics*, Graduate Texts in Mathematics 60, Springer (1989). The definitive modern treatise on Lagrangian and Hamiltonian symplectic mechanics.
+* **I. M. Gelfand & S. V. Fomin**, *Calculus of Variations*, Dover Publications (2000). Chapters 1–4 develop the Euler-Lagrange equations, Jacobi conditions, and Hamilton's principle.
+* **Herbert Goldstein, Charles Poole, and John Safko**, *Classical Mechanics*, 3rd Edition, Addison-Wesley (2001).
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Chapter 8 (Applications: Physics and Engineering).
 <br>
 <br>
 

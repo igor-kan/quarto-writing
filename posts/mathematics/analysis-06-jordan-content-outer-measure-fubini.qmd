@@ -1,111 +1,325 @@
 ---
-title: "Geometry of Sets: Jordan Content, Outer Measure, and Cavalieri's Principle via Fubini"
-subtitle: "Moving beyond slicing volumes to Jordan content, Carathéodory outer measure, and Fubini-Cavalieri indicator integration."
+title: "Multidimensional Integration: Jordan Content, Outer Measure, and Fubini's Theorem"
+subtitle: "Beyond iterated integrals: Jordan measurability, failure of finite additivity, Cavalieri's principle, and Fubini's theorem."
 author: "Igor Kan"
 date: "2026-09-12"
-categories: ["Mathematics", "Analysis", "Geometry", "Computer Science", "Physics"]
+categories: ["Mathematics", "Analysis", "Calculus", "Physics", "Computer Science"]
 format:
   html:
     toc: true
     math: true
 ---
 
-## 1. The Conceptual Shift: What is "Volume"?
+## 1. The Conceptual Shift: Beyond Iterated Area Slices
 
-Introductory calculus calculates volumes via disk/washer slicing. Modern geometric measure theory uses **Jordan content** and **Carathéodory outer measure**, deriving Cavalieri's principle as a rigorous corollary of **Fubini's Theorem** applied to characteristic indicator functions $\chi_E$.
+In standard multivariable calculus, multiple integrals $\iint_D f(x, y) dA$ and $\iiint_E f(x, y, z) dV$ are treated as straightforward nested one-dimensional integrals. Students are taught to slice a 2D or 3D domain along coordinate axes and integrate inside-out. Fubini's theorem—the assertion that order of integration can be freely swapped—is assumed to hold unconditionally for all well-behaved formulas.
 
----
-
-## 2. Rigorous Foundations & Proofs
-
-### Cavalieri via Fubini-Tonelli
-$$m_3(E) = \int_\mathbb{R} \left( \iint_{\mathbb{R}^2} \chi_E(x, y, z) dx dy \right) dz = \int_\mathbb{R} A(z) dz$$
-
----
-
-## 3. Applications Across Disciplines
-
-* **Computer Science**: Constructive Solid Geometry (CSG) and CAD voxelization.
-* **Physics**: Phase-space volumes and Liouville's theorem.
-* **Machine Learning**: High-dimensional concentration of measure on hyperspheres.
+In rigorous multidimensional analysis, this intuitive picture encounters fundamental obstacles:
+1. **The Nature of Domain Measurability**: What sets $D \subset \mathbb{R}^n$ can even have an area or volume assigned to them? In $\mathbb{R}^n$, domains with highly irregular, fractal, or non-rectifiable boundaries cannot be integrated over.
+2. **Jordan Content vs. Lebesgue Measure**: The classical theory of multiple integration relies on **Jordan content**, which uses *finite* coverings by boxes. Jordan content fails dramatically for countable sets (such as $\mathbb{Q}^2 \cap [0, 1]^2$, which has outer Jordan content 1 but inner content 0). This failure forces the creation of **Lebesgue outer measure** based on *countable* coverings.
+3. **The Subtlety of Fubini's Theorem**: Iterated integrals can produce completely different values if the integrand fails absolute integrability:
+   $$\int_0^1 \left(\int_0^1 \frac{x^2 - y^2}{(x^2 + y^2)^2} dy\right) dx \neq \int_0^1 \left(\int_0^1 \frac{x^2 - y^2}{(x^2 + y^2)^2} dx\right) dy$$
+   Fubini's theorem requires strict integrability hypotheses ($f \in L^1$), verified via Tonelli's theorem for non-negative functions.
 
 ---
 
-## 4. Numerical Computation: Monte Carlo vs. Voxelization Volume Estimator
+## 2. Foundational Definitions & Elementary Properties
+
+### Boxes and Elementary Sets in $\mathbb{R}^n$
+* A closed **box** (or rectangle) in $\mathbb{R}^n$ is a Cartesian product of compact intervals:
+  $$B = [a_1, b_1] \times [a_2, b_2] \times \dots \times [a_n, b_n]$$
+* The **volume** of the box $B$ is the product of its side lengths:
+  $$\text{vol}(B) = \prod_{i=1}^n (b_i - a_i)$$
+* An **elementary set** $E \subset \mathbb{R}^n$ is a finite union of non-overlapping boxes: $E = \bigcup_{k=1}^m B_k$. Its volume is $\text{vol}(E) = \sum_{k=1}^m \text{vol}(B_k)$.
+
+### Jordan Content
+Let $S \subset \mathbb{R}^n$ be a bounded set, contained inside a large box $B_0$.
+* The **Outer Jordan Content** of $S$ is:
+  $$J^*(S) = \inf \left\{ \sum_{k=1}^m \text{vol}(B_k) : S \subseteq \bigcup_{k=1}^m B_k, \ B_k \text{ are boxes} \right\}$$
+* The **Inner Jordan Content** of $S$ is:
+  $$J_*(S) = \sup \left\{ \sum_{k=1}^m \text{vol}(B_k) : \bigcup_{k=1}^m B_k \subseteq S, \ B_k \text{ are non-overlapping boxes} \right\}$$
+* A bounded set $S$ is **Jordan measurable** (or has Jordan content) if:
+  $$J_*(S) = J^*(S)$$
+  The common value is denoted $J(S) = \text{vol}(S)$.
+
+---
+
+## 3. Intermediate Lemmas & Rigorous Proofs
+
+> **Lemma 6.1 (Finite Subadditivity of Outer Jordan Content)**: For any bounded sets $A, B \subset \mathbb{R}^n$:
+> $$J^*(A \cup B) \le J^*(A) + J^*(B)$$
+
+*Proof*:
+Let $\epsilon > 0$. By definition of the infimum, there exist finite collections of boxes $\{B_1, \dots, B_m\}$ covering $A$ and $\{C_1, \dots, C_k\}$ covering $B$ such that:
+$$\sum_{i=1}^m \text{vol}(B_i) < J^*(A) + \frac{\epsilon}{2}, \quad \sum_{j=1}^k \text{vol}(C_j) < J^*(B) + \frac{\epsilon}{2}$$
+The union $\{B_1, \dots, B_m, C_1, \dots, C_k\}$ forms a finite covering of $A \cup B$. Therefore:
+$$J^*(A \cup B) \le \sum_{i=1}^m \text{vol}(B_i) + \sum_{j=1}^k \text{vol}(C_j) < J^*(A) + J^*(B) + \epsilon$$
+Since $\epsilon > 0$ is arbitrary, $J^*(A \cup B) \le J^*(A) + J^*(B)$. $\blacksquare$
+
+> **Lemma 6.2 (Boundary Criterion for Jordan Measurability)**: A bounded set $S \subset \mathbb{R}^n$ is Jordan measurable if and only if its topological boundary $\partial S$ has Jordan content zero ($J^*(\partial S) = 0$).
+
+*Proof*:
+Let $B_0$ be a large box containing $S$ in its interior. For any finite grid partition $\mathcal{P}$ of $B_0$ into small sub-boxes $\{B_i\}$:
+* Let $\mathcal{B}_{\text{int}} = \{B_i : B_i \subset \text{int}(S)\}$. The inner Jordan sum is $\sum_{B \in \mathcal{B}_{\text{int}}} \text{vol}(B)$.
+* Let $\mathcal{B}_{\text{cov}} = \{B_i : B_i \cap S \neq \emptyset\}$. The outer Jordan sum is $\sum_{B \in \mathcal{B}_{\text{cov}}} \text{vol}(B)$.
+Notice that a sub-box $B_i$ belongs to $\mathcal{B}_{\text{cov}} \setminus \mathcal{B}_{\text{int}}$ if and only if $B_i$ intersects both $S$ and $\mathbb{R}^n \setminus S$, which means $B_i$ intersects the topological boundary $\partial S = \overline{S} \cap \overline{\mathbb{R}^n \setminus S}$.
+Therefore:
+$$\sum_{B \in \mathcal{B}_{\text{cov}}} \text{vol}(B) - \sum_{B \in \mathcal{B}_{\text{int}}} \text{vol}(B) = \sum_{B \cap \partial S \neq \emptyset} \text{vol}(B)$$
+As the mesh of the partition tends to zero, the left-hand side approaches $J^*(S) - J_*(S)$, while the right-hand side approaches $J^*(\partial S)$.
+Hence $J^*(S) = J_*(S) \iff J^*(\partial S) = 0$. $\blacksquare$
+
+> **Lemma 6.3 (Fubini's Identity for Step Functions)**: Let $s: [a, b] \times [c, d] \to \mathbb{R}$ be a step function constant on sub-boxes $B_{ij} = [x_{i-1}, x_i] \times [y_{j-1}, y_j]$ with value $c_{ij}$. Then:
+> $$\iint_R s(x, y) dA = \int_a^b \left(\int_c^d s(x, y) dy\right) dx = \int_c^d \left(\int_a^b s(x, y) dx\right) dy = \sum_{i,j} c_{ij} \Delta x_i \Delta y_j$$
+
+*Proof*:
+For any fixed $x \in (x_{i-1}, x_i)$, the slice function $y \mapsto s(x, y)$ is a 1D step function equal to $c_{ij}$ on $(y_{j-1}, y_j)$.
+Its 1D integral is $\int_c^d s(x, y) dy = \sum_{j=1}^m c_{ij} \Delta y_j$.
+Integrating this step function with respect to $x$ gives:
+$$\int_a^b \left(\sum_{j=1}^m c_{ij} \Delta y_j\right) dx = \sum_{i=1}^n \left(\sum_{j=1}^m c_{ij} \Delta y_j\right) \Delta x_i = \sum_{i,j} c_{ij} \Delta x_i \Delta y_j$$
+By complete symmetry of coordinates, the reverse iterated integral yields the exact same finite sum. $\blacksquare$
+
+---
+
+## 4. Rigorous Construction & Advanced Theorems
+
+### Fubini's Theorem for Continuous Functions
+> **Theorem 6.1 (Fubini's Theorem on Rectangles)**: Let $R = [a, b] \times [c, d] \subset \mathbb{R}^2$ and $f: R \to \mathbb{R}$ be continuous. Then:
+> $$\iint_R f(x, y) dA = \int_a^b \left(\int_c^d f(x, y) dy\right) dx = \int_c^d \left(\int_a^b f(x, y) dx\right) dy$$
+
+*Proof*:
+Because $R$ is compact, $f$ is uniformly continuous on $R$.
+Given $\epsilon > 0$, there exists a partition $P = P_x \times P_y$ into sub-boxes $R_{ij} = [x_{i-1}, x_i] \times [y_{j-1}, y_j]$ such that:
+$$M_{ij} - m_{ij} < \frac{\epsilon}{(b - a)(d - c)}$$
+Define upper and lower step functions $U(x, y) = M_{ij}$ and $L(x, y) = m_{ij}$ on each $R_{ij}$.
+Then $L(x, y) \le f(x, y) \le U(x, y)$ everywhere on $R$.
+For each fixed $x$, integrating with respect to $y$ preserves inequalities:
+$$\int_c^d L(x, y) dy \le \int_c^d f(x, y) dy \le \int_c^d U(x, y) dy$$
+Now integrate with respect to $x$:
+$$\iint_R L dA \le \int_a^b \left(\int_c^d f(x, y) dy\right) dx \le \iint_R U dA$$
+Since $L(f, P) \le \iint_R f dA \le U(f, P)$, both $\iint_R f dA$ and $\int_a^b (\int_c^d f dy) dx$ lie in the interval $[L(f, P), U(f, P)]$.
+The width of this interval is $U(f, P) - L(f, P) < \epsilon$.
+Since $\epsilon > 0$ is arbitrary, the double integral and the iterated integral must be identical. $\blacksquare$
+
+### Failure of Jordan Content and the Birth of Lebesgue Outer Measure
+> **Theorem 6.2 (The Countable Breakdown of Jordan Content)**: Jordan content is not countably additive. Specifically, the bounded set of rationals $S = \mathbb{Q} \cap [0, 1]$ is not Jordan measurable.
+
+*Proof*:
+1. Every sub-box of any positive length contains irrational numbers. Thus, no box can be entirely contained inside $S$. Consequently, the inner Jordan content is $J_*(S) = 0$.
+2. To cover $S$ by *finitely* many closed boxes $\{B_1, \dots, B_m\}$, notice that the finite union $\bigcup_{k=1}^m B_k$ is closed and contains $\mathbb{Q} \cap [0, 1]$.
+   Since the closure of $\mathbb{Q} \cap [0, 1]$ is the entire interval $[0, 1]$, the finite covering must cover $[0, 1]$.
+   Therefore, $\sum_{k=1}^m \text{vol}(B_k) \ge \text{vol}([0, 1]) = 1$.
+   Hence the outer Jordan content is $J^*(S) = 1$.
+3. Since $J_*(S) = 0 \neq 1 = J^*(S)$, the set $S$ is **not Jordan measurable**.
+
+This failure led Henri Lebesgue (1902) to define the **Lebesgue outer measure** $\lambda^*(E)$ allowing *countable* coverings:
+$$\lambda^*(E) = \inf \left\{ \sum_{k=1}^\infty \text{vol}(B_k) : E \subseteq \bigcup_{k=1}^\infty B_k \right\}$$
+Under Lebesgue outer measure, enumerating $\mathbb{Q} \cap [0, 1] = \{q_1, q_2, \dots\}$ and covering each $q_k$ by an interval of length $\epsilon / 2^k$ yields $\lambda^*(S) \le \sum_{k=1}^\infty \frac{\epsilon}{2^k} = \epsilon \to 0$. Thus $\lambda(\mathbb{Q} \cap [0, 1]) = 0$, restoring countable additivity. $\blacksquare$
+
+---
+
+## 5. Concrete Worked Examples & Step-by-Step Calculations
+
+### Worked Example 6.1: Volume of the Steinmetz Solid (Bicylinder Intersection)
+Compute the exact volume of the solid formed by the intersection of two solid cylinders of radius $R$ intersecting at right angles:
+$$E = \{(x, y, z) \in \mathbb{R}^3 : x^2 + y^2 \le R^2 \text{ and } x^2 + z^2 \le R^2\}$$
+
+1. **Cross-Sectional Analysis (Cavalieri / Fubini)**:
+   Fix $x \in [-R, R]$. The cross-section $E_x$ in the $(y, z)$-plane is given by:
+   $$y^2 \le R^2 - x^2 \implies -\sqrt{R^2 - x^2} \le y \le \sqrt{R^2 - x^2}$$
+   $$z^2 \le R^2 - x^2 \implies -\sqrt{R^2 - x^2} \le z \le \sqrt{R^2 - x^2}$$
+   This cross-section is a **square** with side length $s(x) = 2\sqrt{R^2 - x^2}$.
+
+2. **Cross-Sectional Area**:
+   $$A(x) = s(x)^2 = \left(2\sqrt{R^2 - x^2}\right)^2 = 4(R^2 - x^2)$$
+
+3. **Fubini Integration**:
+   By Fubini's Theorem:
+   $$V = \iiint_E 1 \, dV = \int_{-R}^R A(x) dx = \int_{-R}^R 4(R^2 - x^2) dx$$
+   Since the integrand is even:
+   $$V = 8 \int_0^R (R^2 - x^2) dx = 8 \left[ R^2 x - \frac{x^3}{3} \right]_0^R = 8 \left( R^3 - \frac{R^3}{3} \right) = 8 \cdot \frac{2}{3} R^3 = \frac{16}{3} R^3$$
+
+4. **Numerical Evaluation**:
+   For a cylinder of radius $R = 2.0$:
+   $$V = \frac{16}{3}(2.0)^3 = \frac{16}{3} \times 8 = \frac{128}{3} \approx 42.666667$$
+
+### Worked Example 6.2: Failure of Iterated Integral Commutativity
+Consider the function defined on the unit square $(0, 1] \times (0, 1]$:
+$$f(x, y) = \frac{x^2 - y^2}{(x^2 + y^2)^2}$$
+
+1. **Evaluate First Iterated Integral ($dy$ then $dx$)**:
+   Notice that $\frac{\partial}{\partial y} \left( \frac{y}{x^2 + y^2} \right) = \frac{(x^2 + y^2) - y(2y)}{(x^2 + y^2)^2} = \frac{x^2 - y^2}{(x^2 + y^2)^2} = f(x, y)$.
+   Therefore:
+   $$\int_0^1 f(x, y) dy = \left[ \frac{y}{x^2 + y^2} \right]_{y=0}^{y=1} = \frac{1}{x^2 + 1} - 0 = \frac{1}{1 + x^2}$$
+   Now integrate with respect to $x$:
+   $$\int_0^1 \left(\int_0^1 f(x, y) dy\right) dx = \int_0^1 \frac{1}{1 + x^2} dx = [\arctan(x)]_0^1 = \frac{\pi}{4}$$
+
+2. **Evaluate Second Iterated Integral ($dx$ then $dy$)**:
+   By antisymmetry $f(y, x) = -f(x, y)$:
+   $$\int_0^1 f(x, y) dx = -\frac{1}{1 + y^2}$$
+   Integrating with respect to $y$:
+   $$\int_0^1 \left(\int_0^1 f(x, y) dx\right) dy = \int_0^1 -\frac{1}{1 + y^2} dy = -[\arctan(y)]_0^1 = -\frac{\pi}{4}$$
+
+3. **Conclusion & The $L^1$ Hypothesis**:
+   $$\int_0^1 \left(\int_0^1 f dy\right) dx = \frac{\pi}{4} \neq -\frac{\pi}{4} = \int_0^1 \left(\int_0^1 f dx\right) dy$$
+   Why does this not contradict Fubini's Theorem?
+   Because Fubini requires $f \in L^1(R)$, meaning $\iint_R |f(x, y)| dA < \infty$.
+   Switching to polar coordinates near the origin: $|f(r, \theta)| \approx \frac{|\cos(2\theta)|}{r^2}$.
+   The radial integral is $\int_0^1 \frac{1}{r^2} \cdot r \, dr = \int_0^1 \frac{1}{r} dr = \infty$.
+   Since $f$ is not absolutely integrable, Fubini's theorem does not apply.
+
+---
+
+## 6. Multi-Disciplinary Applications
+
+* **Classical & Quantum Mechanics**: Calculating moments of inertia tensors $I_{ij} = \iiint_V \rho(r)(\delta_{ij} r^2 - x_i x_j) dV$ relies on Fubini's decomposition of 3D bodies. In quantum mechanics, multi-particle wavefunctions $|\Psi(r_1, r_2)|^2$ integrate over configuration spaces $\mathbb{R}^{3N}$ where product measures formalize particle independence.
+* **Probability & Statistics**: For bivariate continuous random variables $(X, Y)$ with joint PDF $f_{X,Y}(x, y)$, marginal distributions are derived via Fubini: $f_X(x) = \int_{-\infty}^\infty f_{X,Y}(x, y) dy$. The convolution formula for independent variables $Z = X + Y$ is a direct application of Fubini and variable substitution.
+* **Computer Graphics & Rendering**: The Rendering Equation in ray tracing integrates outgoing radiance over hemispherical solid angles: $L_o(x, \omega_o) = L_e(x, \omega_o) + \int_\Omega f_r(x, \omega_i, \omega_o) L_i(x, \omega_i) (\omega_i \cdot n) d\omega_i$. Monte Carlo integration estimates these high-dimensional integrals where standard quadrature suffers the curse of dimensionality.
+
+---
+
+## 7. Numerical Computation: Multidimensional Monte Carlo Integrator with Error Bounds
+
+Below are complete, self-contained implementations of **High-Dimensional Monte Carlo Integration with Statistical Error Bounds** (evaluating the Steinmetz solid volume from Worked Example 6.1) across six scientific computing environments:
 
 ::: {.panel-tabset group="language"}
 ## Python 3
 ```python
 import numpy as np
 
-def sphere_volume_mc(r: float = 1.0, n_samples: int = 100000) -> float:
-    pts = np.random.uniform(-r, r, size=(n_samples, 3))
-    inside = np.sum(pts**2, axis=1) <= r**2
-    return float((2.0 * r)**3 * np.mean(inside))
+def monte_carlo_steinmetz(radius: float = 2.0, n_samples: int = 200_000):
+    # Enclosing bounding box [-R, R]^3 has volume (2R)^3 = 8 R^3
+    box_volume = (2.0 * radius) ** 3
+    pts = np.random.uniform(-radius, radius, size=(n_samples, 3))
+    x, y, z = pts[:, 0], pts[:, 1], pts[:, 2]
 
-vol = sphere_volume_mc(1.0)
-print(f"Python 3: Unit Sphere Volume = {vol:.4f} (True: {4/3*np.pi:.4f})")
+    # Indicator: x^2 + y^2 <= R^2 and x^2 + z^2 <= R^2
+    inside = (x**2 + y**2 <= radius**2) & (x**2 + z**2 <= radius**2)
+    fraction = np.mean(inside)
+    volume_est = box_volume * fraction
+    std_err = box_volume * np.sqrt(fraction * (1.0 - fraction) / n_samples)
+
+    return volume_est, std_err
+
+np.random.seed(42)
+vol, err = monte_carlo_steinmetz(2.0, 200_000)
+exact = (16.0 / 3.0) * (2.0**3)
+print(f"Python 3: Est = {vol:.4f} +/- {err:.4f}, Exact = {exact:.4f}")
 ```
 
 ## C++20
 ```cpp
 #include <iostream>
 #include <random>
+#include <cmath>
+#include <iomanip>
 
 int main() {
-    std::mt19937_64 rng(42);
-    std::uniform_real_distribution<double> dist(-1.0, 1.0);
-    int n = 100000, count = 0;
+    const double R = 2.0;
+    const int n_samples = 200000;
+    const double box_volume = 8.0 * R * R * R;
 
-    for (int i = 0; i < n; ++i) {
-        double x = dist(rng), y = dist(rng), z = dist(rng);
-        if (x*x + y*y + z*z <= 1.0) count++;
+    std::mt19937_64 rng(42);
+    std::uniform_real_distribution<double> dist(-R, R);
+
+    int count = 0;
+    for (int i = 0; i < n_samples; ++i) {
+        double x = dist(rng);
+        double y = dist(rng);
+        double z = dist(rng);
+        if (x * x + y * y <= R * R && x * x + z * z <= R * R) {
+            count++;
+        }
     }
-    double vol = 8.0 * (static_cast<double>(count) / n);
-    std::cout << "C++20:    Unit Sphere Volume = " << vol << "\n";
+
+    double p = static_cast<double>(count) / n_samples;
+    double vol = box_volume * p;
+    double std_err = box_volume * std::sqrt(p * (1.0 - p) / n_samples);
+    double exact = (16.0 / 3.0) * (R * R * R);
+
+    std::cout << std::fixed << std::setprecision(4);
+    std::cout << "C++20:    Est = " << vol << " +/- " << std_err << ", Exact = " << exact << "\n";
     return 0;
 }
 ```
 
 ## Julia
 ```julia
-n = 100000
-pts = rand(3, n) .* 2.0 .- 1.0
-inside = sum(pts.^2, dims=1) .<= 1.0
-vol = 8.0 * mean(inside)
-println("Julia:    Unit Sphere Volume = $(round(vol, digits=4))")
+using Random
+
+function monte_carlo_steinmetz(R = 2.0, N = 200_000)
+    Random.seed!(42)
+    box_vol = (2.0 * R)^3
+    count = 0
+    for _ in 1:N
+        x = rand() * 2R - R
+        y = rand() * 2R - R
+        z = rand() * 2R - R
+        if x^2 + y^2 <= R^2 && x^2 + z^2 <= R^2
+            count += 1
+        end
+    end
+    p = count / N
+    vol = box_vol * p
+    err = box_vol * sqrt(p * (1 - p) / N)
+    return vol, err
+end
+
+vol, err = monte_carlo_steinmetz(2.0, 200_000)
+exact = (16.0 / 3.0) * (2.0^3)
+println("Julia:    Est = $(round(vol, digits=4)) +/- $(round(err, digits=4)), Exact = $(round(exact, digits=4))")
 ```
 
 ## Modern Fortran
 ```fortran
-program mc_volume
+program mc_steinmetz
   implicit none
-  integer, parameter :: n = 100000
-  integer :: i, count_in
-  real(8) :: r(3), x, y, z, vol
+  integer, parameter :: N = 200000
+  real(8), parameter :: R = 2.0d0
+  real(8) :: box_vol, x, y, z, p, vol_est, std_err, exact
+  real :: rand_vals(3)
+  integer :: count, i
 
-  count_in = 0
-  do i = 1, n
-    call random_number(r)
-    x = r(1)*2.0d0 - 1.0d0
-    y = r(2)*2.0d0 - 1.0d0
-    z = r(3)*2.0d0 - 1.0d0
-    if (x*x + y*y + z*z <= 1.0d0) count_in = count_in + 1
+  box_vol = (2.0d0 * R)**3
+  count = 0
+
+  do i = 1, N
+     call random_number(rand_vals)
+     x = rand_vals(1) * 2.0d0 * R - R
+     y = rand_vals(2) * 2.0d0 * R - R
+     z = rand_vals(3) * 2.0d0 * R - R
+     if (x**2 + y**2 <= R**2 .and. x**2 + z**2 <= R**2) then
+        count = count + 1
+     end if
   end do
 
-  vol = 8.0d0 * (real(count_in, 8) / n)
-  print '(A,F6.4)', "Fortran:  Unit Sphere Volume = ", vol
-end program mc_volume
+  p = dble(count) / dble(N)
+  vol_est = box_vol * p
+  std_err = box_vol * sqrt(p * (1.0d0 - p) / dble(N))
+  exact = (16.0d0 / 3.0d0) * (R**3)
+
+  print '(A,F8.4,A,F8.4,A,F8.4)', "Fortran:  Est = ", vol_est, " +/- ", std_err, ", Exact = ", exact
+end program mc_steinmetz
 ```
 
 ## MATLAB / Octave
 ```matlab
-n = 100000;
-pts = rand(n, 3) * 2 - 1;
-inside = sum(pts.^2, 2) <= 1;
-vol = 8.0 * mean(inside);
-fprintf('MATLAB:   Unit Sphere Volume = %.4f\n', vol);
+% Monte Carlo integration of Steinmetz solid
+R = 2.0;
+N = 200000;
+box_vol = (2 * R)^3;
+
+rng(42);
+pts = -R + 2 * R * rand(N, 3);
+inside = (pts(:, 1).^2 + pts(:, 2).^2 <= R^2) & (pts(:, 1).^2 + pts(:, 3).^2 <= R^2);
+
+p = mean(inside);
+vol = box_vol * p;
+err = box_vol * sqrt(p * (1 - p) / N);
+exact = (16 / 3) * (R^3);
+
+fprintf('MATLAB:   Est = %.4f +/- %.4f, Exact = %.4f\n', vol, err, exact);
 ```
+
 ## Lean 4
 ```lean
 -- Lean 4: Fubini-Tonelli Product Integration
@@ -121,17 +335,17 @@ theorem fubini_theorem {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     ∫ p, f p ∂(μ.prod ν) = ∫ x, (∫ y, f (x, y) ∂ν) ∂μ :=
   integral_prod f hf
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 8. Curated Primary Literature & Canonical Syllabi
 
-* **Lawrence C. Evans & Ronald F. Gariepy**, *Measure Theory and Fine Properties of Functions*, CRC Press (2015), Ch 1 & 2.
-* **Gerald B. Folland**, *Real Analysis*, Wiley (1999), Ch 2.5.
-* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015), Chapter 6.
-
+* **James R. Munkres**, *Analysis on Manifolds*, CRC Press (1991). Chapters 3 & 4 provide the definitive treatment of Jordan content, multivariable Riemann integration, and Fubini's theorem.
+* **Gerald B. Folland**, *Real Analysis: Modern Techniques and Their Applications*, 2nd Edition, Wiley (1999). Chapters 1 & 2 (Measure and Integration, Fubini-Tonelli).
+* **Michael Spivak**, *Calculus on Manifolds*, Westview Press (1965). Chapter 3 (Integration).
+* **Walter Rudin**, *Real and Complex Analysis*, 3rd Edition, McGraw-Hill (1987). Chapter 8 (Integration on Product Spaces).
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Chapter 15 (Multiple Integrals).
 <br>
 <br>
 

@@ -1,6 +1,6 @@
 ---
 title: "Multidimensional Integration: Partitions of Unity, Fubini-Tonelli, and the Jacobian Determinant"
-subtitle: "Multidimensional Darboux sums, oscillation on rectangles, smooth partitions of unity, and the rigorous Change of Variables Theorem."
+subtitle: "Multidimensional Darboux sums, smooth partitions of unity, Fubini-Tonelli product integration, and the rigorous Change of Variables Theorem."
 author: "Igor Kan"
 date: "2026-09-12"
 categories: ["Mathematics", "Analysis", "Calculus", "Probability", "Physics"]
@@ -12,24 +12,194 @@ format:
 
 ## 1. The Conceptual Shift: Beyond Iterated Slicing
 
-Integration on manifolds and curved domains relies on **smooth partitions of unity** $\sum \rho_i(x) \equiv 1$ and the **Change of Variables Theorem**, where the Jacobian determinant $|\det D\Phi|$ scales the infinitesimal Hausdorff volume.
+In introductory multivariable calculus, multiple integrals $\iint_D f(x, y) dA$ and $\iiint_E f(x, y, z) dV$ are treated as nested 1D integrals. Students learn how to slice domains along coordinate axes and integrate inside-out. The Change of Variables formula is introduced by memorizing the polar factor $r \, dr d\theta$ or the spherical factor $\rho^2 \sin \phi \, d\rho d\phi d\theta$, with the Jacobian determinant presented as a curious formal multiplier.
+
+In rigorous multidimensional analysis and differential geometry, integration undergoes an essential transformation:
+1. **Integration on Curved Geometries**: Manifolds and curved surfaces cannot be enclosed in a single Cartesian bounding box. Integration over manifolds requires **smooth partitions of unity** ($\sum_i \rho_i(x) \equiv 1$), allowing integrals to be computed in local charts and summed without boundary overlap artifacts.
+2. **The Geometry of the Jacobian Determinant**: The Jacobian determinant $|\det D\Phi(u)|$ is not a typographical correction; it represents the **infinitesimal distortion of $n$-dimensional volume** under the local linear transformation $D\Phi$. The differential $D\Phi(u)$ maps an infinitesimal cube $[0, \epsilon]^n$ into a parallelepiped of volume $|\det D\Phi(u)| \epsilon^n$.
+3. **The Fubini-Tonelli Hierarchy**: Slicing is governed by the product measure theorem: **Tonelli's Theorem** guarantees that iterated integrals can be evaluated in any order for non-negative measurable functions, while **Fubini's Theorem** guarantees equality for absolutely integrable functions ($f \in L^1$).
 
 ---
 
-## 2. Numerical Computation: High-Dimensional Monte Carlo Cubature
+## 2. Foundational Definitions & Elementary Properties
+
+### Multiple Riemann Integrals on Compact Domains
+Let $B = [a_1, b_1] \times \dots \times [a_n, b_n] \subset \mathbb{R}^n$ be a closed box.
+* A partition $P = P_1 \times \dots \times P_n$ divides $B$ into sub-boxes $\{B_k\}$.
+* The upper and lower Darboux sums are:
+  $$U(f, P) = \sum_k \sup_{B_k} f \cdot \text{vol}(B_k), \quad L(f, P) = \sum_k \inf_{B_k} f \cdot \text{vol}(B_k)$$
+* $f$ is Darboux integrable on $B$ if $\inf_P U(f, P) = \sup_P L(f, P) = \int_B f dV$.
+* For a bounded domain $D \subset B$, the integral of $f$ over $D$ is defined using the indicator function $\mathbf{1}_D$:
+  $$\int_D f dV = \int_B f(x) \mathbf{1}_D(x) dV$$
+
+### Smooth Partitions of Unity
+Let $M \subseteq \mathbb{R}^n$ be a smooth submanifold and $\mathcal{U} = \{U_\alpha\}$ an open cover of $M$.
+A **smooth partition of unity** subordinate to $\mathcal{U}$ is a family of $C^\infty$ functions $\{\rho_i: M \to [0, 1]\}$ such that:
+1. For each $i$, the support $\text{supp}(\rho_i) = \overline{\{x \in M : \rho_i(x) \neq 0\}}$ is contained in some open set $U_\alpha \in \mathcal{U}$.
+2. The family of supports is **locally finite**: every point $x \in M$ has a neighborhood that intersects only finitely many $\text{supp}(\rho_i)$.
+3. For all $x \in M$:
+   $$\sum_{i} \rho_i(x) = 1$$
+
+---
+
+## 3. Intermediate Lemmas & Rigorous Proofs
+
+> **Lemma 15.1 (Volume Distortion Under Linear Transformations)**: Let $T: \mathbb{R}^n \to \mathbb{R}^n$ be an invertible linear map, and let $B \subset \mathbb{R}^n$ be a Jordan measurable set. Then $T(B)$ is Jordan measurable, and:
+> $$\text{vol}(T(B)) = |\det T| \cdot \text{vol}(B)$$
+
+*Proof*:
+1. By Gaussian elimination, any invertible matrix $T$ can be decomposed as a product of elementary matrices: $T = E_1 E_2 \dots E_m$. It suffices to prove the lemma for elementary transformations:
+   * **Row Scaling**: Multiplying the $i$-th coordinate by $c \neq 0$. An axis-parallel box $[a_1, b_1] \times \dots \times [a_i, b_i] \times \dots \times [a_n, b_n]$ stretches along the $i$-th axis by $|c|$, so its volume scales by $|c| = |\det E|$.
+   * **Row Swap**: Swaps two coordinate axes (reflection). Volume is unchanged, and $|\det E| = |-1| = 1$.
+   * **Row Addition**: Shearing map $(x_1, \dots, x_i + c x_j, \dots, x_n)$. By Cavalieri's principle, cross-sections perpendicular to the $j$-th axis are unchanged. Volume is preserved, and $\det E = 1$.
+2. For an arbitrary box $B$, $\text{vol}(E(B)) = |\det E| \text{vol}(B)$.
+3. By induction: $\text{vol}(T(B)) = \prod_{k=1}^m |\det E_k| \text{vol}(B) = |\det T| \text{vol}(B)$.
+Approximating any Jordan measurable set $B$ from within and without by finite unions of boxes proves the general result. $\blacksquare$
+
+> **Lemma 15.2 (Existence of Smooth Bump Functions)**: There exists a smooth function $b: \mathbb{R}^n \to [0, \infty)$ such that $b(x) > 0$ for $\|x\| < 1$ and $b(x) = 0$ for $\|x\| \ge 1$.
+
+*Proof*:
+Define the single-variable function:
+$$\psi(t) = \begin{cases} e^{-1/t}, & t > 0 \\ 0, & t \le 0 \end{cases}$$
+By induction and L'Hôpital's rule, for any $k \in \mathbb{N}$, $\lim_{t \to 0^+} \frac{e^{-1/t}}{t^k} = 0$. Hence $\psi^{(k)}(0) = 0$ for all $k$, so $\psi \in C^\infty(\mathbb{R})$.
+Now define the radial bump function:
+$$b(x) = \psi(1 - \|x\|^2) = \begin{cases} \exp\left(-\frac{1}{1 - \|x\|^2}\right), & \|x\| < 1 \\ 0, & \|x\| \ge 1 \end{cases}$$
+Because $1 - \|x\|^2$ is smooth and composition of smooth functions is smooth, $b \in C^\infty(\mathbb{R}^n)$. Its support is precisely the closed unit ball $\overline{B}_1(\mathbf{0})$. $\blacksquare$
+
+> **Lemma 15.3 (Tonelli's Theorem for Non-Negative Functions)**: Let $(X, \mathcal{M}, \mu)$ and $(Y, \mathcal{N}, \nu)$ be $\sigma$-finite measure spaces. If $f: X \times Y \to [0, \infty]$ is non-negative and measurable, then:
+> $$\int_{X \times Y} f \, d(\mu \times \nu) = \int_X \left( \int_Y f(x, y) d\nu(y) \right) d\mu(x) = \int_Y \left( \int_X f(x, y) d\mu(x) \right) d\nu(y)$$
+> even if the integrals evaluate to $+\infty$.
+
+*Proof*:
+Follows from the Monotone Convergence Theorem applied to an increasing sequence of non-negative simple functions $s_k \nearrow f$, for which the identity holds by finite additivity of product measures $\mu \times \nu(A \times B) = \mu(A)\nu(B)$. $\blacksquare$
+
+---
+
+## 4. Rigorous Construction & Advanced Theorems
+
+### The Change of Variables Theorem
+> **Theorem 15.1 (Change of Variables in $\mathbb{R}^n$)**: Let $U, V \subseteq \mathbb{R}^n$ be open sets, and let $\Phi: U \to V$ be a $C^1$-diffeomorphism.
+> If $f: V \to \mathbb{R}$ is continuous and Lebesgue integrable (or non-negative and measurable), then:
+> $$\int_V f(y) dy = \int_U f(\Phi(x)) |\det D\Phi(x)| dx$$
+
+*Proof Sketch*:
+1. By a partition of unity, it suffices to prove the identity when $f$ is supported in a small compact ball $K \subset V$.
+2. For each point $x_0 \in U$, by Taylor's theorem:
+   $$\Phi(x) = \Phi(x_0) + D\Phi(x_0)(x - x_0) + o(\|x - x_0\|)$$
+   In a sufficiently small box $B_\delta(x_0)$, $\Phi$ is approximated by the affine map $T(x) = \Phi(x_0) + D\Phi(x_0)(x - x_0)$.
+3. By Lemma 15.1, the linear part transforms volume according to $\text{vol}(T(B)) = |\det D\Phi(x_0)| \text{vol}(B)$.
+4. The error term is bounded by $\sup_{x \in B} \|D\Phi(x) - D\Phi(x_0)\|$, which tends to zero by uniform continuity of $D\Phi$ on compact sets.
+5. Summing over a fine partition of $U$ and taking the mesh to zero realizes the Riemann sum converging to the integral with weight $|\det D\Phi(x)|$. $\blacksquare$
+
+### Global Manifold Integration via Partitions of Unity
+> **Theorem 15.2 (Well-Definedness of Manifold Integrals)**: Let $M$ be an oriented $n$-dimensional smooth manifold covered by charts $\{(U_\alpha, \phi_\alpha)\}$.
+> Let $\{\rho_i\}$ be a smooth partition of unity subordinate to $\{U_\alpha\}$, with $\text{supp}(\rho_i) \subset U_{\alpha(i)}$.
+> For any continuous, compactly supported top differential form $\omega$ on $M$, the integral:
+> $$\int_M \omega = \sum_i \int_{\phi_{\alpha(i)}(U_{\alpha(i)})} (\phi_{\alpha(i)}^{-1})^*(\rho_i \omega)$$
+> is finite and **independent** of the choice of charts and partition of unity.
+
+*Proof*:
+Let $\{\tilde{\rho}_j\}$ be another subordinate partition of unity for charts $\{(\tilde{U}_\beta, \tilde{\phi}_\beta)\}$.
+Using $\sum_j \tilde{\rho}_j = 1$ and linearity:
+$$\sum_i \int \rho_i \omega = \sum_i \int \rho_i \left( \sum_j \tilde{\rho}_j \right) \omega = \sum_{i,j} \int (\rho_i \tilde{\rho}_j) \omega$$
+Because $\text{supp}(\rho_i \tilde{\rho}_j) \subset U_{\alpha(i)} \cap \tilde{U}_{\beta(j)}$, the change of charts map $\tilde{\phi}_\beta \circ \phi_\alpha^{-1}$ is a diffeomorphism.
+Applying the Change of Variables Theorem (Theorem 15.1) on the overlap confirms that both double sums are identical. $\blacksquare$
+
+---
+
+## 5. Concrete Worked Examples & Step-by-Step Calculations
+
+### Worked Example 15.1: The N-Dimensional Gaussian and the Volume of the $(n-1)$-Sphere
+Let us evaluate the multi-dimensional Gaussian integral:
+$$I_n = \int_{\mathbb{R}^n} e^{-\|x\|^2} dx = \int_{\mathbb{R}^n} e^{-(x_1^2 + \dots + x_n^2)} dx_1 \dots dx_n$$
+
+1. **Fubini's Factorization in Cartesian Coordinates**:
+   By Fubini's Theorem (Theorem 6.1 / Lemma 15.3), the integrand factors into independent 1D integrals:
+   $$I_n = \prod_{i=1}^n \left( \int_{-\infty}^\infty e^{-x_i^2} dx_i \right)$$
+   Using the classical 1D Gaussian integral $\int_{-\infty}^\infty e^{-u^2} du = \sqrt{\pi}$:
+   $$I_n = (\sqrt{\pi})^n = \pi^{n/2}$$
+
+2. **Hyperspherical Coordinates via Change of Variables**:
+   Switch to generalized spherical coordinates: $r = \|x\| \in [0, \infty)$ and angular variables $\Omega \in S^{n-1}$.
+   The volume element transforms as:
+   $$dx = r^{n-1} dr \, d\Omega_{S^{n-1}}$$
+   Therefore:
+   $$I_n = \left( \int_0^\infty r^{n-1} e^{-r^2} dr \right) \left( \int_{S^{n-1}} d\Omega \right) = \left( \int_0^\infty r^{n-1} e^{-r^2} dr \right) \cdot \text{Area}(S^{n-1})$$
+
+3. **Evaluating the Radial Gamma Integral**:
+   Substitute $u = r^2$, so $du = 2r dr \implies dr = \frac{1}{2} u^{-1/2} du$:
+   $$\int_0^\infty r^{n-1} e^{-r^2} dr = \int_0^\infty u^{(n-1)/2} e^{-u} \left(\frac{1}{2} u^{-1/2} du\right) = \frac{1}{2} \int_0^\infty u^{\frac{n}{2} - 1} e^{-u} du = \frac{1}{2} \Gamma\left(\frac{n}{2}\right)$$
+
+4. **Surface Area and Volume Formulas**:
+   Equating both expressions for $I_n$:
+   $$\pi^{n/2} = \frac{1}{2} \Gamma\left(\frac{n}{2}\right) \cdot \text{Area}(S^{n-1}) \implies \text{Area}(S^{n-1}) = \frac{2 \pi^{n/2}}{\Gamma(n/2)}$$
+   Integrating with respect to radius $r$ from $0$ to $R$ gives the volume of the unit $n$-ball $B^n$:
+   $$\text{Vol}(B^n(R)) = \int_0^R r^{n-1} \text{Area}(S^{n-1}) dr = \frac{2 \pi^{n/2}}{\Gamma(n/2)} \frac{R^n}{n} = \frac{\pi^{n/2}}{\frac{n}{2} \Gamma(n/2)} R^n = \frac{\pi^{n/2}}{\Gamma\left(\frac{n}{2} + 1\right)} R^n$$
+
+5. **Explicit Values Across Dimensions**:
+   * $n = 1$: $\text{Vol}(B^1(R)) = \frac{\pi^{1/2}}{\Gamma(3/2)} R = \frac{\sqrt{\pi}}{\frac{1}{2}\sqrt{\pi}} R = 2 R$.
+   * $n = 2$: $\text{Vol}(B^2(R)) = \frac{\pi^1}{\Gamma(2)} R^2 = \pi R^2$.
+   * $n = 3$: $\text{Vol}(B^3(R)) = \frac{\pi^{3/2}}{\Gamma(5/2)} R^3 = \frac{\pi^{3/2}}{\frac{3}{4}\sqrt{\pi}} R^3 = \frac{4}{3}\pi R^3$.
+   * $n = 4$: $\text{Vol}(B^4(R)) = \frac{\pi^2}{\Gamma(3)} R^4 = \frac{\pi^2}{2} R^4$.
+   * $n = 5$: $\text{Vol}(B^5(R)) = \frac{\pi^{5/2}}{\Gamma(7/2)} R^5 = \frac{8\pi^2}{15} R^5 \approx 5.2638 R^5$.
+
+### Worked Example 15.2: The Spherical Coordinate Jacobian Determinant
+Derive the Jacobian determinant for the 3D spherical transformation $\Phi(\rho, \phi, \theta) = (x, y, z)$:
+$$x = \rho \sin \phi \cos \theta, \quad y = \rho \sin \phi \sin \theta, \quad z = \rho \cos \phi$$
+
+1. **Jacobian Matrix Construction**:
+   $$J_\Phi = \begin{pmatrix} \frac{\partial x}{\partial \rho} & \frac{\partial x}{\partial \phi} & \frac{\partial x}{\partial \theta} \\ \frac{\partial y}{\partial \rho} & \frac{\partial y}{\partial \phi} & \frac{\partial y}{\partial \theta} \\ \frac{\partial z}{\partial \rho} & \frac{\partial z}{\partial \phi} & \frac{\partial z}{\partial \theta} \end{pmatrix} = \begin{pmatrix} \sin \phi \cos \theta & \rho \cos \phi \cos \theta & -\rho \sin \phi \sin \theta \\ \sin \phi \sin \theta & \rho \cos \phi \sin \theta & \rho \sin \phi \cos \theta \\ \cos \phi & -\rho \sin \phi & 0 \end{pmatrix}$$
+
+2. **Cofactor Expansion Along the 3rd Row**:
+   $$\det J_\Phi = \cos \phi \cdot C_{31} - (-\rho \sin \phi) \cdot C_{32} + 0$$
+   * Minor $M_{31}$:
+     $$\begin{vmatrix} \rho \cos \phi \cos \theta & -\rho \sin \phi \sin \theta \\ \rho \cos \phi \sin \theta & \rho \sin \phi \cos \theta \end{vmatrix} = \rho^2 \sin \phi \cos \phi (\cos^2 \theta + \sin^2 \theta) = \rho^2 \sin \phi \cos \phi$$
+   * Minor $M_{32}$:
+     $$\begin{vmatrix} \sin \phi \cos \theta & -\rho \sin \phi \sin \theta \\ \sin \phi \sin \theta & \rho \sin \phi \cos \theta \end{vmatrix} = \rho \sin^2 \phi (\cos^2 \theta + \sin^2 \theta) = \rho \sin^2 \phi$$
+
+3. **Total Determinant**:
+   $$\det J_\Phi = \cos \phi (\rho^2 \sin \phi \cos \phi) + (\rho \sin \phi)(\rho \sin^2 \phi) = \rho^2 \sin \phi (\cos^2 \phi + \sin^2 \phi) = \rho^2 \sin \phi$$
+   Since $\phi \in [0, \pi]$, $\sin \phi \ge 0$, so $|\det J_\Phi| = \rho^2 \sin \phi$.
+   This confirms the volume element $dV = \rho^2 \sin \phi \, d\rho \, d\phi \, d\theta$.
+
+---
+
+## 6. Multi-Disciplinary Applications
+
+* **Generative AI (Normalizing Flows)**: Normalizing flow models (RealNVP, Glow) generate complex data distributions by mapping a simple base distribution $z \sim \mathcal{N}(\mathbf{0}, I)$ through an invertible neural network $x = f_\theta(z)$. By the Change of Variables Theorem, the exact log-likelihood of data $x$ is:
+  $$\log p_X(x) = \log p_Z(f_\theta^{-1}(x)) + \log \left| \det D f_\theta^{-1}(x) \right|$$
+  Architectures are designed with triangular Jacobians so that $\det Df_\theta$ is computed in $\mathcal{O}(n)$ time.
+* **Quantum Chemistry & Statistical Mechanics**: High-dimensional partition functions $Z = \int e^{-\beta H(p, q)} d^n p \, d^n q$ integrate over phase spaces of dimension $10^3$ to $10^6$. Monte Carlo cubature evaluates these integrals where grid methods suffer from the curse of dimensionality.
+* **Astrophysics**: Stellar interiors model gravitational mass distribution by integrating density profiles $\rho(r)$ using spherical shells $dM = 4\pi r^2 \rho(r) dr$.
+
+---
+
+## 7. Numerical Computation: High-Dimensional Monte Carlo Cubature
+
+Below are complete implementations of **High-Dimensional Monte Carlo Integration with Error Estimation** (evaluating the 5D Gaussian integral from Worked Example 15.1) across six scientific environments:
 
 ::: {.panel-tabset group="language"}
 ## Python 3
 ```python
 import numpy as np
 
-def mc_gaussian_5d(n: int = 100000, bounds=(-2.0, 2.0)):
-    vol = (bounds[1] - bounds[0])**5
-    pts = np.random.uniform(bounds[0], bounds[1], size=(n, 5))
+def mc_gaussian_5d(n_samples: int = 200_000, bounds: tuple = (-4.0, 4.0)):
+    # 5D Bounding Box: [-4, 4]^5
+    L = bounds[1] - bounds[0]
+    box_vol = L ** 5
+    pts = np.random.uniform(bounds[0], bounds[1], size=(n_samples, 5))
+    # f(x) = exp(-||x||^2)
     vals = np.exp(-np.sum(pts**2, axis=1))
-    return float(vol * np.mean(vals))
 
-print(f"Python 3: 5D Gaussian Integral = {mc_gaussian_5d():.4f} (True: {np.pi**2.5:.4f})")
+    mean_val = np.mean(vals)
+    vol_est = box_vol * mean_val
+    std_err = box_vol * np.std(vals) / np.sqrt(n_samples)
+    return vol_est, std_err
+
+np.random.seed(42)
+est, err = mc_gaussian_5d(200_000)
+exact = np.pi ** 2.5
+print(f"Python 3: 5D Gaussian Integral = {est:.4f} +/- {err:.4f}, Exact = {exact:.4f}")
 ```
 
 ## C++20
@@ -37,92 +207,131 @@ print(f"Python 3: 5D Gaussian Integral = {mc_gaussian_5d():.4f} (True: {np.pi**2
 #include <iostream>
 #include <random>
 #include <cmath>
+#include <iomanip>
 
 int main() {
-    std::mt19937_64 rng(42);
-    std::uniform_real_distribution<double> dist(-2.0, 2.0);
-    int n = 100000;
-    double vol = std::pow(4.0, 5);
-    double sum = 0.0;
+    const int n = 200000;
+    const double L = 8.0; // [-4, 4]
+    const double box_vol = std::pow(L, 5);
 
+    std::mt19937_64 rng(42);
+    std::uniform_real_distribution<double> dist(-4.0, 4.0);
+
+    double sum = 0.0, sum_sq = 0.0;
     for (int i = 0; i < n; ++i) {
         double r2 = 0.0;
         for (int d = 0; d < 5; ++d) {
             double x = dist(rng);
             r2 += x * x;
         }
-        sum += std::exp(-r2);
+        double val = std::exp(-r2);
+        sum += val;
+        sum_sq += val * val;
     }
-    std::cout << "C++20:    5D Gaussian Integral = " << (vol * sum / n) << "\n";
+
+    double mean = sum / n;
+    double var = (sum_sq / n) - (mean * mean);
+    double est = box_vol * mean;
+    double err = box_vol * std::sqrt(var / n);
+    double exact = std::pow(M_PI, 2.5);
+
+    std::cout << std::fixed << std::setprecision(4);
+    std::cout << "C++20:    5D Gaussian = " << est << " +/- " << err << ", Exact = " << exact << "\n";
     return 0;
 }
 ```
 
 ## Julia
 ```julia
-n = 100000
-pts = rand(5, n) .* 4.0 .- 2.0
-vals = exp.(-sum(pts.^2, dims=1))
-integral_est = (4.0^5) * mean(vals)
-println("Julia:    5D Gaussian Integral = $(round(integral_est, digits=4))")
+using Random
+
+function mc_gaussian_5d(N = 200_000)
+    Random.seed!(42)
+    box_vol = 8.0^5
+    sum_val = 0.0
+    for _ in 1:N
+        r2 = sum((rand(5) .* 8.0 .- 4.0).^2)
+        sum_val += exp(-r2)
+    end
+    est = box_vol * (sum_val / N)
+    exact = pi^2.5
+    return est, exact
+end
+
+est, exact = mc_gaussian_5d()
+println("Julia:    5D Gaussian = $(round(est, digits=4)), Exact = $(round(exact, digits=4))")
 ```
 
 ## Modern Fortran
 ```fortran
-program mc_cubature
+program mc_gaussian
   implicit none
-  integer, parameter :: n = 100000
+  integer, parameter :: N = 200000
+  real(8), parameter :: pi = 3.14159265358979323846d0
+  real(8) :: box_vol, sum_val, r2, exact, est
+  real :: rand_vals(5)
   integer :: i, d
-  real(8) :: r(5), x, r2, total_sum, vol
 
-  vol = 4.0d0**5
-  total_sum = 0.0d0
+  box_vol = 8.0d0**5
+  sum_val = 0.0d0
 
-  do i = 1, n
-    call random_number(r)
-    r2 = 0.0d0
-    do d = 1, 5
-      x = r(d)*4.0d0 - 2.0d0
-      r2 = r2 + x*x
-    end do
-    total_sum = total_sum + exp(-r2)
+  do i = 1, N
+     call random_number(rand_vals)
+     r2 = 0.0d0
+     do d = 1, 5
+        r2 = r2 + (dble(rand_vals(d)) * 8.0d0 - 4.0d0)**2
+     end do
+     sum_val = sum_val + exp(-r2)
   end do
 
-  print '(A,F8.4)', "Fortran:  5D Gaussian Integral = ", (vol * total_sum / n)
-end program mc_cubature
+  est = box_vol * (sum_val / dble(N))
+  exact = pi**2.5d0
+
+  print '(A,F8.4,A,F8.4)', "Fortran:  Est = ", est, ", Exact = ", exact
+end program mc_gaussian
 ```
 
 ## MATLAB / Octave
 ```matlab
-n = 100000;
-pts = rand(n, 5) * 4 - 2;
-vals = exp(-sum(pts.^2, 2));
-integral_est = (4^5) * mean(vals);
-fprintf('MATLAB:   5D Gaussian Integral = %.4f\n', integral_est);
+% 5D Monte Carlo Gaussian Integration
+N = 200000;
+box_vol = 8^5;
+
+rng(42);
+pts = -4.0 + 8.0 * rand(N, 5);
+r2 = sum(pts.^2, 2);
+vals = exp(-r2);
+
+est = box_vol * mean(vals);
+err = box_vol * std(vals) / sqrt(N);
+exact = pi^2.5;
+
+fprintf('MATLAB:   5D Gaussian = %.4f +/- %.4f, Exact = %.4f\n', est, err, exact);
 ```
+
 ## Lean 4
 ```lean
--- Lean 4: Multidimensional Change of Variables and Jacobians
+-- Lean 4: Volume Transformation Under Linear Diffeomorphisms
 import Mathlib.MeasureTheory.Integral.Lebesgue
 import Mathlib.Analysis.Calculus.FDeriv.Basic
 
 open MeasureTheory
 
--- Formal Jacobian scaling principle: μ(Φ(U)) = ∫_U |det DΦ| dμ
-variable {n : ℕ} (Φ : (Fin n → ℝ) → (Fin n → ℝ))
--- Formalized in Mathlib under MeasureTheory.integral_image
+-- Formal representation: Linear maps scale Lebesgue measure by absolute determinant
+def MeasureScaleByLinearMap {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] (T : E ≃L[ℝ] E) (μ : Measure E) : Prop :=
+  ∀ s : Set E, μ (T '' s) = |T.toLinearEquiv.det| * μ s
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 8. Curated Primary Literature & Canonical Syllabi
 
-* **Michael Spivak**, *Calculus on Manifolds*, Addison-Wesley (1965), Ch 3.
-* **Gerald B. Folland**, *Real Analysis*, Wiley (1999), Ch 2.5.
-* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015), Chapter 15.
-
+* **James R. Munkres**, *Analysis on Manifolds*, CRC Press (1991). Chapters 3 & 4 provide full proofs of the Change of Variables theorem and partitions of unity.
+* **Michael Spivak**, *Calculus on Manifolds*, Westview Press (1965). Chapter 3 covers multiple integration and Fubini's theorem.
+* **Gerald B. Folland**, *Real Analysis: Modern Techniques and Their Applications*, 2nd Edition, Wiley (1999).
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Chapter 15 (Multiple Integrals, Polar, Cylindrical, and Spherical Coordinates).
 <br>
 <br>
 

@@ -1,114 +1,317 @@
 ---
-title: "Function Spaces and Series: Uniform Convergence, Arzelà-Ascoli, and Complex Analyticity"
-subtitle: "Moving from convergence tests to Banach spaces C(K), the Arzelà-Ascoli theorem, Hadamard's formula, and complex analytic series."
+title: "Infinite Series and Uniform Convergence: Weierstrass M-Test, Arzelà-Ascoli, and Banach Spaces"
+subtitle: "Banach spaces of continuous functions, failure of pointwise limits, the 3-epsilon lemma, and equicontinuity."
 author: "Igor Kan"
 date: "2026-09-12"
-categories: ["Mathematics", "Analysis", "Functional Analysis", "Complex Analysis", "Machine Learning"]
+categories: ["Mathematics", "Analysis", "Functional Analysis", "Computer Science"]
 format:
   html:
     toc: true
     math: true
 ---
 
-## 1. The Conceptual Shift: Function Spaces as Metric Universes
+## 1. The Conceptual Shift: Pointwise Limits vs. Function Space Geometry
 
-In elementary calculus, power series are checked with ratio tests. Modern analysis operates in the complete Banach space $(C(K), \|\cdot\|_\infty)$. Compactness of function sets is characterized by **Arzelà-Ascoli** (equicontinuity), and power series are unified by Hadamard's formula $\frac{1}{R} = \limsup |a_n|^{1/n}$.
+In introductory calculus, sequences and series of functions are treated as families of static formulas evaluated at individual points $x$. Convergence is conceptualized purely **pointwise**: for each fixed $x$, does the number sequence $f_n(x)$ approach a limit $L(x)$?
+
+In rigorous modern analysis and functional analysis, pointwise convergence is revealed to be fatally flawed:
+1. **Destruction of Continuity**: Pointwise limits of continuous functions can fail to be continuous! For example, $f_n(x) = x^n$ on $[0, 1]$ consists entirely of smooth polynomials, yet its pointwise limit is a discontinuous step function ($0$ for $x \in [0, 1)$ and $1$ at $x = 1$).
+2. **Failure of Operator Commutativity**: Pointwise convergence fails to commute with integration and differentiation:
+   $$\lim_{n \to \infty} \int_0^1 f_n(x) dx \neq \int_0^1 \left(\lim_{n \to \infty} f_n(x)\right) dx$$
+3. **The Topology of Uniform Convergence**: The space of continuous functions $C(K)$ on a compact space is an infinite-dimensional **Banach space** under the supremum norm $\|f\|_\infty = \sup_{x \in K} |f(x)|$. Uniform convergence ($d_\infty(f_n, f) \to 0$) is the topological condition that preserves continuity and allows limit swapping.
+4. **Infinite-Dimensional Compactness**: The Heine-Borel theorem fails in infinite-dimensional spaces: closed and bounded sets in $C(K)$ are generally *not* compact. Compactness requires the additional constraint of **equicontinuity**, codified by the **Arzelà-Ascoli Theorem**.
 
 ---
 
-## 2. Numerical Computation: Padé Rational Approximant vs. Taylor Series
+## 2. Foundational Definitions & Elementary Properties
+
+### Pointwise vs. Uniform Convergence
+Let $E \subseteq \mathbb{R}$ and $f_n, f: E \to \mathbb{R}$.
+* $f_n \to f$ **pointwise** on $E$ if:
+  $$\forall x \in E, \ \forall \epsilon > 0, \ \exists N = N(x, \epsilon) \in \mathbb{N} \text{ such that } n > N \implies |f_n(x) - f(x)| < \epsilon$$
+* $f_n \to f$ **uniformly** on $E$ if:
+  $$\forall \epsilon > 0, \ \exists N = N(\epsilon) \in \mathbb{N} \text{ such that } n > N \implies \forall x \in E, \ |f_n(x) - f(x)| < \epsilon$$
+  Equivalently: $\|f_n - f\|_\infty = \sup_{x \in E} |f_n(x) - f(x)| \to 0$ as $n \to \infty$.
+
+### Equicontinuity
+A family of functions $\mathcal{F} \subset C(X)$ on a metric space $(X, d)$ is **equicontinuous** if:
+$$\forall \epsilon > 0, \ \exists \delta > 0 \text{ such that } d(x, y) < \delta \implies |f(x) - f(y)| < \epsilon, \quad \forall f \in \mathcal{F}, \ \forall x, y \in X$$
+The critical distinction is that $\delta$ depends *only* on $\epsilon$, uniformly across the entire infinite family $\mathcal{F}$.
+
+---
+
+## 3. Intermediate Lemmas & Rigorous Proofs
+
+> **Lemma 11.1 (Uniform Cauchy Criterion)**: A sequence of functions $f_n: E \to \mathbb{R}$ converges uniformly on $E$ if and only if for every $\epsilon > 0$, there exists an integer $N$ such that:
+> $$m, n > N \implies \sup_{x \in E} |f_n(x) - f_m(x)| < \epsilon$$
+
+*Proof*:
+$(\implies)$ If $f_n \to f$ uniformly, choose $N$ such that $n > N \implies \|f_n - f\|_\infty < \epsilon / 2$.
+Then for $m, n > N$:
+$$|f_n(x) - f_m(x)| \le |f_n(x) - f(x)| + |f(x) - f_m(x)| < \frac{\epsilon}{2} + \frac{\epsilon}{2} = \epsilon$$
+$(\impliedby)$ For each fixed $x \in E$, the number sequence $(f_n(x))$ is a Cauchy sequence in $\mathbb{R}$.
+By completeness of $\mathbb{R}$, $f(x) = \lim_{n \to \infty} f_n(x)$ exists.
+In the Cauchy inequality $|f_n(x) - f_m(x)| < \epsilon$, take the limit as $m \to \infty$:
+$$|f_n(x) - f(x)| \le \epsilon, \quad \forall n > N, \ \forall x \in E$$
+Hence $\|f_n - f\|_\infty \le \epsilon$, proving uniform convergence. $\blacksquare$
+
+> **Lemma 11.2 (Uniform Limit Theorem — Preservation of Continuity)**: If $f_n: E \to \mathbb{R}$ are continuous and $f_n \to f$ uniformly on $E$, then $f$ is continuous on $E$.
+
+*Proof (The $3\epsilon$ Argument)*:
+Let $x_0 \in E$ and $\epsilon > 0$.
+1. By uniform convergence, choose $N$ such that $\|f_N - f\|_\infty < \frac{\epsilon}{3}$.
+2. Since $f_N$ is continuous at $x_0$, choose $\delta > 0$ such that $|x - x_0| < \delta \implies |f_N(x) - f_N(x_0)| < \frac{\epsilon}{3}$.
+3. Now for any $x \in E$ with $|x - x_0| < \delta$, apply the triangle inequality:
+   $$|f(x) - f(x_0)| \le |f(x) - f_N(x)| + |f_N(x) - f_N(x_0)| + |f_N(x_0) - f(x_0)| < \frac{\epsilon}{3} + \frac{\epsilon}{3} + \frac{\epsilon}{3} = \epsilon$$
+Hence $f$ is continuous at $x_0$. $\blacksquare$
+
+> **Lemma 11.3 (Interchange of Limit and Integral)**: If $f_n \to f$ uniformly on a compact interval $[a, b]$, and each $f_n$ is Riemann integrable, then $f$ is Riemann integrable and:
+> $$\lim_{n \to \infty} \int_a^b f_n(x) dx = \int_a^b f(x) dx$$
+
+*Proof*:
+Given $\epsilon > 0$, choose $N$ such that $n > N \implies \|f_n - f\|_\infty < \frac{\epsilon}{b - a}$.
+Then for all $n > N$:
+$$\left| \int_a^b f_n(x) dx - \int_a^b f(x) dx \right| = \left| \int_a^b (f_n(x) - f(x)) dx \right| \le \int_a^b |f_n(x) - f(x)| dx \le \int_a^b \|f_n - f\|_\infty dx < \left( \frac{\epsilon}{b - a} \right) (b - a) = \epsilon$$
+This proves the limit swaps with the integral. $\blacksquare$
+
+---
+
+## 4. Rigorous Construction & Advanced Theorems
+
+### The Weierstrass M-Test
+> **Theorem 11.1 (Weierstrass M-Test)**: Let $\sum_{n=1}^\infty u_n(x)$ be a series of functions on $E$.
+> Suppose there exists a sequence of positive real constants $M_n \ge 0$ such that:
+> 1. $|u_n(x)| \le M_n$ for all $x \in E$ and all $n \in \mathbb{N}$.
+> 2. $\sum_{n=1}^\infty M_n < \infty$ converges.
+> Then $\sum_{n=1}^\infty u_n(x)$ converges **uniformly and absolutely** on $E$.
+
+*Proof*:
+Let $S_k(x) = \sum_{n=1}^k u_n(x)$ be the partial sums.
+For $k > j$:
+$$|S_k(x) - S_j(x)| = \left| \sum_{n=j+1}^k u_n(x) \right| \le \sum_{n=j+1}^k |u_n(x)| \le \sum_{n=j+1}^k M_n$$
+Since $\sum M_n$ converges, its sequence of partial sums is Cauchy in $\mathbb{R}$.
+Given $\epsilon > 0$, there exists $N$ such that for all $k > j > N$, $\sum_{n=j+1}^k M_n < \epsilon$.
+Thus $\|S_k - S_j\|_\infty < \epsilon$ for all $k > j > N$.
+By Lemma 11.1 (Uniform Cauchy Criterion), the partial sums converge uniformly on $E$. $\blacksquare$
+
+### The Arzelà-Ascoli Theorem
+> **Theorem 11.2 (Arzelà-Ascoli Theorem)**: Let $K$ be a compact metric space. A subset $\mathcal{F} \subset C(K)$ is **relatively compact** (its closure is compact in the supremum metric) if and only if $\mathcal{F}$ is:
+> 1. **Pointwise bounded**: for every $x \in K$, $\sup_{f \in \mathcal{F}} |f(x)| < \infty$.
+> 2. **Equicontinuous**: $\forall \epsilon > 0, \exists \delta > 0 \text{ s.t. } d(x, y) < \delta \implies |f(x) - f(y)| < \epsilon, \ \forall f \in \mathcal{F}$.
+
+*Proof Sketch*:
+Compact metric spaces are separable; let $\{x_1, x_2, \dots\}$ be a dense countable subset of $K$.
+Given any sequence $(f_n) \subset \mathcal{F}$:
+1. Since $(f_n(x_1))$ is bounded in $\mathbb{R}$, by Bolzano-Weierstrass there exists a subsequence $f_{1,n}$ converging at $x_1$.
+2. From $f_{1,n}$, extract a sub-subsequence $f_{2,n}$ converging at $x_2$.
+3. By Cantor's **diagonal argument**, the diagonal sequence $g_n = f_{n,n}$ converges at every point of the dense set $\{x_k\}$.
+4. By equicontinuity, choose a finite $\delta$-net covering $K$. The uniform control on neighborhoods extends convergence from the dense set to all of $K$, proving $g_n$ converges uniformly on $K$. $\blacksquare$
+
+---
+
+## 5. Concrete Worked Examples & Step-by-Step Calculations
+
+### Worked Example 11.1: Pointwise vs. Uniform Convergence Analysis
+Investigate the convergence of the sequence:
+$$f_n(x) = \frac{n x}{1 + n^2 x^2}, \quad x \in [0, 1]$$
+
+1. **Pointwise Limit**:
+   * At $x = 0$: $f_n(0) = \frac{0}{1} = 0$.
+   * For $x > 0$: $f_n(x) = \frac{n x}{1 + n^2 x^2} = \frac{x / n}{1/n^2 + x^2} \to \frac{0}{x^2} = 0$ as $n \to \infty$.
+   Thus, the pointwise limit is the identically zero function: $f(x) \equiv 0$.
+
+2. **Supremum Norm Calculation**:
+   To test for uniform convergence, compute $\|f_n - f\|_\infty = \sup_{x \in [0, 1]} f_n(x)$.
+   Differentiating to find the maximum:
+   $$f_n'(x) = \frac{n(1 + n^2 x^2) - n x(2 n^2 x)}{(1 + n^2 x^2)^2} = \frac{n - n^3 x^2}{(1 + n^2 x^2)^2} = \frac{n(1 - n^2 x^2)}{(1 + n^2 x^2)^2}$$
+   Setting $f_n'(x) = 0$ gives critical point $x^* = \frac{1}{n} \in [0, 1]$.
+   Evaluating at the critical point:
+   $$f_n\left(\frac{1}{n}\right) = \frac{n(1/n)}{1 + n^2(1/n^2)} = \frac{1}{1 + 1} = \frac{1}{2}$$
+
+3. **Conclusion on Uniform Convergence**:
+   $$\|f_n - f\|_\infty = \sup_{x \in [0, 1]} |f_n(x) - 0| = \frac{1}{2} \not\to 0 \quad \text{as } n \to \infty$$
+   Therefore, $f_n$ **does not converge uniformly** to $0$ on $[0, 1]$!
+   However, on any restricted interval $[\delta, 1]$ with $\delta > 0$: for $n > 1/\delta$, the peak $1/n$ lies outside the interval, and $\sup_{x \in [\delta, 1]} f_n(x) = f_n(\delta) \approx \frac{1}{n \delta} \to 0$. Hence convergence IS uniform on $[\delta, 1]$.
+
+### Worked Example 11.2: The Weierstrass Nowhere-Differentiable Monster
+Karl Weierstrass (1872) shattered the 19th-century consensus that continuous functions must be differentiable almost everywhere by constructing:
+$$W(x) = \sum_{n=0}^\infty a^n \cos(b^n \pi x), \quad 0 < a < 1, \ ab > 1 + \frac{3}{2}\pi, \ b \text{ odd integer}$$
+
+1. **Proof of Continuity via Weierstrass M-Test**:
+   For each term: $|a^n \cos(b^n \pi x)| \le a^n$.
+   Since $0 < a < 1$, the geometric series $\sum_{n=0}^\infty a^n = \frac{1}{1 - a} < \infty$ converges.
+   By Theorem 11.1 (Weierstrass M-Test), the series converges **uniformly** on all of $\mathbb{R}$.
+   Since each partial sum is a finite sum of continuous cosine functions, by Lemma 11.2, $W(x)$ is **everywhere continuous** on $\mathbb{R}$.
+
+2. **Divergence of Difference Quotients**:
+   Taking the formal derivative term-by-term yields:
+   $$W'(x) \stackrel{?}{=} -\pi \sum_{n=0}^\infty (ab)^n \sin(b^n \pi x)$$
+   Since $ab > 1$, $(ab)^n \to \infty$. The difference quotients $\frac{W(x + h) - W(x)}{h}$ oscillate with unbounded amplitude as $h \to 0$, rigorously proving that $W'(x)$ exists at **no point** in $\mathbb{R}$!
+
+---
+
+## 6. Multi-Disciplinary Applications
+
+* **Machine Learning & Neural Networks**: The **Universal Approximation Theorem** (Hornik, Cybenko) states that single-hidden-layer feedforward networks are dense in the Banach space $(C(K), \|\cdot\|_\infty)$. Proving that neural networks can approximate any continuous function to arbitrary $\epsilon$-precision relies on the Stone-Weierstrass theorem.
+* **Partial Differential Equations (PDEs)**: The existence of weak solutions to elliptic and parabolic PDEs (e.g., Navier-Stokes, reaction-diffusion) uses the **Galerkin method**, where approximate finite-dimensional solutions are proved to have a convergent subsequence via the Arzelà-Ascoli theorem and Rellich-Kondrachov compactness theorems.
+* **Fourier Analysis & Signal Processing**: Gibbs phenomenon—the 9% overshoot at jump discontinuities in Fourier square waves—occurs precisely because Fourier series fail to converge uniformly near jump discontinuities.
+
+---
+
+## 7. Numerical Computation: Weierstrass Nowhere-Differentiable Function Evaluator
+
+Below are complete implementations of the **Weierstrass Nowhere-Differentiable Function and Difference Quotient Divergence** across six scientific computing environments:
 
 ::: {.panel-tabset group="language"}
 ## Python 3
 ```python
 import numpy as np
 
-# Padé [2/2] for ln(1 + x) = (x + x^2/2) / (1 + x + x^2/6)
-def pade_log1p(x):
-    return (x + 0.5 * x**2) / (1.0 + x + (1.0/6.0) * x**2)
+def weierstrass_func(x: float, a: float = 0.5, b: int = 13, n_terms: int = 100) -> float:
+    n = np.arange(n_terms)
+    terms = (a ** n) * np.cos((b ** n) * np.pi * x)
+    return float(np.sum(terms))
 
-x_val = 1.5 # Outside Taylor radius of convergence R=1
-print(f"Python 3: Exact ln(2.5) = {np.log(2.5):.6f}, Padé [2/2] = {pade_log1p(x_val):.6f}")
+def difference_quotient(f, x: float, h: float) -> float:
+    return (f(x + h) - f(x)) / h
+
+x0 = 0.5
+print("Python 3: Testing Weierstrass function difference quotients as h -> 0:")
+for h in [1e-2, 1e-4, 1e-6, 1e-8]:
+    dq = difference_quotient(lambda x: weierstrass_func(x, 0.5, 13, 50), x0, h)
+    print(f"  h = {h:.1e} | [W(x+h) - W(x)] / h = {dq:12.4f}")
 ```
 
 ## C++20
 ```cpp
 #include <iostream>
 #include <cmath>
+#include <vector>
 #include <iomanip>
 
-double pade_log1p(double x) {
-    return (x + 0.5 * x * x) / (1.0 + x + (1.0 / 6.0) * x * x);
+double weierstrass(double x, double a = 0.5, int b = 13, int terms = 50) {
+    double sum = 0.0;
+    double a_pow = 1.0;
+    double b_pow = 1.0;
+    for (int n = 0; n < terms; ++n) {
+        sum += a_pow * std::cos(b_pow * M_PI * x);
+        a_pow *= a;
+        b_pow *= b;
+    }
+    return sum;
 }
 
 int main() {
-    double x = 1.5;
-    std::cout << std::fixed << std::setprecision(6);
-    std::cout << "C++20:    Exact ln(2.5) = " << std::log(1.0 + x) 
-              << ", Padé [2/2] = " << pade_log1p(x) << "\n";
+    double x0 = 0.5;
+    std::cout << std::fixed << std::setprecision(4);
+    std::cout << "C++20:    Weierstrass Difference Quotients:\n";
+    for (double h : {1e-2, 1e-4, 1e-6, 1e-8}) {
+        double dq = (weierstrass(x0 + h) - weierstrass(x0)) / h;
+        std::cout << "          h = " << std::scientific << std::setprecision(1) << h 
+                  << std::fixed << std::setprecision(4) << " | Diff Quot = " << dq << "\n";
+    }
     return 0;
 }
 ```
 
 ## Julia
 ```julia
-pade_log1p(x) = (x + 0.5 * x^2) / (1.0 + x + (1.0 / 6.0) * x^2)
-x = 1.5
-println("Julia:    Exact ln(2.5) = $(round(log(1 + x), digits=6)), Padé [2/2] = $(round(pade_log1p(x), digits=6))")
+function weierstrass(x, a = 0.5, b = 13, terms = 50)
+    sum_val = 0.0
+    for n in 0:(terms - 1)
+        sum_val += (a^n) * cos((b^n) * pi * x)
+    end
+    return sum_val
+end
+
+x0 = 0.5
+println("Julia:    Weierstrass Difference Quotients:")
+for h in [1e-2, 1e-4, 1e-6, 1e-8]
+    dq = (weierstrass(x0 + h) - weierstrass(x0)) / h
+    println("          h = $(h) | Diff Quot = $(round(dq, digits=4))")
+end
 ```
 
 ## Modern Fortran
 ```fortran
-program pade_approx
+program test_weierstrass
   implicit none
-  real(8) :: x, exact_val, pade_val
+  real(8), parameter :: pi = 3.14159265358979323846d0
+  real(8) :: x0, h, dq
+  real(8), external :: weierstrass_val
+  integer :: i
+  real(8), dimension(4) :: h_vals
 
-  x = 1.5d0
-  exact_val = log(1.0d0 + x)
-  pade_val = (x + 0.5d0 * x**2) / (1.0d0 + x + (1.0d0 / 6.0d0) * x**2)
+  h_vals = (/ 1.0d-2, 1.0d-4, 1.0d-6, 1.0d-8 /)
+  x0 = 0.5d0
 
-  print '(A,F10.6,A,F10.6)', "Fortran:  Exact = ", exact_val, ", Padé [2/2] = ", pade_val
-end program pade_approx
+  print '(A)', "Fortran:  Weierstrass Difference Quotients:"
+  do i = 1, 4
+     h = h_vals(i)
+     dq = (weierstrass_val(x0 + h) - weierstrass_val(x0)) / h
+     print '(A,E8.1,A,F12.4)', "          h = ", h, " | Diff Quot = ", dq
+  end do
+end program test_weierstrass
+
+function weierstrass_val(x) result(res)
+  implicit none
+  real(8), parameter :: pi = 3.14159265358979323846d0
+  real(8), intent(in) :: x
+  real(8) :: res, a_pow, b_pow
+  integer :: n
+
+  res = 0.0d0
+  a_pow = 1.0d0
+  b_pow = 1.0d0
+  do n = 0, 40
+     res = res + a_pow * cos(b_pow * pi * x)
+     a_pow = a_pow * 0.5d0
+     b_pow = b_pow * 13.0d0
+  end do
+end function weierstrass_val
 ```
 
 ## MATLAB / Octave
 ```matlab
-x = 1.5;
-exact_val = log(1 + x);
-pade_val = (x + 0.5*x^2) / (1 + x + (1/6)*x^2);
-fprintf('MATLAB:   Exact = %.6f, Padé [2/2] = %.6f\n', exact_val, pade_val);
+% Weierstrass nowhere-differentiable function
+weierstrass = @(x) sum((0.5.^(0:40)) .* cos((13.^(0:40)) * pi * x));
+
+x0 = 0.5;
+h_vals = [1e-2, 1e-4, 1e-6, 1e-8];
+disp('MATLAB:   Weierstrass Difference Quotients:');
+for h = h_vals
+    dq = (weierstrass(x0 + h) - weierstrass(x0)) / h;
+    fprintf('          h = %.1e | Diff Quot = %12.4f\n', h, dq);
+end
 ```
+
 ## Lean 4
 ```lean
--- Lean 4: Uniform Convergence and Completeness of Continuous Function Spaces
-import Mathlib.Topology.ContinuousMap.Basic
-import Mathlib.Topology.UniformSpace.UniformConvergence
+-- Lean 4: Uniform Convergence and the Continuous Function Banach Space C(K)
+import Mathlib.Topology.ContinuousOn
+import Mathlib.Topology.MetricSpace.Basic
 
-open ContinuousMap
+-- Supremum distance between two functions on a compact type
+def DistInfinity {α : Type*} [TopologicalSpace α] [CompactSpace α]
+    (f g : α → ℝ) (hf : Continuous f) (hg : Continuous g) : ℝ :=
+  sSup { r : ℝ | ∃ x : α, r = |f x - g x| }
 
-variable {α : Type*} [TopologicalSpace α] [CompactSpace α]
-
--- The space C(α, ℝ) is complete under the supremum norm (Banach space)
-instance : CompleteSpace (ContinuousMap α ℝ) := by
-  infer_instance
-
--- The uniform limit of continuous functions is continuous
-theorem uniform_limit_preserves_continuity {ι : Type*} (F : ι → α → ℝ) (f : α → ℝ)
-    (h_cont : ∀ i, Continuous (F i)) (l : Filter ι) (h_unif : TendstoUniformly F f l) :
-    Continuous f :=
-  h_unif.continuous h_cont
+-- Definition of uniform convergence in Mathlib
+def TendstoUniformly {α β : Type*} [TopologicalSpace β] [PseudoMetricSpace β]
+    (F : ℕ → α → β) (f : α → β) : Prop :=
+  ∀ ε > 0, ∃ N : ℕ, ∀ n ≥ N, ∀ x : α, dist (F n x) (f x) < ε
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 8. Curated Primary Literature & Canonical Syllabi
 
-* **Walter Rudin**, *Principles of Mathematical Analysis*, McGraw-Hill (1976), Ch 7.
-* **Elias M. Stein & Rami Shakarchi**, *Complex Analysis*, Princeton University Press (2003).
-* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015), Chapter 11.
-
+* **Walter Rudin**, *Principles of Mathematical Analysis*, 3rd Edition, McGraw-Hill (1976). Chapter 7 (Sequences and Series of Functions) provides the classic proofs of uniform convergence, Weierstrass M-test, and Arzelà-Ascoli.
+* **H. L. Royden & P. M. Fitzpatrick**, *Real Analysis*, 4th Edition, Pearson (2010). Chapter 9 (Metric Spaces: Compactness and Arzelà-Ascoli).
+* **Michael Spivak**, *Calculus*, 4th Edition, Publish or Perish (2008). Chapter 24 (Uniform Convergence and Power Series).
+* **Terence Tao**, *Analysis II*, Texts and Readings in Mathematics, Hindustan Book Agency (2016). Chapter 3 (Uniform Convergence).
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Chapter 11 (Infinite Sequences and Series).
 <br>
 <br>
 

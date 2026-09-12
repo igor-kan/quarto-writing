@@ -1,6 +1,6 @@
 ---
 title: "Kinematics of Space Curves: 3D Frenet-Serret Apparatus, Torsion, and Congruence Theorems"
-subtitle: "3D moving frames (T, N, B), curvature, torsion, and the Fundamental Theorem of Space Curves."
+subtitle: "3D moving frames (T, N, B), curvature, torsion, the Darboux vector, and the Fundamental Theorem of Space Curves."
 author: "Igor Kan"
 date: "2026-09-12"
 categories: ["Mathematics", "Differential Geometry", "Physics", "Robotics", "Computer Graphics"]
@@ -12,32 +12,210 @@ format:
 
 ## 1. The Conceptual Shift: Moving Frames in Three Dimensions
 
-The 3D Frenet-Serret frame $(\mathbf{T}, \mathbf{N}, \mathbf{B})$ satisfies:
-$$\frac{d}{ds} \begin{pmatrix} \mathbf{T} \\ \mathbf{N} \\ \mathbf{B} \end{pmatrix} = \begin{pmatrix} 0 & \kappa & 0 \\ -\kappa & 0 & \tau \\ 0 & -\tau & 0 \end{pmatrix} \begin{pmatrix} \mathbf{T} \\ \mathbf{N} \\ \mathbf{B} \end{pmatrix}$$
-Torsion $\tau(s)$ measures departure from the osculating plane.
+In introductory calculus, space curves are visualized as static trails traced by a moving particle $\mathbf{r}(t) = (x(t), y(t), z(t))$. Velocity and acceleration are computed, but the geometry of the curve itself is tangled with the speed of traversal.
+
+In modern differential geometry, space curve kinematics is organized around the **geometry of moving orthonormal frames**:
+1. **The Frenet-Serret Trihedron $(\mathbf{T}, \mathbf{N}, \mathbf{B})$**: At each regular point with non-vanishing curvature, the curve carries an intrinsic, right-handed orthonormal basis: the unit **Tangent** $\mathbf{T}$, the principal **Normal** $\mathbf{N}$ (pointing along acceleration), and the **Binormal** $\mathbf{B} = \mathbf{T} \times \mathbf{N}$.
+2. **Curvature $\kappa(s)$ and Torsion $\tau(s)$**:
+   * **Curvature** $\kappa$ measures the rate at which the curve deviates from a straight tangent line.
+   * **Torsion** $\tau$ measures the rate at which the curve twists out of its local **osculating plane** ($\text{span}\{\mathbf{T}, \mathbf{N}\}$). A space curve is planar if and only if its torsion vanishes identically ($\tau \equiv 0$).
+3. **The Darboux Angular Velocity Vector**: The evolution of the entire trihedron along the curve is governed by a single instantaneous angular velocity vector $\mathbf{\omega} = \tau \mathbf{T} + \kappa \mathbf{B}$:
+   $$\frac{d \mathbf{T}}{ds} = \mathbf{\omega} \times \mathbf{T}, \quad \frac{d \mathbf{N}}{ds} = \mathbf{\omega} \times \mathbf{N}, \quad \frac{d \mathbf{B}}{ds} = \mathbf{\omega} \times \mathbf{B}$$
+4. **The Fundamental Theorem of Space Curves**: Any two smooth functions $\kappa(s) > 0$ and $\tau(s)$ uniquely synthesize a space curve in $\mathbb{R}^3$, uniquely determined up to a global rigid Euclidean isometry ($SE(3)$).
 
 ---
 
-## 2. Numerical Computation: 3D Space Curve Generator from Curvature and Torsion
+## 2. Foundational Definitions & Elementary Properties
+
+### The 3D Frenet-Serret Trihedron
+Let $\gamma: [0, L] \to \mathbb{R}^3$ be a unit-speed curve ($s$ is arc length, $\|\dot{\gamma}(s)\| = 1$) with $\ddot{\gamma}(s) \neq \mathbf{0}$.
+* The **unit tangent vector** is:
+  $$\mathbf{T}(s) = \dot{\gamma}(s)$$
+* The **curvature** is the scalar magnitude of acceleration:
+  $$\kappa(s) = \|\dot{\mathbf{T}}(s)\| = \|\ddot{\gamma}(s)\| > 0$$
+* The **principal normal vector** is the normalized acceleration:
+  $$\mathbf{N}(s) = \frac{\dot{\mathbf{T}}(s)}{\kappa(s)}$$
+* The **binormal vector** completes the right-handed orthonormal basis:
+  $$\mathbf{B}(s) = \mathbf{T}(s) \times \mathbf{N}(s)$$
+
+### Osculating, Normal, and Rectifying Planes
+At each point $\gamma(s)$, the three coordinate planes spanned by the trihedron are:
+1. **The Osculating Plane**: $\text{span}\{\mathbf{T}, \mathbf{N}\}$. Normal vector is $\mathbf{B}$. This is the plane that has highest-order contact with the curve.
+2. **The Normal Plane**: $\text{span}\{\mathbf{N}, \mathbf{B}\}$. Normal vector is $\mathbf{T}$. Orthogonal to curve velocity.
+3. **The Rectifying Plane**: $\text{span}\{\mathbf{T}, \mathbf{B}\}$. Normal vector is $\mathbf{N}$.
+
+### General Coordinate Formulas (Arbitrary Parameter $t$)
+When a curve $\gamma(t)$ is not parameterized by arc length:
+$$\mathbf{T} = \frac{\dot{\gamma}}{\|\dot{\gamma}\|}, \quad \mathbf{B} = \frac{\dot{\gamma} \times \ddot{\gamma}}{\|\dot{\gamma} \times \ddot{\gamma}\|}, \quad \mathbf{N} = \mathbf{B} \times \mathbf{T}$$
+$$\kappa(t) = \frac{\|\dot{\gamma} \times \ddot{\gamma}\|}{\|\dot{\gamma}\|^3}, \quad \tau(t) = \frac{(\dot{\gamma} \times \ddot{\gamma}) \cdot \dddot{\gamma}}{\|\dot{\gamma} \times \ddot{\gamma}\|^2} = \frac{\det(\dot{\gamma}, \ddot{\gamma}, \dddot{\gamma})}{\|\dot{\gamma} \times \ddot{\gamma}\|^2}$$
+
+---
+
+## 3. Intermediate Lemmas & Rigorous Proofs
+
+> **Lemma 13.1 (Orthonormality of the Trihedron)**: For all $s \in [0, L]$, the vectors $\{\mathbf{T}(s), \mathbf{N}(s), \mathbf{B}(s)\}$ satisfy:
+> $$\mathbf{T} \cdot \mathbf{T} = \mathbf{N} \cdot \mathbf{N} = \mathbf{B} \cdot \mathbf{B} = 1, \quad \mathbf{T} \cdot \mathbf{N} = \mathbf{N} \cdot \mathbf{B} = \mathbf{B} \cdot \mathbf{T} = 0$$
+
+*Proof*:
+1. By unit speed, $\|\mathbf{T}\|^2 = 1$. By Lemma 10.1, $\dot{\mathbf{T}} \cdot \mathbf{T} = 0$.
+2. Since $\mathbf{N} = \dot{\mathbf{T}} / \kappa$, we have $\mathbf{N} \cdot \mathbf{T} = 0$, and $\|\mathbf{N}\| = \|\dot{\mathbf{T}}\| / \kappa = 1$.
+3. By cross product properties, $\mathbf{B} = \mathbf{T} \times \mathbf{N}$ is orthogonal to both $\mathbf{T}$ and $\mathbf{N}$, with $\|\mathbf{B}\| = \|\mathbf{T}\| \|\mathbf{N}\| \sin(90^\circ) = 1$.
+Hence the trihedron forms an oriented orthonormal basis of $\mathbb{R}^3$. $\blacksquare$
+
+> **Lemma 13.2 (Derivation of Binormal Variation and Torsion)**: The derivative $\dot{\mathbf{B}}(s)$ is strictly parallel to $\mathbf{N}(s)$.
+
+*Proof*:
+1. Since $\|\mathbf{B}(s)\|^2 = 1$, Lemma 10.1 implies $\dot{\mathbf{B}} \cdot \mathbf{B} = 0$.
+2. Because $\mathbf{B} \cdot \mathbf{T} = 0$, differentiating with respect to $s$:
+   $$0 = \frac{d}{ds} (\mathbf{B} \cdot \mathbf{T}) = \dot{\mathbf{B}} \cdot \mathbf{T} + \mathbf{B} \cdot \dot{\mathbf{T}} = \dot{\mathbf{B}} \cdot \mathbf{T} + \mathbf{B} \cdot (\kappa \mathbf{N}) = \dot{\mathbf{B}} \cdot \mathbf{T} + 0 \implies \dot{\mathbf{B}} \cdot \mathbf{T} = 0$$
+3. Since $\dot{\mathbf{B}}$ is orthogonal to both $\mathbf{B}$ and $\mathbf{T}$, and $\{\mathbf{T}, \mathbf{N}, \mathbf{B}\}$ is an orthonormal basis of $\mathbb{R}^3$, $\dot{\mathbf{B}}$ must lie entirely along $\mathbf{N}$.
+We define the **torsion** $\tau(s)$ by:
+$$\dot{\mathbf{B}}(s) = -\tau(s) \mathbf{N}(s)$$
+(The negative sign is the standard Frenet convention). $\blacksquare$
+
+> **Lemma 13.3 (Planar Characterization Theorem)**: A space curve $\gamma(s)$ with $\kappa(s) > 0$ lies entirely in a single two-dimensional plane if and only if $\tau(s) \equiv 0$ everywhere.
+
+*Proof*:
+$(\implies)$ If $\gamma$ lies in a plane with unit normal vector $\mathbf{n}_0$:
+$(\gamma(s) - \gamma(0)) \cdot \mathbf{n}_0 = 0$. Differentiating gives $\dot{\gamma}(s) \cdot \mathbf{n}_0 = \mathbf{T}(s) \cdot \mathbf{n}_0 = 0$.
+Differentiating again gives $\ddot{\gamma}(s) \cdot \mathbf{n}_0 = \kappa(s) \mathbf{N}(s) \cdot \mathbf{n}_0 = 0 \implies \mathbf{N}(s) \cdot \mathbf{n}_0 = 0$.
+Since $\mathbf{n}_0$ is orthogonal to both $\mathbf{T}$ and $\mathbf{N}$, $\mathbf{B}(s) = \pm \mathbf{n}_0$ is constant.
+Thus $\dot{\mathbf{B}} = \mathbf{0} \implies \tau(s) \equiv 0$.
+$(\impliedby)$ If $\tau(s) \equiv 0$, then $\dot{\mathbf{B}}(s) = \mathbf{0}$, so $\mathbf{B}(s) = \mathbf{B}_0$ is a constant vector.
+Consider $g(s) = (\gamma(s) - \gamma(0)) \cdot \mathbf{B}_0$.
+Differentiating: $\dot{g}(s) = \mathbf{T}(s) \cdot \mathbf{B}_0 = \mathbf{T}(s) \cdot \mathbf{B}(s) = 0$.
+Since $g(0) = 0$, $g(s) \equiv 0$ for all $s$, which proves the curve lies in the plane passing through $\gamma(0)$ with normal $\mathbf{B}_0$. $\blacksquare$
+
+---
+
+## 4. Rigorous Construction & Advanced Theorems
+
+### The 3D Frenet-Serret System
+> **Theorem 13.1 (The Frenet-Serret Equations)**: Let $\gamma(s)$ be a unit-speed $C^3$ curve with $\kappa(s) > 0$. Then:
+> $$\frac{d}{ds} \begin{pmatrix} \mathbf{T} \\ \mathbf{N} \\ \mathbf{B} \end{pmatrix} = \begin{pmatrix} 0 & \kappa(s) & 0 \\ -\kappa(s) & 0 & \tau(s) \\ 0 & -\tau(s) & 0 \end{pmatrix} \begin{pmatrix} \mathbf{T} \\ \mathbf{N} \\ \mathbf{B} \end{pmatrix}$$
+
+*Proof*:
+1. By definition of $\kappa$ and $\mathbf{N}$: $\dot{\mathbf{T}} = \kappa \mathbf{N}$.
+2. By Lemma 13.2: $\dot{\mathbf{B}} = -\tau \mathbf{N}$.
+3. To compute $\dot{\mathbf{N}}$, differentiate $\mathbf{N} = \mathbf{B} \times \mathbf{T}$:
+   $$\dot{\mathbf{N}} = \dot{\mathbf{B}} \times \mathbf{T} + \mathbf{B} \times \dot{\mathbf{T}} = (-\tau \mathbf{N}) \times \mathbf{T} + \mathbf{B} \times (\kappa \mathbf{N}) = -\tau (\mathbf{N} \times \mathbf{T}) + \kappa (\mathbf{B} \times \mathbf{N})$$
+   Using standard cross product identities $\mathbf{N} \times \mathbf{T} = -\mathbf{B}$ and $\mathbf{B} \times \mathbf{N} = -\mathbf{T}$:
+   $$\dot{\mathbf{N}} = -\tau(-\mathbf{B}) + \kappa(-\mathbf{T}) = -\kappa \mathbf{T} + \tau \mathbf{B}$$
+Writing this in matrix form yields the skew-symmetric Frenet-Serret matrix. The skew-symmetry confirms that the trihedron undergoes an instantaneous rotation in the Lie algebra $\mathfrak{so}(3)$. $\blacksquare$
+
+### The Fundamental Theorem of Space Curves
+> **Theorem 13.2 (Fundamental Theorem of Space Curves)**: Let $\kappa, \tau: [0, L] \to \mathbb{R}$ be continuous functions with $\kappa(s) > 0$ for all $s \in [0, L]$.
+> 1. (**Existence**): There exists a unit-speed $C^3$ space curve $\gamma: [0, L] \to \mathbb{R}^3$ having curvature $\kappa(s)$ and torsion $\tau(s)$.
+> 2. (**Uniqueness**): Any other such curve $\tilde{\gamma}(s)$ differs from $\gamma(s)$ by a rigid Euclidean transformation in $SE(3)$: $\tilde{\gamma}(s) = R \gamma(s) + \mathbf{x}_0$, where $R \in SO(3)$ and $\mathbf{x}_0 \in \mathbb{R}^3$.
+
+*Proof*:
+1. The Frenet-Serret system $\dot{\Phi}(s) = \Omega(s) \Phi(s)$ is a linear system of ODEs for the $3 \times 3$ matrix $\Phi = [\mathbf{T}, \mathbf{N}, \mathbf{B}]^T$, where $\Omega(s) \in \mathfrak{so}(3)$ is skew-symmetric.
+   By the Picard-Lindelöf Theorem (Theorem 9.1), given initial orthogonal conditions $\Phi(0) = I \in SO(3)$, there exists a unique solution $\Phi(s)$ on $[0, L]$.
+   Because $\Omega(s)$ is skew-symmetric:
+   $$\frac{d}{ds} (\Phi \Phi^T) = \dot{\Phi} \Phi^T + \Phi \dot{\Phi}^T = \Omega \Phi \Phi^T + \Phi \Phi^T \Omega^T = \Omega + \Omega^T = \mathbf{0}$$
+   Thus $\Phi(s)$ remains orthogonal for all $s$ ($\Phi(s) \in SO(3)$).
+2. Integrate the first row $\mathbf{T}(s)$ to obtain the curve:
+   $$\gamma(s) = \int_0^s \mathbf{T}(u) du$$
+   By construction, $\|\dot{\gamma}(s)\| = \|\mathbf{T}(s)\| = 1$, and its curvature and torsion match $\kappa$ and $\tau$.
+3. Uniqueness follows by rotating and translating $\tilde{\gamma}$ so that its initial frame matches $\Phi(0)$, after which the uniqueness of solutions to linear ODEs forces $\tilde{\Phi}(s) \equiv \Phi(s)$, hence $\tilde{\gamma}(s) \equiv \gamma(s)$. $\blacksquare$
+
+---
+
+## 5. Concrete Worked Examples & Step-by-Step Calculations
+
+### Worked Example 13.1: Full Frenet-Serret Apparatus for a Circular Helix
+Consider the circular helix:
+$$\gamma(t) = (a \cos t, \, a \sin t, \, c t), \quad a > 0, \ c > 0$$
+
+1. **Velocity and Acceleration**:
+   $$\dot{\gamma}(t) = (-a \sin t, \, a \cos t, \, c)$$
+   $$\ddot{\gamma}(t) = (-a \cos t, \, -a \sin t, \, 0)$$
+   $$\dddot{\gamma}(t) = (a \sin t, \, -a \cos t, \, 0)$$
+
+2. **Speed Calculation**:
+   $$v = \|\dot{\gamma}(t)\| = \sqrt{(-a \sin t)^2 + (a \cos t)^2 + c^2} = \sqrt{a^2 + c^2}$$
+
+3. **Cross Product $\dot{\gamma} \times \ddot{\gamma}$**:
+   $$\dot{\gamma} \times \ddot{\gamma} = \begin{vmatrix} \mathbf{i} & \mathbf{j} & \mathbf{k} \\ -a \sin t & a \cos t & c \\ -a \cos t & -a \sin t & 0 \end{vmatrix} = \mathbf{i}(0 - (-a c \sin t)) - \mathbf{j}(0 - (-a c \cos t)) + \mathbf{k}(a^2 \sin^2 t + a^2 \cos^2 t)$$
+   $$\dot{\gamma} \times \ddot{\gamma} = (a c \sin t, \, -a c \cos t, \, a^2)$$
+   Norm:
+   $$\|\dot{\gamma} \times \ddot{\gamma}\| = \sqrt{a^2 c^2 \sin^2 t + a^2 c^2 \cos^2 t + a^4} = \sqrt{a^2 c^2 + a^4} = a \sqrt{a^2 + c^2}$$
+
+4. **Curvature $\kappa$**:
+   $$\kappa(t) = \frac{\|\dot{\gamma} \times \ddot{\gamma}\|}{\|\dot{\gamma}\|^3} = \frac{a \sqrt{a^2 + c^2}}{(a^2 + c^2)^{3/2}} = \frac{a}{a^2 + c^2}$$
+
+5. **Scalar Triple Product & Torsion $\tau$**:
+   $$(\dot{\gamma} \times \ddot{\gamma}) \cdot \dddot{\gamma} = (a c \sin t)(a \sin t) + (-a c \cos t)(-a \cos t) + (a^2)(0) = a^2 c \sin^2 t + a^2 c \cos^2 t = a^2 c$$
+   $$\tau(t) = \frac{(\dot{\gamma} \times \ddot{\gamma}) \cdot \dddot{\gamma}}{\|\dot{\gamma} \times \ddot{\gamma}\|^2} = \frac{a^2 c}{(a \sqrt{a^2 + c^2})^2} = \frac{a^2 c}{a^2(a^2 + c^2)} = \frac{c}{a^2 + c^2}$$
+
+6. **Unit Trihedron Vectors**:
+   * Tangent: $\mathbf{T} = \frac{1}{\sqrt{a^2 + c^2}} (-a \sin t, \, a \cos t, \, c)$.
+   * Binormal: $\mathbf{B} = \frac{1}{\sqrt{a^2 + c^2}} (c \sin t, \, -c \cos t, \, a)$.
+   * Normal: $\mathbf{N} = \mathbf{B} \times \mathbf{T} = (-\cos t, \, -\sin t, \, 0)$.
+   Both $\kappa$ and $\tau$ are **strictly constant**, which characterizes the circular helix as the 3D analog of a circle!
+   Numerical evaluation for $a = 2.0, c = 1.0$:
+   $$\kappa = \frac{2}{2^2 + 1^2} = \frac{2}{5} = 0.4, \quad \tau = \frac{1}{2^2 + 1^2} = \frac{1}{5} = 0.2$$
+
+### Worked Example 13.2: The Twisted Cubic
+Consider the polynomial space curve $\gamma(t) = (t, t^2, t^3)$ evaluated at $t = 0$.
+* $\dot{\gamma}(0) = (1, 0, 0)$, speed $v = 1$.
+* $\ddot{\gamma}(0) = (0, 2, 0)$.
+* $\dddot{\gamma}(0) = (0, 0, 6)$.
+* $\dot{\gamma} \times \ddot{\gamma} = (0, 0, 2)$, norm $= 2$.
+* $\kappa(0) = \frac{2}{1^3} = 2$.
+* $(\dot{\gamma} \times \ddot{\gamma}) \cdot \dddot{\gamma} = (0, 0, 2) \cdot (0, 0, 6) = 12$.
+* $\tau(0) = \frac{12}{2^2} = \frac{12}{4} = 3$.
+At the origin, the twisted cubic has curvature $\kappa = 2$ and torsion $\tau = 3$.
+
+---
+
+## 6. Multi-Disciplinary Applications
+
+* **Aerospace & Flight Mechanics**: An aircraft body carries an adapted frame (roll, pitch, yaw). Centripetal acceleration along an acrobatic flight path depends on path curvature $\kappa$, while the rate of roll of the aircraft wings aligns with torsion $\tau$.
+* **Biophysics & DNA Topology**: The **Călugăreanu-White-Fuller Theorem** links space curve torsion to DNA supercoiling:
+  $$\text{Lk} = \text{Tw} + \text{Wr}$$
+  The Linking Number ($\text{Lk}$) equals the Twist ($\text{Tw}$, integrated torsion and internal twist) plus the Writhe ($\text{Wr}$, non-local self-coiling of the central axis).
+* **Robotics & End-Effector Control**: In 6-DOF robotic welding and CNC milling, tool orientation is commanded using the Frenet trihedron or rotation-minimizing Bishop frames to avoid gimbal lock.
+
+---
+
+## 7. Numerical Computation: 3D Space Curve Generator from Curvature and Torsion
+
+Below are complete implementations of **Integrating the 3D Frenet-Serret System** across six scientific environments:
 
 ::: {.panel-tabset group="language"}
 ## Python 3
 ```python
 import numpy as np
 
-def integrate_helix(k: float = 0.5, tau: float = 0.2, s_max: float = 10.0, n: int = 500):
+def integrate_frenet(k: float = 0.4, tau: float = 0.2, s_max: float = 10.0, n: int = 1000):
     ds = s_max / n
-    T = np.array([1.0, 0.0, 0.0]); N = np.array([0.0, 1.0, 0.0]); B = np.array([0.0, 0.0, 1.0])
+    T = np.array([1.0, 0.0, 0.0])
+    N = np.array([0.0, 1.0, 0.0])
+    B = np.array([0.0, 0.0, 1.0])
     r = np.array([0.0, 0.0, 0.0])
+
     for _ in range(n):
-        dT = k * N; dN = -k * T + tau * B; dB = -tau * N
-        T += dT * ds; N += dN * ds; B += dB * ds
+        dT = k * N
+        dN = -k * T + tau * B
+        dB = -tau * N
+
+        T += dT * ds
+        N += dN * ds
+        B += dB * ds
+
+        # Gram-Schmidt re-orthonormalization
         T /= np.linalg.norm(T)
+        N -= np.dot(N, T) * T
+        N /= np.linalg.norm(N)
+        B = np.cross(T, N)
+
         r += T * ds
+
     return r
 
-r_final = integrate_helix()
-print(f"Python 3: Final Position = ({r_final[0]:.3f}, {r_final[1]:.3f}, {r_final[2]:.3f})")
+r_final = integrate_frenet()
+print(f"Python 3: Final integrated position r(10.0) = ({r_final[0]:.4f}, {r_final[1]:.4f}, {r_final[2]:.4f})")
 ```
 
 ## C++20
@@ -45,74 +223,113 @@ print(f"Python 3: Final Position = ({r_final[0]:.3f}, {r_final[1]:.3f}, {r_final
 #include <iostream>
 #include <cmath>
 #include <array>
+#include <iomanip>
 
 int main() {
-    int n = 500;
-    double s_max = 10.0, ds = s_max / n;
-    double k = 0.5, tau = 0.2;
+    const int n = 1000;
+    const double s_max = 10.0, ds = s_max / n;
+    const double k = 0.4, tau = 0.2;
+
     std::array<double, 3> T{1, 0, 0}, N{0, 1, 0}, B{0, 0, 1}, r{0, 0, 0};
 
     for (int i = 0; i < n; ++i) {
-        std::array<double, 3> dT{k*N[0], k*N[1], k*N[2]};
-        std::array<double, 3> dN{-k*T[0] + tau*B[0], -k*T[1] + tau*B[1], -k*T[2] + tau*B[2]};
-        std::array<double, 3> dB{-tau*N[0], -tau*N[1], -tau*N[2]};
+        std::array<double, 3> dT{k * N[0], k * N[1], k * N[2]};
+        std::array<double, 3> dN{-k * T[0] + tau * B[0], -k * T[1] + tau * B[1], -k * T[2] + tau * B[2]};
+        std::array<double, 3> dB{-tau * N[0], -tau * N[1], -tau * N[2]};
 
-        for(int j=0; j<3; ++j) {
-            T[j] += dT[j]*ds; N[j] += dN[j]*ds; B[j] += dB[j]*ds;
-            r[j] += T[j]*ds;
+        for (int j = 0; j < 3; ++j) {
+            T[j] += dT[j] * ds;
+            N[j] += dN[j] * ds;
+            B[j] += dB[j] * ds;
         }
+
+        // Normalize T
+        double normT = std::sqrt(T[0]*T[0] + T[1]*T[1] + T[2]*T[2]);
+        for(int j=0; j<3; ++j) T[j] /= normT;
+
+        r[0] += T[0] * ds;
+        r[1] += T[1] * ds;
+        r[2] += T[2] * ds;
     }
-    std::cout << "C++20:    Final Pos = (" << r[0] << ", " << r[1] << ", " << r[2] << ")\n";
+
+    std::cout << std::fixed << std::setprecision(4);
+    std::cout << "C++20:    Final Position = (" << r[0] << ", " << r[1] << ", " << r[2] << ")\n";
     return 0;
 }
 ```
 
 ## Julia
 ```julia
-n = 500; ds = 10.0 / n; k = 0.5; tau = 0.2
-T = [1.0, 0.0, 0.0]; N = [0.0, 1.0, 0.0]; B = [0.0, 0.0, 1.0]
-r = [0.0, 0.0, 0.0]
+using LinearAlgebra
 
-for _ in 1:n
-    dT = k .* N; dN = -k .* T .+ tau .* B; dB = -tau .* N
-    global T += dT .* ds; global N += dN .* ds; global B += dB .* ds
-    global r += T .* ds
+function integrate_frenet(k = 0.4, tau = 0.2, s_max = 10.0, n = 1000)
+    ds = s_max / n
+    T = [1.0, 0.0, 0.0]
+    N = [0.0, 1.0, 0.0]
+    B = [0.0, 0.0, 1.0]
+    r = [0.0, 0.0, 0.0]
+
+    for _ in 1:n
+        dT = k * N
+        dN = -k * T + tau * B
+        dB = -tau * N
+
+        T += dT * ds
+        N += dN * ds
+        B += dB * ds
+
+        T = normalize(T)
+        N = normalize(N - dot(N, T) * T)
+        B = cross(T, N)
+
+        r += T * ds
+    end
+    return r
 end
-println("Julia:    Final Pos = $(round.(r, digits=3))")
+
+r_end = integrate_frenet()
+println("Julia:    Final Position = $(round.(r_end, digits=4))")
 ```
 
 ## Modern Fortran
 ```fortran
-program space_curve
+program frenet_space_curve
   implicit none
-  integer, parameter :: n = 500
+  integer, parameter :: n = 1000
+  real(8), parameter :: s_max = 10.0d0, k = 0.4d0, tau = 0.2d0
+  real(8) :: ds, normT
+  real(8), dimension(3) :: T, N, B, r, dT, dN, dB
   integer :: i
-  real(8) :: ds, k, tau
-  real(8) :: T(3), N(3), B(3), r(3), dT(3), dN(3), dB(3)
 
-  ds = 10.0d0 / n; k = 0.5d0; tau = 0.2d0
-  T = [1.0d0, 0.0d0, 0.0d0]
-  N = [0.0d0, 1.0d0, 0.0d0]
-  B = [0.0d0, 0.0d0, 1.0d0]
-  r = 0.0d0
+  ds = s_max / dble(n)
+  T = (/ 1.0d0, 0.0d0, 0.0d0 /)
+  N = (/ 0.0d0, 1.0d0, 0.0d0 /)
+  B = (/ 0.0d0, 0.0d0, 1.0d0 /)
+  r = (/ 0.0d0, 0.0d0, 0.0d0 /)
 
   do i = 1, n
-    dT = k * N
-    dN = -k * T + tau * B
-    dB = -tau * N
-    T = T + dT * ds
-    N = N + dN * ds
-    B = B + dB * ds
-    r = r + T * ds
+     dT = k * N
+     dN = -k * T + tau * B
+     dB = -tau * N
+
+     T = T + dT * ds
+     N = N + dN * ds
+     B = B + dB * ds
+
+     normT = sqrt(sum(T**2))
+     T = T / normT
+     r = r + T * ds
   end do
 
-  print '(A,3F7.3)', "Fortran:  Final Pos = ", r
-end program space_curve
+  print '(A,F8.4,A,F8.4,A,F8.4,A)', "Fortran:  r = (", r(1), ", ", r(2), ", ", r(3), ")"
+end program frenet_space_curve
 ```
 
 ## MATLAB / Octave
 ```matlab
-n = 500; ds = 10 / n; k = 0.5; tau = 0.2;
+% Frenet-Serret space curve integrator
+k = 0.4; tau = 0.2; s_max = 10.0; n = 1000;
+ds = s_max / n;
 T = [1; 0; 0]; N = [0; 1; 0]; B = [0; 0; 1];
 r = [0; 0; 0];
 
@@ -123,36 +340,41 @@ for i = 1:n
     T = T + dT * ds;
     N = N + dN * ds;
     B = B + dB * ds;
+    T = T / norm(T);
     r = r + T * ds;
 end
-fprintf('MATLAB:   Final Pos = (%.3f, %.3f, %.3f)\n', r(1), r(2), r(3));
+
+fprintf('MATLAB:   r(10.0) = (%.4f, %.4f, %.4f)\n', r(1), r(2), r(3));
 ```
+
 ## Lean 4
 ```lean
--- Lean 4: 3D Frenet-Serret Moving Orthonormal Frame
-import Mathlib.Data.Real.Basic
+-- Lean 4: Skew-Symmetric Lie Algebra Generator for Frenet-Serret System
+import Mathlib.Data.Matrix.Basic
+import Mathlib.LinearAlgebra.Matrix.Trace
 
-structure Frame3D where
-  T : ℝ × ℝ × ℝ
-  N : ℝ × ℝ × ℝ
-  B : ℝ × ℝ × ℝ
+-- The 3x3 Frenet-Serret matrix operator in so(3)
+def FrenetMatrix (κ τ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
+  ![![0,  κ,  0],
+    ![-κ, 0,  τ],
+    ![0, -τ,  0]]
 
--- The Frenet-Serret Lie algebra so(3) infinitesimal rotation
-def Frenet3DDeriv (κ τ : ℝ) (f : Frame3D) : Frame3D :=
-  -- dT/ds = κ N, dN/ds = -κ T + τ B, dB/ds = -τ N
-  sorry
+-- Theorem: The trace of the Frenet matrix is identically zero
+theorem frenet_matrix_trace_zero (κ τ : ℝ) :
+    Matrix.trace (FrenetMatrix κ τ) = 0 := by
+  dsimp [Matrix.trace, FrenetMatrix]
+  ring
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 8. Curated Primary Literature & Canonical Syllabi
 
-* **Manfredo P. Do Carmo**, *Differential Geometry of Curves and Surfaces*, Prentice-Hall (1976), Ch 1.5–1.7.
-* **Tom M. Apostol**, *Calculus, Vol. 2*, Wiley (1969), Ch 4.
-* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015), Chapter 13.
-
+* **Manfredo P. do Carmo**, *Differential Geometry of Curves and Surfaces*, 2nd Edition, Prentice-Hall (2016). Chapter 1 (Curves) contains the rigorous proof of the Fundamental Theorem of Space Curves.
+* **Wolfgang Kühnel**, *Differential Geometry: Curves - Surfaces - Manifolds*, 3rd Edition, AMS (2015).
+* **Michael Spivak**, *A Comprehensive Introduction to Differential Geometry, Vol. 2*, Publish or Perish (1999).
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Chapter 13 (Vector Functions: Velocity, Acceleration, and Curvature).
 <br>
 <br>
 

@@ -1,41 +1,184 @@
 ---
-title: "Local Differential Geometry: Planar Curves, Curvature Invariants, and Frenet-Serret Frames"
-subtitle: "Regular parameterized curves, arc length reparametrization, signed curvature, and planar Frenet-Serret frames."
+title: "Planar Curves and Differential Invariants: Curvature, Osculating Circles, and the Frenet-Serret Apparatus"
+subtitle: "Moving orthonormal frames, intrinsic invariants, evolutes, the fundamental theorem of planar curves, and clothoid spirals."
 author: "Igor Kan"
 date: "2026-09-12"
-categories: ["Mathematics", "Differential Geometry", "Physics", "Computer Graphics", "Robotics"]
+categories: ["Mathematics", "Differential Geometry", "Analysis", "Robotics", "Physics"]
 format:
   html:
     toc: true
     math: true
 ---
 
-## 1. The Conceptual Shift: The Moving Frame (Repère Mobile)
+## 1. The Conceptual Shift: Intrinsic vs. Extrinsic Geometry
 
-Planar curves are governed by the moving Frenet-Serret orthonormal frame $(\mathbf{T}, \mathbf{N})$:
-$$\begin{pmatrix} \mathbf{T}' \\ \mathbf{N}' \end{pmatrix} = \begin{pmatrix} 0 & \kappa \\ -\kappa & 0 \end{pmatrix} \begin{pmatrix} \mathbf{T} \\ \mathbf{N} \end{pmatrix}$$
-By the Fundamental Theorem of Planar Curves, any regular curve is uniquely determined up to rigid Euclidean motion by its curvature invariant $\kappa(s)$.
+In introductory multivariable calculus, planar curves are treated extrinsically as Cartesian graphs $y = f(x)$ or coordinate pairs $(x(t), y(t))$. Curvature is introduced via the formidable algebraic formula $\kappa = \frac{|y''|}{(1 + (y')^2)^{3/2}}$, memorized for exams and applied mechanically.
+
+In modern differential geometry, planar curve theory represents the gateway to intrinsic Riemannian geometry:
+1. **The Intrinsic Geometric Invariant**: Curvature $\kappa(s)$ is not an arbitrary formula; it is the **rate of turning of the unit tangent vector** with respect to intrinsic arc length $s$:
+   $$\frac{d T}{d s} = \kappa(s) N(s)$$
+2. **Moving Orthonormal Frames (Darboux / Cartan)**: Geometry is analyzed through moving adapted bases—the **Frenet-Serret frame** $(T, N)$—transforming curve kinematics into Lie algebra actions in $\mathfrak{so}(2)$.
+3. **The Fundamental Theorem of Planar Curves**: Extrinsic shape is completely encoded by intrinsic curvature: any two planar curves with the exact same continuous curvature function $\kappa(s)$ are identical up to a rigid Euclidean transformation (rotation and translation).
+4. **Osculating Geometry & Contact Theory**: The osculating circle is the unique circle having second-order contact with the curve, with radius $R = 1/|\kappa|$ and center tracing the **evolute**.
 
 ---
 
-## 2. Numerical Computation: Curve Reconstruction from Curvature
+## 2. Foundational Definitions & Elementary Properties
+
+### Regular Parameterized Curves and Moving Frames
+Let $\gamma: [a, b] \to \mathbb{R}^2$ be a $C^2$ regular planar curve ($\|\dot{\gamma}(t)\| > 0$).
+* The **unit tangent vector** is:
+  $$T(t) = \frac{\dot{\gamma}(t)}{\|\dot{\gamma}(t)\|}$$
+* The **unit normal vector** $N(t)$ is chosen so that $(T(t), N(t))$ forms an oriented right-handed orthonormal basis of $\mathbb{R}^2$:
+  $$N(t) = J T(t) = \begin{pmatrix} 0 & -1 \\ 1 & 0 \end{pmatrix} T(t)$$
+  If $T = (T_1, T_2)^T$, then $N = (-T_2, T_1)^T$.
+* The **signed curvature** $\kappa(t)$ is defined by the projection of $\dot{T}(t)$ onto $N(t)$:
+  $$\dot{T}(t) = \|\dot{\gamma}(t)\| \kappa(t) N(t) \implies \kappa(t) = \frac{\dot{T}(t) \cdot N(t)}{\|\dot{\gamma}(t)\|}$$
+* In terms of coordinates $\gamma(t) = (x(t), y(t))$:
+  $$\kappa(t) = \frac{\dot{x}(t) \ddot{y}(t) - \dot{y}(t) \ddot{x}(t)}{\left( \dot{x}(t)^2 + \dot{y}(t)^2 \right)^{3/2}}$$
+
+### Osculating Circle and Evolute
+At any point where $\kappa(t) \neq 0$:
+* The **radius of curvature** is $R(t) = \frac{1}{|\kappa(t)|}$.
+* The **center of curvature** is:
+  $$C(t) = \gamma(t) + \frac{1}{\kappa(t)} N(t)$$
+* The **evolute** of $\gamma$ is the locus of all its centers of curvature as $t$ varies.
+
+---
+
+## 3. Intermediate Lemmas & Rigorous Proofs
+
+> **Lemma 10.1 (Derivative of Constant-Norm Vector Fields)**: Let $v: I \to \mathbb{R}^n$ be a differentiable vector field of constant length ($\|v(t)\|^2 = c$). Then:
+> $$\dot{v}(t) \cdot v(t) = 0, \quad \forall t \in I$$
+> That is, the derivative of a constant-length vector is always strictly orthogonal to the vector itself.
+
+*Proof*:
+Since $\|v(t)\|^2 = v(t) \cdot v(t) = c$, differentiate both sides with respect to $t$:
+$$\frac{d}{dt} (v(t) \cdot v(t)) = \dot{v}(t) \cdot v(t) + v(t) \cdot \dot{v}(t) = 2 (\dot{v}(t) \cdot v(t)) = 0$$
+Dividing by 2 yields $\dot{v}(t) \cdot v(t) = 0$. $\blacksquare$
+
+> **Lemma 10.2 (The Planar Frenet-Serret System)**: Let $\gamma(s)$ be parameterized by arc length $s$. Then:
+> $$\frac{d T}{d s} = \kappa(s) N(s), \quad \frac{d N}{d s} = -\kappa(s) T(s)$$
+> In matrix notation:
+> $$\frac{d}{ds} \begin{pmatrix} T(s) \\ N(s) \end{pmatrix} = \begin{pmatrix} 0 & \kappa(s) \\ -\kappa(s) & 0 \end{pmatrix} \begin{pmatrix} T(s) \\ N(s) \end{pmatrix}$$
+
+*Proof*:
+1. By definition of unit speed, $\|T(s)\|^2 = 1$. By Lemma 10.1, $\frac{dT}{ds}$ is orthogonal to $T(s)$.
+   Since $(T, N)$ forms an orthonormal basis of $\mathbb{R}^2$, any vector orthogonal to $T$ must be proportional to $N$.
+   By definition of signed curvature, $\frac{dT}{ds} = \kappa(s) N(s)$.
+2. Similarly, $\|N(s)\|^2 = 1 \implies \frac{dN}{ds}$ is orthogonal to $N(s)$, so $\frac{dN}{ds} = \lambda(s) T(s)$ for some scalar $\lambda(s)$.
+3. Because $T(s)$ and $N(s)$ remain orthogonal for all $s$:
+   $$0 = \frac{d}{ds} (T(s) \cdot N(s)) = \frac{dT}{ds} \cdot N + T \cdot \frac{dN}{ds} = (\kappa N) \cdot N + T \cdot (\lambda T) = \kappa + \lambda$$
+   Therefore, $\lambda(s) = -\kappa(s)$, which proves $\frac{dN}{ds} = -\kappa(s) T(s)$. $\blacksquare$
+
+---
+
+## 4. Rigorous Construction & Advanced Theorems
+
+### The Fundamental Theorem of Planar Curve Theory
+> **Theorem 10.1 (Fundamental Theorem of Planar Curves)**: Let $\kappa: [0, L] \to \mathbb{R}$ be any continuous function.
+> 1. (**Existence**): There exists a unit-speed $C^2$ planar curve $\gamma: [0, L] \to \mathbb{R}^2$ whose signed curvature is $\kappa(s)$.
+> 2. (**Uniqueness**): If $\tilde{\gamma}: [0, L] \to \mathbb{R}^2$ is another unit-speed curve with the same curvature $\kappa(s)$, then there exists a direct Euclidean isometry $M(x) = R x + b$ (where $R \in SO(2)$ and $b \in \mathbb{R}^2$) such that $\tilde{\gamma}(s) = M(\gamma(s))$ for all $s \in [0, L]$.
+
+*Proof*:
+1. **Existence**: Define the turning angle function:
+   $$\theta(s) = \theta_0 + \int_0^s \kappa(u) du$$
+   Define the unit tangent vector $T(s) = (\cos \theta(s), \sin \theta(s))^T$.
+   Differentiating:
+   $$\frac{dT}{ds} = (-\sin \theta(s) \cdot \dot{\theta}(s), \cos \theta(s) \cdot \dot{\theta}(s))^T = \kappa(s) (-\sin \theta(s), \cos \theta(s))^T = \kappa(s) N(s)$$
+   Now integrate $T(s)$ to obtain the curve $\gamma$:
+   $$\gamma(s) = \gamma_0 + \int_0^s T(u) du = \begin{pmatrix} x_0 + \int_0^s \cos \theta(u) du \\ y_0 + \int_0^s \sin \theta(u) du \end{pmatrix}$$
+   By construction, $\|\dot{\gamma}(s)\| = \|T(s)\| = 1$, and its curvature is $\kappa(s)$.
+2. **Uniqueness**: Let $\gamma$ and $\tilde{\gamma}$ have Frenet frames $(T, N)$ and $(\tilde{T}, \tilde{N})$.
+   Apply a rigid rotation $R \in SO(2)$ to $\tilde{\gamma}$ so that $\tilde{T}(0) = T(0)$ and $\tilde{N}(0) = N(0)$.
+   Consider the scalar quantity $f(s) = T(s) \cdot \tilde{T}(s) + N(s) \cdot \tilde{N}(s)$.
+   At $s = 0$: $f(0) = 1 + 1 = 2$.
+   Differentiating using the Frenet-Serret equations:
+   $$\frac{df}{ds} = \left( \frac{dT}{ds} \cdot \tilde{T} + T \cdot \frac{d\tilde{T}}{ds} \right) + \left( \frac{dN}{ds} \cdot \tilde{N} + N \cdot \frac{d\tilde{N}}{ds} \right) = (\kappa N \cdot \tilde{T} + \kappa T \cdot \tilde{N}) + (-\kappa T \cdot \tilde{N} - \kappa N \cdot \tilde{T}) = 0$$
+   Therefore, $f(s) \equiv 2$ for all $s$.
+   Because vectors have unit length, $T(s) \cdot \tilde{T}(s) + N(s) \cdot \tilde{N}(s) = 2 \iff T(s) = \tilde{T}(s)$ for all $s$.
+   Integrating $T = \tilde{T}$ proves $\gamma(s) = \tilde{\gamma}(s) + b$. $\blacksquare$
+
+### The Euler Spiral (Clothoid)
+When curvature varies linearly with arc length ($\kappa(s) = 2 c^2 s$), the curve is the **Euler spiral** (or **clothoid**).
+The turning angle is quadratic: $\theta(s) = c^2 s^2$.
+The coordinates are given by the **Fresnel integrals**:
+$$x(s) = \int_0^s \cos(c^2 u^2) du, \quad y(s) = \int_0^s \sin(c^2 u^2) du$$
+Because $\kappa(0) = 0$ and grows linearly, clothoids allow vehicles to transition smoothly from straight paths to circular arcs without discontinuous jumps in centrifugal force ($F_{\text{cent}} = m v^2 \kappa$).
+
+---
+
+## 5. Concrete Worked Examples & Step-by-Step Calculations
+
+### Worked Example 10.1: Curvature and Osculating Circle of an Ellipse
+Consider the standard ellipse parameterized by:
+$$\gamma(t) = (a \cos t, \, b \sin t), \quad a \ge b > 0, \quad t \in [0, 2\pi)$$
+
+1. **Velocity and Acceleration**:
+   $$\dot{\gamma}(t) = (-a \sin t, \, b \cos t), \quad \ddot{\gamma}(t) = (-a \cos t, \, -b \sin t)$$
+
+2. **Numerator of Curvature Formula**:
+   $$\dot{x}\ddot{y} - \dot{y}\ddot{x} = (-a \sin t)(-b \sin t) - (b \cos t)(-a \cos t) = a b \sin^2 t + a b \cos^2 t = a b$$
+
+3. **Denominator (Speed Cubed)**:
+   $$\|\dot{\gamma}(t)\| = \sqrt{a^2 \sin^2 t + b^2 \cos^2 t} \implies \|\dot{\gamma}(t)\|^3 = (a^2 \sin^2 t + b^2 \cos^2 t)^{3/2}$$
+
+4. **Curvature Formula**:
+   $$\kappa(t) = \frac{a b}{(a^2 \sin^2 t + b^2 \cos^2 t)^{3/2}}$$
+
+5. **Extrema of Curvature**:
+   * At the major vertices ($t = 0, \pi$): $\gamma(0) = (a, 0)$.
+     $$\kappa(0) = \frac{a b}{(b^2)^{3/2}} = \frac{a b}{b^3} = \frac{a}{b^2}$$
+     The radius of curvature is $R_{\min} = \frac{b^2}{a}$.
+     Center of curvature: $C(0) = (a, 0) + \frac{b^2}{a}(-1, 0) = \left( a - \frac{b^2}{a}, 0 \right) = \left( \frac{a^2 - b^2}{a}, 0 \right)$.
+   * At the minor vertices ($t = \pi/2, 3\pi/2$): $\gamma(\pi/2) = (0, b)$.
+     $$\kappa(\pi/2) = \frac{a b}{(a^2)^{3/2}} = \frac{a b}{a^3} = \frac{b}{a^2}$$
+     The radius of curvature is $R_{\max} = \frac{a^2}{b}$.
+     Center of curvature: $C(\pi/2) = \left( 0, -\frac{a^2 - b^2}{b} \right)$.
+
+6. **Numerical Calculation**:
+   For semi-major axis $a = 3.0$ and semi-minor axis $b = 2.0$:
+   * At $(3, 0)$: $\kappa = \frac{3}{4} = 0.75$, $R = \frac{4}{3} \approx 1.333$, Center = $\left(\frac{9 - 4}{3}, 0\right) = (1.667, 0)$.
+   * At $(0, 2)$: $\kappa = \frac{2}{9} \approx 0.222$, $R = \frac{9}{2} = 4.5$, Center = $\left(0, -\frac{9 - 4}{2}\right) = (0, -2.5)$.
+
+---
+
+## 6. Multi-Disciplinary Applications
+
+* **Civil Engineering & Transportation**: Highway ramps, railway curves, and rollercoasters connect straight segments ($\kappa = 0$) to circular arcs ($\kappa = 1/R$) exclusively using clothoids (Euler spirals). If a circular arc met a straight track directly, the sudden discontinuity in curvature would produce infinite jerk ($\dot{a} = v^3 \dot{\kappa} = \infty$), causing rail derailment and vehicle skidding.
+* **Autonomous Driving & Mobile Robotics**: Car-like steering geometry (Ackermann steering) controls the front wheel angle $\phi$, which directly sets the trajectory curvature: $\kappa = \frac{\tan \phi}{L}$, where $L$ is the wheelbase. Motion planners generate curvature-continuous ($G^2$-continuous) splines to guarantee achievable steering rates $\dot{\phi}$.
+* **Computer Vision**: Curve evolution under curvature flow ($\dot{\gamma} = \kappa N$) represents the Euclidean curve shortening flow, widely used in active contour models (snakes) for image segmentation and boundary extraction.
+
+---
+
+## 7. Numerical Computation: Frenet-Serret Curvature & Evolute Generator
+
+Below are complete implementations of **Planar Curvature and Evolute Center Computation** (for the ellipse in Worked Example 10.1) across six scientific computing environments:
 
 ::: {.panel-tabset group="language"}
 ## Python 3
 ```python
 import numpy as np
 
-def reconstruct_curve_2d(kappa_fn, s_max: float = 3.0, n: int = 1000):
-    s = np.linspace(0.0, s_max, n)
-    ds = s[1] - s[0]
-    theta = np.cumsum([kappa_fn(si) for si in s]) * ds
-    x = np.cumsum(np.cos(theta)) * ds
-    y = np.cumsum(np.sin(theta)) * ds
-    return x[-1], y[-1]
+def ellipse_curvature(a: float, b: float, t: float):
+    # Position
+    gamma = np.array([a * np.cos(t), b * np.sin(t)])
+    # Velocity and Acceleration
+    vel = np.array([-a * np.sin(t), b * np.cos(t)])
+    acc = np.array([-a * np.cos(t), -b * np.sin(t)])
 
-# Euler spiral / clothoid: kappa(s) = 2*s
-xf, yf = reconstruct_curve_2d(lambda s: 2.0 * s, 3.0)
-print(f"Python 3: Clothoid End at s=3.0: x = {xf:.4f}, y = {yf:.4f}")
+    speed = np.linalg.norm(vel)
+    T = vel / speed
+    N = np.array([-T[1], T[0]])
+
+    kappa = (vel[0] * acc[1] - vel[1] * acc[0]) / (speed**3)
+    radius = 1.0 / abs(kappa)
+    center = gamma + (1.0 / kappa) * N
+
+    return kappa, radius, center
+
+k, R, C = ellipse_curvature(3.0, 2.0, 0.0)
+print(f"Python 3: Vertex (3,0) -> Curvature = {k:.4f}, Radius = {R:.4f}, Center = ({C[0]:.4f}, {C[1]:.4f})")
 ```
 
 ## C++20
@@ -45,92 +188,127 @@ print(f"Python 3: Clothoid End at s=3.0: x = {xf:.4f}, y = {yf:.4f}")
 #include <iomanip>
 
 int main() {
-    int n = 1000;
-    double s_max = 3.0, ds = s_max / n;
-    double theta = 0.0, x = 0.0, y = 0.0;
+    double a = 3.0, b = 2.0;
+    double t = 0.0; // Major vertex
 
-    for (int i = 0; i < n; ++i) {
-        double s = i * ds;
-        double kappa = 2.0 * s;
-        theta += kappa * ds;
-        x += std::cos(theta) * ds;
-        y += std::sin(theta) * ds;
-    }
+    double x = a * std::cos(t), y = b * std::sin(t);
+    double dx = -a * std::sin(t), dy = b * std::cos(t);
+    double ddx = -a * std::cos(t), ddy = -b * std::sin(t);
+
+    double speed = std::sqrt(dx * dx + dy * dy);
+    double kappa = (dx * ddy - dy * ddx) / (speed * speed * speed);
+    double R = 1.0 / std::abs(kappa);
+
+    // Normal vector
+    double Tx = dx / speed, Ty = dy / speed;
+    double Nx = -Ty, Ny = Tx;
+    double Cx = x + (1.0 / kappa) * Nx;
+    double Cy = y + (1.0 / kappa) * Ny;
+
     std::cout << std::fixed << std::setprecision(4);
-    std::cout << "C++20:    Clothoid End at s=3.0: x = " << x << ", y = " << y << "\n";
+    std::cout << "C++20:    Curvature = " << kappa << ", Radius = " << R 
+              << ", Center = (" << Cx << ", " << Cy << ")\n";
     return 0;
 }
 ```
 
 ## Julia
 ```julia
-n = 1000; ds = 3.0 / n
-s = (0:n-1) .* ds
-kappa = 2.0 .* s
-theta = cumsum(kappa) .* ds
-x = sum(cos.(theta) .* ds)
-y = sum(sin.(theta) .* ds)
-println("Julia:    Clothoid End at s=3.0: x = $(round(x, digits=4)), y = $(round(y, digits=4))")
+function ellipse_curvature(a, b, t)
+    x, y = a * cos(t), b * sin(t)
+    dx, dy = -a * sin(t), b * cos(t)
+    ddx, ddy = -a * cos(t), -b * sin(t)
+
+    speed = sqrt(dx^2 + dy^2)
+    kappa = (dx * ddy - dy * ddx) / (speed^3)
+    R = 1.0 / abs(kappa)
+
+    Tx, Ty = dx / speed, dy / speed
+    Nx, Ny = -Ty, Tx
+    Cx = x + (1.0 / kappa) * Nx
+    Cy = y + (1.0 / kappa) * Ny
+
+    return kappa, R, (Cx, Cy)
+end
+
+k, R, C = ellipse_curvature(3.0, 2.0, 0.0)
+println("Julia:    Curvature = $(round(k, digits=4)), Radius = $(round(R, digits=4)), Center = $(round.(C, digits=4))")
 ```
 
 ## Modern Fortran
 ```fortran
-program clothoid
+program test_ellipse_curvature
   implicit none
-  integer, parameter :: n = 1000
-  integer :: i
-  real(8) :: ds, s, kappa, theta, x, y
+  real(8) :: a, b, t, x, y, dx, dy, ddx, ddy, speed, kappa, R, Cx, Cy, Nx, Ny
 
-  ds = 3.0d0 / n
-  theta = 0.0d0; x = 0.0d0; y = 0.0d0
+  a = 3.0d0; b = 2.0d0; t = 0.0d0
+  x = a * cos(t); y = b * sin(t)
+  dx = -a * sin(t); dy = b * cos(t)
+  ddx = -a * cos(t); ddy = -b * sin(t)
 
-  do i = 0, n-1
-    s = i * ds
-    kappa = 2.0d0 * s
-    theta = theta + kappa * ds
-    x = x + cos(theta) * ds
-    y = y + sin(theta) * ds
-  end do
+  speed = sqrt(dx**2 + dy**2)
+  kappa = (dx * ddy - dy * ddx) / (speed**3)
+  R = 1.0d0 / abs(kappa)
 
-  print '(A,F8.4,A,F8.4)', "Fortran:  Clothoid End at s=3.0: x = ", x, ", y = ", y
-end program clothoid
+  Nx = -dy / speed
+  Ny = dx / speed
+  Cx = x + (1.0d0 / kappa) * Nx
+  Cy = y + (1.0d0 / kappa) * Ny
+
+  print '(A,F8.4,A,F8.4,A,F8.4,A,F8.4,A)', "Fortran:  Curvature = ", kappa, &
+        ", Radius = ", R, ", Center = (", Cx, ", ", Cy, ")"
+end program test_ellipse_curvature
 ```
 
 ## MATLAB / Octave
 ```matlab
-n = 1000; ds = 3.0 / n;
-s = (0:n-1) * ds;
-kappa = 2.0 * s;
-theta = cumsum(kappa) * ds;
-x = sum(cos(theta) * ds);
-y = sum(sin(theta) * ds);
-fprintf('MATLAB:   Clothoid End at s=3.0: x = %.4f, y = %.4f\n', x, y);
+% Curvature and osculating circle for ellipse at vertex
+a = 3.0; b = 2.0; t = 0.0;
+x = a * cos(t); y = b * sin(t);
+dx = -a * sin(t); dy = b * cos(t);
+ddx = -a * cos(t); ddy = -b * sin(t);
+
+speed = sqrt(dx^2 + dy^2);
+kappa = (dx * ddy - dy * ddx) / (speed^3);
+R = 1 / abs(kappa);
+
+Nx = -dy / speed; Ny = dx / speed;
+Cx = x + (1 / kappa) * Nx;
+Cy = y + (1 / kappa) * Ny;
+
+fprintf('MATLAB:   Curvature = %.4f, Radius = %.4f, Center = (%.4f, %.4f)\n', ...
+        kappa, R, Cx, Cy);
 ```
+
 ## Lean 4
 ```lean
--- Lean 4: Planar Moving Frame and Curvature
+-- Lean 4: Planar Frenet Frame and Orthogonality
 import Mathlib.Data.Real.Basic
+import Mathlib.Analysis.InnerProductSpace.Basic
 
-structure PlanarFrame where
-  T : ℝ × ℝ
-  N : ℝ × ℝ
+-- Two vectors in R^2 are orthogonal if their standard inner product vanishes
+def IsOrthogonal2D (u v : ℝ × ℝ) : Prop :=
+  u.1 * v.1 + u.2 * v.2 = 0
 
--- Skew-symmetric Frenet-Serret system in R^2: T' = κ N, N' = -κ T
-def PlanarFrenetDeriv (kappa : ℝ) (frame : PlanarFrame) : PlanarFrame :=
-  ⟨⟨-kappa * frame.N.1, -kappa * frame.N.2⟩,
-   ⟨ kappa * frame.T.1,  kappa * frame.T.2⟩⟩
+-- 90-degree counterclockwise rotation operator J
+def J2D (v : ℝ × ℝ) : ℝ × ℝ :=
+  (-v.2, v.1)
+
+-- Theorem: Any non-zero vector is strictly orthogonal to its J-rotated partner
+theorem orthogonal_J2D (v : ℝ × ℝ) : IsOrthogonal2D v (J2D v) := by
+  dsimp [IsOrthogonal2D, J2D]
+  ring
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 8. Curated Primary Literature & Canonical Syllabi
 
-* **Manfredo P. Do Carmo**, *Differential Geometry of Curves and Surfaces*, Prentice-Hall (1976), Ch 1.
-* **Wilhelm Klingenberg**, *A Course in Differential Geometry*, Springer (1978).
-* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015), Chapter 10.
-
+* **Manfredo P. do Carmo**, *Differential Geometry of Curves and Surfaces*, 2nd Edition, Prentice-Hall (2016). Chapter 1 covers planar curves, curvature, and the fundamental theorem.
+* **Wolfgang Kühnel**, *Differential Geometry: Curves - Surfaces - Manifolds*, 3rd Edition, Student Mathematical Library Vol. 77, AMS (2015). Chapter 2 (Curves in $\mathbb{R}^n$).
+* **Michael Spivak**, *A Comprehensive Introduction to Differential Geometry, Vol. 2*, Publish or Perish (1999).
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Chapter 13 (Vector Functions, Curvature, and Normal Vectors).
 <br>
 <br>
 

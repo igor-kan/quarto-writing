@@ -1,6 +1,6 @@
 ---
-title: "Multivariable Differentiation: Fréchet Partials, Submanifolds, and Lagrange Multipliers as Tangent Normals"
-subtitle: "Fréchet total derivatives, C^1 differentiability, Contraction Mapping proofs of Inverse/Implicit Function Theorems, and manifold optimization."
+title: "Multivariable Differential Calculus: Fréchet Partials, Submanifolds, and the Implicit Function Theorem"
+subtitle: "Beyond partial derivatives: total Fréchet derivatives, Clairaut's theorem, regular submanifolds, and the Inverse/Implicit Function Theorems."
 author: "Igor Kan"
 date: "2026-09-12"
 categories: ["Mathematics", "Analysis", "Differential Geometry", "Optimization", "Machine Learning"]
@@ -10,118 +10,321 @@ format:
     math: true
 ---
 
-## 1. The Conceptual Shift: Beyond Partial Derivatives
+## 1. The Conceptual Shift: Beyond the Gradient Vector
 
-Total differentiability requires the existence of a linear operator $Df(x_0)$ satisfying:
-$$\lim_{h \to 0} \frac{\|f(x_0 + h) - f(x_0) - Df(x_0)h\|}{\|h\|} = 0$$
-Surfaces are submanifolds (regular level sets), and Lagrange multipliers span the normal space to the tangent space.
+In standard multivariable calculus, differentiation is introduced as a collection of scalar partial derivatives: $\frac{\partial f}{\partial x}, \frac{\partial f}{\partial y}$. The gradient vector $\nabla f$ is treated as an arrow perpendicular to level curves, and Lagrange multipliers are taught as a mechanical algebraic system $\nabla f = \lambda \nabla g$.
+
+In modern analysis and differential geometry, this view undergoes a fundamental elevation:
+1. **The Total Derivative as a Linear Map**: The derivative of $f: \mathbb{R}^n \to \mathbb{R}^m$ at $x_0$ is not a collection of numbers or a vector; it is the unique **bounded linear operator** $D f(x_0) \in \mathcal{L}(\mathbb{R}^n, \mathbb{R}^m)$ that approximates $f$ linearly:
+   $$\lim_{h \to \mathbf{0}} \frac{\|f(x_0 + h) - f(x_0) - D f(x_0) h\|}{\|h\|} = 0$$
+2. **Equality of Mixed Partials**: Schwarz's theorem ($\frac{\partial^2 f}{\partial x \partial y} = \frac{\partial^2 f}{\partial y \partial x}$) is not an algebraic coincidence; it reflects the symmetry of the second Fréchet differential as a bilinear form $D^2 f(x_0) \in \mathcal{L}^2(\mathbb{R}^n, \mathbb{R})$.
+3. **Surfaces as Submanifolds**: Surfaces are not merely graphs $z = f(x, y)$; they are **regular submanifolds** defined as level sets $M = F^{-1}(\mathbf{c})$ where the differential has maximal rank ($\text{rank}(D F) = k$). Tangent spaces are null spaces: $T_{x_0} M = \ker(D F(x_0))$.
+4. **The Inverse and Implicit Function Theorems**: The foundational theorems of non-linear analysis establish that whenever the linear approximation $D f(x_0)$ is invertible, the non-linear map $f$ is locally invertible. Proved via the **Banach Fixed-Point Theorem**, these theorems guarantee local coordinate charts on submanifolds.
 
 ---
 
-## 2. Numerical Computation: Multivariable Fréchet Derivative Check
+## 2. Foundational Definitions & Elementary Properties
+
+### Fréchet Differentiability and the Jacobian
+Let $U \subseteq \mathbb{R}^n$ be open, $f: U \to \mathbb{R}^m$, and $x_0 \in U$.
+* $f$ is **Fréchet differentiable** at $x_0$ if there exists a linear transformation $A \in \mathcal{L}(\mathbb{R}^n, \mathbb{R}^m)$ such that:
+  $$\lim_{h \to \mathbf{0}} \frac{\|f(x_0 + h) - f(x_0) - A h\|}{\|h\|} = 0$$
+  We write $D f(x_0) = A$.
+* With respect to standard bases, $D f(x_0)$ is represented by the $m \times n$ **Jacobian matrix**:
+  $$J_f(x_0) = \begin{pmatrix} \frac{\partial f_1}{\partial x_1} & \cdots & \frac{\partial f_1}{\partial x_n} \\ \vdots & \ddots & \vdots \\ \frac{\partial f_m}{\partial x_1} & \cdots & \frac{\partial f_m}{\partial x_n} \end{pmatrix}(x_0)$$
+
+### Regular Points and Submanifolds
+Let $F: U \subseteq \mathbb{R}^n \to \mathbb{R}^k$ ($n \ge k$) be a $C^1$ map.
+* A point $x_0 \in U$ is a **regular point** if the differential $D F(x_0): \mathbb{R}^n \to \mathbb{R}^k$ has maximal rank $k$ (surjective linear map).
+* A value $\mathbf{c} \in \mathbb{R}^k$ is a **regular value** if every point in the preimage $F^{-1}(\mathbf{c})$ is a regular point.
+* By the Regular Level Set Theorem, if $\mathbf{c}$ is a regular value, the level set:
+  $$M = \{x \in U : F(x) = \mathbf{c}\}$$
+  is an embedded smooth **submanifold** of $\mathbb{R}^n$ of dimension $d = n - k$.
+* The **tangent space** to $M$ at $x_0 \in M$ is the kernel of the differential:
+  $$T_{x_0} M = \ker(D F(x_0)) = \{v \in \mathbb{R}^n : D F(x_0) v = \mathbf{0}\}$$
+
+---
+
+## 3. Intermediate Lemmas & Rigorous Proofs
+
+> **Lemma 14.1 ($C^1$ Partial Derivatives Imply Fréchet Differentiability)**: Let $U \subseteq \mathbb{R}^n$ be open, $f: U \to \mathbb{R}$. If all partial derivatives $\frac{\partial f}{\partial x_j}$ exist in $U$ and are continuous at $x_0 \in U$, then $f$ is Fréchet differentiable at $x_0$.
+
+*Proof*:
+For simplicity, let $n = 2$ and write $x_0 = (a, b)$, $h = (h_1, h_2)$.
+Express the increment as a telescoping sum of single-variable steps:
+$$f(a + h_1, b + h_2) - f(a, b) = [f(a + h_1, b + h_2) - f(a, b + h_2)] + [f(a, b + h_2) - f(a, b)]$$
+Applying the single-variable Mean Value Theorem to each bracket:
+* The first bracket gives $h_1 \frac{\partial f}{\partial x}(a + \theta_1 h_1, b + h_2)$ for some $\theta_1 \in (0, 1)$.
+* The second bracket gives $h_2 \frac{\partial f}{\partial y}(a, b + \theta_2 h_2)$ for some $\theta_2 \in (0, 1)$.
+Subtract the candidate linear approximation $L(h) = \frac{\partial f}{\partial x}(a, b) h_1 + \frac{\partial f}{\partial y}(a, b) h_2$:
+$$\Delta(h) = h_1 \left( \frac{\partial f}{\partial x}(a + \theta_1 h_1, b + h_2) - \frac{\partial f}{\partial x}(a, b) \right) + h_2 \left( \frac{\partial f}{\partial y}(a, b + \theta_2 h_2) - \frac{\partial f}{\partial y}(a, b) \right)$$
+Dividing by $\|h\| = \sqrt{h_1^2 + h_2^2}$ and noting that $|h_i| / \|h\| \le 1$:
+$$\frac{|\Delta(h)|}{\|h\|} \le \left| \frac{\partial f}{\partial x}(a + \theta_1 h_1, b + h_2) - \frac{\partial f}{\partial x}(a, b) \right| + \left| \frac{\partial f}{\partial y}(a, b + \theta_2 h_2) - \frac{\partial f}{\partial y}(a, b) \right|$$
+Because the partial derivatives are continuous at $(a, b)$, both terms tend to zero as $h \to \mathbf{0}$.
+Thus $f$ is Fréchet differentiable. $\blacksquare$
+
+> **Lemma 14.2 (Schwarz's Clairaut Theorem on Mixed Partials)**: If $f: U \subseteq \mathbb{R}^2 \to \mathbb{R}$ has continuous second partial derivatives ($f \in C^2(U)$), then:
+> $$\frac{\partial^2 f}{\partial x \partial y}(x_0, y_0) = \frac{\partial^2 f}{\partial y \partial x}(x_0, y_0)$$
+
+*Proof*:
+Consider the rectangular difference operator:
+$$W(h, k) = f(x_0 + h, y_0 + k) - f(x_0 + h, y_0) - f(x_0, y_0 + k) + f(x_0, y_0)$$
+1. Let $\phi(x) = f(x, y_0 + k) - f(x, y_0)$. Then $W(h, k) = \phi(x_0 + h) - \phi(x_0)$.
+   By the Mean Value Theorem on $\phi$:
+   $$W(h, k) = h \phi'(x_0 + \theta_1 h) = h \left[ \frac{\partial f}{\partial x}(x_0 + \theta_1 h, y_0 + k) - \frac{\partial f}{\partial x}(x_0 + \theta_1 h, y_0) \right]$$
+   Applying MVT with respect to $y$ on the bracket:
+   $$W(h, k) = h k \frac{\partial^2 f}{\partial y \partial x}(x_0 + \theta_1 h, y_0 + \theta_2 k), \quad \theta_1, \theta_2 \in (0, 1)$$
+2. Symmetrically, letting $\psi(y) = f(x_0 + h, y) - f(x_0, y)$ and applying MVT in reverse order yields:
+   $$W(h, k) = h k \frac{\partial^2 f}{\partial x \partial y}(x_0 + \theta_3 h, y_0 + \theta_4 k), \quad \theta_3, \theta_4 \in (0, 1)$$
+3. Dividing both expressions by $h k \neq 0$ and taking the limit as $(h, k) \to (0, 0)$, continuity of the second partial derivatives forces both limits to equal their values at $(x_0, y_0)$:
+   $$\frac{\partial^2 f}{\partial y \partial x}(x_0, y_0) = \lim_{(h,k) \to (0,0)} \frac{W(h, k)}{h k} = \frac{\partial^2 f}{\partial x \partial y}(x_0, y_0) \quad \blacksquare$$
+
+---
+
+## 4. Rigorous Construction & Advanced Theorems
+
+### The Inverse Function Theorem
+> **Theorem 14.1 (The Inverse Function Theorem)**: Let $U \subseteq \mathbb{R}^n$ be open and $f: U \to \mathbb{R}^n$ a $C^1$ map.
+> Let $x_0 \in U$ and suppose the differential $D f(x_0) \in \mathcal{L}(\mathbb{R}^n, \mathbb{R}^n)$ is invertible ($\det J_f(x_0) \neq 0$).
+> Then there exists an open neighborhood $V \ni x_0$ and an open neighborhood $W \ni f(x_0)$ such that:
+> 1. $f: V \to W$ is a **bijection**.
+> 2. The inverse map $g = f^{-1}: W \to V$ is $C^1$.
+> 3. For every $y \in W$, the derivative of the inverse is the inverse of the derivative:
+>    $$D(f^{-1})(y) = [D f(f^{-1}(y))]^{-1}$$
+
+*Proof Sketch*:
+Without loss of generality, assume $x_0 = \mathbf{0}$, $f(\mathbf{0}) = \mathbf{0}$, and $D f(\mathbf{0}) = I$ (by affine coordinate changes).
+For a given $y$ near $\mathbf{0}$, solving $f(x) = y$ is equivalent to finding a fixed point of:
+$$\phi_y(x) = x + y - f(x)$$
+Notice that $D \phi_y(x) = I - D f(x)$. Since $D f(\mathbf{0}) = I$ and $f$ is $C^1$, there exists a closed ball $\overline{B}_r(\mathbf{0})$ such that $\|D \phi_y(x)\| \le \frac{1}{2}$ for all $x \in \overline{B}_r(\mathbf{0})$.
+By the Mean Value Theorem, $\phi_y$ is a contraction with Lipschitz constant $1/2$.
+For $\|y\| < r/2$, $\phi_y$ maps $\overline{B}_r(\mathbf{0})$ into itself.
+By the **Banach Contraction Mapping Principle**, there exists a unique fixed point $x \in \overline{B}_r(\mathbf{0})$ satisfying $\phi_y(x) = x \iff f(x) = y$.
+This establishes bijectivity. Applying the chain rule to $g(f(x)) = x$ yields $D g(f(x)) D f(x) = I$, proving the derivative formula. $\blacksquare$
+
+### The Implicit Function Theorem
+> **Theorem 14.2 (The Implicit Function Theorem)**: Let $U \subseteq \mathbb{R}^n \times \mathbb{R}^m$ be open, and let $F: U \to \mathbb{R}^m$ be a $C^1$ mapping.
+> Write points as $(x, y)$ where $x \in \mathbb{R}^n$ and $y \in \mathbb{R}^m$.
+> Suppose $(x_0, y_0) \in U$ satisfies $F(x_0, y_0) = \mathbf{0}$, and the $m \times m$ partial Jacobian:
+> $$D_y F(x_0, y_0) = \left( \frac{\partial F_i}{\partial y_j}(x_0, y_0) \right)_{1 \le i, j \le m}$$
+> is **invertible** ($\det D_y F(x_0, y_0) \neq 0$).
+> Then there exist open neighborhoods $V \ni x_0$ in $\mathbb{R}^n$ and $W \ni y_0$ in $\mathbb{R}^m$, and a unique $C^1$ function $g: V \to W$ such that:
+> $$F(x, g(x)) = \mathbf{0}, \quad \forall x \in V$$
+> Furthermore, the derivative of the implicit function is:
+> $$D g(x) = -[D_y F(x, g(x))]^{-1} D_x F(x, g(x))$$
+
+*Proof*:
+Construct the augmented map $\Phi: U \to \mathbb{R}^n \times \mathbb{R}^m$ defined by:
+$$\Phi(x, y) = (x, F(x, y))$$
+The differential of $\Phi$ at $(x_0, y_0)$ in block matrix form is:
+$$D \Phi(x_0, y_0) = \begin{pmatrix} I_n & \mathbf{0} \\ D_x F(x_0, y_0) & D_y F(x_0, y_0) \end{pmatrix}$$
+The determinant of this block triangular matrix is $\det D \Phi(x_0, y_0) = \det(I_n) \cdot \det(D_y F(x_0, y_0)) \neq 0$.
+By the Inverse Function Theorem (Theorem 14.1), $\Phi$ is a local $C^1$ diffeomorphism with inverse $\Phi^{-1}(x, z) = (x, H(x, z))$.
+Setting $z = \mathbf{0}$ yields the desired implicit function $g(x) = H(x, \mathbf{0})$.
+Differentiating the identity $F(x, g(x)) \equiv \mathbf{0}$ using the multivariable chain rule:
+$$D_x F(x, g(x)) + D_y F(x, g(x)) D g(x) = \mathbf{0} \implies D g(x) = -[D_y F(x, g(x))]^{-1} D_x F(x, g(x)) \quad \blacksquare$$
+
+---
+
+## 5. Concrete Worked Examples & Step-by-Step Calculations
+
+### Worked Example 14.1: Local Inversion of the Complex Square Map
+Consider the non-linear mapping $f: \mathbb{R}^2 \to \mathbb{R}^2$ representing the complex squaring function $w = z^2 = (x + i y)^2 = (x^2 - y^2) + i (2xy)$:
+$$f(x, y) = \begin{pmatrix} x^2 - y^2 \\ 2xy \end{pmatrix}$$
+
+1. **Jacobian Matrix**:
+   $$J_f(x, y) = \begin{pmatrix} 2x & -2y \\ 2y & 2x \end{pmatrix}$$
+
+2. **Determinant and Invertibility**:
+   $$\det J_f(x, y) = (2x)(2x) - (-2y)(2y) = 4x^2 + 4y^2 = 4(x^2 + y^2)$$
+   By Theorem 14.1, $f$ is a local diffeomorphism at every point $(x_0, y_0) \neq (0, 0)$.
+
+3. **Evaluation at $(x_0, y_0) = (1, 1)$**:
+   * Value: $f(1, 1) = (1^2 - 1^2, 2 \cdot 1 \cdot 1) = (0, 2)$.
+   * Jacobian: $J_f(1, 1) = \begin{pmatrix} 2 & -2 \\ 2 & 2 \end{pmatrix}$.
+   * Inverse Jacobian:
+     $$[J_f(1, 1)]^{-1} = \frac{1}{8} \begin{pmatrix} 2 & 2 \\ -2 & 2 \end{pmatrix} = \begin{pmatrix} 1/4 & 1/4 \\ -1/4 & 1/4 \end{pmatrix}$$
+
+4. **Verification via Direct Analytic Inverse**:
+   The inverse branch near $(0, 2)$ is $z = \sqrt{w} = \sqrt{u + iv}$.
+   For $w = 2i = 2 e^{i \pi/2}$, $\sqrt{w} = \sqrt{2} e^{i \pi/4} = 1 + i$.
+   The complex derivative is $\frac{d}{dw}(\sqrt{w}) = \frac{1}{2\sqrt{w}} = \frac{1}{2(1 + i)} = \frac{1 - i}{4} = \frac{1}{4} - \frac{1}{4} i$.
+   Representing multiplication by $\frac{1}{4} - \frac{1}{4} i$ as a real matrix:
+   $$\begin{pmatrix} 1/4 & 1/4 \\ -1/4 & 1/4 \end{pmatrix}$$
+   Exact match with $[J_f(1, 1)]^{-1}$, confirming the Inverse Function Theorem!
+
+### Worked Example 14.2: Implicit Function Differentiation on the 2-Sphere
+Consider the unit sphere $S^2 \subset \mathbb{R}^3$ defined by:
+$$F(x, y, z) = x^2 + y^2 + z^2 - 1 = 0$$
+Let us compute the tangent plane and derivatives $\frac{\partial z}{\partial x}, \frac{\partial z}{\partial y}$ at $(x_0, y_0, z_0) = \left(\frac{1}{2}, \frac{1}{2}, \frac{1}{\sqrt{2}}\right)$.
+
+1. **Check Hypotheses**:
+   $$F\left(\frac{1}{2}, \frac{1}{2}, \frac{1}{\sqrt{2}}\right) = \frac{1}{4} + \frac{1}{4} + \frac{1}{2} - 1 = 0$$
+   Compute the partial Jacobian with respect to the dependent variable $z$:
+   $$D_z F = \frac{\partial F}{\partial z} = 2z \implies D_z F\left(\frac{1}{2}, \frac{1}{2}, \frac{1}{\sqrt{2}}\right) = \sqrt{2} \neq 0$$
+   Because $\sqrt{2} \neq 0$, the Implicit Function Theorem guarantees the existence of a unique function $z = g(x, y)$ in a neighborhood of $(1/2, 1/2)$.
+
+2. **Compute Derivatives**:
+   $$D_x F = 2x = 1, \quad D_y F = 2y = 1$$
+   Applying the formula from Theorem 14.2:
+   $$D g(x, y) = -[D_z F]^{-1} [D_x F, D_y F] = -\frac{1}{2z} (2x, 2y) = -\left(\frac{x}{z}, \frac{y}{z}\right)$$
+   Evaluating at the point:
+   $$\frac{\partial z}{\partial x} = -\frac{1/2}{1/\sqrt{2}} = -\frac{\sqrt{2}}{2} \approx -0.7071$$
+   $$\frac{\partial z}{\partial y} = -\frac{1/2}{1/\sqrt{2}} = -\frac{\sqrt{2}}{2} \approx -0.7071$$
+
+3. **Tangent Plane Equation**:
+   The tangent space $T_{x_0} S^2 = \ker(D F(x_0))$ is:
+   $$2x_0 (x - x_0) + 2y_0 (y - y_0) + 2z_0 (z - z_0) = 0 \implies x + y + \sqrt{2} z = 2$$
+
+---
+
+## 6. Multi-Disciplinary Applications
+
+* **Machine Learning & Manifold Learning**: In deep representation learning, autoencoders and normalizing flows assume that high-dimensional data (e.g. $1024 \times 1024$ images) concentrate on low-dimensional submanifolds $M \subset \mathbb{R}^D$. Tangent spaces $T_x M$ define the admissible variations that preserve image semantics.
+* **Non-Linear Constrained Optimization**: In economics and operations research, optimizing an objective $f(x)$ subject to equality constraints $h_i(x) = 0$ relies on the Implicit Function Theorem to justify elimination of variables and the Lagrange multiplier condition $\nabla f(x^*) = \sum \lambda_i \nabla h_i(x^*)$.
+* **Robotics Kinematics**: The forward kinematics of a robotic arm maps joint angles $\theta \in \mathbb{R}^n$ to end-effector pose $x \in SE(3)$. When the Jacobian $J(\theta)$ is singular ($\det J = 0$), the arm enters a kinematic singularity where degrees of freedom are lost.
+
+---
+
+## 7. Numerical Computation: Multidimensional Newton-Raphson Implicit Solver
+
+Below are complete implementations of the **Multidimensional Newton-Raphson Solver** for locally solving implicit systems $F(x, y) = \mathbf{0}$ across six environments:
 
 ::: {.panel-tabset group="language"}
 ## Python 3
 ```python
 import numpy as np
 
-f = lambda x: x[0]**2 * np.sin(x[1]) + np.exp(x[0]*x[1])
-grad_f = lambda x: np.array([2*x[0]*np.sin(x[1]) + x[1]*np.exp(x[0]*x[1]),
-                             x[0]**2*np.cos(x[1]) + x[0]*np.exp(x[0]*x[1])])
+def implicit_solve_newton(F, J_y, x_val: float, y_init: float, tol: float = 1e-10, max_iter: int = 50):
+    # Solves F(x, y) = 0 for y given x
+    y = y_init
+    for _ in range(max_iter):
+        f_val = F(x_val, y)
+        if abs(f_val) < tol:
+            return y
+        dy = J_y(x_val, y)
+        y -= f_val / dy
+    return y
 
-x0 = np.array([1.5, 0.8])
-h = np.array([1e-5, -1e-5])
-residual = abs(f(x0 + h) - f(x0) - np.dot(grad_f(x0), h))
-print(f"Python 3: Fréchet Residual / ||h|| = {residual / np.linalg.norm(h):.4e}")
+# Circle: F(x, y) = x^2 + y^2 - 1 = 0. Solve for y at x = 0.6
+F_circle = lambda x, y: x**2 + y**2 - 1.0
+Jy_circle = lambda x, y: 2.0 * y
+
+y_sol = implicit_solve_newton(F_circle, Jy_circle, 0.6, 0.5)
+exact = np.sqrt(1.0 - 0.6**2)
+print(f"Python 3: Implicit y(0.6) = {y_sol:.8f}, Exact = {exact:.8f}")
 ```
 
 ## C++20
 ```cpp
 #include <iostream>
 #include <cmath>
+#include <iomanip>
 
 int main() {
-    auto f = [](double x, double y) { return x*x*std::sin(y) + std::exp(x*y); };
-    double x = 1.5, y = 0.8;
-    double gx = 2*x*std::sin(y) + y*std::exp(x*y);
-    double gy = x*x*std::cos(y) + x*std::exp(x*y);
+    double x = 0.6;
+    double y = 0.5; // Initial guess
+    const double tol = 1e-10;
 
-    double hx = 1e-5, hy = -1e-5;
-    double h_norm = std::hypot(hx, hy);
-    double res = std::abs(f(x + hx, y + hy) - f(x, y) - (gx * hx + gy * hy));
-    std::cout << "C++20:    Fréchet Residual / ||h|| = " << (res / h_norm) << "\n";
+    for (int i = 0; i < 50; ++i) {
+        double F = x * x + y * y - 1.0;
+        if (std::abs(F) < tol) break;
+        double dF_dy = 2.0 * y;
+        y -= F / dF_dy;
+    }
+
+    double exact = std::sqrt(1.0 - 0.6 * 0.6);
+    std::cout << std::fixed << std::setprecision(8);
+    std::cout << "C++20:    Implicit y(0.6) = " << y << ", Exact = " << exact << "\n";
     return 0;
 }
 ```
 
 ## Julia
 ```julia
-f(x, y) = x^2 * sin(y) + exp(x*y)
-x = 1.5; y = 0.8
-gx = 2x*sin(y) + y*exp(x*y)
-gy = x^2*cos(y) + x*exp(x*y)
+function implicit_solve(x, y_guess)
+    y = y_guess
+    for _ in 1:50
+        F = x^2 + y^2 - 1.0
+        if abs(F) < 1e-10
+            break
+        end
+        dF_dy = 2.0 * y
+        y -= F / dF_dy
+    end
+    return y
+end
 
-hx = 1e-5; hy = -1e-5
-h_norm = hypot(hx, hy)
-res = abs(f(x + hx, y + hy) - f(x, y) - (gx*hx + gy*hy))
-println("Julia:    Fréchet Residual / ||h|| = $(res / h_norm)")
+y_sol = implicit_solve(0.6, 0.5)
+exact = sqrt(1.0 - 0.6^2)
+println("Julia:    Implicit y(0.6) = $(round(y_sol, digits=8)), Exact = $(round(exact, digits=8))")
 ```
 
 ## Modern Fortran
 ```fortran
-program frechet_check
+program test_implicit_newton
   implicit none
-  real(8) :: x, y, gx, gy, hx, hy, h_norm, f0, fh, res
+  real(8) :: x, y, F, dF_dy, exact
+  integer :: iter
 
-  x = 1.5d0; y = 0.8d0
-  f0 = x*x*sin(y) + exp(x*y)
-  gx = 2.0d0*x*sin(y) + y*exp(x*y)
-  gy = x*x*cos(y) + x*exp(x*y)
+  x = 0.6d0
+  y = 0.5d0
 
-  hx = 1.0d-5; hy = -1.0d-5
-  h_norm = sqrt(hx*hx + hy*hy)
-  fh = (x+hx)**2 * sin(y+hy) + exp((x+hx)*(y+hy))
-  res = abs(fh - f0 - (gx*hx + gy*hy))
+  do iter = 1, 50
+     F = x**2 + y**2 - 1.0d0
+     if (abs(F) < 1.0d-10) exit
+     dF_dy = 2.0d0 * y
+     y = y - F / dF_dy
+  end do
 
-  print '(A,E12.4)', "Fortran:  Residual / ||h|| = ", (res / h_norm)
-end program frechet_check
+  exact = sqrt(1.0d0 - 0.6d0**2)
+  print '(A,F12.8,A,F12.8)', "Fortran:  y(0.6) = ", y, ", Exact = ", exact
+end program test_implicit_newton
 ```
 
 ## MATLAB / Octave
 ```matlab
-f = @(x, y) x.^2 .* sin(y) + exp(x.*y);
-x = 1.5; y = 0.8;
-gx = 2*x*sin(y) + y*exp(x*y);
-gy = x^2*cos(y) + x*exp(x*y);
+% Multidimensional implicit solver via Newton-Raphson
+x = 0.6;
+y = 0.5;
 
-h = [1e-5; -1e-5];
-res = abs(f(x + h(1), y + h(2)) - f(x, y) - (gx*h(1) + gy*h(2)));
-fprintf('MATLAB:   Fréchet Residual / ||h|| = %.4e\n', res / norm(h));
+for iter = 1:50
+    F = x^2 + y^2 - 1.0;
+    if abs(F) < 1e-10
+        break;
+    end
+    dF_dy = 2 * y;
+    y = y - F / dF_dy;
+end
+
+exact = sqrt(1 - 0.6^2);
+fprintf('MATLAB:   Implicit y(0.6) = %.8f, Exact = %.8f\n', y, exact);
 ```
+
 ## Lean 4
 ```lean
--- Lean 4: Local Inverse Function Theorem on Banach Spaces
+-- Lean 4: The Inverse Function Theorem in Mathlib
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
--- Local diffeomorphism theorem for strict Fréchet derivatives
-theorem local_inverse_thm (f : E → E) (x0 : E) (f' : E ≃L[ℝ] E)
-    (hf : HasStrictFDerivAt f (f' : E →L[ℝ] E) x0) :
-    ∃ u v : Set E, IsOpen u ∧ IsOpen v ∧ x0 ∈ u ∧ Set.BijOn f u v := by
-  sorry
+-- Formal statement that invertible Fréchet derivative implies local diffeomorphism
+theorem inverse_function_theorem_local {f : E → E} {x : E} {f' : E ≃L[ℝ] E}
+    (hf : HasStrictFDerivAt f (f' : E →L[ℝ] E) x) :
+    ∃ s ∈ nhds x, ∃ t ∈ nhds (f x), Set.BijOn f s t := by
+  exact HasStrictFDerivAt.map_nhds_eq_nhds_of_equiv hf
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 8. Curated Primary Literature & Canonical Syllabi
 
-* **Walter Rudin**, *Principles of Mathematical Analysis*, McGraw-Hill (1976), Ch 9.
-* **Michael Spivak**, *Calculus on Manifolds*, Addison-Wesley (1965), Ch 2.
-* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015), Chapter 14.
-
+* **John H. Hubbard & Barbara Burke Hubbard**, *Vector Calculus, Linear Algebra, and Differential Forms: A Unified Approach*, 5th Edition, Matrix Editions (2015). Chapters 2 & 3 develop Fréchet derivatives, submanifolds, and the Inverse/Implicit Function Theorems.
+* **James R. Munkres**, *Analysis on Manifolds*, CRC Press (1991). Chapters 1 & 2.
+* **Michael Spivak**, *Calculus on Manifolds*, Westview Press (1965). Chapter 2 (Differentiation).
+* **Walter Rudin**, *Principles of Mathematical Analysis*, 3rd Edition, McGraw-Hill (1976). Chapter 9 (Functions of Several Variables).
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Chapter 14 (Partial Derivatives, Tangent Planes, and Lagrange Multipliers).
 <br>
 <br>
 

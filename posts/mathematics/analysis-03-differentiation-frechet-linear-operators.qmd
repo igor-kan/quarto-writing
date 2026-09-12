@@ -25,7 +25,26 @@ Furthermore, the classical proof of the Chain Rule in elementary textbooks often
 
 ---
 
-## 2. Rigorous Foundations & Formulations
+## 2. Foundational Definitions & Elementary Properties
+
+### Classical Differentiation Rules
+Let $f, g: (a, b) \to \mathbb{R}$ be differentiable at $x$.
+1. **Linearity**: $(c_1 f + c_2 g)'(x) = c_1 f'(x) + c_2 g'(x)$.
+2. **Product Rule (Leibniz)**: $(f \cdot g)'(x) = f'(x) g(x) + f(x) g'(x)$.
+3. **Quotient Rule**: If $g(x) \neq 0$, $\left(\frac{f}{g}\right)'(x) = \frac{f'(x) g(x) - f(x) g'(x)}{g(x)^2}$.
+
+### Foundational Lemmas
+
+> **Lemma 3.1 (Fermat's Interior Extrema Lemma)**: Let $f: (a, b) \to \mathbb{R}$ achieve a local extremum at $c \in (a, b)$. If $f$ is differentiable at $c$, then $f'(c) = 0$.
+
+> **Lemma 3.2 (Rolle's Theorem)**: Let $f: [a, b] \to \mathbb{R}$ be continuous on $[a, b]$ and differentiable on $(a, b)$. If $f(a) = f(b)$, then there exists $\xi \in (a, b)$ such that $f'(\xi) = 0$.
+
+> **Lemma 3.3 (Cauchy Mean Value Theorem)**: Let $f, g: [a, b] \to \mathbb{R}$ be continuous on $[a, b]$ and differentiable on $(a, b)$. Then there exists $\xi \in (a, b)$ such that:
+> $$[f(b) - f(a)] g'(\xi) = [g(b) - g(a)] f'(\xi)$$
+
+---
+
+## 3. Rigorous Foundations & Modern Theorems
 
 ### Carathéodory's Formulation of Differentiability
 A function $f: (a, b) \to \mathbb{R}$ is differentiable at $x_0 \in (a, b)$ if and only if there exists a function $\phi: (a, b) \to \mathbb{R}$ that is **continuous at $x_0$** such that:
@@ -43,14 +62,48 @@ Define $\chi(x) = \phi(g(x)) \psi(x)$. Since $g$ is continuous at $x_0$ and $\ph
 By Carathéodory's theorem, $f \circ g$ is differentiable at $x_0$, and:
 $$(f \circ g)'(x_0) = \chi(x_0) = \phi(g(x_0)) \psi(x_0) = f'(g(x_0)) g'(x_0) \quad \blacksquare$$
 
-### The Fréchet Derivative
+### The Fréchet Derivative in Normed Spaces
 Let $V, W$ be normed vector spaces and $U \subset V$ an open set. A map $f: U \to W$ is **Fréchet differentiable** at $x \in U$ if there exists a bounded linear operator $A \in \mathcal{L}(V, W)$ such that:
 $$\lim_{h \to 0} \frac{\|f(x + h) - f(x) - A(h)\|_W}{\|h\|_V} = 0$$
 We denote $A = Df(x)$.
 
+> **Theorem 3.1 (Uniqueness of the Fréchet Derivative)**: If a Fréchet derivative exists at $x$, it is unique.
+
+*Proof*: Suppose $A_1, A_2 \in \mathcal{L}(V, W)$ both satisfy the definition. Then:
+$$\|(A_1 - A_2)(h)\| = \|[f(x+h) - f(x) - A_2(h)] - [f(x+h) - f(x) - A_1(h)]\| \le o(\|h\|) + o(\|h\|) = o(\|h\|)$$
+For any fixed non-zero vector $v \in V$, let $h = t v$ for $t > 0$. Then:
+$$\frac{\|(A_1 - A_2)(t v)\|}{t \|v\|} = \frac{\|(A_1 - A_2)(v)\|}{\|v\|} \to 0 \quad \text{as } t \to 0$$
+Hence $\|(A_1 - A_2)(v)\| = 0$ for all $v \in V \implies A_1 = A_2$. $\blacksquare$
+
 ---
 
-## 3. Applications Across Disciplines
+## 4. Concrete Worked Examples
+
+### Example 3.1: Fréchet Derivative of Matrix Inversion
+Let $V = \mathcal{M}_{n \times n}(\mathbb{R})$ be the space of $n \times n$ matrices equipped with the operator norm $\|A\| = \sup_{\|x\|=1} \|Ax\|$.
+Let $U = GL_n(\mathbb{R}) = \{A : \det A \neq 0\}$ and consider the inversion map $f(X) = X^{-1}$.
+We compute the Fréchet derivative $Df(X) \in \mathcal{L}(V, V)$:
+1. Expand for a perturbation $H \in \mathcal{M}_{n \times n}$ with $\|H\| < \frac{1}{\|X^{-1}\|}$:
+   $$(X + H)^{-1} = [X (I + X^{-1} H)]^{-1} = (I + X^{-1} H)^{-1} X^{-1}$$
+2. Using the Neumann series $(I + Z)^{-1} = I - Z + Z^2 - \dots$:
+   $$(I + X^{-1} H)^{-1} = I - X^{-1} H + O(\|H\|^2)$$
+3. Substituting back:
+   $$f(X + H) - f(X) = (I - X^{-1} H + O(\|H\|^2)) X^{-1} - X^{-1} = -X^{-1} H X^{-1} + O(\|H\|^2)$$
+4. The linear candidate is $A(H) = -X^{-1} H X^{-1}$. We evaluate the limit:
+   $$\lim_{H \to 0} \frac{\|f(X + H) - f(X) - A(H)\|}{\|H\|} = \lim_{H \to 0} \frac{O(\|H\|^2)}{\|H\|} = 0$$
+Thus, the Fréchet derivative of matrix inversion is the linear operator:
+$$Df(X)(H) = -X^{-1} H X^{-1}$$
+
+### Example 3.2: Fréchet Derivative of Quadratic Forms
+Let $f: \mathbb{R}^n \to \mathbb{R}$ be defined by $f(x) = x^T A x$, where $A \in \mathcal{M}_{n \times n}(\mathbb{R})$ is symmetric.
+$$f(x + h) - f(x) = (x + h)^T A (x + h) - x^T A x = x^T A h + h^T A x + h^T A h = 2 x^T A h + h^T A h$$
+The candidate linear operator is $Df(x)(h) = 2 x^T A h = \langle 2 A x, h \rangle$.
+The residual is $|h^T A h| \le \|A\| \cdot \|h\|^2 = o(\|h\|)$.
+Thus $Df(x) = 2 A x = \nabla f(x)^T$.
+
+---
+
+## 5. Applications Across Disciplines
 
 ### Machine Learning: Automatic Differentiation & Backpropagation
 The backpropagation algorithm in deep neural networks is not an approximation; it is the exact implementation of the multivariable Chain Rule in reverse topological order over a directed acyclic graph (computational graph). In operator terms:
@@ -65,9 +118,7 @@ In financial derivatives pricing (Black-Scholes-Merton framework), the "Greeks" 
 
 ---
 
-## 4. Numerical Computation: Reverse-Mode Vector-Jacobian Product (VJP) Engine
-
-Below are multi-language implementations of a **Reverse-Mode Computational Graph Node** evaluating the chain rule as composable linear operators:
+## 6. Algorithmic Implementation: Reverse-Mode Vector-Jacobian Product (VJP) Engine
 
 ::: {.panel-tabset group="language"}
 ## Python 3
@@ -200,6 +251,7 @@ g_x2 = g_s * 1.0;
 
 fprintf('MATLAB:   y = %.1f, dy/dx1 = %.1f, dy/dx2 = %.1f\n', y, g_x1, g_x2);
 ```
+
 ## Lean 4
 ```lean
 -- Lean 4: Fréchet Derivative as a Bounded Continuous Linear Map
@@ -219,12 +271,11 @@ theorem frechet_chain_rule {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G
     HasFDerivAt (g ∘ f) (g'.comp f') x :=
   HasFDerivAt.comp x hg hf
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 7. Curated Sources & Further Reading
 
 * **Walter Rudin**, *Principles of Mathematical Analysis*, 3rd Edition, McGraw-Hill (1976), Chapter 5: *Differentiation*.
 * **Michael Spivak**, *Calculus*, 4th Edition, Publish or Perish (2008), Chapters 10, 11, & 12.
@@ -232,7 +283,6 @@ theorem frechet_chain_rule {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G
 * **John H. Hubbard & Barbara Burke Hubbard**, *Vector Calculus, Linear Algebra, and Differential Forms*, Matrix Editions (2015), Sections 1.7–1.8.
 * **Jean Dieudonné**, *Foundations of Modern Analysis*, Academic Press (1969), Chapter 8: *Differential Calculus*.
 * **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015), Chapter 3.
-
 <br>
 <br>
 

@@ -1,6 +1,6 @@
 ---
 title: "Topological Extrema and Critical Points: Morse Lemmas, Hessians, and Catastrophe Theory"
-subtitle: "Proofs of EVT and IVT via compactness and connectedness, Hessian determinants, Morse classification, and pitchfork bifurcations."
+subtitle: "Rigorous proofs of EVT and IVT via compactness and connectedness, Hessian determinants, Morse classification, and pitchfork bifurcations."
 author: "Igor Kan"
 date: "2026-09-12"
 categories: ["Mathematics", "Analysis", "Topology", "Physics", "Artificial Intelligence"]
@@ -12,42 +12,195 @@ format:
 
 ## 1. The Conceptual Shift: Beyond the Second Derivative Test
 
-In standard computational calculus, finding extrema is treated through algorithmic mechanics: set $f'(x) = 0$ to find critical numbers, check sign changes, or compute $f''(x)$ to determine concavity. The Extreme Value Theorem (EVT) and Intermediate Value Theorem (IVT) are accepted as intuitive geometric self-evidencies.
+In standard introductory calculus, finding extrema is presented as an algorithmic recipe: set $f'(x) = 0$ to find critical numbers, check sign changes on a number line, or evaluate $f''(x)$ to determine whether a graph is concave upward or downward. The Extreme Value Theorem (EVT) and Intermediate Value Theorem (IVT) are introduced merely as intuitive geometric facts about continuous curves without breaks.
 
-In rigorous modern topology and differential analysis:
-1. **EVT is Compactness**: The Extreme Value Theorem is the theorem that the continuous image of a compact topological space is compact:
+In rigorous modern topology and differential analysis, this mechanical framework undergoes a profound transformation:
+1. **EVT is a Manifestation of Compactness**: The Extreme Value Theorem is not a property of real intervals alone; it is the fundamental theorem that the continuous image of a compact topological space is compact:
    $$K \text{ compact, } f \in C(K, \mathbb{R}) \implies f(K) \subset \mathbb{R} \text{ is compact (closed and bounded)}$$
-2. **IVT is Connectedness**: The Intermediate Value Theorem is the theorem that the continuous image of a connected topological space is connected.
-3. **Morse Theory & Non-Degeneracy**: At critical points ($\nabla f(x_0) = 0$), the local geometry is governed by the eigenvalues of the Hessian matrix $H_{ij} = \frac{\partial^2 f}{\partial x_i \partial x_j}$. If $\det H \neq 0$, the **Morse Lemma** guarantees a local chart where:
+2. **IVT is a Manifestation of Connectedness**: The Intermediate Value Theorem is the statement that the continuous image of a connected topological space is connected:
+   $$X \text{ connected, } f \in C(X, Y) \implies f(X) \text{ is connected}$$
+   Because the only connected subsets of $\mathbb{R}$ are intervals, the range $f([a, b])$ must contain all intermediate values between $f(a)$ and $f(b)$.
+3. **Morse Theory & Non-Degeneracy**: At critical points where the gradient vanishes ($\nabla f(x_0) = 0$), the local geometry of smooth manifolds is governed by the eigenvalues of the Hessian matrix $H_{ij} = \frac{\partial^2 f}{\partial x_i \partial x_j}(x_0)$. When $\det H \neq 0$, the **Morse Lemma** guarantees the existence of a local coordinate chart where the function is purely quadratic:
    $$f(x) = f(x_0) - x_1^2 - \dots - x_\lambda^2 + x_{\lambda+1}^2 + \dots + x_n^2$$
-   The integer $\lambda$ is the **Morse Index**.
-4. **Catastrophe Theory**: When the Hessian becomes degenerate ($\det H = 0$), critical points collide and bifurcate (pitchfork, cusp catastrophes).
+   The topological invariant $\lambda$ is the **Morse Index** (the number of negative eigenvalues), counting the unstable downward directions.
+4. **Catastrophe Theory**: When the Hessian matrix becomes degenerate ($\det H = 0$), critical points collide, merge, and split under perturbation. This is the domain of catastrophe theory and bifurcation theory (pitchfork, fold, cusp catastrophes).
 
 ---
 
-## 2. Rigorous Foundations & Proofs
+## 2. Foundational Definitions & Elementary Properties
 
-### Proof of the Extreme Value Theorem
-> **Theorem (EVT)**: Let $X$ be a compact topological space and $f: X \to \mathbb{R}$ continuous. Then $f$ is bounded and attains its supremum and infimum.
+### Critical Points and Local Extrema
+Let $U \subseteq \mathbb{R}^n$ be an open set and $f: U \to \mathbb{R}$ a differentiable function.
+* A point $x_0 \in U$ is an **interior local extremum** (minimum or maximum) if there exists an open ball $B_\epsilon(x_0) \subseteq U$ such that $f(x) \ge f(x_0)$ (local minimum) or $f(x) \le f(x_0)$ (local maximum) for all $x \in B_\epsilon(x_0)$.
+* A point $x_0 \in U$ is a **critical point** of $f$ if the gradient vanishes: $\nabla f(x_0) = \mathbf{0}$.
+* The **Hessian matrix** of a twice continuously differentiable function $f \in C^2(U)$ is the symmetric $n \times n$ matrix of second partial derivatives:
+  $$H(f)(x_0) = \begin{pmatrix} \frac{\partial^2 f}{\partial x_1^2} & \cdots & \frac{\partial^2 f}{\partial x_1 \partial x_n} \\ \vdots & \ddots & \vdots \\ \frac{\partial^2 f}{\partial x_n \partial x_1} & \cdots & \frac{\partial^2 f}{\partial x_n^2} \end{pmatrix}(x_0)$$
+
+### Elementary Derivative Tests
+In single-variable calculus, for a $C^2$ function $f: [a, b] \to \mathbb{R}$:
+1. **First Derivative Test**: If $f'(c) = 0$, and $f'(x) > 0$ for $x < c$ and $f'(x) < 0$ for $x > c$, then $c$ is a strict local maximum.
+2. **Second Derivative Test**: If $f'(c) = 0$ and $f''(c) > 0$, then $c$ is an isolated local minimum. If $f''(c) < 0$, then $c$ is an isolated local maximum. If $f''(c) = 0$, the test is inconclusive.
+3. **Multivariate Second Derivative Test**: Let $D = \det H = f_{xx} f_{yy} - (f_{xy})^2$. At a critical point $(x_0, y_0)$:
+   * If $D > 0$ and $f_{xx} > 0$: local minimum.
+   * If $D > 0$ and $f_{xx} < 0$: local maximum.
+   * If $D < 0$: saddle point (Morse index $\lambda = 1$).
+   * If $D = 0$: degenerate critical point.
+
+---
+
+## 3. Intermediate Lemmas & Rigorous Proofs
+
+> **Lemma 4.1 (Fermat's Critical Point Theorem)**: Let $U \subseteq \mathbb{R}^n$ be open, $f: U \to \mathbb{R}$ differentiable at $x_0 \in U$. If $x_0$ is a local extremum of $f$, then $\nabla f(x_0) = \mathbf{0}$.
 
 *Proof*:
-1. Let $\mathcal{O} = \{(-n, n) : n \in \mathbb{N}\}$ be an open cover of $\mathbb{R}$. The preimages $\{f^{-1}((-n, n))\}_{n=1}^\infty$ form an open cover of $X$ because $f$ is continuous.
-2. Since $X$ is compact, there exists a finite subcover: $X \subset \bigcup_{k=1}^m f^{-1}((-n_k, n_k))$. Let $N = \max(n_1, \dots, n_m)$. Then $f(X) \subset (-N, N)$, so $f$ is bounded.
-3. Let $M = \sup_{x \in X} f(x)$. Suppose for contradiction that no $x \in X$ satisfies $f(x) = M$. Then $g(x) = \frac{1}{M - f(x)}$ is continuous and strictly positive on $X$.
-4. By step 2, $g$ must be bounded on $X$: $\exists B > 0$ such that $\frac{1}{M - f(x)} \le B \implies f(x) \le M - \frac{1}{B}$ for all $x \in X$.
-5. This contradicts the definition of $M$ as the *least* upper bound. Hence $\exists x^* \in X$ such that $f(x^*) = M$. $\blacksquare$
+Without loss of generality, assume $x_0$ is a local maximum. Let $v \in \mathbb{R}^n$ be an arbitrary vector, and consider the single-variable slice $g(t) = f(x_0 + t v)$ defined for sufficiently small $|t| < \delta$ such that $x_0 + tv \in U$.
+Since $x_0$ is a local maximum, $g(t) \le g(0)$ for all $|t| < \delta$.
+Consider the directional difference quotients:
+* For $t > 0$: $\frac{g(t) - g(0)}{t} \le 0 \implies g'(0) = \lim_{t \to 0^+} \frac{g(t) - g(0)}{t} \le 0$.
+* For $t < 0$: $\frac{g(t) - g(0)}{t} \ge 0 \implies g'(0) = \lim_{t \to 0^-} \frac{g(t) - g(0)}{t} \ge 0$.
+By the squeeze property of limits, $g'(0) = 0$. By the multivariable chain rule:
+$$g'(0) = \nabla f(x_0) \cdot v = 0$$
+Since this holds for every vector $v \in \mathbb{R}^n$, we must have $\nabla f(x_0) = \mathbf{0}$. $\blacksquare$
+
+> **Lemma 4.2 (Preservation of Connectedness — The Topological IVT)**: If $X$ is a connected topological space and $f: X \to Y$ is continuous, then the image $f(X)$ is connected.
+
+*Proof*:
+Suppose for contradiction that $f(X)$ is disconnected. Then there exist open disjoint sets $U, V \subset Y$ such that $f(X) \subset U \cup V$, $f(X) \cap U \neq \emptyset$, and $f(X) \cap V \neq \emptyset$.
+Since $f$ is continuous, the preimages $f^{-1}(U)$ and $f^{-1}(V)$ are open in $X$.
+Notice that:
+1. $f^{-1}(U) \cap f^{-1}(V) = f^{-1}(U \cap V) = f^{-1}(\emptyset) = \emptyset$.
+2. $X = f^{-1}(f(X)) \subseteq f^{-1}(U \cup V) = f^{-1}(U) \cup f^{-1}(V)$.
+3. Neither $f^{-1}(U)$ nor $f^{-1}(V)$ is empty because $f(X)$ intersects both $U$ and $V$.
+Thus, $f^{-1}(U)$ and $f^{-1}(V)$ form a separation of $X$, contradicting that $X$ is connected. Hence $f(X)$ must be connected.
+In $\mathbb{R}$, a subset is connected if and only if it is an interval. Since $[a, b]$ is connected, $f([a, b])$ is an interval containing both $f(a)$ and $f(b)$. Consequently, for every $y$ between $f(a)$ and $f(b)$, $y \in f([a, b])$, proving the classical IVT. $\blacksquare$
+
+> **Lemma 4.3 (Sylvester's Criterion for Positive Definiteness)**: A real symmetric $n \times n$ matrix $A$ is positive definite ($x^T A x > 0$ for all $x \neq 0$) if and only if all its leading principal minors are strictly positive:
+> $$\Delta_k = \det(A_{1:k, 1:k}) > 0, \quad \forall k \in \{1, 2, \dots, n\}$$
+
+*Proof*:
+By the Spectral Theorem, real symmetric $A$ has an orthonormal basis of eigenvectors with real eigenvalues $\lambda_1, \dots, \lambda_n$. $A$ is positive definite if and only if all $\lambda_i > 0$.
+The determinant of $A$ is the product of its eigenvalues: $\det A = \prod_{i=1}^n \lambda_i > 0$.
+By induction on dimension $n$, if the $(n-1) \times (n-1)$ leading submatrix is positive definite (all its leading minors positive), Cauchy's Interlacing Theorem ensures that the eigenvalues of the submatrix interlace the eigenvalues of $A$:
+$$\lambda_1 \le \mu_1 \le \lambda_2 \le \mu_2 \le \dots \le \mu_{n-1} \le \lambda_n$$
+Since $\mu_1 > 0$, the only eigenvalue of $A$ that could potentially be negative is $\lambda_1$. But $\det A = \prod_{i=1}^n \lambda_i > 0$, meaning the product cannot have an odd number of negative eigenvalues. Hence $\lambda_1 > 0$, proving all eigenvalues are strictly positive. $\blacksquare$
 
 ---
 
-## 3. Applications Across Disciplines
+## 4. Rigorous Construction & Advanced Theorems
 
-* **Artificial Intelligence**: High-dimensional non-convex loss surfaces are dominated by saddle points ($\lambda > 0$).
-* **Physics**: Spontaneous symmetry breaking and Ginzburg-Landau phase transitions occur via pitchfork bifurcations.
-* **Statistics**: Singular Fisher information matrices indicate non-identifiable models.
+### Proof of the Extreme Value Theorem (Compactness)
+> **Theorem 4.1 (Extreme Value Theorem)**: Let $X$ be a compact topological space and $f: X \to \mathbb{R}$ continuous. Then $f$ is bounded and attains its global maximum and minimum on $X$.
+
+*Proof*:
+1. **Boundedness**: Consider the open cover of $\mathbb{R}$ given by open intervals $\mathcal{U} = \{(-m, m) : m \in \mathbb{N}\}$. Because $f$ is continuous, the preimages $V_m = f^{-1}((-m, m))$ are open in $X$.
+   Since $\bigcup_{m=1}^\infty (-m, m) = \mathbb{R}$, we have $\bigcup_{m=1}^\infty V_m = X$. By compactness of $X$, there exists a finite subcover $\{V_{m_1}, \dots, V_{m_k}\}$.
+   Let $M^* = \max(m_1, \dots, m_k)$. Then $X \subseteq V_{M^*} = f^{-1}((-M^*, M^*))$, which proves that $|f(x)| < M^*$ for all $x \in X$. Thus, $f(X)$ is bounded.
+2. **Attainment of Supremum**: Since $f(X) \subset \mathbb{R}$ is non-empty and bounded above, by the Least Upper Bound Property of $\mathbb{R}$, $S = \sup_{x \in X} f(x)$ exists.
+   Suppose for contradiction that $f$ does not attain $S$: i.e., $f(x) < S$ for all $x \in X$.
+   Define the auxiliary function $g: X \to \mathbb{R}$ by:
+   $$g(x) = \frac{1}{S - f(x)}$$
+   Because $S - f(x) > 0$ on $X$ and $f$ is continuous, $g$ is continuous on $X$.
+   By step 1, $g$ is bounded on $X$: there exists $B > 0$ such that $g(x) \le B$ for all $x \in X$.
+   This implies:
+   $$\frac{1}{S - f(x)} \le B \implies S - f(x) \ge \frac{1}{B} \implies f(x) \le S - \frac{1}{B}, \quad \forall x \in X$$
+   This shows that $S - \frac{1}{B}$ is an upper bound for $f(X)$, strictly smaller than $S$. This contradicts the definition of $S = \sup f(X)$ as the *least* upper bound.
+   Therefore, there must exist some $x^* \in X$ such that $f(x^*) = S$.
+   Applying the same logic to $-f$ yields the attainment of the global infimum. $\blacksquare$
+
+### The Morse Lemma
+> **Theorem 4.2 (Morse Lemma)**: Let $f: U \to \mathbb{R}$ be a $C^3$ function on an open set $U \subseteq \mathbb{R}^n$, with a non-degenerate critical point at $x_0 = \mathbf{0}$ ($f'(\mathbf{0}) = \mathbf{0}$ and $\det H(f)(\mathbf{0}) \neq 0$).
+> Then there exists a local diffeomorphism $\Phi: V \to W$ between neighborhoods of the origin with $\Phi(\mathbf{0}) = \mathbf{0}$ such that in coordinates $u = \Phi(x)$:
+> $$f(u) = f(\mathbf{0}) - \sum_{i=1}^\lambda u_i^2 + \sum_{j=\lambda+1}^n u_j^2$$
+> where $\lambda$ is the number of negative eigenvalues of $H(f)(\mathbf{0})$ (the Morse Index).
+
+*Proof Sketch*:
+By Taylor's theorem with integral remainder, since $\nabla f(\mathbf{0}) = \mathbf{0}$:
+$$f(x) - f(\mathbf{0}) = \sum_{i,j=1}^n x_i x_j h_{ij}(x), \quad h_{ij}(x) = \int_0^1 (1 - t) \frac{\partial^2 f}{\partial x_i \partial x_j}(t x) dt$$
+Here $h_{ij}(\mathbf{0}) = \frac{1}{2} H_{ij}(\mathbf{0})$. Since $\det H(\mathbf{0}) \neq 0$, the matrix $H(x) = (h_{ij}(x))$ is non-singular in a neighborhood of $\mathbf{0}$.
+By Gram-Schmidt orthogonalization for parameter-dependent symmetric bilinear forms (inductive row and column reduction), one constructs smooth coordinate changes eliminating cross terms $x_i x_j$ ($i \neq j$) one by one. Rescaling each coordinate by the square root of its diagonal coefficient $\sqrt{|h_{ii}|}$ yields the canonical quadratic form. By Sylvester's Law of Inertia, the number of negative signs $\lambda$ is invariant under any coordinate transformation. $\blacksquare$
+
+### Catastrophe Theory & Pitchfork Bifurcations
+When $\det H = 0$, the non-degeneracy condition fails, and the Morse lemma no longer applies. Consider the potential family parameterized by $r \in \mathbb{R}$:
+$$V(x; r) = -\frac{1}{2} r x^2 + \frac{1}{4} x^4$$
+The equilibrium points satisfy:
+$$\frac{d V}{d x} = -r x + x^3 = x(x^2 - r) = 0$$
+* For $r < 0$: the only real critical point is $x = 0$, where $V''(0) = -r > 0$ (a stable minimum).
+* At $r = 0$: $V''(0) = 0$, a degenerate critical point where the Morse lemma breaks down.
+* For $r > 0$: $x = 0$ becomes an unstable maximum ($V''(0) = -r < 0$), while two new stable minima bifurcate symmetrically at $x = \pm \sqrt{r}$, with $V''(\pm \sqrt{r}) = 2r > 0$.
+This represents the **supercritical pitchfork bifurcation**, the mathematical model for spontaneous symmetry breaking.
 
 ---
 
-## 4. Numerical Computation: Hessian Spectral Decomposition & Morse Index Classifier
+## 5. Concrete Worked Examples & Step-by-Step Calculations
+
+### Worked Example 4.1: Hessian Spectral Classification and Morse Index
+Consider the bivariate function:
+$$f(x, y) = 2x^2 + 2xy - 3y^2 + x^3$$
+Let us classify the nature of the critical point at the origin $(0, 0)$.
+
+1. **First Derivatives & Criticality**:
+   $$\nabla f(x, y) = \begin{pmatrix} 4x + 2y + 3x^2 \\ 2x - 6y \end{pmatrix}$$
+   Evaluating at $(0, 0)$: $\nabla f(0, 0) = \begin{pmatrix} 0 \\ 0 \end{pmatrix}$. Thus $(0, 0)$ is indeed a critical point.
+
+2. **Hessian Matrix Construction**:
+   $$H(f)(x, y) = \begin{pmatrix} 4 + 6x & 2 \\ 2 & -6 \end{pmatrix} \implies H(f)(0, 0) = \begin{pmatrix} 4 & 2 \\ 2 & -6 \end{pmatrix}$$
+
+3. **Determinant and Trace**:
+   * $\text{tr}(H) = 4 + (-6) = -2$
+   * $\det(H) = (4)(-6) - (2)(2) = -24 - 4 = -28$
+
+4. **Eigenvalue Computation**:
+   $$\det(H - \lambda I) = \lambda^2 - \text{tr}(H)\lambda + \det(H) = \lambda^2 + 2\lambda - 28 = 0$$
+   $$\lambda_{1, 2} = \frac{-2 \pm \sqrt{4 - 4(1)(-28)}}{2} = \frac{-2 \pm \sqrt{116}}{2} = -1 \pm \sqrt{29}$$
+   * $\lambda_1 = -1 + \sqrt{29} \approx -1 + 5.38516 = +4.38516 > 0$
+   * $\lambda_2 = -1 - \sqrt{29} \approx -1 - 5.38516 = -6.38516 < 0$
+
+5. **Morse Classification**:
+   * Number of negative eigenvalues: $\lambda_{\text{Morse}} = 1$.
+   * Since $\det(H) = -28 \neq 0$, the critical point is **non-degenerate**.
+   * By the Morse Lemma, the critical point is a **hyperbolic saddle point** (topological index 1). Under a local $C^1$ coordinate transformation $(u, v) = \Phi(x, y)$, the function locally satisfies:
+     $$f(u, v) \approx f(0, 0) + u^2 - v^2$$
+
+### Worked Example 4.2: Darboux's Intermediate Value Property on a Discontinuous Derivative
+A common misconception is that the Intermediate Value Property belongs exclusively to continuous functions. **Darboux's Theorem** states that every derivative $f'$ satisfies the intermediate value property, even if $f'$ is severely discontinuous!
+
+Consider the classic function:
+$$f(x) = \begin{cases} x^2 \sin\left(\frac{1}{x}\right), & x \neq 0 \\ 0, & x = 0 \end{cases}$$
+
+1. **Differentiability at the Origin**:
+   By the limit definition of the derivative:
+   $$f'(0) = \lim_{h \to 0} \frac{f(h) - f(0)}{h} = \lim_{h \to 0} \frac{h^2 \sin(1/h)}{h} = \lim_{h \to 0} h \sin\left(\frac{1}{h}\right)$$
+   Since $-|h| \le h \sin(1/h) \le |h|$ and $\lim_{h \to 0} |h| = 0$, by the Squeeze Lemma:
+   $$f'(0) = 0$$
+
+2. **Derivative for $x \neq 0$**:
+   Applying the product and chain rules:
+   $$f'(x) = 2x \sin\left(\frac{1}{x}\right) - \cos\left(\frac{1}{x}\right)$$
+
+3. **Discontinuity of the Derivative**:
+   As $x \to 0$, $2x \sin(1/x) \to 0$, but $-\cos(1/x)$ oscillates indefinitely between $-1$ and $+1$.
+   Hence, $\lim_{x \to 0} f'(x)$ **does not exist**, and $f'$ is discontinuous at $x = 0$.
+
+4. **Verification of the Intermediate Value Property**:
+   Let $\epsilon > 0$. In the interval $(0, \epsilon)$, the term $1/x$ sweeps through infinitely many periods of $2\pi$.
+   Therefore, $\cos(1/x)$ achieves every value in $[-1, 1]$.
+   For any value $\gamma \in (-1, 1)$, there exist infinitely many points $x \in (-\epsilon, \epsilon)$ such that $f'(x) = \gamma$.
+   Thus, $f'$ maps any interval containing $0$ to an interval containing $(-1, 1)$, confirming Darboux's theorem.
+
+---
+
+## 6. Multi-Disciplinary Applications
+
+* **Machine Learning & Deep Learning**: The loss surfaces of deep neural networks live in spaces with millions of parameters ($\mathbb{R}^{10^7}$). Local minima are rare; high-dimensional loss landscapes are almost entirely dominated by saddle points ($\lambda_{\text{Morse}} \in [1, n-1]$). Escaping saddle points requires perturbing stochastic gradient descent (SGD) along negative curvature directions given by the Hessian eigenvectors.
+* **Theoretical Physics**: In statistical mechanics and condensed matter physics, spontaneous symmetry breaking (such as the paramagnetic-to-ferromagnetic transition) corresponds to a pitchfork bifurcation in the Landau free energy potential $\Phi(M) = a(T - T_c)M^2 + b M^4$.
+* **Structural Engineering**: Euler column buckling is a classic pitchfork bifurcation where an axial load exceeds the critical buckling load, causing the straight equilibrium state to lose stability and bifurcate into two buckled states.
+* **Computer Vision**: In 3D geometry processing, Morse-Smale complexes decompose triangulated surfaces into topological cells bounded by integral lines connecting minima, saddles, and maxima.
+
+---
+
+## 7. Numerical Computation: Hessian Spectral Decomposition & Morse Index Classifier
+
+Below are complete, self-contained implementations of **Hessian Spectral Classification and Morse Index Computation** across six scientific computing environments:
 
 ::: {.panel-tabset group="language"}
 ## Python 3
@@ -60,28 +213,32 @@ def classify_hessian_2d(H: np.ndarray):
     is_degenerate = bool(np.any(np.abs(eigvals) < 1e-5))
     return eigvals, morse_index, is_degenerate
 
-# Monkey saddle Hessian at (0, 0): f(x, y) = x^3 - 3*x*y^2 => H = [[0, 0], [0, 0]]
-H_monkey = np.array([[0.0, 0.0], [0.0, 0.0]])
-eigs, idx, deg = classify_hessian_2d(H_monkey)
-print(f"Python 3: Morse Index = {idx}, Degenerate = {deg}")
+# Hyperbolic saddle from Worked Example 4.1: H = [[4, 2], [2, -6]]
+H_example = np.array([[4.0, 2.0], [2.0, -6.0]])
+eigs, idx, deg = classify_hessian_2d(H_example)
+print(f"Python 3: Eigenvalues = {eigs}, Morse Index = {idx}, Degenerate = {deg}")
 ```
 
 ## C++20
 ```cpp
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 
 int main() {
-    // 2x2 Symmetric Matrix [[a, b], [b, c]]
-    double a = 2.0, b = 1.0, c = -3.0; // Hyperbolic saddle
+    // 2x2 Symmetric Matrix [[a, b], [b, c]] from Worked Example 4.1
+    double a = 4.0, b = 2.0, c = -6.0;
     double trace = a + c;
     double det = a * c - b * b;
     double disc = std::sqrt(std::max(0.0, trace * trace - 4.0 * det));
     double l1 = (trace + disc) / 2.0;
     double l2 = (trace - disc) / 2.0;
     int morse_index = (l1 < -1e-5) + (l2 < -1e-5);
+    bool is_degenerate = (std::abs(l1) < 1e-5) || (std::abs(l2) < 1e-5);
 
-    std::cout << "C++20:    Eigenvalues: (" << l1 << ", " << l2 << ") | Morse Index = " << morse_index << "\n";
+    std::cout << "C++20:    Eigenvalues: (" << l1 << ", " << l2 
+              << ") | Morse Index = " << morse_index 
+              << " | Degenerate: " << std::boolalpha << is_degenerate << "\n";
     return 0;
 }
 ```
@@ -90,41 +247,49 @@ int main() {
 ```julia
 using LinearAlgebra
 
-H = [2.0 1.0; 1.0 -3.0]
+H = [4.0 2.0; 2.0 -6.0]
 eigs = eigvals(Symmetric(H))
 morse_idx = count(x -> x < -1e-5, eigs)
-println("Julia:    Eigenvalues = $(eigs) | Morse Index = $(morse_idx)")
+is_deg = any(x -> abs(x) < 1e-5, eigs)
+
+println("Julia:    Eigenvalues = $(eigs) | Morse Index = $(morse_idx) | Degenerate = $(is_deg)")
 ```
 
 ## Modern Fortran
 ```fortran
-program morse_classifier
+program test_hessian
   implicit none
-  real(8) :: a, b, c, tr, det, disc, l1, l2
+  real(8) :: a, b, c, trace, det, disc, l1, l2
   integer :: morse_idx
 
-  a = 2.0d0; b = 1.0d0; c = -3.0d0
-  tr = a + c
-  det = a*c - b*b
-  disc = sqrt(max(0.0d0, tr*tr - 4.0d0*det))
-  l1 = (tr + disc) / 2.0d0
-  l2 = (tr - disc) / 2.0d0
+  ! Symmetric 2x2 matrix [[4, 2], [2, -6]]
+  a = 4.0d0; b = 2.0d0; c = -6.0d0
+  trace = a + c
+  det = a * c - b * b
+  disc = sqrt(max(0.0d0, trace**2 - 4.0d0 * det))
+  l1 = (trace + disc) / 2.0d0
+  l2 = (trace - disc) / 2.0d0
 
   morse_idx = 0
   if (l1 < -1.0d-5) morse_idx = morse_idx + 1
   if (l2 < -1.0d-5) morse_idx = morse_idx + 1
 
-  print '(A,F6.2,A,F6.2,A,I2)', "Fortran:  Eigs = (", l1, ",", l2, ") | Morse Index = ", morse_idx
-end program morse_classifier
+  print '(A,F10.5,A,F10.5,A,I2)', "Fortran:  l1 = ", l1, ", l2 = ", l2, " | Morse Index = ", morse_idx
+end program test_hessian
 ```
 
 ## MATLAB / Octave
 ```matlab
-H = [2.0, 1.0; 1.0, -3.0];
+% Hessian classification and Morse index
+H = [4.0, 2.0; 2.0, -6.0];
 eigs = eig(H);
-morse_idx = sum(eigs < -1e-5);
-fprintf('MATLAB:   Eigenvalues = [%.2f, %.2f] | Morse Index = %d\n', eigs(1), eigs(2), morse_idx);
+morse_index = sum(eigs < -1e-5);
+is_degenerate = any(abs(eigs) < 1e-5);
+
+fprintf('MATLAB:   Eigenvalues: [%.4f, %.4f] | Morse Index = %d | Degenerate = %d\n', ...
+        eigs(1), eigs(2), morse_index, is_degenerate);
 ```
+
 ## Lean 4
 ```lean
 -- Lean 4: Critical Points and the Extreme Value Theorem on Compact Spaces
@@ -143,18 +308,17 @@ def IsCriticalPoint {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (f : E → ℝ) (x : E) : Prop :=
   HasFDerivAt f 0 x
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 8. Curated Primary Literature & Canonical Syllabi
 
-* **John Milnor**, *Morse Theory*, Princeton University Press (1963), §1.
-* **V. I. Arnold**, *Catastrophe Theory*, 3rd Edition, Springer-Verlag (1992).
-* **Walter Rudin**, *Principles of Mathematical Analysis*, McGraw-Hill (1976), Ch 5.
-* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015), Chapter 4.
-
+* **John Milnor**, *Morse Theory*, Annals of Mathematics Studies No. 51, Princeton University Press (1963). The foundational text on non-degenerate critical point theory and topology of manifolds.
+* **Michael Spivak**, *Calculus*, 4th Edition, Publish or Perish (2008). Chapters 7 (Three Hard Theorems), 11 (Significance of the Derivative).
+* **V. I. Arnold**, *Catastrophe Theory*, 3rd Edition, Springer-Verlag (1992). Singularities of smooth mappings and bifurcation diagrams.
+* **Walter Rudin**, *Principles of Mathematical Analysis*, 3rd Edition, McGraw-Hill (1976). Chapter 4 (Continuity) and Chapter 9 (Functions of Several Variables).
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Chapter 4 (Applications of Differentiation) and Chapter 14 (Partial Derivatives).
 <br>
 <br>
 

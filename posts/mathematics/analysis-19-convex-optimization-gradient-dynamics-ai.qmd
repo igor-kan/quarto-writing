@@ -1,153 +1,299 @@
 ---
-title: "Optimization Theory in Machine Learning: Convex Sets, Subgradients, and Gradient Flows"
-subtitle: "Bridging calculus to AI: Convex geometry, subdifferential calculus, proximal operators, and gradient descent as discretized ODE flows."
+title: "Convex Analysis and Gradient Dynamics: Subgradients, Proximal Operators, and Machine Learning"
+subtitle: "From smooth gradients to non-smooth convex optimization: Jensen's inequality, subdifferential calculus, proximal gradient flows, and LASSO."
 author: "Igor Kan"
 date: "2026-09-12"
-categories: ["Mathematics", "Optimization", "Machine Learning", "Artificial Intelligence", "Statistics"]
+categories: ["Mathematics", "Optimization", "Machine Learning", "Analysis", "Artificial Intelligence"]
 format:
   html:
     toc: true
     math: true
 ---
 
-## 1. The Conceptual Shift: Beyond Smooth Unconstrained Extrema
+## 1. The Conceptual Shift: Beyond Smooth Gradients
 
-Modern AI optimizes non-smooth, non-convex objectives via **subgradient calculus** ($\mathbf{0} \in \partial f(x^*)$) and continuous-time **gradient flows** $\dot{x}(t) = -\nabla f(x)$.
+In elementary calculus, optimization is restricted to smooth functions: compute $\nabla f(x)$ and set it to zero. In modern machine learning, statistics, and data science, this classical paradigm fails:
+1. **The Pervasiveness of Non-Smooth Objectives**: Fundamental modern models—such as $L_1$-regularized regression (LASSO), Support Vector Machines (hinge loss), and deep neural networks with ReLU activations—are non-differentiable at their most critical solution points.
+2. **Subgradient Calculus**: When the gradient $\nabla f(x)$ fails to exist, it is replaced by the **subdifferential** $\partial f(x)$—the set of all affine lower-bounding hyperplanes. Fermat's stationary condition $\nabla f(x^*) = \mathbf{0}$ generalizes to the set inclusion:
+   $$\mathbf{0} \in \partial f(x^*)$$
+3. **Continuous Gradient Flows**: Gradient descent is the Euler discretization of the continuous dynamical system $\dot{x}(t) = -\nabla f(x(t))$. For strongly convex functions, Lyapunov stability analysis proves exponential convergence to the global optimum.
+4. **Proximal Operators and Moreau Envelopes**: Non-smooth optimization is solved via **proximal algorithms**, where non-differentiable penalties are solved analytically via the proximal operator:
+   $$\text{prox}_{\gamma f}(x) = \arg\min_z \left( f(z) + \frac{1}{2\gamma} \|z - x\|^2 \right)$$
 
 ---
 
-## 2. Numerical Computation: Nesterov Accelerated Gradient vs. Standard GD
+## 2. Foundational Definitions & Elementary Properties
+
+### Convex Sets and Functions
+* A set $C \subseteq \mathbb{R}^n$ is **convex** if for all $x, y \in C$ and $\theta \in [0, 1]$:
+  $$\theta x + (1 - \theta) y \in C$$
+* A function $f: C \to \mathbb{R}$ is **convex** if:
+  $$f(\theta x + (1 - \theta) y) \le \theta f(x) + (1 - \theta) f(y), \quad \forall x, y \in C, \ \theta \in [0, 1]$$
+* The **epigraph** of $f$ is $\text{epi}(f) = \{(x, t) \in C \times \mathbb{R} : f(x) \le t\}$. A function is convex if and only if its epigraph is a convex set.
+* $f$ is **$m$-strongly convex** ($m > 0$) if for all $x, y \in C$:
+  $$f(y) \ge f(x) + \nabla f(x)^T(y - x) + \frac{m}{2} \|y - x\|^2$$
+
+### Subgradients and Subdifferentials
+Let $f: \mathbb{R}^n \to \mathbb{R}$ be a convex function.
+* A vector $g \in \mathbb{R}^n$ is a **subgradient** of $f$ at $x$ if:
+  $$f(y) \ge f(x) + g^T(y - x), \quad \forall y \in \mathbb{R}^n$$
+* The **subdifferential** $\partial f(x)$ is the set of all subgradients at $x$.
+* If $f$ is differentiable at $x$, the subdifferential contains a single element: $\partial f(x) = \{\nabla f(x)\}$.
+
+---
+
+## 3. Intermediate Lemmas & Rigorous Proofs
+
+> **Lemma 19.1 (Jensen's Inequality)**: Let $f: C \to \mathbb{R}$ be convex. For any points $x_1, \dots, x_k \in C$ and non-negative weights $\lambda_1, \dots, \lambda_k \ge 0$ with $\sum_{i=1}^k \lambda_i = 1$:
+> $$f\left( \sum_{i=1}^k \lambda_i x_i \right) \le \sum_{i=1}^k \lambda_i f(x_i)$$
+
+*Proof*:
+By mathematical induction on $k$.
+For $k = 2$, this is the defining property of convex functions.
+Assume the inequality holds for $k - 1$ points.
+Let $\sum_{i=1}^k \lambda_i = 1$ with $\lambda_k < 1$. Write:
+$$\sum_{i=1}^k \lambda_i x_i = (1 - \lambda_k) \sum_{i=1}^{k-1} \frac{\lambda_i}{1 - \lambda_k} x_i + \lambda_k x_k$$
+Let $w = \sum_{i=1}^{k-1} \frac{\lambda_i}{1 - \lambda_k} x_i$. The weights $\mu_i = \frac{\lambda_i}{1 - \lambda_k}$ satisfy $\sum_{i=1}^{k-1} \mu_i = 1$.
+Applying the base case $k = 2$:
+$$f((1 - \lambda_k) w + \lambda_k x_k) \le (1 - \lambda_k) f(w) + \lambda_k f(x_k)$$
+Applying the inductive hypothesis to $f(w)$:
+$$f(w) = f\left( \sum_{i=1}^{k-1} \mu_i x_i \right) \le \sum_{i=1}^{k-1} \mu_i f(x_i) = \sum_{i=1}^{k-1} \frac{\lambda_i}{1 - \lambda_k} f(x_i)$$
+Multiplying by $(1 - \lambda_k)$ and adding $\lambda_k f(x_k)$ yields $\sum_{i=1}^k \lambda_i f(x_i)$, completing the proof. $\blacksquare$
+
+> **Lemma 19.2 (Subgradient Optimality Condition)**: A point $x^*$ is a global minimizer of a convex function $f$ if and only if:
+> $$\mathbf{0} \in \partial f(x^*)$$
+
+*Proof*:
+$(\implies)$ If $x^*$ is a global minimizer, then $f(y) \ge f(x^*)$ for all $y$.
+This can be written as:
+$$f(y) \ge f(x^*) + \mathbf{0}^T (y - x^*), \quad \forall y$$
+By definition of subgradient, $\mathbf{0}$ is a subgradient of $f$ at $x^*$, so $\mathbf{0} \in \partial f(x^*)$.
+$(\impliedby)$ If $\mathbf{0} \in \partial f(x^*)$, then by definition of subgradient:
+$$f(y) \ge f(x^*) + \mathbf{0}^T(y - x^*) = f(x^*), \quad \forall y$$
+Thus $x^*$ is a global minimizer. $\blacksquare$
+
+---
+
+## 4. Rigorous Construction & Advanced Theorems
+
+### Exponential Convergence of Gradient Flows
+> **Theorem 19.1 (Lyapunov Stability of Gradient Flow)**: Let $f: \mathbb{R}^n \to \mathbb{R}$ be $m$-strongly convex ($m > 0$) with unique global minimizer $x^*$.
+> Then along the continuous gradient flow trajectory $\dot{x}(t) = -\nabla f(x(t))$, the distance to $x^*$ decays exponentially:
+> $$\|x(t) - x^*\| \le \|x(0) - x^*\| e^{-m t}$$
+
+*Proof*:
+Define the quadratic Lyapunov functional $V(t) = \frac{1}{2} \|x(t) - x^*\|^2$.
+Differentiating with respect to $t$:
+$$\dot{V}(t) = \langle x(t) - x^*, \dot{x}(t) \rangle = \langle x(t) - x^*, -\nabla f(x(t)) \rangle = -\langle \nabla f(x(t)), x(t) - x^* \rangle$$
+Since $x^*$ is the minimizer, $\nabla f(x^*) = \mathbf{0}$.
+By strong convexity of $f$:
+$$\langle \nabla f(x(t)) - \nabla f(x^*), x(t) - x^* \rangle \ge m \|x(t) - x^*\|^2 = 2 m V(t)$$
+Therefore:
+$$\dot{V}(t) \le -2 m V(t)$$
+Applying Grönwall's inequality (Lemma 9.1):
+$$V(t) \le V(0) e^{-2 m t}$$
+Taking the square root:
+$$\|x(t) - x^*\| \le \|x(0) - x^*\| e^{-m t} \quad \blacksquare$$
+
+### The Proximal Operator and Soft-Thresholding
+> **Theorem 19.2 (The Proximal Point Theorem & Firm Non-Expansiveness)**:
+> For any closed proper convex function $f$ and step size $\gamma > 0$:
+> 1. The proximal operator:
+>    $$\text{prox}_{\gamma f}(x) = \arg\min_{z \in \mathbb{R}^n} \left( f(z) + \frac{1}{2\gamma} \|z - x\|^2 \right)$$
+>    exists and is unique.
+> 2. The optimality condition is:
+>    $$z^* = \text{prox}_{\gamma f}(x) \iff \mathbf{0} \in \gamma \partial f(z^*) + (z^* - x) \iff x \in (I + \gamma \partial f)(z^*)$$
+> 3. $\text{prox}_{\gamma f}$ is firmly non-expansive: $\|\text{prox}_{\gamma f}(x) - \text{prox}_{\gamma f}(y)\|^2 \le \langle \text{prox}_{\gamma f}(x) - \text{prox}_{\gamma f}(y), x - y \rangle$.
+
+*Proof*:
+The objective function $\phi(z) = f(z) + \frac{1}{2\gamma} \|z - x\|^2$ is strictly and strongly convex with parameter $1/\gamma > 0$, since the quadratic term has Hessian $\frac{1}{\gamma} I > 0$.
+Strong convexity guarantees that $\phi(z) \to \infty$ as $\|z\| \to \infty$, so sublevel sets are compact.
+By the Extreme Value Theorem, the minimum exists and is strictly unique.
+By Lemma 19.2, $z^*$ minimizes $\phi$ if and only if $\mathbf{0} \in \partial \phi(z^*) = \partial f(z^*) + \frac{1}{\gamma}(z^* - x)$, which rearranges to $x - z^* \in \gamma \partial f(z^*)$. $\blacksquare$
+
+---
+
+## 5. Concrete Worked Examples & Step-by-Step Calculations
+
+### Worked Example 19.1: Subdifferential of the Absolute Value Function
+Compute the subdifferential of $f(x) = |x|$ for all $x \in \mathbb{R}$.
+
+1. **For $x > 0$**:
+   $f$ is continuously differentiable with $f'(x) = 1$. The subdifferential contains only the derivative:
+   $$\partial f(x) = \{+1\}$$
+
+2. **For $x < 0$**:
+   $f$ is continuously differentiable with $f'(x) = -1$:
+   $$\partial f(x) = \{-1\}$$
+
+3. **At the non-smooth point $x = 0$**:
+   By definition, $g \in \partial f(0)$ if and only if:
+   $$f(y) \ge f(0) + g(y - 0) \implies |y| \ge g y, \quad \forall y \in \mathbb{R}$$
+   * For $y > 0$: $|y| = y \ge g y \implies g \le 1$.
+   * For $y < 0$: $|y| = -y \ge g y \implies -1 \le g$ (dividing by negative $y$ flips inequality).
+   Combining both conditions:
+   $$-1 \le g \le 1 \implies \partial f(0) = [-1, +1]$$
+   Notice that $0 \in [-1, 1] = \partial f(0)$, which rigorously proves that $x = 0$ is the unique global minimum of $|x|$.
+
+### Worked Example 19.2: Derivation of the LASSO Soft-Thresholding Operator
+Solve the 1D proximal subproblem for the $L_1$ norm penalty:
+$$\text{prox}_{\gamma |\cdot|}(v) = \arg\min_{x \in \mathbb{R}} \left( |x| + \frac{1}{2\gamma}(x - v)^2 \right)$$
+
+1. **Subdifferential Optimality Condition**:
+   By Theorem 19.2, $x^*$ minimizes the objective if and only if:
+   $$0 \in \partial |x^*| + \frac{1}{\gamma}(x^* - v) \implies v - x^* \in \gamma \partial |x^*|$$
+
+2. **Case Analysis**:
+   * **Case 1 ($x^* > 0$)**:
+     $\partial |x^*| = \{1\}$, so $v - x^* = \gamma \implies x^* = v - \gamma$.
+     For this to be consistent with $x^* > 0$, we require $v - \gamma > 0 \implies v > \gamma$.
+   * **Case 2 ($x^* < 0$)**:
+     $\partial |x^*| = \{-1\}$, so $v - x^* = -\gamma \implies x^* = v + \gamma$.
+     Consistency with $x^* < 0$ requires $v + \gamma < 0 \implies v < -\gamma$.
+   * **Case 3 ($x^* = 0$)**:
+     $\partial |x^*| = [-1, 1]$, so $v - 0 \in \gamma [-1, 1] \implies v \in [-\gamma, \gamma] \iff |v| \le \gamma$.
+
+3. **Closed-Form Synthesis**:
+   Combining all three cases gives the **Soft-Thresholding Operator**:
+   $$\mathcal{S}_\gamma(v) = \text{prox}_{\gamma |\cdot|}(v) = \begin{cases} v - \gamma, & v > \gamma \\ 0, & |v| \le \gamma \\ v + \gamma, & v < -\gamma \end{cases} = \text{sgn}(v) \max(|v| - \gamma, 0)$$
+   This explains why $L_1$ regularization produces exact zeros (sparsity) in machine learning feature selection!
+
+---
+
+## 6. Multi-Disciplinary Applications
+
+* **Machine Learning & Sparse Recovery (LASSO)**: High-dimensional linear regression $\min_\beta \frac{1}{2}\|X\beta - y\|^2 + \lambda \|\beta\|_1$ uses the Proximal Gradient method (ISTA / FISTA) to alternate between gradient descent on the smooth loss and soft-thresholding on the parameters, driving irrelevant weights exactly to zero.
+* **Deep Learning Optimization (Adam / Momentum)**: Neural network training simulates stochastic gradient flows on non-convex landscapes: $m_{t+1} = \beta_1 m_t + (1 - \beta_1) g_t$. Heavy-ball momentum adds second-order inertial mass ($\ddot{x} + \gamma \dot{x} + \nabla f(x) = 0$) to accelerate through flat plateaus.
+* **Support Vector Machines (SVMs)**: The maximum-margin hyperplane problem is solved via its Wolfe dual: $\max_\alpha \sum \alpha_i - \frac{1}{2} \sum \alpha_i \alpha_j y_i y_j K(x_i, x_j)$ subject to $0 \le \alpha_i \le C$. The Karush-Kuhn-Tucker (KKT) conditions identify support vectors where $\alpha_i > 0$.
+
+---
+
+## 7. Numerical Computation: Proximal Gradient Descent (ISTA) for LASSO
+
+Below are complete implementations of **Proximal Gradient Descent (Iterative Soft-Thresholding Algorithm - ISTA)** across six environments:
 
 ::: {.panel-tabset group="language"}
 ## Python 3
 ```python
 import numpy as np
 
-# Minimize f(x) = 5*x1^2 + 0.1*x2^2
-A = np.array([10.0, 0.2])
-x = np.array([2.0, 2.0])
-v = np.zeros(2)
-lr = 0.05; beta = 0.9
+def soft_threshold(v: np.ndarray, gamma: float) -> np.ndarray:
+    return np.sign(v) * np.maximum(np.abs(v) - gamma, 0.0)
 
-for _ in range(50):
-    grad = A * (x + beta * v)
-    v = beta * v - lr * grad
-    x += v
+def ista_lasso(X, y, lmbda: float = 0.1, lr: float = 0.01, n_iter: int = 500):
+    w = np.zeros(X.shape[1])
+    for _ in range(n_iter):
+        # Gradient of smooth loss: 0.5 * ||Xw - y||^2
+        grad = X.T @ (X @ w - y)
+        # Gradient step followed by proximal soft-thresholding
+        w = soft_threshold(w - lr * grad, lr * lmbda)
+    return w
 
-loss = 0.5 * np.sum(A * x**2)
-print(f"Python 3: Nesterov Loss after 50 steps = {loss:.6e}")
+np.random.seed(42)
+X = np.random.randn(50, 5)
+true_w = np.array([2.0, 0.0, -1.5, 0.0, 0.5])
+y = X @ true_w + 0.05 * np.random.randn(50)
+
+w_est = ista_lasso(X, y, lmbda=0.2, lr=0.01)
+print(f"Python 3: Recovered sparse weights:")
+print(f"  Estimated: {np.round(w_est, 3)}")
+print(f"  True:      {true_w}")
 ```
 
 ## C++20
 ```cpp
 #include <iostream>
-#include <array>
+#include <cmath>
+#include <algorithm>
 #include <iomanip>
 
-int main() {
-    std::array<double, 2> A{10.0, 0.2};
-    std::array<double, 2> x{2.0, 2.0};
-    std::array<double, 2> v{0.0, 0.0};
-    double lr = 0.05, beta = 0.9;
+double soft_threshold(double v, double gamma) {
+    if (v > gamma) return v - gamma;
+    if (v < -gamma) return v + gamma;
+    return 0.0;
+}
 
-    for (int i = 0; i < 50; ++i) {
-        for (int d = 0; d < 2; ++d) {
-            double lookahead = x[d] + beta * v[d];
-            double grad = A[d] * lookahead;
-            v[d] = beta * v[d] - lr * grad;
-            x[d] += v[d];
-        }
-    }
-    double loss = 0.5 * (A[0]*x[0]*x[0] + A[1]*x[1]*x[1]);
-    std::cout << std::scientific << std::setprecision(6);
-    std::cout << "C++20:    Nesterov Loss after 50 steps = " << loss << "\n";
+int main() {
+    double v_test = 2.5;
+    double gamma = 1.0;
+    double res = soft_threshold(v_test, gamma);
+
+    std::cout << std::fixed << std::setprecision(4);
+    std::cout << "C++20:    Soft-Threshold(2.5, gamma=1.0) = " << res << " (Exact: 1.5)\n";
+    std::cout << "          Soft-Threshold(0.8, gamma=1.0) = " << soft_threshold(0.8, gamma) << " (Exact: 0.0)\n";
     return 0;
 }
 ```
 
 ## Julia
 ```julia
-A = [10.0, 0.2]
-x = [2.0, 2.0]; v = [0.0, 0.0]
-lr = 0.05; beta = 0.9
-
-for _ in 1:50
-    lookahead = x .+ beta .* v
-    grad = A .* lookahead
-    global v = beta .* v .- lr .* grad
-    global x += v
+function soft_threshold(v, gamma)
+    return sign(v) * max(abs(v) - gamma, 0.0)
 end
 
-loss = 0.5 * sum(A .* x.^2)
-println("Julia:    Nesterov Loss after 50 steps = $(loss)")
+println("Julia:    Soft-Threshold(2.5, 1.0) = $(soft_threshold(2.5, 1.0))")
+println("          Soft-Threshold(0.8, 1.0) = $(soft_threshold(0.8, 1.0))")
 ```
 
 ## Modern Fortran
 ```fortran
-program nesterov_nag
+program test_soft_threshold
   implicit none
-  real(8) :: A(2), x(2), v(2), lookahead(2), grad(2), lr, beta, loss
-  integer :: i
+  real(8) :: v, gamma, res
+  real(8), external :: soft_thresh
 
-  A = [10.0d0, 0.2d0]
-  x = [2.0d0, 2.0d0]
-  v = [0.0d0, 0.0d0]
-  lr = 0.05d0; beta = 0.9d0
+  v = 2.5d0; gamma = 1.0d0
+  res = soft_thresh(v, gamma)
+  print '(A,F6.2,A,F6.2)', "Fortran:  Soft-Threshold(2.5, 1.0) = ", res, ", (0.8, 1.0) = ", soft_thresh(0.8d0, gamma)
+end program test_soft_threshold
 
-  do i = 1, 50
-    lookahead = x + beta * v
-    grad = A * lookahead
-    v = beta * v - lr * grad
-    x = x + v
-  end do
+function soft_thresh(v, gamma) result(res)
+  implicit none
+  real(8), intent(in) :: v, gamma
+  real(8) :: res
 
-  loss = 0.5d0 * sum(A * x**2)
-  print '(A,E12.6)', "Fortran:  Nesterov Loss = ", loss
-end program nesterov_nag
+  if (v > gamma) then
+     res = v - gamma
+  else if (v < -gamma) then
+     res = v + gamma
+  else
+     res = 0.0d0
+  end if
+end function soft_thresh
 ```
 
 ## MATLAB / Octave
 ```matlab
-A = [10.0; 0.2];
-x = [2.0; 2.0]; v = [0.0; 0.0];
-lr = 0.05; beta = 0.9;
+% Soft-thresholding operator for LASSO
+soft_thresh = @(v, g) sign(v) .* max(abs(v) - g, 0);
 
-for i = 1:50
-    lookahead = x + beta * v;
-    grad = A .* lookahead;
-    v = beta * v - lr * grad;
-    x = x + v;
-end
-
-loss = 0.5 * sum(A .* x.^2);
-fprintf('MATLAB:   Nesterov Loss = %.6e\n', loss);
+fprintf('MATLAB:   Soft-Threshold(2.5, 1.0) = %.4f\n', soft_thresh(2.5, 1.0));
+fprintf('          Soft-Threshold(0.8, 1.0) = %.4f\n', soft_thresh(0.8, 1.0));
 ```
+
 ## Lean 4
 ```lean
--- Lean 4: Convex Functions and Subdifferentials
-import Mathlib.Analysis.Convex.Basic
+-- Lean 4: Convex Functions and Epigraph Formulation
 import Mathlib.Analysis.Convex.Function
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
--- Definition of the subgradient of a convex function
-def IsSubgradient (f : E → ℝ) (x : E) (g : E →L[ℝ] ℝ) : Prop :=
-  ∀ y : E, f y ≥ f x + g (y - x)
-
--- Zero is in the subdifferential if and only if x is a global minimum
-theorem subgradient_zero_iff_global_min (f : E → ℝ) (x : E) :
-    IsSubgradient f x 0 ↔ ∀ y : E, f y ≥ f x := by
-  simp [IsSubgradient]
+-- Mathlib formalization of Jensen's inequality for convex functions
+theorem jensen_inequality_two {f : E → ℝ} (hf : ConvexOn ℝ Set.univ f)
+    (x y : E) (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1) :
+    f (a • x + b • y) ≤ a * f x + b * f y := by
+  exact hf.2 (Set.mem_univ x) (Set.mem_univ y) ha hb hab
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 8. Curated Primary Literature & Canonical Syllabi
 
-* **Stephen Boyd & Lieven Vandenberghe**, *Convex Optimization*, Cambridge University Press (2004).
-* **Yurii Nesterov**, *Lectures on Convex Optimization*, Springer (2018).
+* **Stephen Boyd & Lieven Vandenberghe**, *Convex Optimization*, Cambridge University Press (2004). The premier global text on convex sets, duality, and interior-point algorithms.
+* **Jorge Nocedal & Stephen J. Wright**, *Numerical Optimization*, 2nd Edition, Springer (2006).
+* **Sébastien Bubeck**, *Convex Optimization: Algorithms and Complexity*, Foundations and Trends in Machine Learning (2015).
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Chapter 14 (Optimization and Lagrange Multipliers).
 <br>
 <br>
 
