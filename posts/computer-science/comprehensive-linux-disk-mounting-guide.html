@@ -580,17 +580,26 @@ NTFS is either inconsistent, or there is a hardware fault...</code></pre>
 <p>Or via <code>udisksctl</code>:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">udisksctl</span> mount <span class="at">-b</span> /dev/disk/by-label/Windows <span class="at">--options</span> ro</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-<section id="discarding-the-windows-hibernation-session" class="level4">
-<h4 class="anchored" data-anchor-id="discarding-the-windows-hibernation-session">2. Discarding the Windows Hibernation Session</h4>
-<p>If you need read-write access and do not care about preserving the hibernated Windows session (any unsaved application state in Windows will be discarded):</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mount <span class="at">-t</span> ntfs-3g <span class="at">-o</span> remove_hiberfile,uid=1000,gid=1000 /dev/disk/by-label/Windows /mnt/windows</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Alternatively, use <code>ntfsfix</code> to clear the dirty/hibernation bit:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ntfsfix <span class="at">-d</span> /dev/disk/by-label/Windows</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ex">udisksctl</span> mount <span class="at">-b</span> /dev/disk/by-label/Windows</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="why--o-remove_hiberfile-alone-can-still-fail-the-mftmirr-mismatch" class="level4">
+<h4 class="anchored" data-anchor-id="why--o-remove_hiberfile-alone-can-still-fail-the-mftmirr-mismatch">2. Why <code>-o remove_hiberfile</code> Alone Can Still Fail: The <code>$MFTMirr</code> Mismatch</h4>
+<p>A common pitfall occurs when attempting:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mount <span class="at">-t</span> ntfs-3g <span class="at">-o</span> remove_hiberfile,uid=1000,gid=1000 /dev/sdc3 /mnt/windows</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>And receiving the exact same failure: <code>$MFTMirr does not match $MFT (record 3). Failed to mount: Input/output error</code></p>
+<p><strong>Why this happens:</strong> In NTFS, the Master File Table (<code>$MFT</code>) contains all inode records, while <code>$MFTMirr</code> holds a backup copy of the first 4 records (record 0 = <code>$MFT</code>, 1 = <code>$MFTMirr</code>, 2 = <code>$LogFile</code>, 3 = <code>$Volume</code>). When a Windows drive experiences an unclean unplug or hybrid hibernation, record 3 (<code>$Volume</code>) often diverges between the primary table and the backup mirror.</p>
+<p>The <code>remove_hiberfile</code> option <strong>only deletes <code>hiberfil.sys</code></strong>; it does not repair a desynchronized <code>$MFTMirr</code>. The <code>ntfs-3g</code> driver’s consistency check aborts <em>before</em> even touching <code>hiberfil.sys</code> to prevent writing to a corrupted table.</p>
+<p><strong>The Fix:</strong> You must run <code>ntfsfix</code> to resynchronize <code>$MFT</code> and <code>$MFTMirr</code> and clear the dirty flag first:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Ensure the device is unmounted</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ex">udisksctl</span> unmount <span class="at">-b</span> /dev/disk/by-label/Windows <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">sudo</span> umount /mnt/windows <span class="dv">2</span><span class="op">&gt;</span>/dev/null</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Resynchronize MFT mirror and clear dirty bit</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ntfsfix <span class="at">-d</span> /dev/disk/by-label/Windows</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Mount read-write</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mount <span class="at">-t</span> ntfs-3g <span class="at">-o</span> remove_hiberfile,uid=1000,gid=1000 /dev/disk/by-label/Windows /mnt/windows</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="the-clean-windows-shutdown-fix" class="level4">
 <h4 class="anchored" data-anchor-id="the-clean-windows-shutdown-fix">3. The Clean Windows Shutdown Fix</h4>
-<p>The cleanest and safest approach: plug the drive back into the Windows machine, click <strong>Start ➔ Restart</strong> (restarts perform a complete, clean dismount without hibernation), and unplug the drive once the machine finishes rebooting.</p>
+<p>The cleanest, non-destructive approach: plug the drive into a Windows machine, click <strong>Start ➔ Restart</strong> (restarts perform a complete, clean filesystem dismount without hibernation), and unplug the drive once the machine finishes rebooting. Alternatively, run <code>chkdsk /f E:</code> in Windows Command Prompt.</p>
 <hr>
 </section>
 </section>
