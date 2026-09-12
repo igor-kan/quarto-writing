@@ -1,0 +1,204 @@
+---
+title: "Self-Hosting Excalidraw: From Standalone Docker to Real-Time Collaboration and Persistent Storage"
+subtitle: "A production-grade guide to deploying private virtual whiteboards with WebSockets, excalidraw-room, reverse proxies, and cloud sharing"
+author: "Igor Kan"
+date: "2026-09-12"
+categories: ["Computer Science", "DevOps", "Docker", "Self-Hosting", "SysAdmin", "Networking", "WebSockets"]
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+draft: true
+---
+
+## 1. Why Self-Host Excalidraw?
+
+[Excalidraw](https://excalidraw.com) has become the gold standard for software architecture diagrams, system design whiteboarding, and engineering mind-mapping. Its signature hand-drawn aesthetic removes the pressure of visual perfection, allowing technical teams to focus on structural logic, workflows, and relationship diagrams.
+
+While the public cloud version is fast and accessible, self-hosting Excalidraw on your own home-lab or virtual private server (VPS) offers compelling advantages:
+* **Total Data Privacy:** Proprietary architecture blueprints, IP addresses, internal database schemas, and confidential security audits never leave your private infrastructure.
+* **Offline & Air-Gapped Operation:** Work inside local isolated intranets or VPNs (such as Tailscale or WireGuard) without depending on third-party cloud uptime.
+* **Cost & Customization:** Unlimited persistent canvases, customized library assets, and direct control over WebSocket collaboration servers without commercial subscription tiers.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       Excalidraw Self-Hosting Tiers                         │
+├─────────────────────┬───────────────────┬───────────────────────────────────┤
+│ Tier                │ Stack Components  │ Capabilities                      │
+├─────────────────────┼───────────────────┼───────────────────────────────────┤
+│ Standalone Client   │ Docker container  │ Static single-user whiteboard.    │
+│                     │ (Nginx + React)   │ Saves to browser LocalStorage.    │
+├─────────────────────┼───────────────────┼───────────────────────────────────┤
+│ Collaborative Stack │ Frontend + Room   │ Live real-time multi-user editing │
+│                     │ backend (Node/Go) │ via WebSockets and share links.   │
+├─────────────────────┼───────────────────┼───────────────────────────────────┤
+│ Production Cluster  │ Reverse Proxy +   │ SSL encryption, custom domains,   │
+│                     │ MinIO / S3 Store  │ persistent cloud canvas archive.  │
+└─────────────────────┴───────────────────┴───────────────────────────────────┘
+```
+
+---
+
+## 2. Method 1: Standalone Client via Docker (Single User)
+
+The quickest method to deploy Excalidraw is running the official pre-built Docker image. This provides an isolated, web-accessible whiteboard without real-time collaboration or server-side database persistence.
+
+### 2.1 One-Line Docker Run
+Execute the following command on your Linux server:
+
+```bash
+docker run --rm -dit \
+  --name excalidraw \
+  -p 8080:80 \
+  excalidraw/excalidraw:latest
+```
+
+* **Image:** `excalidraw/excalidraw:latest` pulls the official production build from Docker Hub.
+* **Port Mapping:** `-p 8080:80` routes incoming HTTP traffic on port `8080` to the internal Nginx webserver inside the container.
+* **Verification:** Open your browser and navigate to `http://<your-server-ip>:8080`.
+
+### 2.2 Inherent Limitations of Standalone Mode
+* **Client-Side Storage:** Drawings are saved solely in your browser’s `window.localStorage`. Clearing browser cache or switching devices wipes the drawing unless exported manually as an `.excalidraw`, `.png`, or `.svg` file.
+* **No Collaboration:** The "Live collaboration" room button is disabled or fails to connect because there is no backend coordination server handling WebSocket synchronization.
+
+For foundational documentation on building from source, see the [Excalidraw Official Developer Documentation](https://docs.excalidraw.com/docs/introduction/development) and [Docker Hub Excalidraw Image](https://hub.docker.com/r/excalidraw/excalidraw). Detailed home-lab deployment tutorials are available at [VirtualizationHowTo Docker Whiteboard Guide](https://www.virtualizationhowto.com/2023/04/excalidraw-whiteboard-ultimate-docker-self-hosted-home-lab-diagramming/).
+
+---
+
+## 3. Method 2: Multi-Container Real-Time Collaboration
+
+To enable live multi-user editing—where colleagues or remote collaborators can join a room via a shared URL and see live cursor movements—you must deploy a **collaboration backend**.
+
+In the Excalidraw architecture, the frontend client connects to a companion backend service (traditionally `excalidraw-room`, or the optimized Go-based engine found in `excalidraw-complete`).
+
+```
+                    ┌─────────────────────────────────────────┐
+                    │          Client Browser (User A)        │
+                    └────────────┬───────────────────▲────────┘
+                                 │                   │
+                     HTTP Assets │                   │ WSS / WebSocket
+                                 ▼                   │
+                ┌────────────────────────────────────┴────────┐
+                │          Ingress / Reverse Proxy            │
+                │              (Nginx / Caddy)                │
+                └───────────────┬─────────────────────────────┘
+                                │
+            ┌───────────────────┴───────────────────┐
+            ▼                                       ▼
+  ┌───────────────────┐                   ┌───────────────────┐
+  │ Excalidraw Web    │                   │ Excalidraw Room   │
+  │ Frontend (Port 80)│                   │ Backend (WebSock) │
+  └───────────────────┘                   └───────────────────┘
+```
+
+### 3.1 Production `docker-compose.yml` Architecture
+Create a dedicated project directory and `docker-compose.yml` file:
+
+```bash
+mkdir -p ~/services/excalidraw && cd ~/services/excalidraw
+```
+
+```yaml
+version: '3.8'
+
+services:
+  # 1. Excalidraw Frontend Web UI
+  excalidraw-web:
+    image: excalidraw/excalidraw:latest
+    container_name: excalidraw_web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - BACKEND_V2_GET_URL=http://localhost:8081/api/v2/
+      - BACKEND_V2_POST_URL=http://localhost:8081/api/v2/
+      - WS_SERVER_URL=ws://localhost:8081
+
+  # 2. Real-Time Collaboration Room Backend
+  excalidraw-room:
+    image: alswl/excalidraw-collaboration:latest
+    container_name: excalidraw_collab
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      - PORT=80
+```
+
+Alternatively, you can deploy the consolidated, high-efficiency Go implementation maintained in the [PatWie/excalidraw-complete GitHub Repository](https://github.com/PatWie/excalidraw-complete) or [Someone0nEarth/excalidraw-self-hosted](https://github.com/Someone0nEarth/excalidraw-self-hosted):
+
+```bash
+git clone https://github.com/PatWie/excalidraw-complete.git
+cd excalidraw-complete
+docker compose up -d
+```
+
+For advanced container orchestration and WebSocket configuration parameters, review [Sliplane 2026 Self-Hosting Excalidraw Guide](https://sliplane.io/) and [InterServer VPS Self-Hosting Tutorials](https://www.interserver.net/).
+
+---
+
+## 4. Reverse Proxy & WebSocket Configuration (Nginx & Caddy)
+
+Because Excalidraw uses WebSockets (`ws://` / `wss://`) to broadcast live drawing deltas and encrypted cursor coordinates, standard HTTP reverse proxy configurations will fail with `WebSocket connection to 'ws://...' failed: Connection closed before receiving a handshake response`.
+
+### 4.1 Production Nginx Configuration with WebSocket Upgrade
+When serving over HTTPS (e.g. `draw.yourdomain.com`), configure Nginx to handle both static assets and persistent WebSocket upgrades:
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name draw.yourdomain.com;
+
+    ssl_certificate /etc/letsencrypt/live/draw.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/draw.yourdomain.com/privkey.pem;
+
+    # Frontend Static Application
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # WebSocket Real-Time Collaboration Endpoint
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+    }
+}
+```
+
+### 4.2 Caddy Alternative
+For automated Let's Encrypt certificates and native WebSocket proxying, Caddy requires only three lines:
+
+```caddyfile
+draw.yourdomain.com {
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
+---
+
+## 5. Persistent Storage & Canvas Sharing Workflows
+
+### 5.1 Sharing Canvases without a Complex Database
+If you do not want to manage an S3 storage cluster, you have three primary workflows for sharing:
+1. **Live Room Links:** When running with the collaboration backend, clicking "Start session" generates an end-to-end encrypted room link (e.g., `https://draw.yourdomain.com/#room=abc123,key=xyz789`). The encryption key exists strictly in the URL hash, meaning the server cannot read canvas contents.
+2. **Local-First Markdown Integration (Obsidian):** Using the popular `obsidian-excalidraw-plugin`, drawings are stored as `.excalidraw.md` files within your local vault, version-controlled with Git, and viewable/editable directly in desktop or mobile apps.
+3. **Static Export Hosting (GitHub Pages / Quarto):** Export diagrams directly as `.svg` files with embedded scene data (*"Embed Scene"* option in Excalidraw). SVGs render cleanly on web pages while retaining the ability to be dragged back onto any Excalidraw canvas for future editing.
+
+---
+
+## 6. Troubleshooting Common Deployment Pitfalls
+
+* **WebSocket `400 Bad Request` or `Connection Dropped`:** Ensure your reverse proxy explicitly sets `Upgrade $http_upgrade` and `Connection "upgrade"`, and increases proxy timeouts beyond standard 60-second limits.
+* **Mixed Content Security Errors:** If your frontend is accessed via `https://`, all WebSocket and API backend URLs must use `wss://` and `https://`. Modern browsers block unencrypted `ws://` connections originating from secure origins.
+* **Container Port Conflicts:** If port `8080` is occupied by another service (e.g., Jenkins, Traefik dashboard), adjust the host port mapping (`-p 8090:80`) in your `docker-compose.yml`.
