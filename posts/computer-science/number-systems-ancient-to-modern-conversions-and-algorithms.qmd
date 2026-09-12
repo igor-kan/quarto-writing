@@ -1,0 +1,555 @@
+---
+title: "Number Systems from Antiquity to Modern Computing: Symbolic Evolution, Positional Radices, and Conversion Algorithms"
+subtitle: "A comprehensive mathematical and computational taxonomy of Roman vinculum, Egyptian hieroglyphs, Babylonian sexagesimal, Maya vigesimal, and modern arbitrary-radix conversion algorithms."
+author: "Igor Kan"
+date: "2026-09-12"
+categories: ["Computer Science", "Mathematics", "Discrete Mathematics", "Algorithms", "History of Science"]
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    math: true
+---
+
+## 1. Introduction: The Evolution of Numerical Representation
+
+The development of numerical notation represents one of humanity’s greatest cognitive leaps. A **numeral system** is a formal symbolic framework for expressing numbers, providing a standardized mapping between abstract mathematical quantities and concrete visual glyphs.
+
+Throughout human history, numerical systems have evolved along two fundamental structural paradigms:
+1. **Additive and Sign-Value Systems**: Numbers are represented by repeating symbols whose cumulative values are summed (or subtracted). These systems—such as **Egyptian hieroglyphic**, **classical Attic Greek**, and **Roman numerals**—are visually intuitive for tallying and ledger-keeping but computationally cumbersome for arithmetic operations like multiplication and division.
+2. **Positional Place-Value Systems**: The value of a digit is determined by both its intrinsic symbol and its positional column weighted by powers of a base (radix $b$):
+   $$N = \sum_{i=-\infty}^{k-1} d_i b^i, \quad d_i \in \{0, 1, \dots, b-1\}$$
+   Pioneered in rudimentary forms by the **Babylonians** (base 60) and **Maya** (base 20), and perfected with the invention of the operational zero in ancient **India** (transmitted globally via Arabic mathematics), positional systems revolutionized human calculation and form the mathematical bedrock of all modern digital computers.
+
+---
+
+## 2. Ancient and Historical Symbolic Systems
+
+Before analyzing modern radices, we examine the major historical notation systems that preceded our standard Hindu-Arabic decimal arithmetic.
+
+```
+       Ancient Additive Systems                Ancient Positional Systems
+  (Egyptian Hieroglyphs, Roman, Greek)            (Babylonian, Maya)
+                 │                                        │
+                 ▼                                        ▼
+      Repetitive Sign Tallying                 Weighted Place Columns
+      (Computationally rigid)                  (Required Zero / Placeholders)
+                 │                                        │
+                 └───────────────────┬────────────────────┘
+                                     │
+                                     ▼
+                      Modern Hindu-Arabic Positional
+                         (Base 2, 8, 10, 16, b)
+```
+
+### 1. Roman Numerals and the Vinculum ($I$ to $\overline{M}$)
+Classical Roman numerals rely on a biquinary sign-value additive/subtractive notation. The baseline symbols are:
+
+| Symbol | Numerical Value | Etymological / Visual Origin |
+| :---: | :---: | :--- |
+| **I** | $1$ | Single tally notch carved into wood or bone. |
+| **V** | $5$ | Visual outline of an open hand (V-shape between thumb and fingers). |
+| **X** | $10$ | Two crossing tally notches ($V$ atop an inverted $V$). |
+| **L** | $50$ | Derived from the Western Greek letter Chalcidian Chi ($\chi$). |
+| **C** | $100$ | Abbreviation of Latin *centum* (one hundred). |
+| **D** | $500$ | Half of the ancient Greek phi symbol ($\Phi \implies |\supset| \implies D$). |
+| **M** | $1,000$ | Abbreviation of Latin *mille* (one thousand); originally Greek $\Phi$ ($|\supset|$). |
+
+#### The Vinculum (Horizontal Overline for Large Values)
+Standard subtractive Roman notation cannot cleanly represent numbers $\ge 4,000$ without unwieldy repetitions of $M$. To overcome this, Roman and medieval scribes introduced the **vinculum** (Latin for "chain" or "bond")—a horizontal bar placed above a numeral to multiply its intrinsic value by **$1,000$**:
+
+$$\overline{X} = X \times 1,000$$
+
+A double overline ($\overline{\overline{X}}$) or side brackets ($|X|$) multiplied the value by **$1,000,000$**.
+
+| Base Numeral | Value | Vinculum Numeral | Value ($\times 10^3$) | Double Vinculum | Value ($\times 10^6$) |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **I** | $1$ | $\overline{\text{I}}$ | $1,000$ | $\overline{\overline{\text{I}}}$ | $1,000,000$ |
+| **IV** | $4$ | $\overline{\text{IV}}$ | $4,000$ | $\overline{\overline{\text{IV}}}$ | $4,000,000$ |
+| **V** | $5$ | $\overline{\text{V}}$ | $5,000$ | $\overline{\overline{\text{V}}}$ | $5,000,000$ |
+| **VI** | $6$ | $\overline{\text{VI}}$ | $6,000$ | $\overline{\overline{\text{VI}}}$ | $6,000,000$ |
+| **VII** | $7$ | $\overline{\text{VII}}$ | $7,000$ | $\overline{\overline{\text{VII}}}$ | $7,000,000$ |
+| **VIII** | $8$ | $\overline{\text{VIII}}$ | $8,000$ | $\overline{\overline{\text{VIII}}}$ | $8,000,000$ |
+| **IX** | $9$ | $\overline{\text{IX}}$ | $9,000$ | $\overline{\overline{\text{IX}}}$ | $9,000,000$ |
+| **X** | $10$ | $\overline{\text{X}}$ | $10,000$ | $\overline{\overline{\text{X}}}$ | $10,000,000$ |
+| **L** | $50$ | $\overline{\text{L}}$ | $50,000$ | $\overline{\overline{\text{L}}}$ | $50,000,000$ |
+| **C** | $100$ | $\overline{\text{C}}$ | $100,000$ | $\overline{\overline{\text{C}}}$ | $100,000,000$ |
+| **D** | $500$ | $\overline{\text{D}}$ | $500,000$ | $\overline{\overline{\text{D}}}$ | $500,000,000$ |
+| **M** | $1,000$ | $\overline{\text{M}}$ | $1,000,000$ | $\overline{\overline{\text{M}}}$ | $1,000,000,000$ |
+
+*Example*: To write **$3,452,891$**:
+$$\overline{\overline{\text{III}}} \;\; \overline{\text{CDLII}} \;\; \text{DCCCXCI}$$
+
+---
+
+### 2. Greek Ionic (Milesian) Alphabetic Numerals
+By the 5th century BCE, the Greeks replaced the older Attic tally system with the **Ionic** or **Milesian** system, assigning the 24 letters of the Greek alphabet plus 3 archaic Phoenician letters (*digamma/stigma* $\text{\stigma}$, *koppa* $\text{\koppa}$, and *sampi* $\text{\sampi}$) to numbers:
+
+| Value | Units | Tens | Hundreds |
+| :---: | :---: | :---: | :---: |
+| **1** | $\alpha'$ ($1$) | $\iota'$ ($10$) | $\rho'$ ($100$) |
+| **2** | $\beta'$ ($2$) | $\kappa'$ ($20$) | $\sigma'$ ($200$) |
+| **3** | $\gamma'$ ($3$) | $\lambda'$ ($30$) | $\tau'$ ($300$) |
+| **4** | $\delta'$ ($4$) | $\mu'$ ($40$) | $\upsilon'$ ($400$) |
+| **5** | $\varepsilon'$ ($5$) | $\nu'$ ($50$) | $\phi'$ ($500$) |
+| **6** | $\text{\stigma}'$ / $\digamma'$ ($6$) | $\xi'$ ($60$) | $\chi'$ ($600$) |
+| **7** | $\zeta'$ ($7$) | $o'$ ($70$) | $\psi'$ ($700$) |
+| **8** | $\eta'$ ($8$) | $\pi'$ ($80$) | $\omega'$ ($800$) |
+| **9** | $\theta'$ ($9$) | $\text{\koppa}'$ ($90$) | $\text{\sampi}'$ ($900$) |
+
+*Thousands* were marked with a lower-left accent (e.g., $,\alpha = 1,000$), and the base unit for very large numbers was the **myriad** ($M = 10,000$).
+
+---
+
+### 3. Hebrew Alphabetic Numerals (Gematria)
+Similar to the Greek system, classical Hebrew utilizes the 22 consonant characters of the Hebrew alphabet:
+
+* **Units ($1$–$9$)**: $\aleph$ ($1$), $\beth$ ($2$), $\gimel$ ($3$), $\daleth$ ($4$), $\he$ ($5$), $\vav$ ($6$), $\zayin$ ($7$), $\het$ ($8$), $\tet$ ($9$).
+* **Tens ($10$–$90$)**: $\yod$ ($10$), $\kaf$ ($20$), $\lamed$ ($30$), $\mem$ ($40$), $\nun$ ($50$), $\samekh$ ($60$), $\ayin$ ($70$), $\pe$ ($80$), $\tsadi$ ($90$).
+* **Hundreds ($100$–$400$)**: $\qof$ ($100$), $\resh$ ($200$), $\shin$ ($300$), $\tav$ ($400$).
+* *Special Theological Exception*: The numbers $15$ and $16$ are never written as $\yod + \he$ ($10+5$) or $\yod + \vav$ ($10+6$) because these spell the sacred Tetragrammaton name of God. Instead, they are written as $\tet + \vav$ ($9+6 = 15$) and $\tet + \zayin$ ($9+7 = 16$).
+
+---
+
+### 4. Chinese Character Numerals and Rod Calculus
+Traditional Chinese numerical notation uses dedicated ideograms with base-10 grouping words:
+
+$$\text{一 } (1), \quad \text{二 } (2), \quad \text{三 } (3), \quad \text{四 } (4), \quad \text{五 } (5), \quad \text{六 } (6), \quad \text{七 } (7), \quad \text{八 } (8), \quad \text{九 } (9), \quad \text{十 } (10)$$
+$$\text{百 } (10^2 = 100), \quad \text{千 } (10^3 = 1,000), \quad \text{万 } (10^4 = 10,000), \quad \text{亿 } (10^8 = 100,000,000)$$
+
+In Chinese, numbers group into blocks of **four orders of magnitude** (myriads / $10^4$) rather than Western thousands ($10^3$). 
+* *Counting Rods (Suanzi)*: From the Warring States period, mathematicians used an alternating horizontal/vertical positional grid with empty spaces for zero (later stylized as $\bigcirc$).
+
+---
+
+### 5. The Maya Vigesimal System (Base 20)
+The Maya civilization independently engineered a sophisticated **positional base-20 (vigesimal)** system with a true operational zero represented by a stylized snail shell glyph.
+
+Digits from $0$ to $19$ are constructed using a biquinary sub-base:
+* A **dot** ($\bullet$) represents **$1$**.
+* A **horizontal bar** ($-$) represents **$5$**.
+* A **shell** ($\odot$ or glyph) represents **$0$**.
+
+$$\begin{aligned}
+1 &= \bullet & 5 &= - & 10 &= = & 15 &= \equiv \\
+2 &= \bullet\bullet & 6 &= \overset{\bullet}{-} & 11 &= \overset{\bullet}{=} & 16 &= \overset{\bullet}{\equiv} \\
+3 &= \bullet\bullet\bullet & 7 &= \overset{\bullet\bullet}{-} & 12 &= \overset{\bullet\bullet}{=} & 17 &= \overset{\bullet\bullet}{\equiv} \\
+4 &= \bullet\bullet\bullet\bullet & 8 &= \overset{\bullet\bullet\bullet}{-} & 13 &= \overset{\bullet\bullet\bullet}{=} & 18 &= \overset{\bullet\bullet\bullet}{\equiv} \\
+& & 9 &= \overset{\bullet\bullet\bullet\bullet}{-} & 14 &= \overset{\bullet\bullet\bullet\bullet}{=} & 19 &= \overset{\bullet\bullet\bullet\bullet}{\equiv}
+\end{aligned}$$
+
+Positional values are written **vertically**, with the lowest tier representing units ($20^0$), the tier above representing twenties ($20^1$), followed by four-hundreds ($20^2 = 400$), eight-thousands ($20^3 = 8,000$), etc. In astronomical Long Count calendar calculations, the third tier was modified to $18 \times 20 = 360$ (the *tun*) to approximate the solar year.
+
+---
+
+### 6. Egyptian Hieroglyphic Numerals (Base 10 Additive)
+Flourishing from 3000 BCE, Egyptian hieroglyphic numbers were purely decimal and additive, using iconic visual glyphs for each power of ten:
+
+| Power | Glyph Representation | Meaning / Symbolism |
+| :---: | :---: | :--- |
+| **$10^0 = 1$** | 𓏤 (Stroke) | A single vertical wooden tally rod. |
+| **$10^1 = 10$** | 𓎆 (Hobble) | An ox hobble or heel-bone loop. |
+| **$10^2 = 100$** | 𓍢 (Coil) | A coiled coil of measuring rope. |
+| **$10^3 = 1,000$** | 𓆼 (Lotus) | A water lily / lotus plant blooming from the Nile. |
+| **$10^4 = 10,000$** | 𓂭 (Finger) | A slightly bent pointing finger. |
+| **$10^5 = 100,000$** | 𓆽 (Tadpole) | A fertile frog or tadpole swimming in river mud. |
+| **$10^6 = 1,000,000$** | 𓁨 (Heh) | The god Heh kneeling with arms raised in adoration of infinity. |
+
+To write $46,225$, Egyptian scribes carved 4 pointing fingers, 6 lotus flowers, 2 rope coils, 2 hobbles, and 5 strokes.
+
+---
+
+### 7. Babylonian Sexagesimal Cuneiform (Base 60 Positional)
+Originating in ancient Sumer and Mesopotamia (c. 2000 BCE), the Babylonian system was the first known **positional place-value** system in recorded history. It utilized base **$60$**, likely chosen because $60$ is a superior highly composite number having twelve divisors ($\{1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60\}$), greatly simplifying commercial fractions.
+
+Numbers within each sexagesimal place ($1$ to $59$) were built additively from two cuneiform wedge impressions:
+* Vertical stylus wedge: $\top$ (or **Y**) $= 1$.
+* Angled corner wedge: $\prec$ (or **$<$**) $= 10$.
+
+For instance, $34$ is written as $\prec\prec\prec\top\top\top\top$ ($<<<\text{YYYY}$). 
+
+When written in sexagesimal positional columns separated by spaces:
+$$[1] \; [24] \; [51] \; [10]_{60} = 1 \times 60^3 + 24 \times 60^2 + 51 \times 60^1 + 10 \times 60^0 = 305,470_{10}$$
+This Babylonian legacy endures universally today in our division of an hour into $60$ minutes, a minute into $60$ seconds, and a circle into $360^\circ$.
+
+---
+
+## 3. Comparative Matrix: Ancient to Modern Radices
+
+Below is a synchronized comparative alignment of the first 16 positive integers across the foundational modern computing radices and classical historical systems:
+
+| Decimal | Binary (Base 2) | Octal (Base 8) | Hexadecimal (Base 16) | Roman | Greek | Hebrew | Maya | Babylonian ($Y=1, <=10$) |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **1** | `0001` | `1` | `1` | I | $\alpha'$ | $\aleph$ | $\bullet$ | $Y$ |
+| **2** | `0010` | `2` | `2` | II | $\beta'$ | $\beth$ | $\bullet\bullet$ | $YY$ |
+| **3** | `0011` | `3` | `3` | III | $\gamma'$ | $\gimel$ | $\bullet\bullet\bullet$ | $YYY$ |
+| **4** | `0100` | `4` | `4` | IV | $\delta'$ | $\daleth$ | $\bullet\bullet\bullet\bullet$ | $YYYY$ |
+| **5** | `0101` | `5` | `5` | V | $\varepsilon'$ | $\he$ | $-$ | $YYYYY$ |
+| **6** | `0110` | `6` | `6` | VI | $\text{\stigma}'$ | $\vav$ | $\overset{\bullet}{-}$ | $Y_6$ |
+| **7** | `0111` | `7` | `7` | VII | $\zeta'$ | $\zayin$ | $\overset{\bullet\bullet}{-}$ | $Y_7$ |
+| **8** | `1000` | `10` | `8` | VIII | $\eta'$ | $\het$ | $\overset{\bullet\bullet\bullet}{-}$ | $Y_8$ |
+| **9** | `1001` | `11` | `9` | IX | $\theta'$ | $\tet$ | $\overset{\bullet\bullet\bullet\bullet}{-}$ | $Y_9$ |
+| **10** | `1010` | `12` | `A` | X | $\iota'$ | $\yod$ | $=$ | $<$ |
+| **11** | `1011` | `13` | `B` | XI | $\iota\alpha'$ | $\yod\aleph$ | $\overset{\bullet}{=}$ | $<Y$ |
+| **12** | `1100` | `14` | `C` | XII | $\iota\beta'$ | $\yod\beth$ | $\overset{\bullet\bullet}{=}$ | $<YY$ |
+| **13** | `1101` | `15` | `D` | XIII | $\iota\gamma'$ | $\yod\gimel$ | $\overset{\bullet\bullet\bullet}{=}$ | $<YYY$ |
+| **14** | `1110` | `16` | `E` | XIV | $\iota\delta'$ | $\yod\daleth$ | $\overset{\bullet\bullet\bullet\bullet}{=}$ | $<YYYY$ |
+| **15** | `1111` | `17` | `F` | XV | $\iota\varepsilon'$ | $\tet\vav$ | $\equiv$ | $<YYYYY$ |
+| **16** | `10000` | `20` | `10` | XVI | $\iota\text{\stigma}'$ | $\yod\vav$ | $\overset{\bullet}{\odot}$ (20s tier) | $<Y_6$ |
+
+---
+
+## 4. Algorithmic Conversions Between Arbitrary Bases
+
+In computational mathematics, converting between radices is governed by rigorous polynomial evaluation and Euclidean division.
+
+```
+       Base-b Number (d_{k-1} ... d_0)
+                     │
+                     ▼  Horner's Method (Accumulate: val = val * b + d_i)
+             Decimal Integer (N)
+                     │
+                     ▼  Euclidean Division (quotient = N // target_b, remainder = N % target_b)
+       Target-Base String (r_m ... r_0)
+```
+
+### 1. Base $b$ to Decimal: Horner’s Polynomial Method
+A number represented by digits $(d_{k-1} d_{k-2} \dots d_1 d_0)_b$ represents the polynomial:
+$$N = d_{k-1} b^{k-1} + d_{k-2} b^{k-2} + \dots + d_1 b^1 + d_0 b^0$$
+
+Direct evaluation of powers requires $O(k^2)$ multiplications. **Horner's Method** nests the operations to evaluate the integer in exactly $k$ multiplications and $k$ additions ($O(k)$ linear time):
+
+$$N = \left( \dots \left( (d_{k-1} \cdot b + d_{k-2}) \cdot b + d_{k-3} \right) \dots \right) \cdot b + d_0$$
+
+*Example*: Convert $(2\text{F}3)_{16}$ to Decimal:
+$$\begin{aligned}
+\text{Step 1: } & \text{Accumulator} = 2 \\
+\text{Step 2: } & \text{Accumulator} = 2 \times 16 + 15 = 47 \\
+\text{Step 3: } & \text{Accumulator} = 47 \times 16 + 3 = 752 + 3 = \mathbf{755}_{10}
+\end{aligned}$$
+
+---
+
+### 2. Decimal to Base $b$: Successive Euclidean Division
+To convert an integer $N \in \mathbb{N}$ into base $b$, we repeatedly apply the Division Algorithm:
+$$N = q_0 b + r_0, \quad 0 \le r_0 < b$$
+$$q_0 = q_1 b + r_1, \quad 0 \le r_1 < b$$
+$$\vdots$$
+$$q_{m-1} = 0 \cdot b + r_m$$
+
+The remainders collected in **reverse chronological order** (from last remainder $r_m$ down to first remainder $r_0$) constitute the base-$b$ representation:
+$$N_{10} = (r_m r_{m-1} \dots r_1 r_0)_b$$
+
+*Example*: Convert $156_{10}$ to Binary ($b=2$):
+$$\begin{aligned}
+156 \div 2 &= 78 \quad \text{rem } \mathbf{0} \quad (\text{LSB}) \\
+78 \div 2 &= 39 \quad \text{rem } \mathbf{0} \\
+39 \div 2 &= 19 \quad \text{rem } \mathbf{1} \\
+19 \div 2 &= 9 \quad \text{rem } \mathbf{1} \\
+9 \div 2 &= 4 \quad \text{rem } \mathbf{1} \\
+4 \div 2 &= 2 \quad \text{rem } \mathbf{0} \\
+2 \div 2 &= 1 \quad \text{rem } \mathbf{0} \\
+1 \div 2 &= 0 \quad \text{rem } \mathbf{1} \quad (\text{MSB})
+\end{aligned}$$
+Reading bottom-to-top yields: **$10011100_2$**.
+
+---
+
+### 3. Fractional Conversions and Recurring Expansions
+For fractional values $0 < F < 1$, conversion from decimal to base $b$ utilizes **successive multiplication**:
+1. Multiply the fractional part by base $b$.
+2. The integer part of the product becomes the next fractional digit.
+3. The fractional part is retained for the next iteration until it hits zero or enters a recurring cycle.
+
+*Example*: Convert $0.625_{10}$ to Binary:
+$$\begin{aligned}
+0.625 \times 2 &= \mathbf{1}.250 \implies d_{-1} = 1 \\
+0.250 \times 2 &= \mathbf{0}.500 \implies d_{-2} = 0 \\
+0.500 \times 2 &= \mathbf{1}.000 \implies d_{-3} = 1 \quad (\text{terminates})
+\end{aligned}$$
+Thus, $0.625_{10} = \mathbf{0.101_2}$.
+
+#### The Cause of Floating-Point Imprecision in Modern Computing
+Why does `0.1 + 0.2 != 0.3` in Python, JavaScript, and C++?
+In decimal, $0.1 = 1/10$ is a terminating fraction because the denominator factors into prime factors of ten ($10 = 2 \times 5$). But in binary, the only allowable denominator factor is $2$.
+Applying successive multiplication to $0.1_{10}$:
+$$\begin{aligned}
+0.1 \times 2 &= 0.2 \implies 0 \\
+0.2 \times 2 &= 0.4 \implies 0 \\
+0.4 \times 2 &= 0.8 \implies 0 \\
+0.8 \times 2 &= 1.6 \implies 1 \\
+0.6 \times 2 &= 1.2 \implies 1 \\
+0.2 \times 2 &= 0.4 \implies 0 \dots \text{ (repeats infinitely)}
+\end{aligned}$$
+Thus, $0.1_{10} = 0.0\overline{0011}_2$—an **infinite recurring binary fraction** that must be truncated by IEEE 754 floating-point hardware, resulting in fundamental rounding error!
+
+---
+
+### 4. Direct Power-of-Two Radix Conversions
+When transforming between bases where both radices are powers of two ($b_1 = 2^k, b_2 = 2^m$), conversions bypass decimal arithmetic entirely through bit-level grouping:
+
+* **Binary to Octal ($2^1 \to 2^3$)**: Group bits into clusters of **$3$** from the binary point:
+  $$11101011_2 \implies \underbrace{011}_{3} \; \underbrace{101}_{5} \; \underbrace{011}_{3} \implies \mathbf{353_8}$$
+* **Binary to Hexadecimal ($2^1 \to 2^4$)**: Group bits into **nibbles of $4$**:
+  $$11101011_2 \implies \underbrace{1110}_{\text{E}} \; \underbrace{1011}_{\text{B}} \implies \mathbf{\text{EB}_{16}}$$
+
+---
+
+### 5. Hardware Double Dabble: Binary to BCD
+In digital hardware (FPGA, ASIC), performing integer divisions by $10$ to display binary values on 7-segment decimal displays requires extensive clock cycles and logic gates.
+
+The **Double Dabble algorithm** converts an $n$-bit binary number into Binary Coded Decimal (BCD) using only shift operations and single-cycle additions:
+1. Shift the binary register left by 1 bit into the BCD column registers (Hundreds, Tens, Units).
+2. If all bits have been shifted, the conversion is complete.
+3. If any BCD decade column contains a value $\ge 5$, **add 3** to that column. (Rationale: In the next left shift, the value doubles. If it was $\ge 5$, doubling produces $\ge 10$, but a 4-bit nibble overflows at 16, not 10. Adding $3$ before shifting compensates for the 6-count difference: $(X + 3) \times 2 = 2X + 6$).
+4. Repeat from Step 1.
+
+---
+
+## 5. Non-Standard & Exotic Number Systems
+
+Modern discrete mathematics and computing architecture have explored fascinating non-standard positional systems that eliminate conventional limitations.
+
+### 1. Negabinary (Base $-2$)
+Invented by Vittorio Grünwald (1885), base **$-2$** represents **any positive or negative integer without a sign bit**!
+
+$$N = \sum_{i=0}^{k-1} d_i (-2)^i, \quad d_i \in \{0, 1\}$$
+
+Column place weights alternate in sign:
+$$\dots, \quad (-2)^4 = 16, \quad (-2)^3 = -8, \quad (-2)^2 = 4, \quad (-2)^1 = -2, \quad (-2)^0 = 1$$
+
+*Example*: Representing $-6_{10}$ in Negabinary:
+$$-6 = 1 \times (-8) + 0 \times (4) + 1 \times (-2) + 0 \times (1) \implies \mathbf{1010_{-2}}$$
+Because no sign bit exists, hardware arithmetic units never need two's complement inversion logic.
+
+---
+
+### 2. Balanced Ternary (Base $3$ with Digits $\{-1, 0, +1\}$)
+In balanced ternary, the base is $3$, but instead of digits $\{0, 1, 2\}$, digits are drawn from $\{-1, 0, +1\}$, traditionally denoted as $\{-, 0, +\}$:
+
+$$N = \sum_{i=0}^{k-1} t_i 3^i, \quad t_i \in \{-1, 0, 1\}$$
+
+In *The Art of Computer Programming* (Vol. 2), Donald Knuth famously declared:
+> *"Perhaps the prettiest number system of all is the balanced ternary notation."*
+
+#### Remarkable Mathematical Properties:
+1. **Inherently Symmetric**: Negation requires merely flipping the sign of every trit ($+ \leftrightarrow -$, $0$ remains $0$). No special subtraction hardware is required!
+2. **Optimal Radix Economy**: The theoretical most efficient radix for information storage is Euler's number $e \approx 2.718$. The nearest integer radix is **$3$**, making ternary more compact than binary ($2$).
+3. **Historical Computer Implementation**: The Soviet Union constructed the **Setun** computer at Moscow State University in 1958, operating entirely on balanced ternary ferrite-core memory.
+
+---
+
+## 6. Multi-Language Implementations: The Universal Base Converter & Roman Parser
+
+Below is a complete, production-grade interactive multi-language program that demonstrates:
+1. Converting arbitrary integers between any source base $b_1$ and target base $b_2$ ($2 \le b \le 36$).
+2. Parsing and formatting Roman numerals with **vinculum** support for numbers exceeding $3,999$.
+
+::: {.panel-tabset group="language"}
+## Python 3
+```python
+import math
+
+DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+def base_to_decimal(s: str, base: int) -> int:
+    """Horner's method for arbitrary base string to integer."""
+    val = 0
+    for char in s.upper():
+        digit = DIGITS.index(char)
+        if digit >= base:
+            raise ValueError(f"Invalid digit '{char}' for base {base}")
+        val = val * base + digit
+    return val
+
+def decimal_to_base(n: int, base: int) -> str:
+    """Successive Euclidean division from decimal integer to target base."""
+    if n == 0:
+        return "0"
+    digits = []
+    curr = n
+    while curr > 0:
+        curr, rem = divmod(curr, base)
+        digits.append(DIGITS[rem])
+    return "".join(reversed(digits))
+
+def int_to_roman_vinculum(n: int) -> str:
+    """Convert positive integer to Roman numerals with vinculum for >= 4000."""
+    mapping = [
+        (1000000, "M̄"), (900000, "C̄M̄"), (500000, "D̄"), (400000, "C̄D̄"),
+        (100000, "C̄"), (90000, "X̄C̄"), (50000, "L̄"), (40000, "X̄L̄"),
+        (10000, "X̄"), (9000, "ĪX̄"), (5000, "V̄"), (4000, "ĪV̄"),
+        (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
+        (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
+        (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")
+    ]
+    res = []
+    curr = n
+    for val, roman in mapping:
+        while curr >= val:
+            res.append(roman)
+            curr -= val
+    return "".join(res)
+
+if __name__ == "__main__":
+    test_val = 305470
+    print(f"Decimal: {test_val}")
+    print(f"Binary:  {decimal_to_base(test_val, 2)}")
+    print(f"Hex:     {decimal_to_base(test_val, 16)}")
+    print(f"Base 36: {decimal_to_base(test_val, 36)}")
+    print(f"Roman Vinculum: {int_to_roman_vinculum(test_val)}")
+```
+
+## C++20
+```cpp
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <stdexcept>
+
+const std::string DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+long long base_to_decimal(const std::string& s, int base) {
+    long long val = 0;
+    for (char c : s) {
+        size_t idx = DIGITS.find(std::toupper(c));
+        if (idx == std::string::npos || idx >= static_cast<size_t>(base)) {
+            throw std::invalid_argument("Invalid digit for base");
+        }
+        val = val * base + idx;
+    }
+    return val;
+}
+
+std::string decimal_to_base(long long n, int base) {
+    if (n == 0) return "0";
+    std::string res = "";
+    while (n > 0) {
+        res += DIGITS[n % base];
+        n /= base;
+    }
+    std::reverse(res.begin(), res.end());
+    return res;
+}
+
+int main() {
+    long long num = 755;
+    std::cout << "C++20 Base Conversions for " << num << ":\n";
+    std::cout << "Binary: " << decimal_to_base(num, 2) << "\n";
+    std::cout << "Hex:    " << decimal_to_base(num, 16) << "\n";
+    std::cout << "Reconstructed: " << base_to_decimal("2F3", 16) << "\n";
+    return 0;
+}
+```
+
+## Julia
+```julia
+# Julia 1.10: Radix Conversion & Horner's Rule
+const DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+function base_to_dec(str::String, base::Int)::BigInt
+    val = BigInt(0)
+    for c in uppercase(str)
+        idx = findfirst(==(c), DIGITS) - 1
+        val = val * base + idx
+    end
+    return val
+end
+
+function dec_to_base(n::BigInt, base::Int)::String
+    n == 0 && return "0"
+    chars = Char[]
+    curr = n
+    while curr > 0
+        rem = curr % base
+        push!(chars, DIGITS[rem + 1])
+        curr ÷= base
+    end
+    return String(reverse(chars))
+end
+
+num = BigInt(305470)
+println("Julia: Converting $num to Sexagesimal equivalent check:")
+println("Hex: ", dec_to_base(num, 16))
+println("Back: ", base_to_dec("4A93E", 16))
+```
+
+## Modern Fortran
+```fortran
+program base_converter
+    implicit none
+    integer :: n, base, rem, i, pos
+    character(len=64) :: buffer
+    character(len=36), parameter :: digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+    n = 755
+    base = 16
+    buffer = ''
+    pos = len(buffer)
+
+    print *, 'Fortran 2018: Decimal to Base Conversion'
+    do while (n > 0)
+        rem = mod(n, base)
+        buffer(pos:pos) = digits(rem+1:rem+1)
+        pos = pos - 1
+        n = n / base
+    end do
+
+    print *, 'Result in Hex: ', trim(adjustl(buffer(pos+1:)))
+end program base_converter
+```
+
+## MATLAB / Octave
+```matlab
+% MATLAB / GNU Octave: Arbitrary Base Converter
+function out_str = dec2base_custom(n, target_base)
+    digits_map = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    if n == 0
+        out_str = '0';
+        return;
+    end
+    chars = [];
+    curr = n;
+    while curr > 0
+        r = mod(curr, target_base);
+        chars = [digits_map(r + 1), chars];
+        curr = floor(curr / target_base);
+    end
+    out_str = chars;
+end
+```
+
+## Lean 4
+```lean
+-- Lean 4: Formal Verification of Positional Number Evaluation
+import Mathlib.Data.Nat.Basic
+import Mathlib.Data.List.Basic
+
+-- Horner's polynomial evaluation function for list of digits in base b
+def evalDigits (b : ℕ) : List ℕ → ℕ
+  | [] => 0
+  | d :: ds => d + b * evalDigits b ds
+
+-- Theorem: Single digit evaluates directly to itself in any valid base
+theorem eval_single_digit (b d : ℕ) : evalDigits b [d] = d := by
+  simp [evalDigits]
+```
+:::
+
+---
+
+## 7. Curated Sources & Further Reading
+
+* **Donald E. Knuth**, *The Art of Computer Programming, Volume 2: Seminumerical Algorithms*, 3rd Edition, Addison-Wesley (1997). Chapter 4 (Arithmetic: Positional Number Systems, Floating-Point Arithmetic, Multiple-Precision Arithmetic, and Radix Economy).
+* **Georges Ifrah**, *The Universal History of Numbers: From Prehistory to the Invention of the Computer*, John Wiley & Sons (2000). The authoritative encyclopedic reference for global numerical scripts.
+* **Vittorio Grünwald**, "Intorno all'aritmetica dei sistemi numerici a base negativa con particolare riguardo al sistema numerico a base negativo-binario", *Giornale di Matematiche di Battaglini*, 23, 203–221 (1885). First mathematical formalization of negative bases.
+* **David Goldberg**, "What Every Computer Scientist Should Know About Floating-Point Arithmetic", *ACM Computing Surveys*, 23(1), 5–48 (1991).
+* **Ascher, Marcia**, *Ethnomathematics: A Multicultural View of Mathematical Ideas*, Chapman & Hall (1991). Maya vigesimal geometry and calendar systems.
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Foundation for real number completeness, representation of reals as infinite geometric series $\sum d_i b^{-i}$, and floating-point error bounds.
+<br>
+<br>
+
+<div style="text-align: center; color: #888; font-size: 0.9em;">
+  © 2026 Igor Kan
+</div>
