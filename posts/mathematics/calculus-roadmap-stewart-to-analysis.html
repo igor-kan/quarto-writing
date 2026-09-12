@@ -527,7 +527,7 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="algorithmic-overview-forward-mode-automatic-differentiation-via-dual-numbers">4. Algorithmic Overview: Forward-Mode Automatic Differentiation via Dual Numbers</h2>
 <p>Below are complete, self-contained implementations of <strong>Dual Number Automatic Differentiation</strong> across major scientific languages, reflecting the transition from finite-difference heuristics to exact jet space evaluations:</p>
 <div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
-<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">Python 3</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">C++20</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false" href="">Julia</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-4" role="tab" aria-controls="tabset-1-4" aria-selected="false" href="">Modern Fortran</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-5" role="tab" aria-controls="tabset-1-5" aria-selected="false" href="">MATLAB / Octave</a></li></ul>
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">Python 3</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">C++20</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false" href="">Julia</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-4" role="tab" aria-controls="tabset-1-4" aria-selected="false" href="">Modern Fortran</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-5" role="tab" aria-controls="tabset-1-5" aria-selected="false" href="">MATLAB / Octave</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-6-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-6" role="tab" aria-controls="tabset-1-6" aria-selected="false" href="">Lean 4</a></li></ul>
 <div class="tab-content" data-group="language">
 <div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -667,6 +667,35 @@ window.Quarto = {
 <span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="va">der</span> <span class="op">=</span> <span class="va">imag</span>(<span class="va">fz</span>) <span class="op">/</span> <span class="va">h</span><span class="op">;</span></span>
 <span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">'MATLAB:   Value = %.8f, Exact Derivative = %.8f\n'</span><span class="op">,</span> <span class="va">val</span><span class="op">,</span> <span class="va">der</span>)<span class="op">;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-1-6" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-6-tab">
+<pre class="lean"><code>-- Lean 4: Formal definition of Dual Numbers as an R-Algebra
+import Mathlib.Algebra.Algebra.Basic
+
+structure Dual (R : Type*) [CommRing R] where
+  val : R
+  der : R
+
+namespace Dual
+
+variable {R : Type*} [CommRing R]
+
+def add (x y : Dual R) : Dual R :=
+  ⟨x.val + y.val, x.der + y.der⟩
+
+-- Dual multiplication: (a + b*ε)(c + d*ε) = ac + (ad + bc)*ε (since ε^2 = 0)
+def mul (x y : Dual R) : Dual R :=
+  ⟨x.val * y.val, x.val * y.der + x.der * y.val⟩
+
+instance : Add (Dual R) := ⟨add⟩
+instance : Mul (Dual R) := ⟨mul⟩
+
+-- Forward-mode derivative evaluation at x0
+def evalDiff (f : Dual R → Dual R) (x0 : R) : R × R :=
+  let res := f ⟨x0, 1⟩
+  (res.val, res.der)
+
+end Dual</code></pre>
 </div>
 </div>
 </div>

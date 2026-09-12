@@ -8,8 +8,9 @@
 
 <meta name="author" content="Igor Kan">
 <meta name="dcterms.date" content="2026-09-12">
+<meta name="description" content="A deep architectural and practical guide to mounting external SSDs, HDDs, and USB drives in Linux. Covers dynamic device naming, persistent UUIDs, NTFS hibernation locks, udisks2, and fstab.">
 
-<title>Multidimensional Integration: Partitions of Unity, Fubini-Tonelli, and the Jacobian Determinant – My Writings</title>
+<title>The Comprehensive Linux Disk Mounting Guide: From udisksctl and mount to ntfs-3g and FUSE – My Writings</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -115,35 +116,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 <link rel="stylesheet" href="../../styles.css">
 </head>
@@ -360,9 +332,41 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#the-conceptual-shift-beyond-iterated-slicing" id="toc-the-conceptual-shift-beyond-iterated-slicing" class="nav-link active" data-scroll-target="#the-conceptual-shift-beyond-iterated-slicing">1. The Conceptual Shift: Beyond Iterated Slicing</a></li>
-  <li><a href="#numerical-computation-high-dimensional-monte-carlo-cubature" id="toc-numerical-computation-high-dimensional-monte-carlo-cubature" class="nav-link" data-scroll-target="#numerical-computation-high-dimensional-monte-carlo-cubature">2. Numerical Computation: High-Dimensional Monte Carlo Cubature</a></li>
-  <li><a href="#curated-sources-further-reading" id="toc-curated-sources-further-reading" class="nav-link" data-scroll-target="#curated-sources-further-reading">5. Curated Sources &amp; Further Reading</a></li>
+  <li><a href="#anatomy-of-storage-how-linux-identifies-disks" id="toc-anatomy-of-storage-how-linux-identifies-disks" class="nav-link active" data-scroll-target="#anatomy-of-storage-how-linux-identifies-disks">1. Anatomy of Storage: How Linux Identifies Disks</a>
+  <ul class="collapse">
+  <li><a href="#the-pitfall-of-dynamic-device-naming-devsdx" id="toc-the-pitfall-of-dynamic-device-naming-devsdx" class="nav-link" data-scroll-target="#the-pitfall-of-dynamic-device-naming-devsdx">The Pitfall of Dynamic Device Naming (<code>/dev/sdX</code>)</a></li>
+  <li><a href="#the-robust-solution-persistent-identifiers-devdisk" id="toc-the-robust-solution-persistent-identifiers-devdisk" class="nav-link" data-scroll-target="#the-robust-solution-persistent-identifiers-devdisk">The Robust Solution: Persistent Identifiers (<code>/dev/disk/</code>)</a></li>
+  </ul></li>
+  <li><a href="#mounting-methods-compared" id="toc-mounting-methods-compared" class="nav-link" data-scroll-target="#mounting-methods-compared">2. Mounting Methods Compared</a></li>
+  <li><a href="#method-1-the-modern-desktop-standard-udisksctl" id="toc-method-1-the-modern-desktop-standard-udisksctl" class="nav-link" data-scroll-target="#method-1-the-modern-desktop-standard-udisksctl">3. Method 1: The Modern Desktop Standard (<code>udisksctl</code>)</a>
+  <ul class="collapse">
+  <li><a href="#recommended-daily-mount-by-label" id="toc-recommended-daily-mount-by-label" class="nav-link" data-scroll-target="#recommended-daily-mount-by-label">Recommended Daily Mount (By Label):</a></li>
+  <li><a href="#bulletproof-mount-by-uuid" id="toc-bulletproof-mount-by-uuid" class="nav-link" data-scroll-target="#bulletproof-mount-by-uuid">Bulletproof Mount (By UUID):</a></li>
+  <li><a href="#why-udisksctl-is-superior-for-desktop-workflows" id="toc-why-udisksctl-is-superior-for-desktop-workflows" class="nav-link" data-scroll-target="#why-udisksctl-is-superior-for-desktop-workflows">Why <code>udisksctl</code> Is Superior for Desktop Workflows:</a></li>
+  <li><a href="#unmounting-with-udisksctl" id="toc-unmounting-with-udisksctl" class="nav-link" data-scroll-target="#unmounting-with-udisksctl">Unmounting with <code>udisksctl</code>:</a></li>
+  </ul></li>
+  <li><a href="#method-2-classic-kernel-mounting-mount" id="toc-method-2-classic-kernel-mounting-mount" class="nav-link" data-scroll-target="#method-2-classic-kernel-mounting-mount">4. Method 2: Classic Kernel Mounting (<code>mount</code>)</a>
+  <ul class="collapse">
+  <li><a href="#the-standard-procedure" id="toc-the-standard-procedure" class="nav-link" data-scroll-target="#the-standard-procedure">The Standard Procedure:</a></li>
+  <li><a href="#useful-mount-options--o" id="toc-useful-mount-options--o" class="nav-link" data-scroll-target="#useful-mount-options--o">Useful Mount Options (<code>-o</code>):</a></li>
+  <li><a href="#unmounting" id="toc-unmounting" class="nav-link" data-scroll-target="#unmounting">Unmounting:</a></li>
+  </ul></li>
+  <li><a href="#method-3-handling-ntfs-drives-windows-hibernation-ntfs-3g" id="toc-method-3-handling-ntfs-drives-windows-hibernation-ntfs-3g" class="nav-link" data-scroll-target="#method-3-handling-ntfs-drives-windows-hibernation-ntfs-3g">5. Method 3: Handling NTFS Drives &amp; Windows Hibernation (<code>ntfs-3g</code>)</a>
+  <ul class="collapse">
+  <li><a href="#the-root-cause-windows-fast-startup-hybrid-sleep" id="toc-the-root-cause-windows-fast-startup-hybrid-sleep" class="nav-link" data-scroll-target="#the-root-cause-windows-fast-startup-hybrid-sleep">The Root Cause: Windows Fast Startup &amp; Hybrid Sleep</a></li>
+  <li><a href="#the-solutions" id="toc-the-solutions" class="nav-link" data-scroll-target="#the-solutions">The Solutions:</a></li>
+  </ul></li>
+  <li><a href="#method-4-persistent-boot-mounts-via-etcfstab" id="toc-method-4-persistent-boot-mounts-via-etcfstab" class="nav-link" data-scroll-target="#method-4-persistent-boot-mounts-via-etcfstab">6. Method 4: Persistent Boot Mounts via <code>/etc/fstab</code></a>
+  <ul class="collapse">
+  <li><a href="#the-fault-tolerant-systemd-automount-solution" id="toc-the-fault-tolerant-systemd-automount-solution" class="nav-link" data-scroll-target="#the-fault-tolerant-systemd-automount-solution">The Fault-Tolerant Systemd Automount Solution:</a></li>
+  <li><a href="#key-flags-explained" id="toc-key-flags-explained" class="nav-link" data-scroll-target="#key-flags-explained">Key Flags Explained:</a></li>
+  </ul></li>
+  <li><a href="#method-5-bind-mounts-the-local-mirror-trick" id="toc-method-5-bind-mounts-the-local-mirror-trick" class="nav-link" data-scroll-target="#method-5-bind-mounts-the-local-mirror-trick">7. Method 5: Bind Mounts (The Local Mirror Trick)</a></li>
+  <li><a href="#summary-quick-reference-cheat-sheet" id="toc-summary-quick-reference-cheat-sheet" class="nav-link" data-scroll-target="#summary-quick-reference-cheat-sheet">8. Summary &amp; Quick-Reference Cheat Sheet</a>
+  <ul class="collapse">
+  <li><a href="#mount-any-drive-in-3-steps" id="toc-mount-any-drive-in-3-steps" class="nav-link" data-scroll-target="#mount-any-drive-in-3-steps">Mount Any Drive in 3 Steps:</a></li>
+  <li><a href="#recovery-toolkit" id="toc-recovery-toolkit" class="nav-link" data-scroll-target="#recovery-toolkit">Recovery Toolkit:</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -372,17 +376,21 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Multidimensional Integration: Partitions of Unity, Fubini-Tonelli, and the Jacobian Determinant</h1>
-<p class="subtitle lead">Deconstructing Stewart Chapter 15: Multidimensional Darboux sums, oscillation on rectangles, smooth partitions of unity, and the rigorous Change of Variables Theorem.</p>
+<h1 class="title">The Comprehensive Linux Disk Mounting Guide: From udisksctl and mount to ntfs-3g and FUSE</h1>
   <div class="quarto-categories">
-    <div class="quarto-category">Mathematics</div>
-    <div class="quarto-category">Analysis</div>
-    <div class="quarto-category">Calculus</div>
-    <div class="quarto-category">Probability</div>
-    <div class="quarto-category">Physics</div>
+    <div class="quarto-category">Linux</div>
+    <div class="quarto-category">Storage</div>
+    <div class="quarto-category">Systems</div>
+    <div class="quarto-category">DevOps</div>
+    <div class="quarto-category">Architecture</div>
   </div>
   </div>
 
+<div>
+  <div class="description">
+    A deep architectural and practical guide to mounting external SSDs, HDDs, and USB drives in Linux. Covers dynamic device naming, persistent UUIDs, NTFS hibernation locks, udisks2, and fstab.
+  </div>
+</div>
 
 
 <div class="quarto-title-meta">
@@ -409,115 +417,240 @@ window.Quarto = {
 </header>
 
 
-<section id="the-conceptual-shift-beyond-iterated-slicing" class="level2">
-<h2 class="anchored" data-anchor-id="the-conceptual-shift-beyond-iterated-slicing">1. The Conceptual Shift: Beyond Iterated Slicing</h2>
-<p>Integration on manifolds and curved domains relies on <strong>smooth partitions of unity</strong> <span class="math inline">\(\sum \rho_i(x) \equiv 1\)</span> and the <strong>Change of Variables Theorem</strong>, where the Jacobian determinant <span class="math inline">\(|\det D\Phi|\)</span> scales the infinitesimal Hausdorff volume.</p>
+<p>Mounting storage in Linux is one of the most fundamental systems tasks, yet it is also one of the most frequently misunderstood. Many users learn a single command—typically <code>sudo mount /dev/sdb1 /mnt</code>—and run into immediate friction the moment a drive letter unexpectedly changes, an NTFS external drive throws an input/output error, or an automated script hangs at system boot.</p>
+<p>Unlike Windows, where storage volumes are isolated into arbitrary drive letters (<code>C:</code>, <code>D:</code>, <code>E:</code>), Linux treats all storage devices as nodes in a single, unified tree rooted at <code>/</code>. Connecting a storage device’s filesystem to that unified hierarchy is called <strong>mounting</strong>.</p>
+<p>This guide covers the full architecture of Linux disk mounting: how the kernel discovers devices, why <code>/dev/sdX</code> shifts unpredictably, how to use persistent identifiers, and the exact trade-offs between modern user-space mounting (<code>udisks2</code>), classic kernel mounting (<code>mount</code>), userspace NTFS drivers (<code>ntfs-3g</code>), and virtual filesystems (FUSE).</p>
+<hr>
+<section id="anatomy-of-storage-how-linux-identifies-disks" class="level2">
+<h2 class="anchored" data-anchor-id="anatomy-of-storage-how-linux-identifies-disks">1. Anatomy of Storage: How Linux Identifies Disks</h2>
+<p>When you plug in an external NVMe SSD, mechanical hard drive, or USB thumb drive, the Linux kernel’s SCSI and USB subsystems detect the hardware, negotiate link speeds, and expose the device through the <code>sysfs</code> virtual filesystem (<code>/sys</code>).</p>
+<p>The kernel then populates special device nodes in <code>/dev</code>:</p>
+<pre><code>/dev/
+├── nvme0n1       &lt;-- NVMe solid-state drive (Internal controller 0, namespace 1)
+│   ├── nvme0n1p1 &lt;-- Partition 1 (e.g. EFI System Partition /boot)
+│   ├── nvme0n1p2 &lt;-- Partition 2 (Swap)
+│   └── nvme0n1p3 &lt;-- Partition 3 (Root ext4 filesystem /)
+├── sda           &lt;-- First SCSI/SATA/USB block device (e.g. 32 GB Flash Drive)
+│   └── sda1      &lt;-- Partition 1 (FAT32)
+└── sde           &lt;-- Second USB storage device (e.g. 1 TB External NVMe SSD)
+    ├── sde1      &lt;-- Partition 1 (EFI/System)
+    └── sde3      &lt;-- Partition 3 (Windows NTFS Data)</code></pre>
+<section id="the-pitfall-of-dynamic-device-naming-devsdx" class="level3">
+<h3 class="anchored" data-anchor-id="the-pitfall-of-dynamic-device-naming-devsdx">The Pitfall of Dynamic Device Naming (<code>/dev/sdX</code>)</h3>
+<p>A critical rule of Linux administration: <strong>Device letters (<code>sda</code>, <code>sdb</code>, <code>sdc</code>, <code>sdd</code>, <code>sde</code>) are never guaranteed to be permanent.</strong></p>
+<p>The kernel assigns letters dynamically based on discovery order. For example, during testing on a modern workstation: 1. An external 1 TB Kioxia SSD plugged into a USB-C enclosure was assigned <code>/dev/sdc</code>. 2. When unplugged and reconnected, the kernel assigned it <code>/dev/sdd</code>. 3. When an additional USB thumb drive was attached, the SSD shifted again to <code>/dev/sde</code>.</p>
+<p>If you write a backup script or mount shortcut that hardcodes <code>/dev/sdc3</code>, it will fail the moment the device letter increments—or worse, it might accidentally mount or overwrite an entirely different drive.</p>
+</section>
+<section id="the-robust-solution-persistent-identifiers-devdisk" class="level3">
+<h3 class="anchored" data-anchor-id="the-robust-solution-persistent-identifiers-devdisk">The Robust Solution: Persistent Identifiers (<code>/dev/disk/</code>)</h3>
+<p>To solve dynamic naming, <code>udev</code> automatically creates persistent symbolic links in <code>/dev/disk/</code>:</p>
+<pre><code>/dev/disk/
+├── by-label/   &lt;-- Human-friendly volume labels (e.g. /dev/disk/by-label/Windows)
+├── by-uuid/    &lt;-- Universally Unique Identifiers (e.g. /dev/disk/by-uuid/0680FC5180FC48A7)
+├── by-id/      &lt;-- Hardware serial &amp; enclosure models (e.g. /dev/disk/by-id/usb-KIOXIA_...)
+└── by-path/    &lt;-- Physical motherboard/hub port topology</code></pre>
+<p>Always inspect your connected block devices with <code>lsblk</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">lsblk</span> <span class="at">-o</span> NAME,SIZE,TYPE,FSTYPE,LABEL,UUID,MOUNTPOINTS,MODEL</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
-<section id="numerical-computation-high-dimensional-monte-carlo-cubature" class="level2">
-<h2 class="anchored" data-anchor-id="numerical-computation-high-dimensional-monte-carlo-cubature">2. Numerical Computation: High-Dimensional Monte Carlo Cubature</h2>
-<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
-<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">Python 3</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">C++20</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false" href="">Julia</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-4" role="tab" aria-controls="tabset-1-4" aria-selected="false" href="">Modern Fortran</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-5" role="tab" aria-controls="tabset-1-5" aria-selected="false" href="">MATLAB / Octave</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-6-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-6" role="tab" aria-controls="tabset-1-6" aria-selected="false" href="">Lean 4</a></li></ul>
-<div class="tab-content" data-group="language">
-<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mc_gaussian_5d(n: <span class="bu">int</span> <span class="op">=</span> <span class="dv">100000</span>, bounds<span class="op">=</span>(<span class="op">-</span><span class="fl">2.0</span>, <span class="fl">2.0</span>)):</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    vol <span class="op">=</span> (bounds[<span class="dv">1</span>] <span class="op">-</span> bounds[<span class="dv">0</span>])<span class="op">**</span><span class="dv">5</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    pts <span class="op">=</span> np.random.uniform(bounds[<span class="dv">0</span>], bounds[<span class="dv">1</span>], size<span class="op">=</span>(n, <span class="dv">5</span>))</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    vals <span class="op">=</span> np.exp(<span class="op">-</span>np.<span class="bu">sum</span>(pts<span class="op">**</span><span class="dv">2</span>, axis<span class="op">=</span><span class="dv">1</span>))</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">float</span>(vol <span class="op">*</span> np.mean(vals))</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Python 3: 5D Gaussian Integral = </span><span class="sc">{</span>mc_gaussian_5d()<span class="sc">:.4f}</span><span class="ss"> (True: </span><span class="sc">{</span>np<span class="sc">.</span>pi<span class="op">**</span><span class="fl">2.5</span><span class="sc">:.4f}</span><span class="ss">)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;random&gt;</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cmath&gt;</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>mt19937_64 rng<span class="op">(</span><span class="dv">42</span><span class="op">);</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>uniform_real_distribution<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> dist<span class="op">(-</span><span class="fl">2.0</span><span class="op">,</span> <span class="fl">2.0</span><span class="op">);</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> n <span class="op">=</span> <span class="dv">100000</span><span class="op">;</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> vol <span class="op">=</span> <span class="bu">std::</span>pow<span class="op">(</span><span class="fl">4.0</span><span class="op">,</span> <span class="dv">5</span><span class="op">);</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> sum <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> n<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        <span class="dt">double</span> r2 <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> d <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> d <span class="op">&lt;</span> <span class="dv">5</span><span class="op">;</span> <span class="op">++</span>d<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>            <span class="dt">double</span> x <span class="op">=</span> dist<span class="op">(</span>rng<span class="op">);</span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>            r2 <span class="op">+=</span> x <span class="op">*</span> x<span class="op">;</span></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        sum <span class="op">+=</span> <span class="bu">std::</span>exp<span class="op">(-</span>r2<span class="op">);</span></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"C++20:    5D Gaussian Integral = "</span> <span class="op">&lt;&lt;</span> <span class="op">(</span>vol <span class="op">*</span> sum <span class="op">/</span> n<span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div id="tabset-1-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-3-tab">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="fl">100000</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>pts <span class="op">=</span> <span class="fu">rand</span>(<span class="fl">5</span>, n) <span class="op">.*</span> <span class="fl">4.0</span> <span class="op">.-</span> <span class="fl">2.0</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>vals <span class="op">=</span> <span class="fu">exp</span>.(<span class="fu">-sum</span>(pts<span class="op">.^</span><span class="fl">2</span>, dims<span class="op">=</span><span class="fl">1</span>))</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>integral_est <span class="op">=</span> (<span class="fl">4.0</span><span class="op">^</span><span class="fl">5</span>) <span class="op">*</span> <span class="fu">mean</span>(vals)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Julia:    5D Gaussian Integral = </span><span class="sc">$</span>(<span class="fu">round</span>(integral_est, digits<span class="op">=</span><span class="fl">4</span>))<span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div id="tabset-1-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-4-tab">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode fortran code-with-copy"><code class="sourceCode fortranfixed"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">program</span> mc_cubature</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">implicit</span> <span class="kw">none</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">integer</span>, <span class="dt">parameter</span> <span class="dt">::</span> n <span class="kw">=</span> <span class="dv">100000</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">integer</span> <span class="dt">::</span> i, d</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">real(8)</span> <span class="dt">::</span> r(<span class="dv">5</span>), x, r2, total_sum, vol</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  vol <span class="kw">=</span> <span class="fl">4.0d0</span><span class="kw">**</span><span class="dv">5</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  total_sum <span class="kw">=</span> <span class="fl">0.0d0</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">do</span> i <span class="kw">=</span> <span class="dv">1</span>, n</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">call</span> <span class="fu">random_number</span>(r)</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    r2 <span class="kw">=</span> <span class="fl">0.0d0</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">do</span> d <span class="kw">=</span> <span class="dv">1</span>, <span class="dv">5</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>      x <span class="kw">=</span> r(d)<span class="kw">*</span><span class="fl">4.0d0</span> <span class="kw">-</span> <span class="fl">2.0d0</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>      r2 <span class="kw">=</span> r2 <span class="kw">+</span> x<span class="kw">*</span>x</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end do</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    total_sum <span class="kw">=</span> total_sum <span class="kw">+</span> <span class="bu">exp</span>(<span class="kw">-</span>r2)</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end do</span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span> <span class="st">'(A,F8.4)'</span>, <span class="st">"Fortran:  5D Gaussian Integral = "</span>, (vol <span class="kw">*</span> total_sum <span class="kw">/</span> n)</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="kw">end program</span> mc_cubature</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div id="tabset-1-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-5-tab">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode matlab code-with-copy"><code class="sourceCode matlab"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="va">n</span> <span class="op">=</span> <span class="fl">100000</span><span class="op">;</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="va">pts</span> <span class="op">=</span> <span class="va">rand</span>(<span class="va">n</span><span class="op">,</span> <span class="fl">5</span>) <span class="op">*</span> <span class="fl">4</span> <span class="op">-</span> <span class="fl">2</span><span class="op">;</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="va">vals</span> <span class="op">=</span> <span class="va">exp</span>(<span class="op">-</span><span class="va">sum</span>(<span class="va">pts</span><span class="op">.^</span><span class="fl">2</span><span class="op">,</span> <span class="fl">2</span>))<span class="op">;</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="va">integral_est</span> <span class="op">=</span> (<span class="fl">4</span><span class="op">^</span><span class="fl">5</span>) <span class="op">*</span> <span class="va">mean</span>(<span class="va">vals</span>)<span class="op">;</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">'MATLAB:   5D Gaussian Integral = %.4f\n'</span><span class="op">,</span> <span class="va">integral_est</span>)<span class="op">;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div id="tabset-1-6" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-6-tab">
-<pre class="lean"><code>-- Lean 4: Multidimensional Change of Variables and Jacobians
-import Mathlib.MeasureTheory.Integral.Lebesgue
-import Mathlib.Analysis.Calculus.FDeriv.Basic
-
-open MeasureTheory
-
--- Formal Jacobian scaling principle: μ(Φ(U)) = ∫_U |det DΦ| dμ
-variable {n : ℕ} (Φ : (Fin n → ℝ) → (Fin n → ℝ))
--- Formalized in Mathlib under MeasureTheory.integral_image</code></pre>
-</div>
-</div>
-</div>
+</section>
+<section id="mounting-methods-compared" class="level2">
+<h2 class="anchored" data-anchor-id="mounting-methods-compared">2. Mounting Methods Compared</h2>
+<p>Linux provides several distinct layers for mounting filesystems, ranging from high-level unprivileged desktop daemons to low-level kernel system calls.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Mount Method</th>
+<th style="text-align: left;">Privilege Required</th>
+<th style="text-align: left;">Typical Mountpoint</th>
+<th style="text-align: left;">Key Strengths</th>
+<th style="text-align: left;">Best For</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong><code>udisksctl</code> (udisks2)</strong></td>
+<td style="text-align: left;"><strong>Unprivileged (No sudo)</strong></td>
+<td style="text-align: left;"><code>/run/media/$USER/&lt;LABEL&gt;</code></td>
+<td style="text-align: left;">Automatic folder creation, clean desktop integration, no root password</td>
+<td style="text-align: left;">Daily desktop use, hot-plugged SSDs/USBs</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong><code>mount</code> (Kernel syscall)</strong></td>
+<td style="text-align: left;"><strong>Root (<code>sudo</code>)</strong></td>
+<td style="text-align: left;"><code>/mnt/&lt;directory&gt;</code></td>
+<td style="text-align: left;">Direct kernel driver (<code>ntfs3</code>, <code>ext4</code>, <code>btrfs</code>), maximum performance</td>
+<td style="text-align: left;">Servers, system maintenance, fixed infrastructure</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong><code>ntfs-3g</code> (FUSE Driver)</strong></td>
+<td style="text-align: left;"><strong>Root (<code>sudo</code>)</strong></td>
+<td style="text-align: left;">Arbitrary (<code>/mnt/windows</code>)</td>
+<td style="text-align: left;">Handles dirty/hibernated NTFS metadata, robust cross-platform recovery</td>
+<td style="text-align: left;">Difficult NTFS volumes, Windows dual-boot drives</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong><code>/etc/fstab</code> (Automount)</strong></td>
+<td style="text-align: left;"><strong>Root (Config only)</strong></td>
+<td style="text-align: left;">Configured path</td>
+<td style="text-align: left;">System-wide persistence across reboots with <code>x-systemd.automount</code></td>
+<td style="text-align: left;">Permanently connected external storage pools</td>
+</tr>
+</tbody>
+</table>
 <hr>
 </section>
-<section id="curated-sources-further-reading" class="level2">
-<h2 class="anchored" data-anchor-id="curated-sources-further-reading">5. Curated Sources &amp; Further Reading</h2>
+<section id="method-1-the-modern-desktop-standard-udisksctl" class="level2">
+<h2 class="anchored" data-anchor-id="method-1-the-modern-desktop-standard-udisksctl">3. Method 1: The Modern Desktop Standard (<code>udisksctl</code>)</h2>
+<p>On modern desktop Linux distributions (Arch Linux, Fedora, Ubuntu), <code>udisks2</code> runs as a system daemon that coordinates with Polkit and D-Bus. Its command-line client, <code>udisksctl</code>, allows logged-in interactive users to safely mount and unmount external media without entering a <code>sudo</code> password.</p>
+<section id="recommended-daily-mount-by-label" class="level3">
+<h3 class="anchored" data-anchor-id="recommended-daily-mount-by-label">Recommended Daily Mount (By Label):</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">udisksctl</span> mount <span class="at">-b</span> /dev/disk/by-label/Windows <span class="at">--options</span> ro</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="bulletproof-mount-by-uuid" class="level3">
+<h3 class="anchored" data-anchor-id="bulletproof-mount-by-uuid">Bulletproof Mount (By UUID):</h3>
+<p>If your drive does not have a filesystem label or shares a label with another drive:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">udisksctl</span> mount <span class="at">-b</span> /dev/disk/by-uuid/0680FC5180FC48A7 <span class="at">--options</span> ro</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="why-udisksctl-is-superior-for-desktop-workflows" class="level3">
+<h3 class="anchored" data-anchor-id="why-udisksctl-is-superior-for-desktop-workflows">Why <code>udisksctl</code> Is Superior for Desktop Workflows:</h3>
+<ol type="1">
+<li><strong>Automated Directory Management:</strong> You do not need to <code>sudo mkdir /mnt/...</code>. It dynamically creates <code>/run/media/igorkan/&lt;LABEL&gt;</code> and removes the folder automatically on unmount.</li>
+<li><strong>Security:</strong> Runs within unprivileged user boundaries while delegating kernel operations to the audited <code>udisksd</code> daemon.</li>
+<li><strong>Desktop File Manager Synergy:</strong> Mounts appear instantly in file managers (Thunar, Dolphin, Nautilus) and system bars (Waybar, Polybar).</li>
+</ol>
+</section>
+<section id="unmounting-with-udisksctl" class="level3">
+<h3 class="anchored" data-anchor-id="unmounting-with-udisksctl">Unmounting with <code>udisksctl</code>:</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">udisksctl</span> unmount <span class="at">-b</span> /dev/disk/by-label/Windows</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="method-2-classic-kernel-mounting-mount" class="level2">
+<h2 class="anchored" data-anchor-id="method-2-classic-kernel-mounting-mount">4. Method 2: Classic Kernel Mounting (<code>mount</code>)</h2>
+<p>The traditional <code>mount</code> command interacts directly with the Linux VFS kernel layer via the <code>mount(2)</code> system call.</p>
+<section id="the-standard-procedure" class="level3">
+<h3 class="anchored" data-anchor-id="the-standard-procedure">The Standard Procedure:</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Create the mountpoint directory</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mkdir <span class="at">-p</span> /mnt/windows</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Mount the volume (using persistent label or UUID)</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mount <span class="at">-o</span> ro /dev/disk/by-label/Windows /mnt/windows</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="useful-mount-options--o" class="level3">
+<h3 class="anchored" data-anchor-id="useful-mount-options--o">Useful Mount Options (<code>-o</code>):</h3>
 <ul>
-<li><strong>Michael Spivak</strong>, <em>Calculus on Manifolds</em>, Addison-Wesley (1965), Ch 3.</li>
-<li><strong>Gerald B. Folland</strong>, <em>Real Analysis</em>, Wiley (1999), Ch 2.5. <br> <br></li>
+<li><code>ro</code>: Mounts as read-only.</li>
+<li><code>rw</code>: Mounts as read-write (default for healthy filesystems).</li>
+<li><code>noexec</code>: Disallows running binaries directly from the external drive (security hardening).</li>
+<li><code>nodev</code>: Prevents character or block special devices on the filesystem from being interpreted.</li>
+<li><code>uid=1000,gid=1000</code>: Maps file ownership directly to your primary Linux user account for filesystems like FAT32/vfat that lack native POSIX ownership.</li>
 </ul>
-<div style="text-align: center; color: #888; font-size: 0.9em;">
-<p>© 2026 Igor Kan</p>
-</div>
+</section>
+<section id="unmounting" class="level3">
+<h3 class="anchored" data-anchor-id="unmounting">Unmounting:</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> umount /mnt/windows</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="method-3-handling-ntfs-drives-windows-hibernation-ntfs-3g" class="level2">
+<h2 class="anchored" data-anchor-id="method-3-handling-ntfs-drives-windows-hibernation-ntfs-3g">5. Method 3: Handling NTFS Drives &amp; Windows Hibernation (<code>ntfs-3g</code>)</h2>
+<p>When mounting external drives formatted in Windows (NTFS), Linux administrators frequently encounter a notorious failure:</p>
+<pre><code>$MFTMirr does not match $MFT (record 3).
+Failed to mount '/dev/sdd3': Input/output error
+NTFS is either inconsistent, or there is a hardware fault...</code></pre>
+<section id="the-root-cause-windows-fast-startup-hybrid-sleep" class="level3">
+<h3 class="anchored" data-anchor-id="the-root-cause-windows-fast-startup-hybrid-sleep">The Root Cause: Windows Fast Startup &amp; Hybrid Sleep</h3>
+<p>In Windows 10 and 11, <strong>Fast Startup</strong> is enabled by default. When you click “Shut Down”, Windows does not perform a true clean shutdown. Instead, it logs out all users and writes the kernel state into <code>hiberfil.sys</code>.</p>
+<p>This leaves the NTFS volume in an <strong>unclean / locked state</strong>. The Linux kernel detects this and strictly refuses to mount the filesystem in read-write mode to prevent corrupting the open Windows session.</p>
+</section>
+<section id="the-solutions" class="level3">
+<h3 class="anchored" data-anchor-id="the-solutions">The Solutions:</h3>
+<section id="safe-read-only-mount-instant-read-access" class="level4">
+<h4 class="anchored" data-anchor-id="safe-read-only-mount-instant-read-access">1. Safe Read-Only Mount (Instant Read Access)</h4>
+<p>If you only need to copy, view, or analyze files from the drive, mounting in read-only mode bypasses the lock cleanly:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mount <span class="at">-t</span> ntfs-3g <span class="at">-o</span> ro,uid=1000,gid=1000 /dev/disk/by-label/Windows /mnt/windows</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Or via <code>udisksctl</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">udisksctl</span> mount <span class="at">-b</span> /dev/disk/by-label/Windows <span class="at">--options</span> ro</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="discarding-the-windows-hibernation-session" class="level4">
+<h4 class="anchored" data-anchor-id="discarding-the-windows-hibernation-session">2. Discarding the Windows Hibernation Session</h4>
+<p>If you need read-write access and do not care about preserving the hibernated Windows session (any unsaved application state in Windows will be discarded):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mount <span class="at">-t</span> ntfs-3g <span class="at">-o</span> remove_hiberfile,uid=1000,gid=1000 /dev/disk/by-label/Windows /mnt/windows</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Alternatively, use <code>ntfsfix</code> to clear the dirty/hibernation bit:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ntfsfix <span class="at">-d</span> /dev/disk/by-label/Windows</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ex">udisksctl</span> mount <span class="at">-b</span> /dev/disk/by-label/Windows</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="the-clean-windows-shutdown-fix" class="level4">
+<h4 class="anchored" data-anchor-id="the-clean-windows-shutdown-fix">3. The Clean Windows Shutdown Fix</h4>
+<p>The cleanest and safest approach: plug the drive back into the Windows machine, click <strong>Start ➔ Restart</strong> (restarts perform a complete, clean dismount without hibernation), and unplug the drive once the machine finishes rebooting.</p>
+<hr>
+</section>
+</section>
+</section>
+<section id="method-4-persistent-boot-mounts-via-etcfstab" class="level2">
+<h2 class="anchored" data-anchor-id="method-4-persistent-boot-mounts-via-etcfstab">6. Method 4: Persistent Boot Mounts via <code>/etc/fstab</code></h2>
+<p>If an external drive remains permanently connected to your workstation, you can configure it to mount automatically at boot in <code>/etc/fstab</code>.</p>
+<p>However, traditional <code>fstab</code> entries cause Linux to <strong>hang at boot</strong> if the drive is disconnected when the machine turns on.</p>
+<section id="the-fault-tolerant-systemd-automount-solution" class="level3">
+<h3 class="anchored" data-anchor-id="the-fault-tolerant-systemd-automount-solution">The Fault-Tolerant Systemd Automount Solution:</h3>
+<p>Add this line to <code>/etc/fstab</code>:</p>
+<pre class="fstab"><code># /etc/fstab entry for external Windows SSD
+UUID=0680FC5180FC48A7  /mnt/windows  ntfs3  ro,nofail,x-systemd.automount,x-systemd.idle-timeout=1min,uid=1000,gid=1000  0  0</code></pre>
+</section>
+<section id="key-flags-explained" class="level3">
+<h3 class="anchored" data-anchor-id="key-flags-explained">Key Flags Explained:</h3>
+<ul>
+<li><code>UUID=...</code>: Ensures the entry matches the drive regardless of <code>/dev/sdX</code> re-ordering.</li>
+<li><code>nofail</code>: Prevents boot failure if the drive is unplugged.</li>
+<li><code>x-systemd.automount</code>: Defers the actual mount until a program or user navigates into <code>/mnt/windows</code>.</li>
+<li><code>x-systemd.idle-timeout=1min</code>: Automatically unmounts the filesystem after 60 seconds of inactivity, keeping write caches flushed and protecting against accidental cable disconnects.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="method-5-bind-mounts-the-local-mirror-trick" class="level2">
+<h2 class="anchored" data-anchor-id="method-5-bind-mounts-the-local-mirror-trick">7. Method 5: Bind Mounts (The Local Mirror Trick)</h2>
+<p>Suppose an external drive is already mounted by <code>udisksctl</code> at <code>/run/media/igorkan/Windows</code>, but an external script or software suite expects the path <code>/mnt/windows</code>.</p>
+<p>Instead of unmounting and remounting, use a <strong>bind mount</strong>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mkdir <span class="at">-p</span> /mnt/windows</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mount <span class="at">--bind</span> /run/media/igorkan/Windows /mnt/windows</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>A bind mount makes the exact same directory tree accessible at two distinct paths simultaneously, with zero performance overhead.</p>
+<p>To unmount the mirror:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> umount /mnt/windows</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+<section id="summary-quick-reference-cheat-sheet" class="level2">
+<h2 class="anchored" data-anchor-id="summary-quick-reference-cheat-sheet">8. Summary &amp; Quick-Reference Cheat Sheet</h2>
+<section id="mount-any-drive-in-3-steps" class="level3">
+<h3 class="anchored" data-anchor-id="mount-any-drive-in-3-steps">Mount Any Drive in 3 Steps:</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Scan and find the UUID or Label</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ex">lsblk</span> <span class="at">-o</span> NAME,SIZE,TYPE,FSTYPE,LABEL,UUID,MOUNTPOINTS</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Mount by Label (No sudo required)</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="ex">udisksctl</span> mount <span class="at">-b</span> /dev/disk/by-label/<span class="op">&lt;</span>LABEL<span class="op">&gt;</span> --options ro</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Safely unmount before pulling the USB cable</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="ex">udisksctl</span> unmount <span class="at">-b</span> /dev/disk/by-label/<span class="op">&lt;</span>LABEL<span class="op">&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="recovery-toolkit" class="level3">
+<h3 class="anchored" data-anchor-id="recovery-toolkit">Recovery Toolkit:</h3>
+<ul>
+<li><strong>Fix Dirty NTFS Drive:</strong> <code>sudo ntfsfix -d /dev/disk/by-label/&lt;LABEL&gt;</code></li>
+<li><strong>Force Lazy Unmount (Stuck Device):</strong> <code>sudo umount -l /mnt/windows</code> or <code>fusermount -z -u &lt;path&gt;</code></li>
+<li><strong>Check Drive Health (S.M.A.R.T.):</strong> <code>sudo smartctl -a /dev/disk/by-id/&lt;DISK_ID&gt;</code></li>
+</ul>
+<p>By combining persistent disk identifiers (<code>/dev/disk/by-label/</code> and <code>by-uuid/</code>) with modern unprivileged tooling like <code>udisksctl</code>, you can reliably manage hot-plugged storage on any Linux distribution without hardcoded device failures or hibernation lockouts.</p>
 
 
-
+</section>
 </section>
 
 </main> <!-- /main -->

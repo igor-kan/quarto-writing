@@ -464,7 +464,7 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="numerical-computation-reverse-mode-vector-jacobian-product-vjp-engine">4. Numerical Computation: Reverse-Mode Vector-Jacobian Product (VJP) Engine</h2>
 <p>Below are multi-language implementations of a <strong>Reverse-Mode Computational Graph Node</strong> evaluating the chain rule as composable linear operators:</p>
 <div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
-<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">Python 3</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">C++20</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false" href="">Julia</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-4" role="tab" aria-controls="tabset-1-4" aria-selected="false" href="">Modern Fortran</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-5" role="tab" aria-controls="tabset-1-5" aria-selected="false" href="">MATLAB / Octave</a></li></ul>
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">Python 3</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">C++20</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false" href="">Julia</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-4" role="tab" aria-controls="tabset-1-4" aria-selected="false" href="">Modern Fortran</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-5" role="tab" aria-controls="tabset-1-5" aria-selected="false" href="">MATLAB / Octave</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-6-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-6" role="tab" aria-controls="tabset-1-6" aria-selected="false" href="">Lean 4</a></li></ul>
 <div class="tab-content" data-group="language">
 <div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Node:</span>
@@ -586,6 +586,24 @@ window.Quarto = {
 <span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="va">g_x2</span> <span class="op">=</span> <span class="va">g_s</span> <span class="op">*</span> <span class="fl">1.0</span><span class="op">;</span></span>
 <span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="va">fprintf</span>(<span class="ss">'MATLAB:   y = %.1f, dy/dx1 = %.1f, dy/dx2 = %.1f\n'</span><span class="op">,</span> <span class="va">y</span><span class="op">,</span> <span class="va">g_x1</span><span class="op">,</span> <span class="va">g_x2</span>)<span class="op">;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-1-6" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-6-tab">
+<pre class="lean"><code>-- Lean 4: Fréchet Derivative as a Bounded Continuous Linear Map
+import Mathlib.Analysis.Calculus.FDeriv.Basic
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+-- Formal definition: Fréchet derivative Df(x) ∈ E →L[ℝ] F
+def IsFrechetDifferentiableAt (f : E → F) (x : E) (f' : E →L[ℝ] F) : Prop :=
+  HasFDerivAt f f' x
+
+-- The Chain Rule for Fréchet derivatives
+theorem frechet_chain_rule {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (f : E → F) (g : F → G) (x : E) (f' : E →L[ℝ] F) (g' : F →L[ℝ] G)
+    (hf : HasFDerivAt f f' x) (hg : HasFDerivAt g g' (f x)) :
+    HasFDerivAt (g ∘ f) (g'.comp f') x :=
+  HasFDerivAt.comp x hg hf</code></pre>
 </div>
 </div>
 </div>
