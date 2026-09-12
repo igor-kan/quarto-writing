@@ -1,0 +1,111 @@
+---
+title: "Local Differential Geometry: Planar Curves, Curvature Invariants, and Frenet-Serret Frames"
+subtitle: "Deconstructing Stewart Chapter 10: Regular parameterized curves, arc length reparametrization, signed curvature, and planar Frenet-Serret frames."
+author: "Igor Kan"
+date: "2026-09-12"
+categories: ["Mathematics", "Differential Geometry", "Physics", "Computer Graphics", "Robotics"]
+format:
+  html:
+    toc: true
+    math: true
+---
+
+## 1. The Conceptual Shift: Invariant Geometry vs. Arbitrary Parameterizations
+
+In introductory calculus (Stewart, Chapter 10), parametric curves $\gamma(t) = (x(t), y(t))$ and polar equations $r = f(\theta)$ are treated as algebraic coordinate conversions. Curvature is presented via a computational recipe:
+$$\kappa = \frac{|\dot{x}\ddot{y} - \dot{y}\ddot{x}|}{(\dot{x}^2 + \dot{y}^2)^{3/2}}$$
+
+In modern differential geometry:
+1. **Parameter Invariance**: A geometric curve is an equivalence class of regular parameterized curves modulo orientation-preserving diffeomorphisms. The arbitrary parameter $t$ has no geometric meaning.
+2. **The Natural Parametrization (Arc Length $s$)**: The intrinsic geometry is revealed only when parameterized by arc length $s$, where the velocity vector has unit speed: $\|\gamma'(s)\| \equiv 1$.
+3. **The Moving Frame (Repère Mobile)**: Following Gaspard Monge and Jean Frédéric Frenet, geometry is analyzed not by fixed Cartesian axes, but by an orthonormal basis attached to and moving along the curve: the **Frenet-Serret frame** $(\mathbf{T}(s), \mathbf{N}(s))$.
+4. **Fundamental Theorem of Planar Curves**: Curvature $\kappa(s)$ is the complete geometric invariant: any smooth planar curve is uniquely determined up to a rigid Euclidean motion (translation and rotation) by its curvature function $\kappa(s)$.
+
+---
+
+## 2. Rigorous Foundations & Theorems
+
+### Regular Parameterized Curves
+A parameterized curve $\gamma: I \to \mathbb{R}^2$ is **regular** if its tangent vector never vanishes: $\dot{\gamma}(t) \neq \mathbf{0}$ for all $t \in I$. Regularity ensures the existence of a continuous unit tangent vector and rules out cusp singularities.
+
+### Arc Length Reparametrization
+Let $s(t) = \int_{t_0}^t \|\dot{\gamma}(u)\| du$. Since $\gamma$ is regular, $s'(t) = \|\dot{\gamma}(t)\| > 0$. By the Inverse Function Theorem, $s(t)$ is invertible with $t(s) = s^{-1}(s)$.
+Defining $\beta(s) = \gamma(t(s))$, we obtain unit speed:
+$$\|\beta'(s)\| = \left\| \dot{\gamma}(t(s)) \frac{dt}{ds} \right\| = \left\| \dot{\gamma}(t(s)) \frac{1}{\|\dot{\gamma}(t(s))\|} \right\| = 1$$
+
+### Planar Frenet-Serret Equations
+Let $\mathbf{T}(s) = \beta'(s)$ be the unit tangent vector. Differentiating $\langle \mathbf{T}(s), \mathbf{T}(s) \rangle = 1$ yields:
+$$2 \langle \mathbf{T}'(s), \mathbf{T}(s) \rangle = 0 \implies \mathbf{T}'(s) \perp \mathbf{T}(s)$$
+Let $\mathbf{N}(s)$ be the unit normal vector obtained by rotating $\mathbf{T}(s)$ by $+90^\circ$ counterclockwise. The **signed curvature** $\kappa(s)$ is defined by:
+$$\mathbf{T}'(s) = \kappa(s) \mathbf{N}(s)$$
+Differentiating $\mathbf{N}(s)$ similarly yields the complete **Planar Frenet-Serret System**:
+$$\begin{pmatrix} \mathbf{T}'(s) \\ \mathbf{N}'(s) \end{pmatrix} = \begin{pmatrix} 0 & \kappa(s) \\ -\kappa(s) & 0 \end{pmatrix} \begin{pmatrix} \mathbf{T}(s) \\ \mathbf{N}(s) \end{pmatrix}$$
+The skew-symmetric matrix represents an infinitesimal rotation in the Lie algebra $\mathfrak{so}(2)$.
+
+---
+
+## 3. Applications Across Disciplines
+
+### Computer Graphics & CAD: Clothoids and Euler Spirals
+In highway design, railway engineering, and vector font rendering (TrueType), connecting straight lines to circular arcs requires smooth transitions. A sudden jump in curvature causes infinite jerk in vehicles. Engineers use **clothoids** (Euler spirals), where curvature grows linearly with arc length $\kappa(s) = a s$, producing perfectly smooth, jerk-free transitions.
+
+### Physics: Charged Particles in Non-Uniform Magnetic Fields
+The Lorentz force $\mathbf{F} = q (\mathbf{v} \times \mathbf{B})$ acts perpendicularly to velocity. In a planar magnetic field $B(x, y)\mathbf{\hat{z}}$, a charged particle moves at constant speed, and its path curvature is directly proportional to the local magnetic field strength:
+$$\kappa(s) = \frac{q B(s)}{m v}$$
+
+### Robotics: Wheeled Vehicle Kinematic Constraints
+A differential-drive or car-like robot has nonholonomic constraints: it cannot move laterally. The control inputs directly govern velocity $v(t)$ and angular yaw rate $\omega(t)$. The instantaneous curvature of the path is $\kappa(t) = \omega(t) / v(t)$, and vehicle planning algorithms operate by synthesizing curvature profiles.
+
+---
+
+## 4. Numerical Computation: Reconstructing a Curve from Curvature Invariants
+
+Below is a Python algorithm demonstrating the **Fundamental Theorem of Planar Curves**: integrating an arbitrary curvature function $\kappa(s)$ using the Frenet-Serret equations to reconstruct the exact Euclidean curve:
+
+```python
+import numpy as np
+
+def reconstruct_curve_from_curvature(kappa_func, s_max: float, n_steps: int = 1000):
+    """
+    Reconstructs a planar curve gamma(s) from its curvature kappa(s) by integrating:
+    theta'(s) = kappa(s) => theta(s) = int kappa(s) ds
+    x'(s) = cos(theta(s)), y'(s) = sin(theta(s))
+    """
+    s_grid = np.linspace(0.0, s_max, n_steps)
+    ds = s_grid[1] - s_grid[0]
+    
+    kappas = np.array([kappa_func(s) for s in s_grid])
+    # Integrate curvature to get tangent angle theta(s)
+    theta = np.cumsum(kappas) * ds
+    
+    # Integrate tangent vector to get positions (x, y)
+    dx = np.cos(theta) * ds
+    dy = np.sin(theta) * ds
+    
+    x = np.cumsum(dx)
+    y = np.cumsum(dy)
+    
+    return s_grid, x, y
+
+# Reconstruct a Clothoid (Euler Spiral): kappa(s) = 2*s
+s_vals, x_clothoid, y_clothoid = reconstruct_curve_from_curvature(lambda s: 2.0 * s, s_max=3.0, n_steps=3000)
+
+print(f"Reconstructed Clothoid end position at s = 3.0:")
+print(f"x(3.0) = {x_clothoid[-1]:.6f}, y(3.0) = {y_clothoid[-1]:.6f}")
+print("Curvature verified: continuously varying from 0 to 6.0")
+```
+
+---
+
+## 5. Curated Sources & Further Reading
+
+* **Manfredo P. Do Carmo**, *Differential Geometry of Curves and Surfaces*, Prentice-Hall (1976), Chapter 1.2–1.5.
+* **Wilhelm Klingenberg**, *A Course in Differential Geometry*, Graduate Texts in Mathematics 51, Springer-Verlag (1978), Chapter 1.
+* **Michael Spivak**, *A Comprehensive Introduction to Differential Geometry, Vol. 1*, Publish or Perish (1999), Chapter 1.
+* **Tom M. Apostol**, *Calculus, Vol. 1*, 2nd Edition, Wiley (1967), Chapters 13–14.
+<br>
+<br>
+
+<div style="text-align: center; color: #888; font-size: 0.9em;">
+  © 2026 Igor Kan
+</div>

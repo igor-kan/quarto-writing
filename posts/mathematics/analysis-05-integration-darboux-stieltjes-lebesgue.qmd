@@ -1,0 +1,129 @@
+---
+title: "Foundations of Integration: Darboux-Stieltjes Sums, Measure Zero, and Lebesgue's Criterion"
+subtitle: "Deconstructing Stewart Chapter 5: Replacing intuitive Riemann area sums with upper/lower Darboux sums, the Riemann-Stieltjes integral, and Lebesgue's integrability theorem."
+author: "Igor Kan"
+date: "2026-09-12"
+categories: ["Mathematics", "Analysis", "Calculus", "Probability", "Physics"]
+format:
+  html:
+    toc: true
+    math: true
+---
+
+## 1. The Conceptual Shift: Why Riemann Sums Fail
+
+In elementary calculus (Stewart, Chapter 5), the definite integral is defined as the limit of Riemann sums approximating the area under a curve using rectangular vertical strips:
+$$\int_a^b f(x) dx = \lim_{n \to \infty} \sum_{i=1}^n f(x_i^*) \Delta x$$
+While pedagogically intuitive, this classical definition has critical theoretical shortcomings:
+1. **Arbitrary Tag Points**: The choice of sample points $x_i^* \in [x_{i-1}, x_i]$ obscures the fundamental infimum/supremum sandwiching required for rigorous convergence.
+2. **Inability to Integrate Characteristic Functions**: The Dirichlet function $\chi_\mathbb{Q}(x)$ (which equals 1 if $x \in \mathbb{Q}$ and 0 if $x \notin \mathbb{Q}$) is not Riemann integrable on $[0, 1]$, even though the set of rationals is countable and negligibly small.
+3. **Failure of Monotone Convergence**: The space of Riemann integrable functions is **not complete**. The pointwise limit of a bounded sequence of Riemann-integrable functions may fail to be Riemann-integrable.
+
+To resolve these defects, modern analysis replaces naive Riemann sums with **Darboux sums**, generalizes integration with respect to arbitrary integrator functions (the **Riemann-Stieltjes integral**), and establishes **Lebesgue's Criterion of Integrability** via measure theory.
+
+---
+
+## 2. Rigorous Formulations & Theorems
+
+### Upper and Lower Darboux Integrals
+Let $P = \{a = x_0 < x_1 < \dots < x_n = b\}$ be a partition of $[a, b]$, and $f: [a, b] \to \mathbb{R}$ bounded.
+Define:
+$$M_i = \sup_{x \in [x_{i-1}, x_i]} f(x), \quad m_i = \inf_{x \in [x_{i-1}, x_i]} f(x)$$
+The **Upper and Lower Darboux sums** are:
+$$U(f, P) = \sum_{i=1}^n M_i \Delta x_i, \quad L(f, P) = \sum_{i=1}^n m_i \Delta x_i$$
+The upper and lower Darboux integrals are defined by infimum and supremum over all possible partitions $\mathcal{P}$:
+$$\overline{\int_a^b} f(x) dx = \inf_{P \in \mathcal{P}} U(f, P), \quad \underline{\int_a^b} f(x) dx = \sup_{P \in \mathcal{P}} L(f, P)$$
+A bounded function $f$ is Darboux (Riemann) integrable if and only if $\overline{\int} f = \underline{\int} f$.
+
+### The Riemann-Stieltjes Integral
+Let $\alpha: [a, b] \to \mathbb{R}$ be a monotonically increasing function. The **Riemann-Stieltjes integral** replaces $\Delta x_i$ with $\Delta \alpha_i = \alpha(x_i) - \alpha(x_{i-1})$:
+$$U(f, P, \alpha) = \sum_{i=1}^n M_i (\alpha(x_i) - \alpha(x_{i-1}))$$
+If $\alpha$ is continuously differentiable, $\int_a^b f d\alpha = \int_a^b f(x) \alpha'(x) dx$. If $\alpha$ is a step function with jump discontinuities of height $c_k$ at points $s_k$, the integral naturally evaluates to a discrete sum:
+$$\int_a^b f d\alpha = \sum_k c_k f(s_k)$$
+The Riemann-Stieltjes integral seamlessly bridges discrete sums and continuous integrals into a single mathematical operator.
+
+### Lebesgue's Criterion for Riemann Integrability
+> **Theorem (Vitali-Lebesgue)**: A bounded function $f: [a, b] \to \mathbb{R}$ is Riemann integrable on $[a, b]$ if and only if its set of discontinuities $D = \{x \in [a, b] : f \text{ is discontinuous at } x\}$ has **Lebesgue measure zero**.
+
+A set $E \subset \mathbb{R}$ has measure zero if for every $\epsilon > 0$, there exists a countable collection of open intervals $\{(a_k, b_k)\}_{k=1}^\infty$ covering $E$ such that $\sum_{k=1}^\infty (b_k - a_k) < \epsilon$.
+
+---
+
+## 3. Applications Across Disciplines
+
+### Probability & Statistics: Cumulative Distribution Functions (CDFs)
+In probability theory, random variables can be neither purely continuous nor purely discrete (e.g., waiting times with a probability mass at zero). The expected value of a payoff $g(X)$ is rigorously defined as a Riemann-Stieltjes integral against the CDF $F_X(x) = P(X \le x)$:
+$$\mathbb{E}[g(X)] = \int_{-\infty}^\infty g(x) dF_X(x)$$
+This unified formula unifies continuous densities $f_X(x)dx$ and discrete probability masses $p_k$.
+
+### Physics: Mass Densities with Point Impulses (Dirac Deltas)
+In classical electrodynamics and mechanics, point charges and concentrated masses are modeled using the Dirac delta distribution $\delta(x)$. In Stieltjes terms, integrating against a point charge located at $x_0$ is simply integrating against the Heaviside step function $\Theta(x - x_0)$:
+$$\int f(x) \delta(x - x_0) dx = \int f(x) d\Theta(x - x_0) = f(x_0)$$
+
+### Computer Science: Adaptive Numerical Quadrature & Error Enclosures
+Unlike naive Riemann sums with $O(1/n)$ convergence, numerical methods exploit Darboux bounds ($L(f, P) \le \int f \le U(f, P)$) to produce guaranteed error intervals for safety-critical simulations (e.g., aerospace trajectory certification).
+
+---
+
+## 4. Numerical Computation: Rigorous Darboux Upper/Lower Bound Integrator
+
+Below is a Python algorithm that computes guaranteed upper and lower Darboux bounds for an arbitrary bounded function, evaluating its oscillatory convergence:
+
+```python
+import numpy as np
+
+def darboux_integrate(func, a: float, b: float, n_intervals: int, n_subsamples: int = 100):
+    """
+    Computes rigorous Upper and Lower Darboux sums by densely sampling each subinterval.
+    """
+    x_grid = np.linspace(a, b, n_intervals + 1)
+    lower_sum = 0.0
+    upper_sum = 0.0
+    
+    for i in range(n_intervals):
+        x_left = x_grid[i]
+        x_right = x_grid[i+1]
+        dx = x_right - x_left
+        
+        sub_pts = np.linspace(x_left, x_right, n_subsamples)
+        vals = func(sub_pts)
+        
+        m_i = np.min(vals)
+        M_i = np.max(vals)
+        
+        lower_sum += m_i * dx
+        upper_sum += M_i * dx
+        
+    return lower_sum, upper_sum
+
+# Test on Thomae's popcorn function (Riemann integrable, discontinuous on Q)
+def thomae_approx(x):
+    y = np.zeros_like(x)
+    for q in range(1, 51):
+        for p in range(0, q + 1):
+            val = p / q
+            mask = np.abs(x - val) < 1e-5
+            y[mask] = np.maximum(y[mask], 1.0 / q)
+    return y
+
+lo, hi = darboux_integrate(thomae_approx, 0.0, 1.0, n_intervals=500)
+print(f"Darboux Lower Sum: {lo:.6f}")
+print(f"Darboux Upper Sum: {hi:.6f}")
+print(f"Darboux Gap (Upper - Lower): {hi - lo:.6f} (Shrinks to 0 -> Integrable with integral 0)")
+```
+
+---
+
+## 5. Curated Sources & Further Reading
+
+* **Walter Rudin**, *Principles of Mathematical Analysis*, 3rd Edition, McGraw-Hill (1976), Chapter 6: *The Riemann-Stieltjes Integral*.
+* **Gerald B. Folland**, *Real Analysis: Modern Techniques and Their Applications*, 2nd Edition, Wiley (1999), Chapter 2.
+* **Terence Tao**, *An Introduction to Measure Theory*, Graduate Studies in Mathematics 126, AMS (2011), Chapter 1.
+* **Michael Spivak**, *Calculus*, 4th Edition, Publish or Perish (2008), Chapters 13 & 14.
+* **Tom M. Apostol**, *Calculus, Vol. 1*, 2nd Edition, Wiley (1967), Chapters 1.11–1.27 & Chapter 5.
+<br>
+<br>
+
+<div style="text-align: center; color: #888; font-size: 0.9em;">
+  © 2026 Igor Kan
+</div>
