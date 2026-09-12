@@ -18,7 +18,7 @@ In rigorous modern analysis, this intuitive picture breaks down immediately:
 1. **The Incompleteness of the Rationals**: The field of rational numbers $\mathbb{Q}$ possesses "holes" (e.g., $\{q \in \mathbb{Q} : q^2 < 2\}$ has no supremum in $\mathbb{Q}$). Calculus cannot exist on $\mathbb{Q}$ because limits fail to converge.
 2. **Axiomatic Construction of $\mathbb{R}$**: The real numbers must be formally synthesized from $\mathbb{Q}$ either as **Dedekind cuts** (order-theoretic completion) or as **equivalence classes of Cauchy sequences** (metric completion).
 3. **The Least Upper Bound Property**: $\mathbb{R}$ is characterized uniquely (up to isomorphic field embedding) as the *unique complete ordered Archimedean field*.
-4. **Function Spaces as Metric Universes**: A function $f: X 	o Y$ is not merely an algebraic equation, but an element of an infinite-dimensional function space $Y^X$. When equipped with metrics like the supremum norm $\|f\|_\infty = \sup_{x \in X} |f(x)|$, function spaces inherit topological properties like completeness (Banach spaces).
+4. **Function Spaces as Metric Universes**: A function $f: X \to Y$ is not merely an algebraic equation, but an element of an infinite-dimensional function space $Y^X$. When equipped with metrics like the supremum norm $\|f\|_\infty = \sup_{x \in X} |f(x)|$, function spaces inherit topological properties like completeness (Banach spaces).
 
 ---
 
@@ -26,9 +26,7 @@ In rigorous modern analysis, this intuitive picture breaks down immediately:
 
 ### Construction of $\mathbb{R}$ via Dedekind Cuts
 A **Dedekind cut** in $\mathbb{Q}$ is a partition $(A, B)$ of $\mathbb{Q}$ such that:
-1. $A 
-eq \emptyset$ and $B 
-eq \emptyset$.
+1. $A \neq \emptyset$ and $B \neq \emptyset$.
 2. If $a \in A$ and $q < a$, then $q \in A$ ($A$ is downward-closed).
 3. $A$ contains no greatest rational element: for every $a \in A$, there exists $a' \in A$ with $a < a'$.
 
@@ -44,13 +42,13 @@ Rational Axis Q:
 ### The Completeness Axiom (Least Upper Bound Property)
 > **Theorem (Supremum Property)**: Every non-empty subset $S \subset \mathbb{R}$ that is bounded above possesses a least upper bound (supremum) in $\mathbb{R}$, denoted $\sup S$.
 
-*Proof Sketch (Dedekind)*: Let $\mathcal{S}$ be a non-empty family of cuts bounded above by cut $B^*$. Define $A_\sigma = igcup_{A \in \mathcal{S}} A$. One proves $A_\sigma$ satisfies all three axioms of a cut and that $A_\sigma = \sup \mathcal{S}$.
+*Proof Sketch (Dedekind)*: Let $\mathcal{S}$ be a non-empty family of cuts bounded above by cut $B^*$. Define $A_\sigma = \bigcup_{A \in \mathcal{S}} A$. One proves $A_\sigma$ satisfies all three axioms of a cut and that $A_\sigma = \sup \mathcal{S}$.
 
 ### Cardinality and Function Space Dimensions
-* $|\mathbb{N}| = |\mathbb{Q}| = leph_0$ (Countable).
-* $|\mathbb{R}| = 2^{leph_0} = \mathfrak{c}$ (Continuum).
-* The set of all functions $\mathbb{R} 	o \mathbb{R}$ has cardinality $|\mathbb{R}^\mathbb{R}| = (2^{leph_0})^{2^{leph_0}} = 2^\mathfrak{c} > \mathfrak{c}$.
-* The subset of *continuous* functions $C(\mathbb{R}, \mathbb{R})$ is uniquely determined by values on $\mathbb{Q}$, hence $|C(\mathbb{R}, \mathbb{R})| = \mathfrak{c}^{leph_0} = (2^{leph_0})^{leph_0} = 2^{leph_0} = \mathfrak{c}$.
+* $|\mathbb{N}| = |\mathbb{Q}| = \aleph_0$ (Countable).
+* $|\mathbb{R}| = 2^{\aleph_0} = \mathfrak{c}$ (Continuum).
+* The set of all functions $\mathbb{R} \to \mathbb{R}$ has cardinality $|\mathbb{R}^\mathbb{R}| = (2^{\aleph_0})^{2^{\aleph_0}} = 2^\mathfrak{c} > \mathfrak{c}$.
+* The subset of *continuous* functions $C(\mathbb{R}, \mathbb{R})$ is uniquely determined by values on $\mathbb{Q}$, hence $|C(\mathbb{R}, \mathbb{R})| = \mathfrak{c}^{\aleph_0} = (2^{\aleph_0})^{\aleph_0} = 2^{\aleph_0} = \mathfrak{c}$.
 
 ---
 
@@ -70,54 +68,132 @@ Digital computers cannot represent $\mathbb{R}$; they work on a finite subset $\
 
 ---
 
-## 4. Numerical Computation: Exact Interval Arithmetic & Dedekind Bisection
+## 4. Numerical Computation: Rigorous Dedekind Cut Interval Arithmetic
 
-Below is a Python implementation of **Dedekind Cut Interval Arithmetic**, representing real numbers as rigorous enclosing bounds that guarantee inclusion:
+Below are multi-language implementations of **Dedekind Cut Interval Arithmetic**, representing real numbers as enclosing bounds that guarantee inclusion:
 
+::: {.panel-tabset group="language"}
+## Python 3
 ```python
 class IntervalReal:
-    """
-    Rigorous Real Number via Interval Arithmetic.
-    Represents an element of R as an arbitrarily tight Dedekind interval [lower, upper] in Q.
-    """
+    """Rigorous Real Number via Interval Arithmetic."""
     def __init__(self, lower: float, upper: float):
-        assert lower <= upper, "Lower bound must not exceed upper bound"
+        assert lower <= upper
         self.lo = float(lower)
         self.hi = float(upper)
 
     def __repr__(self):
-        return f"[{self.lo:.8f}, {self.hi:.8f}] (width: {self.hi - self.lo:.2e})"
+        return f"[{self.lo:.8f}, {self.hi:.8f}]"
 
-    def __add__(self, other):
-        return IntervalReal(self.lo + other.lo, self.hi + other.hi)
-
-    def __sub__(self, other):
-        return IntervalReal(self.lo - other.hi, self.hi - other.lo)
-
-    def __mul__(self, other):
-        products = [self.lo * other.lo, self.lo * other.hi, self.hi * other.lo, self.hi * other.hi]
-        return IntervalReal(min(products), max(products))
-
-def sqrt_dedekind_cut(target: float, tol: float = 1e-12, max_iter: int = 100) -> IntervalReal:
-    """
-    Computes sqrt(target) via rigorous Dedekind cut bisection over Q.
-    """
+def sqrt_dedekind(target: float, tol: float = 1e-12) -> IntervalReal:
     lo, hi = 0.0, max(1.0, float(target))
-    for _ in range(max_iter):
-        if hi - lo < tol:
-            break
+    while hi - lo > tol:
         mid = (lo + hi) / 2.0
         if mid * mid < target:
-            lo = mid  # mid belongs to lower Dedekind cut A
+            lo = mid
         else:
-            hi = mid  # mid belongs to upper set B
+            hi = mid
     return IntervalReal(lo, hi)
 
-# Validate on sqrt(2)
-sqrt2_interval = sqrt_dedekind_cut(2.0)
-print(f"Rigorous Dedekind Enclosure for sqrt(2):\n{sqrt2_interval}")
-print(f"Contains true value: {sqrt2_interval.lo**2 <= 2.0 <= sqrt2_interval.hi**2}")
+res = sqrt_dedekind(2.0)
+print(f"Python 3: sqrt(2) in {res}")
 ```
+
+## C++20
+```cpp
+#include <iostream>
+#include <iomanip>
+#include <algorithm>
+
+struct IntervalReal {
+    double lo, hi;
+};
+
+IntervalReal sqrt_dedekind(double target, double tol = 1e-12) {
+    double lo = 0.0, hi = std::max(1.0, target);
+    while (hi - lo > tol) {
+        double mid = (lo + hi) / 2.0;
+        if (mid * mid < target) lo = mid;
+        else hi = mid;
+    }
+    return {lo, hi};
+}
+
+int main() {
+    auto res = sqrt_dedekind(2.0);
+    std::cout << std::fixed << std::setprecision(8);
+    std::cout << "C++20:    sqrt(2) in [" << res.lo << ", " << res.hi << "]\n";
+    return 0;
+}
+```
+
+## Julia
+```julia
+struct IntervalReal
+    lo::Float64
+    hi::Float64
+end
+
+function sqrt_dedekind(target::Float64, tol::Float64 = 1e-12)::IntervalReal
+    lo = 0.0
+    hi = max(1.0, target)
+    while hi - lo > tol
+        mid = (lo + hi) / 2.0
+        if mid^2 < target
+            lo = mid
+        else
+            hi = mid
+        end
+    end
+    return IntervalReal(lo, hi)
+end
+
+res = sqrt_dedekind(2.0)
+println("Julia:    sqrt(2) in [$(res.lo), $(res.hi)]")
+```
+
+## Modern Fortran
+```fortran
+program dedekind_sqrt
+  implicit none
+  real(8) :: target, lo, hi, mid, tol
+  target = 2.0d0
+  tol = 1.0d-12
+  lo = 0.0d0
+  hi = max(1.0d0, target)
+
+  do while ((hi - lo) > tol)
+    mid = (lo + hi) / 2.0d0
+    if (mid * mid < target) then
+      lo = mid
+    else
+      hi = mid
+    end if
+  end do
+
+  print '(A,F10.8,A,F10.8,A)', "Fortran:  sqrt(2) in [", lo, ", ", hi, "]"
+end program dedekind_sqrt
+```
+
+## MATLAB / Octave
+```matlab
+target = 2.0;
+tol = 1e-12;
+lo = 0.0;
+hi = max(1.0, target);
+
+while (hi - lo) > tol
+    mid = (lo + hi) / 2.0;
+    if mid^2 < target
+        lo = mid;
+    else
+        hi = mid;
+    end
+end
+
+fprintf('MATLAB:   sqrt(2) in [%.8f, %.8f]\n', lo, hi);
+```
+:::
 
 ---
 

@@ -12,115 +12,94 @@ format:
 
 ## 1. The Conceptual Shift: The Death of Vector Calculus
 
-In introductory multivariable calculus (Stewart, Chapter 16), vector calculus is taught as a patchwork of disconnected vector operators and theorems:
-* Gradient ($\nabla f$), Curl ($\nabla \times \mathbf{F}$), Divergence ($\nabla \cdot \mathbf{F}$)
-* Line integrals $\int \mathbf{F} \cdot d\mathbf{r}$, Surface flux $\iint \mathbf{F} \cdot d\mathbf{S}$
-* Fundamental Theorem of Line Integrals, Green’s Theorem, the Kelvin-Stokes Theorem, and Gauss’s Divergence Theorem.
-
-In modern differential geometry, theoretical physics, and exterior algebra, **this entire patchwork is abolished**. Vector calculus is inherently coordinate-dependent and strictly confined to 3D Euclidean space (cross products only exist in 3 and 7 dimensions).
-
-Modern mathematics unifies all of vector calculus through **Exterior Differential Forms**:
-1. **Differential Forms ($\Omega^k(M)$)**: Alternating multilinear differential forms are the natural mathematical objects to integrate over $k$-dimensional submanifolds.
-2. **Exterior Derivative ($d$)**: A single, universal, coordinate-free operator $d: \Omega^k(M) \to \Omega^{k+1}(M)$ that unifies gradient, curl, and divergence, with the nilpotency property:
-   $$d \circ d = 0 \quad (d^2 = 0)$$
-3. **The Generalized Stokes' Theorem**: All classical integration theorems collapse into a single identity:
-   $$\int_{\partial M} \omega = \int_M d\omega$$
-4. **De Rham Cohomology**: The fact that $d^2 = 0$ allows one to define cohomology groups $H^k_{\text{dR}}(M) = \ker(d_k) / \text{im}(d_{k-1})$, which algebraically count the $k$-dimensional topological holes in a space.
+Exterior differential forms $\Omega^k(M)$ and the nilpotent exterior derivative $d$ ($d^2 = 0$) unify all classical theorems into **Generalized Stokes**:
+$$\int_{\partial M} \omega = \int_M d\omega$$
+De Rham cohomology $H^k_{\text{dR}}(M) = \ker(d_k)/\text{im}(d_{k-1})$ links calculus to topology.
 
 ---
 
-## 2. Rigorous Foundations & The Modern Dictionary
+## 2. Numerical Computation: Discrete Exterior Derivative on Simplicial 1-Skeletons
 
-### The Translation Dictionary
-In $\mathbb{R}^3$, the classical vector operators translate into exterior calculus via differential forms and the **Hodge Star operator** $\star$:
-
-| Dimension ($k$) | Differential Form $\omega$ | Vector Equivalent | Exterior Derivative $d\omega$ | Vector Calculus Theorem |
-| :---: | :---: | :---: | :---: | :---: |
-| **0-form** | $f$ (Scalar function) | Scalar field $f$ | $df = \frac{\partial f}{\partial x} dx + \frac{\partial f}{\partial y} dy + \frac{\partial f}{\partial z} dz$ | Gradient ($\nabla f$) |
-| **1-form** | $\omega = F_1 dx + F_2 dy + F_3 dz$ | Vector Field $\mathbf{F}$ | $d\omega = (\nabla \times \mathbf{F})_x dy \wedge dz + \dots$ | Curl ($\nabla \times \mathbf{F}$) |
-| **2-form** | $\eta = F_1 dy \wedge dz + F_2 dz \wedge dx + F_3 dx \wedge dy$ | Flux form $\mathbf{F} \cdot d\mathbf{S}$ | $d\eta = (\nabla \cdot \mathbf{F}) dx \wedge dy \wedge dz$ | Divergence ($\nabla \cdot \mathbf{F}$) |
-| **3-form** | $\rho = g \, dx \wedge dy \wedge dz$ | Volume density | $d\rho = 0$ | — |
-
-The identities $\nabla \times (\nabla f) = \mathbf{0}$ and $\nabla \cdot (\nabla \times \mathbf{F}) = 0$ are simply the single algebraic property:
-$$d(df) = 0 \quad \text{and} \quad d(d\omega) = 0$$
-
-### Generalized Stokes' Theorem
-> **Theorem**: Let $M$ be an oriented, compact, smooth $k$-dimensional manifold with boundary $\partial M$, equipped with the induced boundary orientation. Let $\omega$ be a smooth $(k-1)$-differential form on $M$. Then:
-> $$\int_{\partial M} \omega = \int_M d\omega$$
-
-#### Special Cases:
-1. **$k = 1$ (Fundamental Theorem of Calculus)**: $M = [a, b]$, $\partial M = \{b\} - \{a\}$, $\omega = f$ (0-form):
-   $$\int_{\{b\} - \{a\}} f = f(b) - f(a) = \int_a^b df = \int_a^b f'(t) dt$$
-2. **$k = 2$ (Green’s / Stokes’ Theorem)**: $M$ is a 2D surface, $\partial M$ is its boundary loop:
-   $$\oint_{\partial M} \mathbf{F} \cdot d\mathbf{r} = \int_{\partial M} \omega = \int_M d\omega = \iint_M (\nabla \times \mathbf{F}) \cdot d\mathbf{S}$$
-3. **$k = 3$ (Gauss’s Divergence Theorem)**: $M$ is a 3D volume, $\partial M$ is its closed bounding surface:
-   $$\oiint_{\partial M} \mathbf{F} \cdot d\mathbf{S} = \int_{\partial M} \eta = \int_M d\eta = \iiint_M (\nabla \cdot \mathbf{F}) dV$$
-
----
-
-## 3. Applications Across Disciplines
-
-### Physics: Relativistic Electrodynamics (Maxwell's Equations)
-In tensor calculus and special relativity on Minkowski spacetime $\mathbb{R}^{1,3}$, the four classical Maxwell equations collapse into **two geometric equations**:
-$$dF = 0 \quad \text{and} \quad d(\star F) = J$$
-Here, $F = \frac{1}{2} F_{\mu\nu} dx^\mu \wedge dx^\nu$ is the electromagnetic 2-form (Faraday tensor), $J$ is the current 3-form, and $\star$ is the Hodge star. The identity $d^2 = 0$ directly implies local electric charge conservation: $dJ = d^2(\star F) \equiv 0$.
-
-### Topology: De Rham Cohomology & The Aharonov-Bohm Effect
-In quantum mechanics, a charged particle orbiting a solenoid experiences a phase shift even though the magnetic field $\mathbf{B} = \mathbf{0}$ everywhere in the particle's region $M = \mathbb{R}^2 \setminus \{(0, 0)\}$. In de Rham cohomology, the vector potential 1-form $A$ is closed ($dA = F = 0$), but is **not exact** ($A \neq df$) because $H^1_{\text{dR}}(M) \cong \mathbb{R} \neq 0$. The path integral $\oint_{\partial M} A \neq 0$ detects the topological hole!
-
-### Computer Graphics: Discrete Exterior Calculus (DEC)
-In 3D mesh processing, fluid simulations, and geometry processing, scalar and vector fields are represented using **Discrete Exterior Calculus** (DEC). 0-forms live on mesh vertices, 1-forms on edges, 2-forms on triangular faces, and the exterior derivative $d$ becomes the discrete boundary matrix, guaranteeing exact preservation of physical conservation laws.
-
----
-
-## 4. Numerical Computation: Discrete Exterior Derivative on Triangular Meshes
-
-Below is a Python algorithm demonstrating Discrete Exterior Calculus: computing the coboundary operator (exterior derivative $d_0$) mapping 0-forms (vertex potentials) to 1-forms (directed edge circulation):
-
+::: {.panel-tabset group="language"}
+## Python 3
 ```python
 import numpy as np
 
-def discrete_exterior_derivative_d0(vertices: np.ndarray, edges: np.ndarray, vertex_0form: np.ndarray) -> np.ndarray:
-    """
-    Implements the discrete exterior derivative d0: Omega^0 -> Omega^1
-    on a 1-skeleton graph/mesh.
-    For an edge e = (i, j) directed from i to j: (d0 f)(e) = f(j) - f(i).
-    """
-    n_edges = len(edges)
-    edge_1form = np.zeros(n_edges)
-    
-    for k, (i, j) in enumerate(edges):
-        edge_1form[k] = vertex_0form[j] - vertex_0form[i]
-        
-    return edge_1form
-
-# Define a simple planar triangular mesh
-# Vertices: 0: (0,0), 1: (1,0), 2: (0,1)
-verts = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
-# Edges: e0: 0->1, e1: 1->2, e2: 2->0
+# Triangular 1-skeleton: edges (0->1), (1->2), (2->0)
 edges = np.array([[0, 1], [1, 2], [2, 0]])
+f_0form = np.array([1.0, 4.0, 9.0]) # Vertex potentials
 
-# 0-form: scalar potential f(x, y) = 2x + 3y
-f_0form = np.array([2.0 * v[0] + 3.0 * v[1] for v in verts])
-
-# Compute exterior derivative (discrete gradient circulation along edges)
-df_1form = discrete_exterior_derivative_d0(verts, edges, f_0form)
-
-print("Vertex Potentials (0-form):", f_0form)
-print("Edge Differentials df (1-form):", df_1form)
-print("Circulation along closed loop sum(df):", np.sum(df_1form))
-print("Verified exactness: loop integral of exact differential is strictly 0.")
+# Discrete coboundary d0: df(e_ij) = f(j) - f(i)
+df = np.array([f_0form[j] - f_0form[i] for i, j in edges])
+print(f"Python 3: Edge 1-forms df = {df}, Closed Loop Sum = {np.sum(df)}")
 ```
+
+## C++20
+```cpp
+#include <iostream>
+#include <vector>
+#include <array>
+
+int main() {
+    std::vector<std::array<int, 2>> edges{{0, 1}, {1, 2}, {2, 0}};
+    std::vector<double> f{1.0, 4.0, 9.0};
+    double sum = 0.0;
+
+    std::cout << "C++20:    Edge 1-forms: ";
+    for (auto& e : edges) {
+        double df = f[e[1]] - f[e[0]];
+        std::cout << df << " ";
+        sum += df;
+    }
+    std::cout << "| Loop Sum = " << sum << "\n";
+    return 0;
+}
+```
+
+## Julia
+```julia
+edges = [(1, 2), (2, 3), (3, 1)]
+f = [1.0, 4.0, 9.0]
+df = [f[j] - f[i] for (i, j) in edges]
+println("Julia:    Edge 1-forms = $(df) | Loop Sum = $(sum(df))")
+```
+
+## Modern Fortran
+```fortran
+program dec_d0
+  implicit none
+  integer :: edges(3, 2)
+  real(8) :: f(3), df(3)
+  integer :: k
+
+  edges(1, :) = [1, 2]
+  edges(2, :) = [2, 3]
+  edges(3, :) = [3, 1]
+  f = [1.0d0, 4.0d0, 9.0d0]
+
+  do k = 1, 3
+    df(k) = f(edges(k, 2)) - f(edges(k, 1))
+  end do
+
+  print '(A,3F6.1,A,F5.1)', "Fortran:  Edge 1-forms = ", df, " | Loop Sum = ", sum(df)
+end program dec_d0
+```
+
+## MATLAB / Octave
+```matlab
+edges = [1, 2; 2, 3; 3, 1];
+f = [1.0, 4.0, 9.0];
+df = f(edges(:, 2)) - f(edges(:, 1));
+fprintf('MATLAB:   Edge 1-forms = [%.1f, %.1f, %.1f] | Loop Sum = %.1f\n', df(1), df(2), df(3), sum(df));
+```
+:::
 
 ---
 
 ## 5. Curated Sources & Further Reading
 
-* **John M. Lee**, *Introduction to Smooth Manifolds*, 2nd Edition, Graduate Texts in Mathematics 218, Springer (2013), Chapters 14–17.
-* **Michael Spivak**, *Calculus on Manifolds*, Addison-Wesley (1965), Chapters 4 & 5.
-* **James R. Munkres**, *Analysis on Manifolds*, Westview Press (1991), Chapters 5–7.
-* **John H. Hubbard & Barbara Burke Hubbard**, *Vector Calculus, Linear Algebra, and Differential Forms*, Matrix Editions (2015), Chapter 6.
-* **V. I. Arnold**, *Mathematical Methods of Classical Mechanics*, Graduate Texts in Mathematics 60, Springer-Verlag (1989), Chapter 7.
+* **John M. Lee**, *Introduction to Smooth Manifolds*, Springer (2013), Ch 14–17.
+* **Michael Spivak**, *Calculus on Manifolds*, Addison-Wesley (1965), Ch 4 & 5.
 <br>
 <br>
 

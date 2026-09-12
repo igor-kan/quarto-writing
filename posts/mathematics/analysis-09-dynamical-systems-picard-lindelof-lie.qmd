@@ -10,112 +10,139 @@ format:
     math: true
 ---
 
-## 1. The Conceptual Shift: Beyond Separable Differential Equations
+## 1. The Conceptual Shift: ODEs as Contraction Mappings
 
-In introductory calculus (Stewart, Chapter 9), ordinary differential equations (ODEs) are taught as algebraic recipes: separate variables, find integrating factors, or sketch direction fields. The fundamental question—*under what mathematical conditions does a unique solution actually exist?*—is treated as a black box.
-
-In modern functional analysis and dynamical systems:
-1. **ODEs as Fixed-Point Problems**: An initial value problem $\dot{x} = f(t, x), x(t_0) = x_0$ is recast as an equivalent Volterra integral equation:
-   $$x(t) = x_0 + \int_{t_0}^t f(s, x(s)) \, ds$$
-   Solving an ODE is not algebraic manipulation; it is finding a **fixed point** of an integral operator $T: C([t_0-\delta, t_0+\delta]) \to C([t_0-\delta, t_0+\delta])$ on a Banach space.
-2. **The Picard-Lindelöf Theorem**: Utilizing the **Banach Contraction Mapping Principle**, one proves existence and uniqueness provided $f$ is Lipschitz continuous in $x$.
-3. **Vector Fields as Infinitesimal Generators**: In geometric mechanics and Lie theory, an ODE is viewed as an autonomous dynamical system $\dot{x} = X(x)$. The vector field $X$ is the **infinitesimal generator** of a 1-parameter group of diffeomorphisms: the **flow** $\Phi_t: M \to M$, satisfying $\Phi_{t+s} = \Phi_t \circ \Phi_s$.
+Separable solution formulas obscure the structural foundation of ODEs: Picard-Lindelöf proves that an initial value problem $\dot{x} = f(t, x), x(t_0) = x_0$ is a fixed-point problem of the Picard operator:
+$$(Tx)(t) = x_0 + \int_{t_0}^t f(s, x(s)) ds$$
+The Banach Fixed-Point Theorem guarantees exponential uniform convergence on $C([t_0-\delta, t_0+\delta])$.
 
 ---
 
-## 2. Rigorous Foundations & Proofs
+## 2. Numerical Computation: Picard Successive Approximations
 
-### The Banach Contraction Mapping Principle
-Let $(X, d)$ be a complete metric space and $T: X \to X$ a mapping such that:
-$$d(T(x), T(y)) \le k \, d(x, y) \quad \forall x, y \in X$$
-for some constant $0 \le k < 1$. Then $T$ has a unique fixed point $x^* \in X$ (i.e., $T(x^*) = x^*$). Furthermore, for any initial $x_0 \in X$, the sequence of iterates $x_{n+1} = T(x_n)$ converges to $x^*$ with $d(x_n, x^*) \le \frac{k^n}{1-k} d(x_0, x_1)$.
-
-### The Picard-Lindelöf Theorem
-> **Theorem**: Let $U \subset \mathbb{R} \times \mathbb{R}^n$ be an open domain containing $(t_0, x_0)$. Let $f: U \to \mathbb{R}^n$ be continuous on $U$ and uniformly Lipschitz in $x$:
-> $$\|f(t, x) - f(t, y)\| \le L \|x - y\| \quad \forall (t, x), (t, y) \in U$$
-> Then there exists $\delta > 0$ such that the initial value problem $\dot{x} = f(t, x), x(t_0) = x_0$ has a **unique continuous solution** on $[t_0 - \delta, t_0 + \delta]$.
-
-*Proof Sketch*:
-Consider the space $X = C([t_0-\delta, t_0+\delta], \mathbb{R}^n)$ equipped with the uniform norm $\|x\|_\infty = \sup_{t} \|x(t)\|$. $(X, \|\cdot\|_\infty)$ is a Banach space.
-Define the Picard operator $T: X \to X$ by:
-$$(Tx)(t) = x_0 + \int_{t_0}^t f(s, x(s)) \, ds$$
-We estimate the distance between images:
-$$\|(Tx)(t) - (Ty)(t)\| \le \int_{t_0}^t \|f(s, x(s)) - f(s, y(s))\| ds \le L \int_{t_0}^t \|x(s) - y(s)\| ds \le L \delta \|x - y\|_\infty$$
-Taking the supremum over $t \in [t_0-\delta, t_0+\delta]$:
-$$\|Tx - Ty\|_\infty \le (L \delta) \|x - y\|_\infty$$
-Choose $\delta < 1/L$. Then $k = L \delta < 1$, making $T$ a strict contraction on the complete metric space $X$. By the Banach Contraction Mapping Principle, a unique fixed point $x^*$ exists, satisfying $x^*(t) = (Tx^*)(t)$. By the Fundamental Theorem of Calculus, $x^*$ is $C^1$ and solves the ODE. $\blacksquare$
-
----
-
-## 3. Applications Across Disciplines
-
-### Machine Learning: Neural Ordinary Differential Equations (Neural ODEs)
-Rather than defining deep neural networks as discrete layer transitions $h_{t+1} = h_t + f(h_t, \theta_t)$ (ResNets), **Neural ODEs** (Chen et al., 2018) treat the hidden state as a continuous trajectory governed by a vector field parameterized by neural network weights:
-$$\frac{dh(t)}{dt} = f_\theta(h(t), t)$$
-Gradients are computed via the **adjoint sensitivity method** (solving an augmented ODE backward in time), completely eliminating the need to store intermediate activations in memory.
-
-### Physics: Hamiltonian Flows and Liouville Conservation
-In classical mechanics, the state of $N$ particles moves along trajectories defined by Hamilton's equations $\dot{q} = \frac{\partial H}{\partial p}, \dot{p} = -\frac{\partial H}{\partial q}$. The vector field $X_H$ generates a symplectic flow $\Phi_t$. Liouville's theorem states that this flow is volume-preserving: $\text{div}(X_H) = 0$.
-
-### Control Theory & Robotics: Lie Brackets of Vector Fields
-In nonholonomic robotics (e.g., parallel parking a car), the robot cannot move directly sideways. However, by alternating between steering and driving—commuting the two vector fields $X_1$ and $X_2$—the system can travel in the direction of the **Lie bracket** $[X_1, X_2] = X_1 X_2 - X_2 X_1$.
-
----
-
-## 4. Numerical Computation: Picard Successive Approximations
-
-Below is a Python implementation of **Picard Iteration**, demonstrating uniform convergence of polynomial approximations to the exact analytic solution of a nonlinear ODE:
-
+::: {.panel-tabset group="language"}
+## Python 3
 ```python
 import numpy as np
 
-def picard_iteration(f_rhs, t0: float, x0: float, t_grid: np.ndarray, n_iterations: int = 6):
-    """
-    Computes successive Picard approximations:
-    x_{k+1}(t) = x0 + int_t0^t f_rhs(s, x_k(s)) ds
-    using numerical trapezoidal integration.
-    """
-    n_pts = len(t_grid)
-    # Initial guess: constant function x(t) = x0
-    x_current = np.full(n_pts, x0)
-    history = [x_current.copy()]
-    
-    for _ in range(n_iterations):
-        x_next = np.zeros(n_pts)
-        x_next[0] = x0
-        for i in range(1, n_pts):
-            # Numerical integration from t0 to t_grid[i]
-            s_sub = t_grid[:i+1]
-            f_vals = f_rhs(s_sub, x_current[:i+1])
-            # Trapezoidal rule
-            integral = np.trapz(f_vals, s_sub)
-            x_next[i] = x0 + integral
-        x_current = x_next
-        history.append(x_current.copy())
-        
-    return history
+def picard_step(f, t_grid, x_prev, x0):
+    x_new = np.zeros_like(x_prev)
+    x_new[0] = x0
+    for i in range(1, len(t_grid)):
+        s = t_grid[:i+1]
+        x_new[i] = x0 + np.trapz(f(s, x_prev[:i+1]), s)
+    return x_new
 
-# Test ODE: dx/dt = x, x(0) = 1 (Exact solution: x(t) = exp(t))
-t_eval = np.linspace(0.0, 1.5, 100)
-f_linear = lambda t, x: x
-picard_history = picard_iteration(f_linear, 0.0, 1.0, t_eval, n_iterations=6)
-
-exact_sol = np.exp(t_eval)
-print("Picard Convergence toward exp(t) at t = 1.0:")
-print(f"Exact Value exp(1.0): {np.exp(1.0):.8f}")
-for k, sol in enumerate(picard_history):
-    val_at_1 = sol[np.argmin(np.abs(t_eval - 1.0))]
-    print(f"Iteration {k}: {val_at_1:.8f} | Error: {abs(val_at_1 - np.exp(1.0)):.2e}")
+# dx/dt = x, x(0) = 1 => Exact: exp(t)
+t = np.linspace(0.0, 1.0, 50)
+x = np.ones_like(t) # x0(t) = 1
+for _ in range(4):
+    x = picard_step(lambda s, v: v, t, x, 1.0)
+print(f"Python 3: Picard Iteration 4 at t=1: {x[-1]:.6f} (True: {np.exp(1):.6f})")
 ```
+
+## C++20
+```cpp
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <iomanip>
+
+int main() {
+    int n = 50;
+    double t_end = 1.0, dt = t_end / (n - 1);
+    std::vector<double> t(n), x(n, 1.0);
+    for (int i = 0; i < n; ++i) t[i] = i * dt;
+
+    for (int iter = 0; iter < 4; ++iter) {
+        std::vector<double> x_new(n, 1.0);
+        for (int i = 1; i < n; ++i) {
+            double trap = 0.0;
+            for (int j = 0; j < i; ++j) {
+                trap += 0.5 * (x[j] + x[j+1]) * dt;
+            }
+            x_new[i] = 1.0 + trap;
+        }
+        x = x_new;
+    }
+    std::cout << std::fixed << std::setprecision(6);
+    std::cout << "C++20:    Picard Iteration 4 at t=1: " << x.back() << "\n";
+    return 0;
+}
+```
+
+## Julia
+```julia
+n = 50
+t = range(0.0, 1.0, length=n)
+dt = step(t)
+x = ones(n)
+
+for _ in 1:4
+    x_new = ones(n)
+    for i in 2:n
+        trap = sum(0.5 * (x[j] + x[j+1]) * dt for j in 1:i-1)
+        x_new[i] = 1.0 + trap
+    end
+    global x = x_new
+end
+
+println("Julia:    Picard Iteration 4 at t=1: $(round(x[end], digits=6))")
+```
+
+## Modern Fortran
+```fortran
+program picard
+  implicit none
+  integer, parameter :: n = 50
+  integer :: iter, i, j
+  real(8) :: dt, trap
+  real(8) :: x(n), x_new(n)
+
+  dt = 1.0d0 / (n - 1)
+  x = 1.0d0
+
+  do iter = 1, 4
+    x_new(1) = 1.0d0
+    do i = 2, n
+      trap = 0.0d0
+      do j = 1, i - 1
+        trap = trap + 0.5d0 * (x(j) + x(j+1)) * dt
+      end do
+      x_new(i) = 1.0d0 + trap
+    end do
+    x = x_new
+  end do
+
+  print '(A,F10.6)', "Fortran:  Picard Iteration 4 at t=1: ", x(n)
+end program picard
+```
+
+## MATLAB / Octave
+```matlab
+n = 50;
+t = linspace(0, 1, n);
+dt = t(2) - t(1);
+x = ones(1, n);
+
+for iter = 1:4
+    x_new = ones(1, n);
+    for i = 2:n
+        x_new(i) = 1.0 + trapz(t(1:i), x(1:i));
+    end
+    x = x_new;
+end
+
+fprintf('MATLAB:   Picard Iteration 4 at t=1: %.6f\n', x(end));
+```
+:::
 
 ---
 
 ## 5. Curated Sources & Further Reading
 
-* **V. I. Arnold**, *Ordinary Differential Equations*, 3rd Edition, Springer-Verlag (1992), Chapters 1 & 2.
-* **Morris Tenenbaum & Harry Pollard**, *Ordinary Differential Equations*, Dover Publications (1985), Chapters 1–3.
-* **Morris W. Hirsch, Stephen Smale, & Robert L. Devaney**, *Differential Equations, Dynamical Systems, and an Introduction to Chaos*, 3rd Edition, Academic Press (2012), Chapter 1.
-* **Tom M. Apostol**, *Calculus, Vol. 1*, 2nd Edition, Wiley (1967), Chapter 8.
+* **V. I. Arnold**, *Ordinary Differential Equations*, Springer (1992), Ch 1 & 2.
+* **Morris W. Hirsch, Stephen Smale, & Robert L. Devaney**, *Differential Equations, Dynamical Systems*, Academic Press (2012).
 <br>
 <br>
 

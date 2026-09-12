@@ -10,93 +10,82 @@ format:
     math: true
 ---
 
-## 1. The Conceptual Shift: Beyond Pointwise Convergence
+## 1. The Conceptual Shift: Function Spaces as Metric Universes
 
-In introductory calculus (Stewart, Chapter 11), infinite series and sequences of functions are tested using computational criteria: the ratio test, root test, and Taylor polynomials. Convergence is viewed pointwise: does the sequence of numbers $\{f_n(x)\}$ converge at a fixed $x$?
-
-In modern mathematical analysis:
-1. **The Pathology of Pointwise Limits**: Pointwise limits do not preserve the structure of calculus. The sequence $f_n(x) = x^n$ on $[0, 1]$ consists of smooth continuous functions, but its pointwise limit is discontinuous at $x = 1$. Similarly, integrals and derivatives fail to commute with pointwise limits: $\lim \int f_n \neq \int \lim f_n$.
-2. **Uniform Convergence & the Banach Space $C(K)$**: Uniform convergence $f_n \rightrightarrows f$ is convergence under the supremum metric $d(f, g) = \|f - g\|_\infty$. The space of continuous functions on a compact set $C(K)$ equipped with the sup-norm is a **complete normed vector space (Banach space)**. Uniform limits guarantee that continuity, integrability, and (with derivative bounds) differentiability are preserved.
-3. **Compactness in Function Spaces (Arzelà-Ascoli)**: In $\mathbb{R}^n$, bounded sets have convergent subsequences (Bolzano-Weierstrass). In infinite-dimensional function spaces, this fails! A bounded sequence of functions may have no uniformly convergent subsequence unless it is **equicontinuous**.
-4. **Analytic Functions in $\mathbb{C}$**: Power series are properly understood in the complex plane $\mathbb{C}$, where Hadamard's formula dictates the radius of convergence, and Cauchy's theorem reveals that complex differentiability implies infinite differentiability and power series analyticity.
+In elementary calculus, power series are checked with ratio tests. Modern analysis operates in the complete Banach space $(C(K), \|\cdot\|_\infty)$. Compactness of function sets is characterized by **Arzelà-Ascoli** (equicontinuity), and power series are unified by Hadamard's formula $\frac{1}{R} = \limsup |a_n|^{1/n}$.
 
 ---
 
-## 2. Rigorous Foundations & Theorems
+## 2. Numerical Computation: Padé Rational Approximant vs. Taylor Series
 
-### Pointwise vs. Uniform Convergence
-Let $f_n: E \to \mathbb{R}$.
-* **Pointwise**: $\forall x \in E, \forall \epsilon > 0, \exists N(x, \epsilon) \in \mathbb{N}$ such that $n \ge N \implies |f_n(x) - f(x)| < \epsilon$.
-* **Uniform**: $\forall \epsilon > 0, \exists N(\epsilon) \in \mathbb{N}$ such that $n \ge N \implies |f_n(x) - f(x)| < \epsilon \quad \forall x \in E$.
-
-> **Uniform Limit Theorem**: If $f_n \to f$ uniformly on $E$ and each $f_n$ is continuous at $x_0 \in E$, then the limit function $f$ is continuous at $x_0$.
-
-### The Arzelà-Ascoli Theorem
-A family of functions $\mathcal{F} \subset C(K)$ on a compact metric space $K$ is **equicontinuous** if:
-$$\forall \epsilon > 0, \exists \delta > 0 \quad \text{s.t.} \quad d(x, y) < \delta \implies |f(x) - f(y)| < \epsilon \quad \forall f \in \mathcal{F}, \; \forall x, y \in K$$
-
-> **Theorem (Arzelà-Ascoli)**: Let $K$ be a compact metric space. A subset $\mathcal{F} \subset C(K)$ is relatively compact (its closure is compact in the supremum norm) if and only if $\mathcal{F}$ is **uniformly bounded** and **equicontinuous**.
-
-### Hadamard's Formula for Radius of Convergence
-For a complex power series $\sum_{n=0}^\infty a_n (z - z_0)^n$, the radius of convergence $R$ is given exactly by:
-$$\frac{1}{R} = \limsup_{n \to \infty} |a_n|^{1/n}$$
-
----
-
-## 3. Applications Across Disciplines
-
-### Machine Learning & AI: Universal Approximation Theorems
-The foundational proof that deep neural networks can approximate any continuous function (Cybenko, 1989; Hornik, 1991) relies directly on functional analysis: the **Stone-Weierstrass Theorem**. It proves that polynomial algebras or activation squashing networks are dense in the Banach space $C(K, \mathbb{R})$ under the uniform norm.
-
-### Physics: Green's Function Expansions and Fourier Optics
-In quantum mechanics and electrodynamics, wavefunctions and potentials are expanded in eigenfunction series $\psi(x) = \sum c_n \phi_n(x)$ of self-adjoint differential operators. Proving that these infinite series converge to true physical field distributions requires convergence in the Hilbert space norm $L^2(\mathbb{R}^3)$ and uniform convergence on compact subdomains.
-
-### Signal Processing: Gibbs Phenomenon
-When truncating Fourier series of discontinuous signals (e.g., square waves), the partial sums $S_N(x)$ overshoot the jump discontinuity by approximately 8.95% regardless of how large $N$ becomes. This occurs because convergence is pointwise almost everywhere, but **fails to be uniform** in any neighborhood of the jump.
-
----
-
-## 4. Numerical Computation: Padé Approximants vs. Truncated Taylor Series
-
-Below is a Python algorithm comparing a truncated Taylor series against a **Padé Rational Approximant**, demonstrating how rational functional series dramatically extend the domain of convergence beyond branch cuts:
-
+::: {.panel-tabset group="language"}
+## Python 3
 ```python
 import numpy as np
 
-def taylor_log1p(x, n_terms: int = 10):
-    """Truncated Taylor series for ln(1 + x) = sum_{k=1}^N (-1)^(k+1) x^k / k"""
-    val = np.zeros_like(x, dtype=float)
-    for k in range(1, n_terms + 1):
-        val += ((-1.0) ** (k + 1)) * (x ** k) / k
-    return val
+# Padé [2/2] for ln(1 + x) = (x + x^2/2) / (1 + x + x^2/6)
+def pade_log1p(x):
+    return (x + 0.5 * x**2) / (1.0 + x + (1.0/6.0) * x**2)
 
-def pade_log1p_order2(x):
-    """[2/2] Padé Approximant for ln(1 + x) = (x + x^2/2) / (1 + x + x^2/6)"""
-    num = x + 0.5 * (x ** 2)
-    denom = 1.0 + x + (1.0 / 6.0) * (x ** 2)
-    return num / denom
-
-# Evaluate outside the Taylor radius of convergence (R = 1)
-test_pts = np.array([0.5, 0.9, 1.2, 1.5, 2.0])
-exact_vals = np.log(1.0 + test_pts)
-taylor_vals = taylor_log1p(test_pts, n_terms=15)
-pade_vals = pade_log1p_order2(test_pts)
-
-print(f"{'x':<5} | {'Exact ln(1+x)':<15} | {'Taylor (N=15)':<15} | {'Padé [2/2]':<15}")
-print("-" * 55)
-for i, x in enumerate(test_pts):
-    print(f"{x:<5.1f} | {exact_vals[i]:<15.8f} | {taylor_vals[i]:<15.8f} | {pade_vals[i]:<15.8f}")
+x_val = 1.5 # Outside Taylor radius of convergence R=1
+print(f"Python 3: Exact ln(2.5) = {np.log(2.5):.6f}, Padé [2/2] = {pade_log1p(x_val):.6f}")
 ```
+
+## C++20
+```cpp
+#include <iostream>
+#include <cmath>
+#include <iomanip>
+
+double pade_log1p(double x) {
+    return (x + 0.5 * x * x) / (1.0 + x + (1.0 / 6.0) * x * x);
+}
+
+int main() {
+    double x = 1.5;
+    std::cout << std::fixed << std::setprecision(6);
+    std::cout << "C++20:    Exact ln(2.5) = " << std::log(1.0 + x) 
+              << ", Padé [2/2] = " << pade_log1p(x) << "\n";
+    return 0;
+}
+```
+
+## Julia
+```julia
+pade_log1p(x) = (x + 0.5 * x^2) / (1.0 + x + (1.0 / 6.0) * x^2)
+x = 1.5
+println("Julia:    Exact ln(2.5) = $(round(log(1 + x), digits=6)), Padé [2/2] = $(round(pade_log1p(x), digits=6))")
+```
+
+## Modern Fortran
+```fortran
+program pade_approx
+  implicit none
+  real(8) :: x, exact_val, pade_val
+
+  x = 1.5d0
+  exact_val = log(1.0d0 + x)
+  pade_val = (x + 0.5d0 * x**2) / (1.0d0 + x + (1.0d0 / 6.0d0) * x**2)
+
+  print '(A,F10.6,A,F10.6)', "Fortran:  Exact = ", exact_val, ", Padé [2/2] = ", pade_val
+end program pade_approx
+```
+
+## MATLAB / Octave
+```matlab
+x = 1.5;
+exact_val = log(1 + x);
+pade_val = (x + 0.5*x^2) / (1 + x + (1/6)*x^2);
+fprintf('MATLAB:   Exact = %.6f, Padé [2/2] = %.6f\n', exact_val, pade_val);
+```
+:::
 
 ---
 
 ## 5. Curated Sources & Further Reading
 
-* **Walter Rudin**, *Principles of Mathematical Analysis*, 3rd Edition, McGraw-Hill (1976), Chapter 7: *Sequences and Series of Functions*.
-* **Elias M. Stein & Rami Shakarchi**, *Complex Analysis*, Princeton Lectures in Analysis II, Princeton University Press (2003), Chapters 1 & 2.
-* **Michael Spivak**, *Calculus*, 4th Edition, Publish or Perish (2008), Chapters 22–24.
-* **Walter Rudin**, *Real and Complex Analysis*, 3rd Edition, McGraw-Hill (1987), Chapter 6.
-* **Tom M. Apostol**, *Calculus, Vol. 1*, 2nd Edition, Wiley (1967), Chapters 10–11.
+* **Walter Rudin**, *Principles of Mathematical Analysis*, McGraw-Hill (1976), Ch 7.
+* **Elias M. Stein & Rami Shakarchi**, *Complex Analysis*, Princeton University Press (2003).
 <br>
 <br>
 
