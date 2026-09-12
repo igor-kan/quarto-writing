@@ -795,8 +795,11 @@ score_range  | student_count | distribution_chart
 * **Problem:** Given three side lengths $x, y, z$, determine whether they can form a valid triangle.
 * **Mathematical Condition:** The sum of any two sides must be strictly greater than the remaining side:
 $$(x + y > z) \quad \land \quad (x + z > y) \quad \land \quad (y + z > x)$$
-* **Universal SQL Solution:**
+
+::: {.panel-tabset group="sql"}
+## PostgreSQL / MySQL / SQLite
 ```sql
+-- Universal standard ANSI SQL
 SELECT 
     x, y, z,
     CASE 
@@ -805,14 +808,40 @@ SELECT
     END AS triangle
 FROM Triangle;
 ```
+## SQL Server (T-SQL)
+```sql
+-- T-SQL perfectly supports the standard ANSI CASE statement
+SELECT 
+    x, y, z,
+    CASE 
+        WHEN x + y > z AND x + z > y AND y + z > x THEN 'Yes'
+        ELSE 'No'
+    END AS triangle
+FROM Triangle;
+```
+## Oracle
+```sql
+-- Oracle 12c+ supports identical syntax for standard boolean logic
+SELECT 
+    x, y, z,
+    CASE 
+        WHEN x + y > z AND x + z > y AND y + z > x THEN 'Yes'
+        ELSE 'No'
+    END AS triangle
+FROM Triangle;
+```
+:::
 
 ---
 
 ### Case Study 2: Department Top Three Salaries (LeetCode 185)
 * **Problem:** A company wants to find employees who earn top 3 **unique** salaries in each department.
 * **Why `RANK()` Fails:** If salaries are [100k, 90k, 90k, 80k], `RANK` assigns [1, 2, 2, 4]. Rank 4 is skipped, missing the third tier!
-* **The `DENSE_RANK()` Solution:**
+
+::: {.panel-tabset group="sql"}
+## PostgreSQL / MySQL / SQLite
 ```sql
+-- Using DENSE_RANK() to prevent skipping ranks for tied salaries
 WITH RankedEmployees AS (
     SELECT 
         d.name AS Department,
@@ -829,6 +858,45 @@ SELECT Department, Employee, Salary
 FROM RankedEmployees
 WHERE rnk <= 3;
 ```
+## SQL Server (T-SQL)
+```sql
+-- T-SQL uses identical syntax for CTEs and Window Functions
+WITH RankedEmployees AS (
+    SELECT 
+        d.name AS Department,
+        e.name AS Employee,
+        e.salary AS Salary,
+        DENSE_RANK() OVER (
+            PARTITION BY e.departmentId 
+            ORDER BY e.salary DESC
+        ) AS rnk
+    FROM Employee e
+    INNER JOIN Department d ON e.departmentId = d.id
+)
+SELECT Department, Employee, Salary
+FROM RankedEmployees
+WHERE rnk <= 3;
+```
+## Oracle
+```sql
+-- Oracle also relies fully on ANSI compliant CTEs and window functions
+WITH RankedEmployees AS (
+    SELECT 
+        d.name AS Department,
+        e.name AS Employee,
+        e.salary AS Salary,
+        DENSE_RANK() OVER (
+            PARTITION BY e.departmentId 
+            ORDER BY e.salary DESC
+        ) AS rnk
+    FROM Employee e
+    INNER JOIN Department d ON e.departmentId = d.id
+)
+SELECT Department, Employee, Salary
+FROM RankedEmployees
+WHERE rnk <= 3;
+```
+:::
 
 ---
 
@@ -836,6 +904,23 @@ WHERE rnk <= 3;
 * **Problem:** Find all numbers that appear at least three times consecutively in a log table.
 
 #### Method A: Modern Window Functions (`LAG` & `LEAD`)
+::: {.panel-tabset group="sql"}
+## PostgreSQL / MySQL / SQLite
+```sql
+WITH ConsecutiveScan AS (
+    SELECT 
+        num,
+        -- Peek backwards 1 row
+        LAG(num, 1)  OVER (ORDER BY id) AS prev_num,
+        -- Peek forwards 1 row
+        LEAD(num, 1) OVER (ORDER BY id) AS next_num
+    FROM Logs
+)
+SELECT DISTINCT num AS ConsecutiveNums
+FROM ConsecutiveScan
+WHERE num = prev_num AND num = next_num;
+```
+## SQL Server (T-SQL)
 ```sql
 WITH ConsecutiveScan AS (
     SELECT 
@@ -848,8 +933,33 @@ SELECT DISTINCT num AS ConsecutiveNums
 FROM ConsecutiveScan
 WHERE num = prev_num AND num = next_num;
 ```
+## Oracle
+```sql
+WITH ConsecutiveScan AS (
+    SELECT 
+        num,
+        LAG(num, 1)  OVER (ORDER BY id) AS prev_num,
+        LEAD(num, 1) OVER (ORDER BY id) AS next_num
+    FROM Logs
+)
+SELECT DISTINCT num AS ConsecutiveNums
+FROM ConsecutiveScan
+WHERE num = prev_num AND num = next_num;
+```
+:::
 
 #### Method B: 3-Way Self-Join (Compatible with any SQL version):
+::: {.panel-tabset group="sql"}
+## PostgreSQL / MySQL / SQLite
+```sql
+-- Classic self-join approach when window functions aren't available
+SELECT DISTINCT l1.num AS ConsecutiveNums
+FROM Logs l1
+INNER JOIN Logs l2 ON l1.id = l2.id - 1
+INNER JOIN Logs l3 ON l1.id = l3.id - 2
+WHERE l1.num = l2.num AND l2.num = l3.num;
+```
+## SQL Server (T-SQL)
 ```sql
 SELECT DISTINCT l1.num AS ConsecutiveNums
 FROM Logs l1
@@ -857,14 +967,25 @@ INNER JOIN Logs l2 ON l1.id = l2.id - 1
 INNER JOIN Logs l3 ON l1.id = l3.id - 2
 WHERE l1.num = l2.num AND l2.num = l3.num;
 ```
+## Oracle
+```sql
+SELECT DISTINCT l1.num AS ConsecutiveNums
+FROM Logs l1
+INNER JOIN Logs l2 ON l1.id = l2.id - 1
+INNER JOIN Logs l3 ON l1.id = l3.id - 2
+WHERE l1.num = l2.num AND l2.num = l3.num;
+```
+:::
 
 ---
 
 ### Case Study 4: Exchange Seats (LeetCode 626)
 * **Problem:** Swap consecutive odd and even seats. If the last seat is odd, do not swap it.
 
-#### Universal SQL Solution via `CASE` & Window Count:
+::: {.panel-tabset group="sql"}
+## PostgreSQL / MySQL / SQLite
 ```sql
+-- Using modulo (%) for parity check
 SELECT 
     CASE 
         -- If odd and last seat, keep as is
@@ -878,6 +999,81 @@ SELECT
 FROM Seat
 ORDER BY id ASC;
 ```
+## SQL Server (T-SQL)
+```sql
+-- T-SQL also supports % for modulo operator
+SELECT 
+    CASE 
+        WHEN id % 2 = 1 AND id = (SELECT COUNT(*) FROM Seat) THEN id
+        WHEN id % 2 = 1 THEN id + 1
+        ELSE id - 1
+    END AS id,
+    student
+FROM Seat
+ORDER BY id ASC;
+```
+## Oracle
+```sql
+-- Oracle uses the MOD() function instead of the % operator!
+SELECT 
+    CASE 
+        WHEN MOD(id, 2) = 1 AND id = (SELECT COUNT(*) FROM Seat) THEN id
+        WHEN MOD(id, 2) = 1 THEN id + 1
+        ELSE id - 1
+    END AS id,
+    student
+FROM Seat
+ORDER BY id ASC;
+```
+:::
+
+---
+
+### Case Study 5: Reformatting Department Report (LeetCode 1179)
+* **Problem:** Given a table of `(id, revenue, month)`, pivot the table so that each `id` has exactly one row with a column for each month's revenue (e.g. `Jan_Revenue`, `Feb_Revenue`).
+
+::: {.panel-tabset group="sql"}
+## PostgreSQL / MySQL / SQLite
+```sql
+-- Conditional aggregation is the universal standard for pivoting
+SELECT 
+    id,
+    SUM(CASE WHEN month = 'Jan' THEN revenue ELSE NULL END) AS Jan_Revenue,
+    SUM(CASE WHEN month = 'Feb' THEN revenue ELSE NULL END) AS Feb_Revenue,
+    SUM(CASE WHEN month = 'Mar' THEN revenue ELSE NULL END) AS Mar_Revenue
+    -- (repeated for remaining months)
+FROM Department
+GROUP BY id;
+```
+## SQL Server (T-SQL)
+```sql
+-- T-SQL has a native PIVOT operator for cleaner syntax
+SELECT id, 
+    [Jan] AS Jan_Revenue, 
+    [Feb] AS Feb_Revenue, 
+    [Mar] AS Mar_Revenue
+FROM 
+    (SELECT id, revenue, month FROM Department) AS SourceTable
+PIVOT
+    (
+        SUM(revenue)
+        FOR month IN ([Jan], [Feb], [Mar])
+    ) AS PivotTable;
+```
+## Oracle
+```sql
+-- Oracle 11g+ also natively supports the PIVOT keyword
+SELECT id, 
+    Jan AS Jan_Revenue, 
+    Feb AS Feb_Revenue, 
+    Mar AS Mar_Revenue
+FROM Department
+PIVOT (
+    SUM(revenue) 
+    FOR month IN ('Jan' AS Jan, 'Feb' AS Feb, 'Mar' AS Mar)
+);
+```
+:::
 
 ---
 
