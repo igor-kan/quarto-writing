@@ -230,7 +230,87 @@ where $H(t)$ is the Heaviside step function: $H(t) = 0$ for $t < 0$, and $H(t) =
 
 ---
 
-## 6. Multi-Disciplinary Applications
+
+### Worked Example 5.4: High-Degree Monomial Riemann Limits (Stewart Ch 5, Problem 78)
+
+Evaluate the asymptotic limit of the discrete power sum:
+$$\mathcal{L} = \lim_{n \to \infty} \sum_{i=1}^n \frac{i^9}{n^{10}}$$
+
+1. **Factoring into Riemann Sum Canonical Form**:
+   Rewrite the general term to expose the normalized sample point $x_i = \frac{i}{n}$ and uniform subinterval width $\Delta x = \frac{1}{n}$:
+   $$\frac{i^9}{n^{10}} = \frac{i^9}{n^9 \cdot n} = \left( \frac{i}{n} \right)^9 \frac{1}{n}$$
+   Thus the sum becomes:
+   $$\sum_{i=1}^n \frac{i^9}{n^{10}} = \sum_{i=1}^n \left( \frac{i}{n} \right)^9 \Delta x$$
+
+2. **Identification with the Definite Integral**:
+   This is precisely the right-endpoint Riemann sum $R_n$ for the continuous function $f(x) = x^9$ on the unit interval $[0, 1]$ with uniform partition $x_i = i/n$:
+   $$\lim_{n \to \infty} \sum_{i=1}^n f(x_i) \Delta x = \int_0^1 x^9 dx$$
+
+3. **Evaluation via FTC**:
+   $$\int_0^1 x^9 dx = \left[ \frac{x^{10}}{10} \right]_0^1 = \frac{1^{10}}{10} - \frac{0^{10}}{10} = \frac{1}{10}$$
+
+4. **Verification via Faulhaber's Formula**:
+   By Faulhaber's polynomial theorem, the sum of ninth powers is:
+   $$\sum_{i=1}^n i^9 = \frac{n^{10}}{10} + \frac{n^9}{2} + \frac{3n^8}{4} - \frac{7n^6}{10} + \dots$$
+   Dividing by $n^{10}$:
+   $$\frac{\sum_{i=1}^n i^9}{n^{10}} = \frac{1}{10} + \frac{1}{2n} + O\left(\frac{1}{n^2}\right) \xrightarrow{n \to \infty} \frac{1}{10}$$
+   This demonstrates how the definite integral acts as the continuous limit of discrete discrete power sum asymptotics.
+
+### Worked Example 5.5: Non-Equal Endpoint Sums and the Breakdown of Integrability
+
+A central question in the transition from Stewart calculus to rigorous analysis is: *What happens if the left-endpoint sum limit $\lim_{n \to \infty} L_n$ and the right-endpoint sum limit $\lim_{n \to \infty} R_n$ do not agree?*
+
+1. **The Monotonic Case (Guaranteed Agreement)**:
+   If $f$ is monotonic on $[a, b]$, the difference between right and left sums on a uniform partition is:
+   $$|R_n - L_n| = \left| \sum_{i=1}^n f(x_i) \Delta x - \sum_{i=1}^n f(x_{i-1}) \Delta x \right| = \Delta x \cdot |f(b) - f(a)| = \frac{b - a}{n} |f(b) - f(a)|$$
+   As $n \to \infty$, $\frac{b-a}{n} \to 0$, guaranteeing that $\lim L_n = \lim R_n$ for all bounded monotonic functions.
+
+2. **The Non-Integrable Case (Essential Oscillation)**:
+   Consider the **Dirichlet Indicator Function** on $[0, 1]$:
+   $$\mathbf{1}_\mathbb{Q}(x) = \begin{cases} 1, & x \in \mathbb{Q} \\ 0, & x \notin \mathbb{Q} \end{cases}$$
+   * If we choose rational sample points (such as standard right endpoints $x_i = i/n \in \mathbb{Q}$):
+     $$R_n = \sum_{i=1}^n \mathbf{1}_\mathbb{Q}(i/n) \frac{1}{n} = \sum_{i=1}^n 1 \cdot \frac{1}{n} = 1 \implies \lim_{n \to \infty} R_n = 1$$
+   * If we choose irrational sample tags $x_i^* = \frac{i - 1 + \frac{1}{\sqrt{2}}}{n} \notin \mathbb{Q}$:
+     $$S_n = \sum_{i=1}^n \mathbf{1}_\mathbb{Q}(x_i^*) \frac{1}{n} = \sum_{i=1}^n 0 \cdot \frac{1}{n} = 0 \implies \lim_{n \to \infty} S_n = 0$$
+   Because the infimum on any interval is $m_i = 0$ and the supremum is $M_i = 1$, the Darboux sums yield:
+   $$L(f, P) = 0 \quad \text{and} \quad U(f, P) = 1 \quad \forall P$$
+   Hence $\underline{\int_0^1} f = 0 \neq 1 = \overline{\int_0^1} f$. The failure of endpoint and sample sums to converge to a single invariant value signals that the function has a set of discontinuities with **positive Lebesgue measure** ($\{x : f \text{ is discontinuous}\} = [0, 1]$, measure $1$).
+
+---
+
+
+## 6. Multi-Disciplinary Applications: The Intensity $\times$ Time (AUC) Paradigm
+
+In applied calculus and mathematical modeling (as explored in Stewart Chapter 5.4, Net Change Theorem), integrals are frequently introduced as areas under graphs. However, physical and biological reality is governed by **accumulation across continuous dimensions**:
+
+$$\mathbf{Accumulation} = \int_{t_0}^{t_1} \mathbf{Intensity}(t) \, dt$$
+
+### 1. In-Host Viral Dynamics: The Measles Infection Model
+In epidemiological virology (J. M. Heffernan & M. J. Keeling, *Theoretical Population Biology* 73, 2008), the measles virus level in blood plasma is modeled as:
+$$f(t) = -t(t - 21)(t + 1) = -t(t^2 - 20t - 21) = -t^3 + 20t^2 + 21t$$
+where $t$ is measured in days ($0 \le t \le 21$) and $f(t)$ represents viral concentration in **infected cells per mL of blood plasma**.
+* **Dimensional Analysis**:
+  $$\text{Unit of Area} = \left( \frac{\text{cells}}{\text{mL}} \right) \times \text{days} = \frac{\text{cells} \cdot \text{days}}{\text{mL}}$$
+* **Physical Significance**: The integral $\int_0^{12} f(t) dt$ represents the **Area Under the Curve (AUC)**—the cumulative cellular wear and tear required for the immune system to trigger the symptomatic clinical rash at day 12:
+  $$\int_0^{12} (-t^3 + 20t^2 + 21t) dt = \left[ -\frac{t^4}{4} + \frac{20t^3}{3} + \frac{21t^2}{2} \right]_0^{12} = -5184 + 11520 + 1512 = 7848 \text{ cells}\cdot\text{days/mL}$$
+* **Midpoint Riemann Estimation ($n = 6$ subintervals, $\Delta t = 2$)**:
+  Midpoints $t_i^* \in \{1, 3, 5, 7, 9, 11\}$:
+  $$M_6 = 2 \cdot [f(1) + f(3) + f(5) + f(7) + f(9) + f(11)] = 2 \cdot [40 + 432 + 1176 + 2128 + 3072 + 3740] = 2 \cdot 10588 = 21176 / 2 = 7944$$
+  The relative error of the midpoint estimate is under $1.2\%$.
+
+### 2. Universal "Intensity $\times$ Time" Equivalencies Across Disciplines
+
+| Field | $Y$-Axis (Intensity Rate) | $X$-Axis (Duration) | Integral / Accumulation Area | Physical / Operational Meaning |
+| :--- | :--- | :--- | :--- | :--- |
+| **Toxicology** | Air concentration ($\text{mg/m}^3$) | Time ($t$) | **Haber's Exposure** ($C \times t$) | Biological damage threshold for chemical toxicity. |
+| **Radiation Dosimetry** | Dose rate ($\text{Sv/hr}$) | Exposure time ($t$) | **Effective Dose** ($\text{Sv}$) | Total radiation absorbed determining somatic/genetic risk. |
+| **Power Systems / AI** | Electrical power draw ($\text{MW}$) | Operating hours ($t$) | **Energy Consumed** ($\text{MWh}$) | Total energy cost to train frontier foundation models. |
+| **Materials Science** | Mechanical stress $\sigma(t)$ ($\text{MPa}$) | Fatigue cycles ($N$) | **Cumulative Fatigue Damage** | Miner's rule for structural failure in airframes and bridges. |
+| **Cardiology** | Tracer dye density $c(t)$ ($\text{mg/L}$) | Circulation time ($t$) | **Cardiac Output** ($A / \int c dt$) | Volumetric blood flow rate pumped by the heart. |
+| **Military Operations** | Combatant density (fighters/km$^2$) | Days under siege ($t$) | **Warrior-Days / Troop-Months** | Cumulative attrition and municipal infrastructure degradation. |
+| **Rocket Dynamics** | Dynamic pressure $q(t) = \frac{1}{2}\rho v^2$ | Ascent time ($t$) | **Structural Stress Load** | Max-$Q$ aerodynamic buffeting during stage separation. |
+| **Vehicle Braking** | Deceleration velocity $v(t)$ ($\text{m/s}$) | Stopping time ($t_b$) | **Total Braking Distance** ($\text{m}$) | $\int_0^{t_b} v(t) dt$ accounting for road friction $\mu(v)$. |
+
 
 * **Probability Theory & Statistics**: The Riemann-Stieltjes integral unifies discrete probability mass functions and continuous probability densities. For any random variable $X$ with cumulative distribution function $F(x) = P(X \le x)$, the expectation is universally defined as $\mathbb{E}[g(X)] = \int_{-\infty}^\infty g(x) dF(x)$, eliminating the need to write separate formulas for discrete sums and continuous integrals.
 * **Theoretical Physics**: In electrodynamics, charge densities can be composed of continuous volume charge clouds $\rho(x)$ and discrete point charges $q_k$. Writing total charge as $Q = \int \rho(x) dx + \sum q_k$ is unified under the Stieltjes measure $Q = \int dQ(x)$.
@@ -395,6 +475,124 @@ All six implementations (`Python 3`, `C++20`, `Rust`, `Julia`, `Modern Fortran`,
 
 
 ---
+
+
+
+---
+
+### Non-Uniform Grid Quadrature (Arbitrary Experimental Partitions)
+
+In observational physics, telemetry logs, and financial tick data, samples are rarely spaced uniformly ($\Delta x_i \neq \text{const}$). Below is the composite trapezoidal algorithm for arbitrary partitions:
+
+$$I \approx \sum_{i=1}^n \frac{f(x_{i-1}) + f(x_i)}{2} (x_i - x_{i-1})$$
+
+::: {.panel-tabset group="language"}
+## Python 3
+```python
+def trapz_nonuniform(x, y):
+    total = 0.0
+    for i in range(len(x) - 1):
+        dx = x[i+1] - x[i]
+        total += 0.5 * (y[i] + y[i+1]) * dx
+    return total
+
+# Example: Non-uniform time telemetry
+x_pts = [0.0, 0.15, 0.45, 0.8, 1.2, 2.0]
+y_pts = [xi**2 for xi in x_pts]
+print(f"Python 3: Non-uniform Trapz = {trapz_nonuniform(x_pts, y_pts):.6f}")
+```
+
+## C++20
+```cpp
+#include <iostream>
+#include <vector>
+#include <iomanip>
+
+double trapz_nonuniform(const std::vector<double>& x, const std::vector<double>& y) {
+    double total = 0.0;
+    for (size_t i = 0; i < x.size() - 1; ++i) {
+        double dx = x[i+1] - x[i];
+        total += 0.5 * (y[i] + y[i+1]) * dx;
+    }
+    return total;
+}
+
+int main() {
+    std::vector<double> x = {0.0, 0.15, 0.45, 0.8, 1.2, 2.0};
+    std::vector<double> y;
+    for (double val : x) y.push_back(val * val);
+    std::cout << std::fixed << std::setprecision(6);
+    std::cout << "C++20:    Non-uniform Trapz = " << trapz_nonuniform(x, y) << "\n";
+    return 0;
+}
+```
+
+## Rust
+```rust
+fn trapz_nonuniform(x: &[f64], y: &[f64]) -> f64 {
+    let mut total = 0.0;
+    for i in 0..(x.len() - 1) {
+        let dx = x[i + 1] - x[i];
+        total += 0.5 * (y[i] + y[i + 1]) * dx;
+    }
+    total
+}
+
+fn main() {
+    let x = [0.0, 0.15, 0.45, 0.8, 1.2, 2.0];
+    let y: Vec<f64> = x.iter().map(|&v| v * v).collect();
+    println!("Rust:     Non-uniform Trapz = {:.6}", trapz_nonuniform(&x, &y));
+}
+```
+
+## Julia
+```julia
+function trapz_nonuniform(x, y)
+    total = 0.0
+    for i in 1:(length(x) - 1)
+        dx = x[i+1] - x[i]
+        total += 0.5 * (y[i] + y[i+1]) * dx
+    end
+    return total
+end
+
+x = [0.0, 0.15, 0.45, 0.8, 1.2, 2.0]
+y = x .^ 2
+println("Julia:    Non-uniform Trapz = $(round(trapz_nonuniform(x, y), digits=6))")
+```
+
+## Modern Fortran
+```fortran
+program trapz_nonunif
+  implicit none
+  integer, parameter :: n = 6
+  real(8) :: x(n), y(n), total, dx
+  integer :: i
+
+  x = (/ 0.0d0, 0.15d0, 0.45d0, 0.8d0, 1.2d0, 2.0d0 /)
+  y = x**2
+  total = 0.0d0
+
+  do i = 1, n - 1
+     dx = x(i+1) - x(i)
+     total = total + 0.5d0 * (y(i) + y(i+1)) * dx
+  end do
+
+  print '(A,F10.6)', "Fortran:  Non-uniform Trapz = ", total
+end program trapz_nonunif
+```
+
+## MATLAB / Octave
+```matlab
+x = [0.0, 0.15, 0.45, 0.8, 1.2, 2.0];
+y = x.^2;
+
+dx = diff(x);
+trapz_val = sum(0.5 * (y(1:end-1) + y(2:end)) .* dx);
+fprintf('MATLAB:   Non-uniform Trapz = %.6f\n', trapz_val);
+```
+:::
+
 
 ## 8. Curated Primary Literature & Canonical Syllabi
 
