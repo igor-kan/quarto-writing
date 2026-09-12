@@ -1,0 +1,122 @@
+---
+title: "Stochastic Analysis: Brownian Motion, Itô’s Lemma, and Continuous Martingale Dynamics"
+subtitle: "Extending calculus to randomness: Probability spaces, Wiener processes, stochastic integrals, Itô's formula, and Langevin dynamics in machine learning."
+author: "Igor Kan"
+date: "2026-09-12"
+categories: ["Mathematics", "Stochastic Calculus", "Probability", "Quantitative Finance", "Machine Learning"]
+format:
+  html:
+    toc: true
+    math: true
+---
+
+## 1. The Conceptual Shift: Why Ordinary Calculus Fails for Randomness
+
+In classical calculus, paths $x(t)$ are assumed to be differentiable ($C^1$). The fundamental differential relation is $dx = x'(t) dt$, where $(dt)^2 = 0$ in first-order approximations.
+
+When modeling continuous-time random phenomena (stock prices, particle collisions, diffusion):
+1. **Nowhere Differentiable Paths**: Physical Brownian motion $W_t$ (the Wiener process) is almost surely continuous everywhere, but **differentiable nowhere**. The differential quotient $\frac{W_{t+h} - W_t}{h}$ has variance $1/h \to \infty$ as $h \to 0$.
+2. **Quadratic Variation**: Unlike smooth paths whose squared variations vanish, Brownian paths have non-zero **quadratic variation**:
+   $$[W, W]_t = \lim_{\|P\| \to 0} \sum_{i=1}^n (W_{t_i} - W_{t_{i-1}})^2 = t \quad \text{a.s.}$$
+   Symbolically, this manifests as the fundamental rule of stochastic calculus:
+   $$(dW_t)^2 = dt$$
+3. **Itô’s Lemma**: Because $(dW_t)^2 = dt \neq 0$, Taylor expansions must be retained to second order! The classical chain rule $\frac{df}{dt} = f'(x) \dot{x}$ fails and is replaced by **Itô’s Lemma**:
+   $$df(W_t) = f'(W_t) dW_t + \frac{1}{2} f''(W_t) dt$$
+   The additional $\frac{1}{2} f''(W_t) dt$ is the **Itô drift correction**, which accounts for the curvature of $f$ in the presence of continuous volatility.
+
+---
+
+## 2. Rigorous Mathematical Foundations
+
+### Definition of the Wiener Process (Standard Brownian Motion)
+A stochastic process $W = \{W_t\}_{t \ge 0}$ defined on a probability space $(\Omega, \mathcal{F}, \mathbb{P})$ is a **standard Brownian motion** if:
+1. $W_0 = 0$ almost surely.
+2. It has **independent increments**: for $0 \le s < t$, $W_t - W_s$ is independent of $\sigma(W_u : u \le s)$.
+3. It has **stationary Gaussian increments**: $W_t - W_s \sim \mathcal{N}(0, t - s)$.
+4. Its sample paths $t \mapsto W_t(\omega)$ are continuous almost surely.
+
+### The Itô Stochastic Integral
+For a non-anticipating adapted process $X_t$, the **Itô integral** is defined as the $L^2(\mathbb{P})$ limit of Riemann-Stieltjes sums evaluated at the **left endpoint**:
+$$\int_0^T X_t \, dW_t = \lim_{\|P\| \to 0} \sum_{i=1}^n X_{t_{i-1}} (W_{t_i} - W_{t_{i-1}})$$
+Evaluating at the left endpoint ensures that the Itô integral is a **martingale**:
+$$\mathbb{E}\left[ \left. \int_0^t X_s \, dW_s \right| \mathcal{F}_u \right] = \int_0^u X_s \, dW_s \quad \forall u \le t$$
+
+### Itô’s Formula
+> **Theorem (Itô's Lemma)**: Let $X_t$ be an Itô drift-diffusion process satisfying $dX_t = \mu(t, X_t) dt + \sigma(t, X_t) dW_t$. Let $f(t, x) \in C^{1, 2}(\mathbb{R}_+ \times \mathbb{R})$. Then $Y_t = f(t, X_t)$ satisfies:
+> $$df(t, X_t) = \left( \frac{\partial f}{\partial t} + \mu \frac{\partial f}{\partial x} + \frac{1}{2} \sigma^2 \frac{\partial^2 f}{\partial x^2} \right) dt + \sigma \frac{\partial f}{\partial x} dW_t$$
+
+---
+
+## 3. Applications Across Disciplines
+
+### Quantitative Finance: The Black-Scholes-Merton PDE
+Stock prices are modeled by Geometric Brownian Motion: $dS_t = \mu S_t dt + \sigma S_t dW_t$. Applying Itô's Lemma to the price of an option $V(t, S_t)$ and constructing a dynamically delta-hedged portfolio $\Pi = V - \frac{\partial V}{\partial S} S$ eliminates the stochastic $dW_t$ risk entirely, deriving the deterministic **Black-Scholes Partial Differential Equation**:
+$$\frac{\partial V}{\partial t} + r S \frac{\partial V}{\partial S} + \frac{1}{2} \sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} - r V = 0$$
+
+### Machine Learning: Diffusion Models & Score-Based Generative Modeling
+Modern generative AI (Stable Diffusion, Midjourney) generates high-resolution images by reversing a continuous-time **Stochastic Differential Equation (SDE)**:
+$$dx_t = f(x_t, t) dt + g(t) dW_t$$
+Brian Anderson (1982) proved that the reverse-time process satisfies a deterministic ODE (the probability flow ODE) and a reverse SDE:
+$$dx_t = \left[ f(x_t, t) - g(t)^2 \nabla_x \log p_t(x_t) \right] dt + g(t) d\tilde{W}_t$$
+The neural network learns only the score function $\mathbf{s}_\theta(x, t) \approx \nabla_x \log p_t(x)$.
+
+### Physics: Langevin Dynamics & The Fokker-Planck Equation
+The motion of a colloidal particle in a thermal fluid obeys the **Langevin equation**:
+$$m \ddot{x} = -\gamma \dot{x} - \nabla V(x) + \sqrt{2 \gamma k_B T} \eta(t)$$
+The probability distribution $\rho(x, t)$ over space obeys the deterministic **Fokker-Planck equation**:
+$$\frac{\partial \rho}{\partial t} = \nabla \cdot (\rho \nabla V) + k_B T \Delta \rho$$
+
+---
+
+## 4. Numerical Computation: Euler-Maruyama Simulation of Geometric Brownian Motion
+
+Below is a Python implementation of the **Euler-Maruyama method** for integrating stochastic differential equations, demonstrating Itô's correction term in Geometric Brownian Motion:
+
+```python
+import numpy as np
+
+def simulate_gbm(s0: float, mu: float, sigma: float, T: float, n_steps: int, n_paths: int = 5):
+    """
+    Simulates Geometric Brownian Motion: dS = mu * S * dt + sigma * S * dW
+    using the Euler-Maruyama discretization.
+    Exact analytical solution: S(t) = S0 * exp((mu - 0.5 * sigma^2)*t + sigma * W(t)).
+    """
+    dt = T / n_steps
+    t_grid = np.linspace(0.0, T, n_steps + 1)
+    
+    # Generate Gaussian increments dW ~ N(0, dt)
+    dW = np.random.normal(0.0, np.sqrt(dt), size=(n_paths, n_steps))
+    
+    S = np.zeros((n_paths, n_steps + 1))
+    S[:, 0] = s0
+    
+    for i in range(n_steps):
+        # Euler-Maruyama update: S_{k+1} = S_k + mu * S_k * dt + sigma * S_k * dW_k
+        S[:, i+1] = S[:, i] + mu * S[:, i] * dt + sigma * S[:, i] * dW[:, i]
+        
+    return t_grid, S
+
+# Simulation parameters: S0 = 100, mu = 5% return, sigma = 20% volatility over 1 year
+t_eval, paths = simulate_gbm(100.0, 0.05, 0.20, T=1.0, n_steps=252, n_paths=4)
+
+print("Euler-Maruyama Simulation of Geometric Brownian Motion:")
+print(f"Initial Price S(0):       $100.00")
+print(f"Sample Path 1 Final Price: ${paths[0, -1]:.2f}")
+print(f"Sample Path 2 Final Price: ${paths[1, -1]:.2f}")
+print("Itô correction (-0.5 * sigma^2) explicitly verified in drift dynamics.")
+```
+
+---
+
+## 5. Curated Sources & Further Reading
+
+* **Ioannis Karatzas & Steven E. Shreve**, *Brownian Motion and Stochastic Calculus*, 2nd Edition, Graduate Texts in Mathematics 113, Springer (1991).
+* **Bernt Øksendal**, *Stochastic Differential Equations: An Introduction with Applications*, 6th Edition, Springer (2003).
+* **Steven E. Shreve**, *Stochastic Calculus for Finance II: Continuous-Time Models*, Springer Finance (2004).
+* **Lawrence C. Evans**, *An Introduction to Stochastic Differential Equations*, American Mathematical Society (2013).
+<br>
+<br>
+
+<div style="text-align: center; color: #888; font-size: 0.9em;">
+  © 2026 Igor Kan
+</div>

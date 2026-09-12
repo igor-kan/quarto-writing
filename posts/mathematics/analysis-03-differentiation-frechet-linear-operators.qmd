@@ -1,0 +1,122 @@
+---
+title: "The Linear Operator Approximation: Fréchet Derivatives, Carathéodory Formulations, and the Chain Rule"
+subtitle: "Deconstructing Stewart Chapter 3: Reconceptualizing derivatives as bounded linear operators, Carathéodory differentiability, and the 1D Inverse Function Theorem."
+author: "Igor Kan"
+date: "2026-09-12"
+categories: ["Mathematics", "Analysis", "Calculus", "Machine Learning", "Physics"]
+format:
+  html:
+    toc: true
+    math: true
+---
+
+## 1. The Conceptual Shift: From Secant Slopes to Linear Operators
+
+In elementary single-variable calculus (Stewart, Chapter 3), the derivative of $f$ at $x$ is presented as the slope of the tangent line:
+$$f'(x) = \lim_{h 	o 0} rac{f(x+h) - f(x)}{h}$$
+This quotient representation works exclusively in 1D scalar settings because one can divide by the real number $h$. In multivariable calculus, infinite dimensions, or manifold geometry, division by vectors $h \in \mathbb{R}^n$ is mathematically undefined.
+
+To generalize differentiation, modern analysis inverts the perspective:
+> **The Modern Definition**: The derivative of a function at a point is not a number; it is the **unique bounded linear operator** that best approximates the nonlinear function near that point.
+
+$$f(x+h) - f(x) = Df(x) \cdot h + o(\|h\|) \quad 	ext{as } h 	o 0$$
+
+Furthermore, the classical proof of the Chain Rule in elementary textbooks often suffers from division-by-zero errors when the inner function is locally constant. Constantin Carathéodory resolved this by reformulating differentiability through a continuous auxiliary function.
+
+---
+
+## 2. Rigorous Foundations & Formulations
+
+### Carathéodory's Formulation of Differentiability
+A function $f: (a, b) 	o \mathbb{R}$ is differentiable at $x_0 \in (a, b)$ if and only if there exists a function $\phi: (a, b) 	o \mathbb{R}$ that is **continuous at $x_0$** such that:
+$$f(x) - f(x_0) = \phi(x)(x - x_0) \quad orall x \in (a, b)$$
+In this case, $f'(x_0) = \phi(x_0)$.
+
+#### Proof of the Chain Rule via Carathéodory
+Let $g: I 	o J$ be differentiable at $x_0$, and $f: J 	o \mathbb{R}$ be differentiable at $y_0 = g(x_0)$.
+By Carathéodory:
+$$g(x) - g(x_0) = \psi(x)(x - x_0), \quad 	ext{with } \psi 	ext{ continuous at } x_0, \; \psi(x_0) = g'(x_0)$$
+$$f(y) - f(y_0) = \phi(y)(y - y_0), \quad 	ext{with } \phi 	ext{ continuous at } y_0, \; \phi(y_0) = f'(y_0)$$
+Substitute $y = g(x)$:
+$$f(g(x)) - f(g(x_0)) = \phi(g(x))(g(x) - g(x_0)) = [\phi(g(x)) \psi(x)] (x - x_0)$$
+Define $\chi(x) = \phi(g(x)) \psi(x)$. Since $g$ is continuous at $x_0$ and $\phi$ is continuous at $g(x_0)$, the composition $\phi \circ g$ is continuous at $x_0$. Hence $\chi(x)$ is continuous at $x_0$.
+By Carathéodory's theorem, $f \circ g$ is differentiable at $x_0$, and:
+$$(f \circ g)'(x_0) = \chi(x_0) = \phi(g(x_0)) \psi(x_0) = f'(g(x_0)) g'(x_0) \quad lacksquare$$
+
+### The Fréchet Derivative
+Let $V, W$ be normed vector spaces and $U \subset V$ an open set. A map $f: U 	o W$ is **Fréchet differentiable** at $x \in U$ if there exists a bounded linear operator $A \in \mathcal{L}(V, W)$ such that:
+$$\lim_{h 	o 0} rac{\|f(x + h) - f(x) - A(h)\|_W}{\|h\|_V} = 0$$
+We denote $A = Df(x)$.
+
+---
+
+## 3. Applications Across Disciplines
+
+### Machine Learning: Automatic Differentiation & Backpropagation
+The backpropagation algorithm in deep neural networks is not an approximation; it is the exact implementation of the multivariable Chain Rule in reverse topological order over a directed acyclic graph (computational graph). In operator terms:
+$$D(f_L \circ f_{L-1} \circ \dots \circ f_1)(x) = Df_L(z_{L-1}) \cdot Df_{L-1}(z_{L-2}) \cdots Df_1(x)$$
+Reverse-mode automatic differentiation computes the vector-Jacobian products (VJP) $\mathbf{v}^T J$ from output to input with temporal complexity proportional to a single forward pass.
+
+### Physics: Linear Response Theory & Perturbation Operators
+In quantum mechanics and statistical physics, linear response theory (Kubo formula) treats small physical perturbations $\delta H(t)$ to a Hamiltonian as linear operators acting on the density matrix $ho(t)$, matching the Fréchet derivative of expectation values with respect to external driving fields.
+
+### Economics & Finance: Greeks and Sensitivity Operators
+In financial derivatives pricing (Black-Scholes-Merton framework), the "Greeks" ($\Delta, \Gamma, \Theta, 	ext{Vega}$) represent Fréchet derivative projections of option pricing functionals with respect to underlying asset prices, volatility, and time decay.
+
+---
+
+## 4. Numerical Computation: Vector-Jacobian Product Engine (VJP)
+
+Below is a Python implementation of a **Reverse-Mode Computational Graph Node**, illustrating how the Chain Rule operates as composable linear operators:
+
+```python
+class Node:
+    """A computational graph node supporting reverse-mode automatic differentiation."""
+    def __init__(self, value, parents=(), vjp_funcs=()):
+        self.value = value
+        self.parents = parents
+        self.vjp_funcs = vjp_funcs  # Functions returning parent adjoints given child adjoint
+        self.grad = 0.0
+
+    def backward(self, upstream_grad=1.0):
+        self.grad += upstream_grad
+        for parent, vjp_func in zip(self.parents, self.vjp_funcs):
+            parent_grad = vjp_func(upstream_grad)
+            parent.backward(parent_grad)
+
+def add(a: Node, b: Node) -> Node:
+    return Node(a.value + b.value, parents=(a, b), vjp_funcs=(lambda g: g, lambda g: g))
+
+def mul(a: Node, b: Node) -> Node:
+    return Node(a.value * b.value, parents=(a, b), 
+                vjp_funcs=(lambda g: g * b.value, lambda g: g * a.value))
+
+# Compute y = (x1 + x2) * x1 for x1 = 3, x2 = 4
+# Analytical y = (3 + 4) * 3 = 21
+# dy/dx1 = (x1 + x2) + x1 = 7 + 3 = 10; dy/dx2 = x1 = 3
+x1 = Node(3.0)
+x2 = Node(4.0)
+sum_node = add(x1, x2)
+y = mul(sum_node, x1)
+
+y.backward(1.0)
+print(f"Output y: {y.value:.2f}")
+print(f"dy/dx1:   {x1.grad:.2f} (Expected: 10.00)")
+print(f"dy/dx2:   {x2.grad:.2f} (Expected: 3.00)")
+```
+
+---
+
+## 5. Curated Sources & Further Reading
+
+* **Walter Rudin**, *Principles of Mathematical Analysis*, 3rd Edition, McGraw-Hill (1976), Chapter 5: *Differentiation*.
+* **Michael Spivak**, *Calculus*, 4th Edition, Publish or Perish (2008), Chapters 10, 11, & 12.
+* **Tom M. Apostol**, *Calculus, Vol. 1*, 2nd Edition, Wiley (1967), Chapter 4: *Differential Calculus*.
+* **John H. Hubbard & Barbara Burke Hubbard**, *Vector Calculus, Linear Algebra, and Differential Forms*, Matrix Editions (2015), Sections 1.7–1.8.
+* **Jean Dieudonné**, *Foundations of Modern Analysis*, Academic Press (1969), Chapter 8: *Differential Calculus*.
+<br>
+<br>
+
+<div style="text-align: center; color: #888; font-size: 0.9em;">
+  © 2026 Igor Kan
+</div>
