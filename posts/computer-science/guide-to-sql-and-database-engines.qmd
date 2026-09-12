@@ -55,7 +55,7 @@ flowchart TD
     S8 --> S9["<b>9. LIMIT / OFFSET / FETCH</b><br/>Paginate the final emitted result set"]
 ```
 
-### The Two Critical Pitfalls Explained:
+### The Three Critical Execution Order Pitfalls Explained:
 
 1. **Why `WHERE avg_sal > 80000` Errors:**
    * In Step 2 (`WHERE`), the `SELECT` clause (Step 6) has not executed yet. The alias `avg_sal` does not exist in memory! 
@@ -65,6 +65,34 @@ flowchart TD
    * Window functions execute in Step 5 (`WINDOW`), *after* `WHERE` has already executed in Step 2.
    * A database cannot filter rows using a window function in the same query block because the window function requires the post-`WHERE` dataset to define its partitions!
    * **The Universal Solution:** Wrap the window function inside a **Common Table Expression (CTE)** or a derived subquery, allowing the outer query's `WHERE` clause to filter the computed rank.
+
+3. **The Classic Oracle `ROWNUM` Ordering Trap (Step 2 vs. Step 8):**
+   * In legacy Oracle systems (11g and older), developers intuitively wrote:
+     ```sql
+     -- BUG: Returns 5 arbitrary employees, then sorts ONLY those 5!
+     SELECT employee_id, salary
+     FROM employees
+     WHERE ROWNUM <= 5
+     ORDER BY salary DESC;
+     ```
+   * **Why this fails catastrophically:** Under the execution order pipeline, `WHERE` (Step 2) executes **before** `ORDER BY` (Step 8). Oracle assigns `ROWNUM` sequentially as rows are scanned from physical disk blocks. The engine takes the *first 5 arbitrary rows* that satisfy the `WHERE` condition, and only then sorts those 5 rows by salary. It completely misses the actual top 5 earners in the company!
+   * **The Subquery Workaround (Oracle 11g):** Sort the entire table inside a derived subquery first, then filter `ROWNUM`:
+     ```sql
+     SELECT * 
+     FROM (
+         SELECT employee_id, salary 
+         FROM employees 
+         ORDER BY salary DESC
+     )
+     WHERE ROWNUM <= 5;
+     ```
+   * **The Modern ANSI SQL Standard (Oracle 12c+, PostgreSQL, SQL Server 2012+):** Use explicit paging syntax evaluated in Step 9:
+     ```sql
+     SELECT employee_id, salary
+     FROM employees
+     ORDER BY salary DESC
+     FETCH FIRST 5 ROWS ONLY;
+     ```
 
 ---
 
@@ -269,66 +297,191 @@ INNER JOIN reservations r2
 
 ---
 
-## 6. Array & Collection Unnesting Across All 5 Engines
+## 6. Reshaping Relational Data: Array Unnesting vs. Column Unpivoting
 
-Modern schemas frequently store arrays, repeated records, or JSON documents. **Unnesting** (or "exploding") expands an array of $N$ elements into $N$ separate rows.
+In relational database engineering, data often arrives in formats that violate first normal form (1NF) or require structural transposition for aggregation. Two fundamental operations perform this transformation, yet they are frequently confused: **`UNNEST`** and **`UNPIVOT`**.
 
-Because array implementations vary dramatically across engines, here is the concrete syntax for each:
+### 1. The Core Distinction: `UNNEST` vs. `UNPIVOT`
 
-### 1. PostgreSQL (Native Arrays)
-```sql
--- Input: Table with an integer array column: tags INT[] = '{101, 102, 103}'
-SELECT 
-    item_id, 
-    unnested_tag.tag_id,
-    unnested_tag.ordinality
-FROM items,
-UNNEST(items.tags) WITH ORDINALITY AS unnested_tag(tag_id, ordinality);
+| Dimension | `UNNEST` (Array / JSON Exploding) | `UNPIVOT` (Column-to-Row Transposition) |
+|:---|:---|:---|
+| **Input Source** | A **single cell** containing an array, list, or JSON document (`tags: ['sql', 'ai']`). | **Multiple distinct columns** in a table (`q1_sales`, `q2_sales`, `q3_sales`, `q4_sales`). |
+| **Output Shape** | Expands each array element into its own row, duplicating the parent row's scalar attributes. | Collapses $M$ columns into two rows: an attribute name column and a value column. |
+| **Common Use Cases**| Flattening tag collections, denormalized JSON payloads, search keyword indices. | Normalizing wide reporting spreadsheets, quarterly financial reports, time-series metrics. |
+
+#### Conceptual Visual Matrix:
+
+```
+[ UNNEST ]
+Input Row:   [ id: 1 | title: "SQL Tips" | tags: ['database', 'sql'] ]
+Output Rows: [ id: 1 | title: "SQL Tips" | tag: "database" ]
+             [ id: 1 | title: "SQL Tips" | tag: "sql"      ]
+
+[ UNPIVOT ]
+Input Row:   [ product: "Laptop" | q1: 100 | q2: 150 | q3: 200 ]
+Output Rows: [ product: "Laptop" | quarter: "q1" | sales: 100 ]
+             [ product: "Laptop" | quarter: "q2" | sales: 150 ]
+             [ product: "Laptop" | quarter: "q3" | sales: 200 ]
 ```
 
-### 2. MySQL (JSON Arrays via `JSON_TABLE`)
+---
+
+### 2. Positional Tracking & Standalone Unnesting
+
+When unnesting an array, preserving the sequential position (index) of items is frequently critical (e.g., maintaining chronological order or priority weighting).
+
+#### A. Standalone Array Flattening (Generating In-Memory Rows)
+You can unnest literal arrays directly to synthesize tables without touching physical disk:
+
 ```sql
--- Input: Table with a JSON array column: tags_json = '[101, 102, 103]'
+-- PostgreSQL / BigQuery
+SELECT * 
+FROM UNNEST(ARRAY['apple', 'banana', 'cherry']) AS fruit;
+```
+
+#### B. Positional Index Tracking (`WITH ORDINALITY` vs. `WITH OFFSET`)
+
+* **PostgreSQL (`WITH ORDINALITY`)**: Emits a **1-indexed** sequence counter column:
+  ```sql
+  SELECT keyword, position_idx
+  FROM UNNEST(ARRAY['data', 'science', 'ml']) WITH ORDINALITY AS t(keyword, position_idx);
+  -- Returns: ('data', 1), ('science', 2), ('ml', 3)
+  ```
+
+* **Google BigQuery (`WITH OFFSET`)**: Emits a **0-indexed** offset column:
+  ```sql
+  SELECT keyword, offset_idx
+  FROM UNNEST(['data', 'science', 'ml']) AS keyword WITH OFFSET AS offset_idx;
+  -- Returns: ('data', 0), ('science', 1), ('ml', 2)
+  ```
+
+---
+
+### 3. Array & Collection Unnesting Across All Major Engines
+
+Because array implementations vary dramatically across relational engines, here is the concrete production syntax for each platform:
+
+#### 1. PostgreSQL (Native Arrays & Ordinality)
+```sql
+-- Table: articles (id INT, title TEXT, tags TEXT[])
 SELECT 
-    i.item_id, 
-    jt.tag_id
-FROM items i,
+    a.id, 
+    a.title, 
+    u.tag,
+    u.tag_index
+FROM articles a
+CROSS JOIN LATERAL UNNEST(a.tags) WITH ORDINALITY AS u(tag, tag_index);
+```
+
+#### 2. Google BigQuery / Presto / Trino
+In BigQuery and Presto, `CROSS JOIN` is often abbreviated with a simple comma:
+```sql
+SELECT 
+    id, 
+    title, 
+    tag,
+    tag_offset
+FROM articles,
+UNNEST(tags) AS tag WITH OFFSET AS tag_offset;
+```
+
+#### 3. Snowflake (`FLATTEN`)
+Snowflake parses semi-structured variants using the table function `FLATTEN`:
+```sql
+SELECT 
+    a.id, 
+    a.title, 
+    f.value::STRING AS tag,
+    f.index AS tag_index
+FROM articles a,
+LATERAL FLATTEN(input => a.tags_variant) f;
+```
+
+#### 4. MySQL 8.0+ (`JSON_TABLE`)
+Since MySQL lacks native array column types, collections are stored as JSON arrays:
+```sql
+-- Table: articles (id INT, title VARCHAR(100), tags_json JSON)
+SELECT 
+    a.id, 
+    a.title, 
+    jt.tag,
+    jt.ordinality
+FROM articles a,
 JSON_TABLE(
-    i.tags_json, 
-    '$[*]' COLUMNS (tag_id INT PATH '$')
+    a.tags_json, 
+    '$[*]' COLUMNS (
+        ordinality FOR ORDINALITY,
+        tag VARCHAR(50) PATH '$'
+    )
 ) AS jt;
 ```
 
-### 3. Microsoft SQL Server (`STRING_SPLIT` & `OPENJSON`)
+#### 5. Microsoft SQL Server (`STRING_SPLIT` & `OPENJSON`)
+T-SQL provides two modern options depending on storage format:
 ```sql
--- A. Unnesting comma-delimited strings:
-SELECT item_id, TRIM(value) AS tag_id
-FROM items
-CROSS APPLY STRING_SPLIT(tags_csv, ',');
+-- Option A: Comma-delimited strings with 1-based index (SQL Server 2022+)
+SELECT a.id, a.title, s.value AS tag, s.ordinal AS tag_index
+FROM articles a
+CROSS APPLY STRING_SPLIT(a.tags_csv, ',', 1) AS s;
 
--- B. Unnesting JSON arrays:
-SELECT item_id, CAST(value AS INT) AS tag_id
-FROM items
-CROSS APPLY OPENJSON(tags_json);
+-- Option B: JSON Arrays (SQL Server 2016+)
+SELECT a.id, a.title, j.[value] AS tag, CAST(j.[key] AS INT) AS tag_index
+FROM articles a
+CROSS APPLY OPENJSON(a.tags_json) AS j;
 ```
 
-### 4. Oracle (`JSON_TABLE` & Nested Tables)
+#### 6. Oracle Database 12c+ (`JSON_TABLE`)
 ```sql
--- Unnesting JSON array in Oracle 12c+:
-SELECT i.item_id, jt.tag_id
-FROM items i,
+SELECT a.id, a.title, jt.tag
+FROM articles a,
 JSON_TABLE(
-    i.tags_json, 
-    '$[*]' COLUMNS (tag_id NUMBER PATH '$')
+    a.tags_json, 
+    '$[*]' COLUMNS (tag VARCHAR2(50) PATH '$')
 ) jt;
 ```
 
-### 5. SQLite (`json_each`)
+#### 7. SQLite 3.38+ (`json_each`)
+SQLite includes the JSON extension enabled by default:
 ```sql
--- SQLite supports JSON extension natively:
-SELECT i.item_id, j.value AS tag_id
-FROM items i,
-json_each(i.tags_json) j;
+SELECT a.id, a.title, j.value AS tag, j.key AS tag_index
+FROM articles a,
+json_each(a.tags_json) j;
+```
+
+---
+
+### 4. Column Unpivoting (Wide Tables to Tall Tables)
+
+When tables store attributes across multiple columns rather than in an array, use `UNPIVOT`.
+
+#### Native `UNPIVOT` (Microsoft SQL Server & Oracle Database):
+```sql
+-- Table: quarterly_sales (product_id, q1, q2, q3, q4)
+SELECT 
+    product_id, 
+    quarter, 
+    revenue
+FROM quarterly_sales
+UNPIVOT (
+    revenue FOR quarter IN (q1, q2, q3, q4)
+) AS unpvt;
+```
+
+#### The Universal ANSI Standard (PostgreSQL, MySQL 8.0.14+, SQLite via `VALUES`):
+In engines without a proprietary `UNPIVOT` keyword, the modern, high-performance equivalent is `CROSS JOIN LATERAL` using virtual row tuples:
+```sql
+SELECT 
+    s.product_id, 
+    u.quarter, 
+    u.revenue
+FROM quarterly_sales s
+CROSS JOIN LATERAL (
+    VALUES 
+        ('Q1', s.q1),
+        ('Q2', s.q2),
+        ('Q3', s.q3),
+        ('Q4', s.q4)
+) AS u(quarter, revenue);
 ```
 
 ---
