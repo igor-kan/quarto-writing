@@ -684,7 +684,131 @@ ORDER BY id ASC;
 
 ---
 
-## 12. The Grand Cross-Engine Rosetta Stone
+## 12. Set Operations, Multiset Differences & The `EXCEPT` Traps
+
+SQL set operators combine or subtract rows from two queries. While `UNION` is ubiquitous, set difference operators (**`EXCEPT`** in PostgreSQL, SQL Server, and SQLite; **`MINUS`** in Oracle) harbor subtle behaviors that frequently confuse developers.
+
+### 1. The Syntax Landscape
+* **PostgreSQL / SQL Server / SQLite / MySQL 8.0.31+:** `EXCEPT` and `EXCEPT ALL`
+* **Oracle Database:** `MINUS`
+
+```sql
+SELECT column_list FROM table_a
+EXCEPT
+SELECT column_list FROM table_b;
+```
+
+* **Rules:** Both queries must return identical column counts with compatible data types. Result column names are inherited from the first query.
+
+---
+
+### 2. The Duplicate-Detection Anti-Pattern Trap
+
+Consider a query written by a developer attempting to find duplicate emails in a `Person` table:
+
+```sql
+-- FLAWED QUERY: Always returns ZERO rows regardless of data!
+WITH MultisetDiffCTE AS (
+    SELECT email AS Email FROM Person
+    EXCEPT
+    SELECT DISTINCT email AS Email FROM Person
+)
+SELECT DISTINCT Email FROM MultisetDiffCTE;
+```
+
+#### Why Does This Return Nothing?
+1. By default, ANSI SQL `EXCEPT` (and Oracle's `MINUS`) performs a **set difference**, not a multiset (bag) difference.
+2. The engine implicitly applies `DISTINCT` to **both** sides of the operator before performing the subtraction.
+3. Therefore, `SELECT email FROM Person` is reduced to a unique set of emails.
+4. `SELECT DISTINCT email FROM Person` is already that identical unique set.
+5. You are computing $S \setminus S = \emptyset$. It mathematically always produces $0$ rows!
+
+#### The Two Legitimate Solutions:
+
+* **Solution A: Standard Relational Aggregation (Recommended & Fastest)**
+  ```sql
+  SELECT email
+  FROM Person
+  GROUP BY email
+  HAVING COUNT(email) > 1;
+  ```
+
+* **Solution B: Multiset Difference via `EXCEPT ALL` (PostgreSQL & SQLite)**
+  `EXCEPT ALL` preserves row multiplicities. If an email appears 3 times in `Person` and 1 time in the distinct query, $3 - 1 = 2$ rows remain in the CTE:
+  ```sql
+  WITH MultisetDiffCTE AS (
+      SELECT email AS Email FROM Person
+      EXCEPT ALL  -- Preserves duplicate occurrences during subtraction
+      SELECT DISTINCT email AS Email FROM Person
+  )
+  SELECT DISTINCT Email FROM MultisetDiffCTE;
+  ```
+
+---
+
+### 3. `EXCEPT` vs. `NOT IN` vs. `NOT EXISTS` (The Deadly NULL Trap)
+
+When filtering records in one table that do not exist in another, choosing between `EXCEPT`, `NOT IN`, and `NOT EXISTS` has critical implications for correctness and indexing:
+
+| Operation | Best Use Case | Handles `NULL`s Safely? | Index Performance |
+|:---|:---|:---:|:---|
+| **`EXCEPT`** | Comparing entire multi-column row tuples across two queries. | **Yes** (Treats `NULL` as equal to `NULL`). | Evaluates full result sets (often requires sorting/hashing). |
+| **`NOT EXISTS`** | Correlated subqueries filtering a table by foreign key. | **Yes** (Evaluates boolean truth of existence). | **Optimal**: Query planner utilizes index seeks and anti-joins. |
+| **`NOT IN`** | Small static lists of non-null scalars (`WHERE id NOT IN (1, 2, 3)`). | ⚠️ **NO!** (Returns empty set if subquery contains **any** `NULL`). | Can devolve into full table scans. |
+
+::: {.callout-caution}
+### The Infamous Three-Valued Logic Trap of `NOT IN`
+In SQL's ternary logic (`TRUE`, `FALSE`, `UNKNOWN`), if a subquery produces a single `NULL`:
+```sql
+SELECT employee_id FROM employees
+WHERE department_id NOT IN (SELECT department_id FROM departments);
+```
+If `departments` has even one row with `department_id IS NULL`, the condition `department_id NOT IN (...)` evaluates to `UNKNOWN` for every single row. **The entire query returns zero records!** Always prefer `NOT EXISTS` or ensure `WHERE department_id IS NOT NULL` in the subquery.
+:::
+
+---
+
+## 13. Numeric Typings & The SQL Server Integer Division Trap
+
+A classic cross-engine discrepancy occurs when computing averages over integer columns:
+
+```sql
+SELECT 
+    project_id, 
+    ROUND(AVG(experience_years), 2) AS average_years
+FROM Project p
+JOIN Employee e ON e.employee_id = p.employee_id
+GROUP BY project_id
+ORDER BY project_id;
+```
+
+### The Engine Discrepancy
+
+* **PostgreSQL:** Automatically casts integer inputs inside `AVG()` to `NUMERIC`, preserving decimal fidelity (e.g., $11 / 3 \rightarrow 3.6666\dots$, rounded to `3.67`).
+* **MySQL:** Promotes integers to `DOUBLE` during division, maintaining decimal precision.
+* **Microsoft SQL Server (T-SQL):** **Strictly maintains integer types!** If `experience_years` is stored as `INT`, `AVG(experience_years)` performs integer division and truncates the decimal component *before* passing the result to `ROUND()`. An average of $3.66$ becomes $3$, and `ROUND(3, 2)` produces `3.00`!
+
+### The Two Fixes in SQL Server:
+
+1. **Multiply by `1.0` (Implicit Decimal Promotion):**
+   ```sql
+   SELECT project_id, ROUND(AVG(experience_years * 1.0), 2) AS average_years
+   FROM Project p
+   JOIN Employee e ON e.employee_id = p.employee_id
+   GROUP BY project_id;
+   ```
+
+2. **Explicit `CAST` / `CONVERT`:**
+   ```sql
+   SELECT project_id, ROUND(AVG(CAST(experience_years AS DECIMAL(10, 2))), 2) AS average_years
+   FROM Project p
+   JOIN Employee e ON e.employee_id = p.employee_id
+   GROUP BY project_id;
+   ```
+
+---
+
+## 14. The Grand Cross-Engine Rosetta Stone
 
 | Feature | PostgreSQL | MySQL (8.0+) | SQL Server (T-SQL) | Oracle (19c+) | SQLite (3.25+) |
 |:---|:---|:---|:---|:---|:---|
@@ -692,6 +816,7 @@ ORDER BY id ASC;
 | **String Concat** | `a \|\| b` or `CONCAT()` | `CONCAT(a, b)` | `a + b` or `CONCAT()` | `a \|\| b` or `CONCAT()` | `a \|\| b` |
 | **Group String Agg** | `STRING_AGG(x, ',')` | `GROUP_CONCAT(x)` | `STRING_AGG(x, ',')` | `LISTAGG(x, ',')` | `GROUP_CONCAT(x, ',')` |
 | **Array Unnest** | `UNNEST(arr)` | `JSON_TABLE()` | `OPENJSON()` / `STRING_SPLIT()` | `JSON_TABLE()` / `TABLE()` | `json_each()` |
+| **Set Difference** | `EXCEPT` / `EXCEPT ALL` | `EXCEPT` (8.0.31+) | `EXCEPT` | `MINUS` | `EXCEPT` / `EXCEPT ALL` |
 | **Recursive CTE** | `WITH RECURSIVE` | `WITH RECURSIVE` | `WITH` (no keyword) | `WITH` or `CONNECT BY` | `WITH RECURSIVE` |
 | **Bitwise XOR** | `#` | `^` | `^` | Custom / UDF | `^` |
 | **ASCII to Char** | `CHR(n)` | `CHAR(n)` | `CHAR(n)` | `CHR(n)` | `CHAR(n)` |
@@ -701,12 +826,13 @@ ORDER BY id ASC;
 
 ---
 
-## 13. References & Official Documentation
+## 15. References & Official Documentation
 
 1. **PostgreSQL Global Development Group.** *PostgreSQL 16 Documentation: Window Functions & Array Functions* (2024).
 2. **Oracle Corporation.** *MySQL 8.0 Reference Manual: Window Function Concepts and Syntax* (2024).
-3. **Microsoft Learn.** *Transact-SQL (T-SQL) Reference: DENSE_RANK, STRING_AGG, and CTEs* (2024).
-4. **Oracle Corporation.** *Database SQL Language Reference: Analytic Functions and Hierarchical Queries* (2024).
-5. **SQLite Consortium.** *Window Functions and JSON1 Extension Specifications* (2024).
+3. **Microsoft Learn.** *Transact-SQL (T-SQL) Reference: DENSE_RANK, STRING_AGG, EXCEPT, and CTEs* (2024).
+4. **Oracle Corporation.** *Database SQL Language Reference: Analytic Functions, Hierarchical Queries, and Set Operators* (2024).
+5. **SQLite Consortium.** *Window Functions, Set Operations, and JSON1 Extension Specifications* (2024).
 6. **Celko, Joe.** *SQL for Smarties: Advanced SQL Programming* (5th ed., Morgan Kaufmann, 2014).
 7. **Stewart, James.** *Calculus: Early Transcendentals* (8th ed., Cengage Learning). Chapters on discrete partitions and numerical series, underpinning how database query planners compute bounded intervals and Riemann-partition window frames.
+
