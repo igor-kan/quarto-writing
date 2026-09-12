@@ -168,7 +168,7 @@ LAST_VALUE(salary) OVER (
 
 ## 4. Common Table Expressions (CTEs) & Recursive Hierarchies
 
-A **Common Table Expression (CTE)** defines a temporary, named result set that exists solely within the execution scope of a single SQL statement.
+A **Common Table Expression (CTE)** defines a temporary, named result set that exists solely within the execution scope of a single SQL statement. On platforms like LeetCode and in production data engineering, CTEs function as modular "Lego blocks" that replace deeply nested subqueries with clean, top-to-bottom sequential pipelines.
 
 ### 1. Non-Recursive CTE for Filtering Window Functions
 As established in Section 2, window functions cannot be filtered directly in `WHERE`. The standard, clean architectural pattern is a CTE:
@@ -190,16 +190,85 @@ FROM RankedSalaries
 WHERE salary_rank <= 3;  -- Top 3 distinct earners per department
 ```
 
-### 2. Recursive CTEs for Hierarchical and Graph Traversal
-Recursive CTEs solve self-referential tree problems (e.g., corporate reporting structures, folder directories, bill of materials).
+### 2. Chaining Multiple CTEs (Sequential Data Pipelines)
+You can define multiple CTEs in a single query by separating them with commas. Each subsequent CTE can freely reference any CTE defined above it:
+
+```sql
+WITH TotalCustomerSpend AS (
+    SELECT user_id, SUM(order_amount) AS total_spent
+    FROM orders
+    GROUP BY user_id
+),
+SpendBenchmarks AS (
+    SELECT 
+        AVG(total_spent) AS avg_spend,
+        PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY total_spent) AS p90_spend
+    FROM TotalCustomerSpend
+)
+SELECT 
+    t.user_id, 
+    t.total_spent, 
+    b.avg_spend
+FROM TotalCustomerSpend t
+CROSS JOIN SpendBenchmarks b
+WHERE t.total_spent > b.avg_spend;
+```
+
+### 3. Using CTEs in Subqueries & Filtering Clauses
+Once defined at the top of a statement, a CTE behaves like a physical table or view for the remainder of the query execution:
+
+```sql
+WITH HighPerformingBranches AS (
+    SELECT branch_id
+    FROM branch_revenue
+    WHERE revenue > 1000000
+)
+SELECT employee_name, salary
+FROM employees
+WHERE branch_id IN (SELECT branch_id FROM HighPerformingBranches);
+```
+
+#### The Three Golden Rules for CTE Subquery References:
+1. **Define First, Use Later:** The `WITH` block must be the absolute first statement in the query. You cannot embed `WITH` inside a subquery (e.g., `SELECT * FROM (WITH cte AS ...) ` is illegal syntax).
+2. **Global Downstream Visibility:** Once declared, the CTE is visible anywhere downstream—including inside nested subqueries, `EXISTS` conditions, and derived tables.
+3. **Prefer Explicit `JOIN`s Over `IN (SELECT...)`:** On high-volume tables, joining directly against the CTE (`INNER JOIN HighPerformingBranches b ON e.branch_id = b.branch_id`) enables query planners to utilize hash joins and merge joins rather than iterative subquery scans.
+
+---
+
+### 4. Recursive CTEs: Synthesizing Sequences & Hierarchies
+
+Recursive CTEs solve self-referential tree problems and allow engineers to generate synthetic records (like continuous date ranges) out of thin air.
 
 A recursive CTE consists of:
-1. **The Anchor Member:** The base query that initializes the recursion (e.g., finding the CEO where `manager_id IS NULL`).
+1. **The Anchor Member:** The base query that initializes the recursion.
 2. **`UNION ALL`**
-3. **The Recursive Member:** The query referencing the CTE itself, joining the child rows to parent rows.
-4. **Termination Condition:** Implicitly halts when the recursive join yields an empty set.
+3. **The Recursive Member:** The query referencing the CTE itself, executing iteratively until the termination condition is met.
+4. **Termination Condition:** Evaluated in the recursive member's `WHERE` clause to halt execution.
 
-#### Universal Recursive CTE (PostgreSQL, MySQL 8.0+, SQLite):
+#### A. Generating Calendar Series & Filling Zero-Data Gaps
+On LeetCode and in analytical dashboards, a common challenge is computing metrics for every calendar day when days with zero transactions do not exist in the source table. A recursive CTE synthesizes the complete date spine:
+
+```sql
+-- PostgreSQL / MySQL 8.0+ Calendar Generator:
+WITH RECURSIVE DateSpine AS (
+    -- Anchor: First day of the month
+    SELECT CAST('2026-09-01' AS DATE) AS calendar_date
+    UNION ALL
+    -- Recursive Step: Increment by 1 day
+    SELECT calendar_date + INTERVAL '1 day'
+    FROM DateSpine
+    WHERE calendar_date < '2026-09-30'
+)
+SELECT 
+    d.calendar_date,
+    COALESCE(SUM(o.amount), 0.00) AS total_sales
+FROM DateSpine d
+LEFT JOIN orders o ON d.calendar_date = CAST(o.created_at AS DATE)
+GROUP BY d.calendar_date
+ORDER BY d.calendar_date ASC;
+```
+
+#### B. Recursive Tree & Organization Traversal:
 ```sql
 WITH RECURSIVE OrgTree AS (
     -- Anchor Member: Root CEO
@@ -229,15 +298,31 @@ FROM OrgTree
 ORDER BY hierarchy_path;
 ```
 
-#### Engine Dialect Differences for Recursive CTEs:
-* **SQL Server (T-SQL):** Omits the `RECURSIVE` keyword (`WITH OrgTree AS (...)`).
-* **Oracle:** Supports both standard ANSI `WITH` recursive CTEs (11gR2+) and proprietary `START WITH manager_id IS NULL CONNECT BY PRIOR employee_id = manager_id`.
+* **SQL Server (T-SQL):** Omits `RECURSIVE` (`WITH OrgTree AS (...)`).
+* **Oracle:** Supports ANSI `WITH` (11gR2+) and proprietary `START WITH ... CONNECT BY PRIOR`.
+
+---
+
+### 5. CTEs vs. Subqueries: Architectural Comparison
+
+| Dimension | Common Table Expression (`WITH ... AS`) | Subquery (`SELECT ... FROM (...)`) |
+|:---|:---|:---|
+| **Readability** | **High:** Reads sequentially from top to bottom like procedural steps. | **Low:** Deeply nested subqueries produce hard-to-read "spaghetti SQL". |
+| **Reusability** | **Yes:** A single CTE can be referenced multiple times across downstream joins. | **No:** Identical subqueries must be repeated, wasting code and maintenance. |
+| **Recursion** | **Yes:** Capable of tree traversal, graph exploration, and sequence synthesis. | **No:** Standard subqueries cannot perform recursion. |
+| **Optimization** | In modern engines (PostgreSQL 12+, MySQL 8.0), CTEs are inlined identically to subqueries. (Use `WITH ... AS MATERIALIZED` in PostgreSQL if you explicitly want to cache the CTE). | Inlined directly into the outer query execution plan. |
+
+#### Must-Try LeetCode Problems for CTE Mastery:
+* **Department Highest Salary** (Medium, LeetCode 184) — Basic Window + CTE.
+* **Managers with at Least 5 Direct Reports** (Medium, LeetCode 570) — Aggregate CTE filter.
+* **Total Sales Amount by Year** (Hard, LeetCode 1384) — Recursive Date Expansion.
+* **Find the Subtasks That Did Not Execute** (Hard, LeetCode 1767) — Recursive sequence synthesis.
 
 ---
 
 ## 5. Complex Joins, Multi-Column Keys & Self-Referential Rules
 
-### 1. Multi-Column Joins (Composite Keys)
+### 1. Multi-Column Joins (Composite Keys via `AND`)
 In enterprise databases and data warehouses, tables are frequently related by compound primary keys (e.g., multi-tenant systems where every table includes a `tenant_id` and `store_id`):
 
 ```sql
@@ -253,7 +338,26 @@ INNER JOIN dim_department d
 WHERE f.fiscal_year = 2026;
 ```
 
-### 2. Non-Equi Joins (Interval & Range Matching)
+### 2. Shorthand Multi-Column Joins with `USING (c1, c2)`
+When the join columns share identical names across both tables, ANSI SQL allows replacing the verbose `ON` clause with the concise `USING` keyword:
+
+```sql
+SELECT 
+    employee_id,  -- Notice: NO table alias prefix allowed or needed!
+    branch_id,
+    e.employee_name,
+    s.shift_date
+FROM employees e
+INNER JOIN schedules s USING (employee_id, branch_id);
+```
+
+#### Key Rules for the `USING` Clause:
+* **Exact Column Name Match:** Column names must be identical in both tables.
+* **No Table Prefixes in Output:** In the `SELECT` list, you must reference the join column directly (`employee_id`, not `e.employee_id`), as the engine automatically unifies the column into a single attribute.
+* **Comma-Delimited:** List multiple columns separated by commas: `USING (c1, c2)`. Never write `AND` inside `USING()`.
+* **Database Portability:** Supported in **PostgreSQL, MySQL, SQLite, and Oracle**. Microsoft SQL Server (T-SQL) **does not support `USING`**; you must write explicit `ON` conditions in SQL Server.
+
+### 3. Non-Equi Joins (Interval & Range Matching)
 Joins do not require equality (`=`). Non-equi joins match records across temporal ranges or thresholds:
 
 ```sql
@@ -268,7 +372,7 @@ INNER JOIN salary_bands b
    AND e.salary <  b.max_salary;
 ```
 
-### 3. Self-Joins & Self-Referential Matching
+### 4. Self-Joins & Self-Referential Matching
 A self-join joins a table to itself under distinct aliases. Common use cases include:
 
 #### A. Finding Managers of Employees:
@@ -486,17 +590,110 @@ CROSS JOIN LATERAL (
 
 ---
 
-## 7. String & Array Aggregations (The Reverse of Unnesting)
+## 7. String Aggregations & In-Row String Manipulation
 
-When grouping rows, developers often need to collapse multiple child strings into a single comma-separated list:
+String operations in relational databases fall into two distinct categories: **Across-Row Aggregations** (collapsing multiple rows into a single delimited string) and **In-Row Concatenation** (merging multiple column values within a single record).
 
-| Engine | Aggregation Syntax | Example |
+### 1. Across-Row String Aggregation Across Engines
+
+| Engine | Aggregation Syntax | Ordering & Deduplication Syntax |
 |:---|:---|:---|
-| **PostgreSQL** | `STRING_AGG(col, delimiter [ORDER BY ...])` | `STRING_AGG(name, ', ' ORDER BY name ASC)` |
-| **MySQL** | `GROUP_CONCAT([DISTINCT] col [ORDER BY ...] SEPARATOR delimiter)` | `GROUP_CONCAT(name ORDER BY name ASC SEPARATOR ', ')` |
-| **SQL Server** | `STRING_AGG(col, delimiter) WITHIN GROUP (ORDER BY ...)` | `STRING_AGG(name, ', ') WITHIN GROUP (ORDER BY name ASC)` |
-| **Oracle** | `LISTAGG(col, delimiter) WITHIN GROUP (ORDER BY ...)` | `LISTAGG(name, ', ') WITHIN GROUP (ORDER BY name ASC)` |
-| **SQLite** | `GROUP_CONCAT(col [, delimiter])` | `GROUP_CONCAT(name, ', ')` |
+| **PostgreSQL** | `STRING_AGG(col, delimiter)` | `STRING_AGG(DISTINCT name, ', ' ORDER BY name ASC)` |
+| **MySQL** | `GROUP_CONCAT(col SEPARATOR delimiter)` | `GROUP_CONCAT(DISTINCT name ORDER BY name ASC SEPARATOR ', ')` |
+| **SQL Server** | `STRING_AGG(col, delimiter)` | `STRING_AGG(name, ', ') WITHIN GROUP (ORDER BY name ASC)` |
+| **Oracle** | `LISTAGG(col, delimiter)` | `LISTAGG(name, ', ') WITHIN GROUP (ORDER BY name ASC)` |
+| **SQLite** | `GROUP_CONCAT(col, delimiter)` | `GROUP_CONCAT(DISTINCT name)` |
+
+---
+
+### 2. The Infamous Nested Subquery Error in `STRING_AGG`
+
+A frequent blunder when attempting LeetCode 1484 (*Group Sold Products By The Date*) is embedding a `SELECT DISTINCT` subquery inside the aggregation function:
+
+```sql
+-- ❌ SYNTAX ERROR in PostgreSQL:
+SELECT 
+    sell_date, 
+    COUNT(DISTINCT product) AS num_sold,
+    STRING_AGG((SELECT DISTINCT product ORDER BY product), ',') AS products
+FROM Activities 
+GROUP BY sell_date;
+```
+
+#### Why This Fails:
+`STRING_AGG` expects a scalar column expression or attribute reference. Wrapping `(SELECT DISTINCT...)` inside forces the engine to evaluate a scalar subquery without an outer table relation, which violates aggregate parsing rules.
+
+#### The Correct Native Solutions:
+
+* **PostgreSQL Native Fix:**
+  Pass `DISTINCT` and `ORDER BY` directly inside the `STRING_AGG` parameters:
+  ```sql
+  SELECT 
+      sell_date, 
+      COUNT(DISTINCT product) AS num_sold,
+      STRING_AGG(DISTINCT product, ',' ORDER BY product ASC) AS products
+  FROM Activities 
+  GROUP BY sell_date
+  ORDER BY sell_date ASC;
+  ```
+
+* **MySQL Fix (LeetCode Default Environment):**
+  ```sql
+  SELECT 
+      sell_date,
+      COUNT(DISTINCT product) AS num_sold,
+      GROUP_CONCAT(DISTINCT product ORDER BY product ASC SEPARATOR ',') AS products
+  FROM Activities
+  GROUP BY sell_date
+  ORDER BY sell_date ASC;
+  ```
+
+---
+
+### 3. In-Row String Concatenation & NULL Safety
+
+When merging multiple string columns within the same row (e.g., constructing full names or physical mailing addresses):
+
+#### A. The Standard Pipe Operator (`||`)
+```sql
+SELECT first_name || ' ' || last_name AS full_name FROM employees;
+```
+* **The NULL Trap:** In ANSI SQL, `'Alice' || NULL` yields **`NULL`**! If any component is missing, the entire concatenated string disappears.
+
+#### B. `CONCAT(...)` (Safe with NULLs)
+Supported in PostgreSQL, MySQL, and SQL Server:
+```sql
+SELECT CONCAT(first_name, ' ', middle_name, ' ', last_name) AS full_name FROM employees;
+```
+* Automatically converts `NULL` into an empty string (`''`), preventing catastrophic data loss.
+
+#### C. `CONCAT_WS(separator, ...)` (Concatenate With Separator)
+Supported in PostgreSQL, MySQL, and SQL Server 2017+:
+```sql
+SELECT CONCAT_WS(', ', street, city, state, zip_code) AS full_address FROM offices;
+```
+* **The Elegance:** Automatically ignores `NULL` arguments **without leaving dangling separators** (e.g., producing `"123 Main St, New York, 10001"` rather than `"123 Main St, , New York, 10001"`).
+
+#### D. Array Flattening (`ARRAY_TO_STRING` in PostgreSQL)
+```sql
+SELECT ARRAY_TO_STRING(ARRAY[first_name, middle_name, last_name], ' ') AS full_name 
+FROM employees;
+```
+
+#### E. Printf-Style String Formatting (`FORMAT` in PostgreSQL)
+```sql
+SELECT FORMAT('Employee %s (#%s) works at Branch %s.', employee_name, employee_id, branch_id)
+FROM employees;
+```
+
+---
+
+### 4. Cleaning Duplicate Words and Trailing Commas
+
+If your query outputs hanging commas (`"apple,"`) or duplicate tokens (`"word,word"`):
+1. **Duplicate Tokens in Group:** Always add `DISTINCT` inside the aggregator (`STRING_AGG(DISTINCT col, ',')`).
+2. **Hanging Commas in Source Data:** Clean the column using `TRIM(BOTH ',' FROM col)` before aggregation.
+3. **Trailing Commas in Output:** Strip the outer edge with `RTRIM(STRING_AGG(...), ',')`.
 
 ---
 
@@ -746,25 +943,73 @@ SELECT DISTINCT Email FROM MultisetDiffCTE;
 
 ---
 
-### 3. `EXCEPT` vs. `NOT IN` vs. `NOT EXISTS` (The Deadly NULL Trap)
+### 4. Multiset vs. Set Operations: How `UNION` vs. `UNION ALL` Handles Duplicates
 
-When filtering records in one table that do not exist in another, choosing between `EXCEPT`, `NOT IN`, and `NOT EXISTS` has critical implications for correctness and indexing:
+A common misconception is that SQL set operations perform custom multiset arithmetic (such as keeping the maximum count of duplicate items). In reality, database engines process duplicates using two strict behaviors:
 
-| Operation | Best Use Case | Handles `NULL`s Safely? | Index Performance |
-|:---|:---|:---:|:---|
-| **`EXCEPT`** | Comparing entire multi-column row tuples across two queries. | **Yes** (Treats `NULL` as equal to `NULL`). | Evaluates full result sets (often requires sorting/hashing). |
-| **`NOT EXISTS`** | Correlated subqueries filtering a table by foreign key. | **Yes** (Evaluates boolean truth of existence). | **Optimal**: Query planner utilizes index seeks and anti-joins. |
-| **`NOT IN`** | Small static lists of non-null scalars (`WHERE id NOT IN (1, 2, 3)`). | ⚠️ **NO!** (Returns empty set if subquery contains **any** `NULL`). | Can devolve into full table scans. |
+* **`UNION ALL` (Pure Bag Concatenation):** Performs pure mathematical multiset addition. It never inspects duplicate rows and does not sort. If Table 1 contains $3 \times A$ and Table 2 contains $2 \times A$, `UNION ALL` returns:
+  $$3 + 2 = 5 \times A$$
+* **`UNION` (Set Distinct):** Applies an implicit `DISTINCT` operation across the combined dataset. It sorts or hashes the records, collapsing all identical entries into exactly one representative row:
+  $$\text{Table 1: } (A, A, A) \quad \cup \quad \text{Table 2: } (A, A) \implies \text{Result: } (A)$$
 
-::: {.callout-caution}
-### The Infamous Three-Valued Logic Trap of `NOT IN`
-In SQL's ternary logic (`TRUE`, `FALSE`, `UNKNOWN`), if a subquery produces a single `NULL`:
+| Input Table 1 | Input Table 2 | `UNION ALL` Output | `UNION` Output |
+|:---:|:---:|:---:|:---:|
+| $A, A, A$ (3 rows) | $A, A$ (2 rows) | **$A, A, A, A, A$ (5 rows)** | **$A$ (1 row)** |
+
+---
+
+### 5. Multi-Column `GROUP BY` & `NULL` Grouping Semantics
+
+#### A. How `GROUP BY` Treats `NULL` Values
+In SQL's grouping engine, **all `NULL` values are treated as belonging to a single group**. If multiple rows contain `NULL` in the grouped column, they are aggregated into one single summary row in the output.
+
+#### B. Usages of `GROUP BY` Across Multiple Columns
+When multiple columns are specified (`GROUP BY col1, col2`), the engine creates a separate bucket for every unique combination of values across those columns:
+
+1. **Hierarchical Reporting:** Aggregating metrics across multiple levels of granularity:
+   ```sql
+   SELECT department_id, job_title, COUNT(*) AS headcount, AVG(salary) AS avg_sal
+   FROM employees
+   GROUP BY department_id, job_title;
+   ```
+2. **Composite Key Tracking:** Grouping on entities uniquely identified by compound keys (e.g., `store_id, product_id`).
+3. **Time-Series Matrices:** Tracking user activity by geographic origin and registration date (`country, signup_date`).
+
+---
+
+### 6. The Three Universal LeetCode Replacements for `EXCEPT`
+
+On platforms like LeetCode, running queries in older MySQL environments (or solving problems requiring multiset tracking) often forbids or errors on `EXCEPT`. The three universally accepted production replacements are:
+
+#### 1. The `NOT IN` Pattern (Best for Simple Single-Column Exclusion)
 ```sql
-SELECT employee_id FROM employees
-WHERE department_id NOT IN (SELECT department_id FROM departments);
+SELECT customer_id 
+FROM Customers 
+WHERE customer_id NOT IN (
+    SELECT customer_id 
+    FROM Orders 
+    WHERE customer_id IS NOT NULL  -- Crucial safeguard!
+);
 ```
-If `departments` has even one row with `department_id IS NULL`, the condition `department_id NOT IN (...)` evaluates to `UNKNOWN` for every single row. **The entire query returns zero records!** Always prefer `NOT EXISTS` or ensure `WHERE department_id IS NOT NULL` in the subquery.
-:::
+
+#### 2. The `LEFT JOIN ... WHERE right.id IS NULL` Pattern (Fastest for Composite Keys)
+```sql
+SELECT c.customer_id 
+FROM Customers c
+LEFT JOIN Orders o ON c.customer_id = o.customer_id
+WHERE o.customer_id IS NULL;
+```
+
+#### 3. The `NOT EXISTS` Pattern (Safest and Most Robust)
+```sql
+SELECT c.customer_id 
+FROM Customers c
+WHERE NOT EXISTS (
+    SELECT 1 
+    FROM Orders o 
+    WHERE o.customer_id = c.customer_id
+);
+```
 
 ---
 
@@ -808,15 +1053,167 @@ ORDER BY project_id;
 
 ---
 
-## 14. The Grand Cross-Engine Rosetta Stone
+## 14. Three-Valued Logic, `NULL` Mechanics & The Complete Negation Catalog
+
+In relational algebra and ANSI SQL, `NULL` does not signify `0`, `FALSE`, or an empty string `""`. It represents an **unknown or absent value**.
+
+Because `NULL` signifies missing information, it cannot be verified as equal or unequal to any other value. This architectural foundation is known as **Three-Valued Logic (3VL)**, where logical statements evaluate to `TRUE`, `FALSE`, or `UNKNOWN`.
+
+### 1. The Evaluation Matrices of Three-Valued Logic
+
+* **Comparison Operators (`=, !=, <, >, <=, >=`):**
+  Any direct comparison against `NULL` evaluates to `UNKNOWN`:
+  * $5 = \text{NULL} \longrightarrow \text{UNKNOWN}$
+  * $5 \ne \text{NULL} \longrightarrow \text{UNKNOWN}$
+  * $\text{NULL} = \text{NULL} \longrightarrow \text{UNKNOWN}$ *(Two unknown values cannot be proven equal!)*
+  * *Fix:* Use `IS NULL` and `IS NOT NULL`.
+
+* **Logical Truth Tables:**
+
+| $A$ | $B$ | $A \text{ \bf AND } B$ | $A \text{ \bf OR } B$ | $\text{\bf NOT } A$ |
+|:---:|:---:|:---:|:---:|:---:|
+| `TRUE` | `UNKNOWN` | `UNKNOWN` | **`TRUE`** | `FALSE` |
+| `FALSE` | `UNKNOWN` | **`FALSE`** | `UNKNOWN` | `TRUE` |
+| `UNKNOWN` | `UNKNOWN` | `UNKNOWN` | `UNKNOWN` | **`UNKNOWN`** |
+
+* **Arithmetic on NULL:** Any arithmetic operation on `NULL` collapses to `NULL` ($10 + \text{NULL} = \text{NULL}$). Use `COALESCE(column, 0)` to provide safe numeric defaults.
+
+---
+
+### 2. Under the Hood: Why `NOT EXISTS` Succeeds where `NOT IN` Fails
+
+Consider the query designed to find employees who are not managers:
+
+```sql
+SELECT e.employee_id, e.employee_name
+FROM employees e
+WHERE NOT EXISTS (
+    SELECT 1 
+    FROM employees m 
+    WHERE m.manager_id = e.employee_id
+);
+```
+
+#### Step-by-Step Engine Execution:
+1. **Outer Row-by-Row Scan:** The engine iterates through the outer table (`FROM employees e`). For each candidate row, it passes `e.employee_id` into the correlated subquery.
+2. **Subquery Evaluation:** The subquery checks: *Does any row exist in `m` where `m.manager_id = e.employee_id`?*
+   * *`SELECT 1` Explained:* The engine does not instantiate table columns; `SELECT 1` is an industry-standard dummy constant that emits a lightweight signal indicating row presence.
+3. **Evaluating Scenario A (Subquery Hits a NULL):**
+   * Suppose outer employee Alice has `id = 5`.
+   * The subquery scans a row where `manager_id IS NULL`. It evaluates `NULL = 5`, which yields `UNKNOWN`.
+   * Under SQL semantics, an `UNKNOWN` filter condition is discarded (not true). The subquery does not return that row.
+   * If no rows match, the subquery returns **0 rows**. `NOT EXISTS` evaluates to `TRUE`, and Alice is safely returned in the output!
+4. **Contrast with `NOT IN`:**
+   * `NOT IN` evaluates as an expanded `AND` chain:
+     $$\text{Alice.id } \ne 1 \quad \text{\bf AND} \quad \text{Alice.id } \ne 2 \quad \text{\bf AND} \quad \text{Alice.id } \ne \text{NULL}$$
+   * Because $5 \ne \text{NULL}$ evaluates to `UNKNOWN`, the entire `AND` chain collapses to `UNKNOWN`. Alice is filtered out! A single `NULL` destroys the entire query!
+
+---
+
+### 3. The Complete Catalog of 10 Negation Operators in SQL
+
+| # | Negation Type | Syntax Example | Behavioral Mechanics |
+|:---:|:---|:---|:---|
+| **1** | **General Logical** | `WHERE NOT (status = 'active' AND age > 21)` | Inverts compound boolean expressions. |
+| **2** | **Inequality** | `WHERE status != 'active'` or `WHERE status <> 'active'` | Returns true only if status holds a known, non-equal value. |
+| **3** | **Set Membership** | `WHERE dept_id NOT IN (1, 2, 3)` | True if value matches no items in list. (Fails if list has `NULL`). |
+| **4** | **Subquery Existence** | `WHERE NOT EXISTS (SELECT 1 FROM ...)` | True if subquery returns zero rows. (Completely null-safe). |
+| **5** | **Range Negation** | `WHERE salary NOT BETWEEN 50000 AND 80000` | Excludes closed interval $[50000, 80000]$. |
+| **6** | **Null Value Negation** | `WHERE email IS NOT NULL` | Filters out missing records. (`!= NULL` is invalid). |
+| **7** | **Wildcard Pattern** | `WHERE email NOT LIKE '%@test.com'` | Excludes matching string pattern (`NOT ILIKE` for case-insensitive). |
+| **8** | **Regular Expression** | `WHERE phone !~ '^[0-9]{3}-[0-9]{3}$'` | PostgreSQL regex negation (`!~*` for case-insensitive). |
+| **9** | **Boolean States** | `WHERE is_verified IS NOT TRUE` | Returns rows where column is `FALSE` **or** `NULL`. |
+| **10**| **Null-Safe Distinctness**| `WHERE col_a IS DISTINCT FROM col_b` | Treats `NULL` as a normal comparable value. (`NULL` distinct from 5 is `TRUE`). |
+
+---
+
+## 15. The Object-Relational Impedance Mismatch in Databases, PL, and ETL
+
+### 1. The Electrical Engineering Origin of "Impedance"
+In electrical engineering, **electrical impedance ($Z$)** represents the total opposition that an electrical circuit presents to alternating current (AC) at a given frequency:
+
+$$Z = R + jX$$
+
+* **Resistance ($R$ - Real Part):** Opposition that dissipates electrical energy as heat. Constant across both DC and AC.
+* **Reactance ($X$ - Imaginary Part):** Opposition caused by dynamic energy storage elements:
+  * **Inductive Reactance ($X_L = 2\pi f L$):** Opposition from inductors (coils), which increases with frequency ($f$) as magnetic fields oppose current changes.
+  * **Capacitive Reactance ($X_C = \frac{1}{2\pi f C}$):** Opposition from capacitors, which decreases with frequency as charge cycles rapidly across plates.
+* **Total Magnitude & Phase Angle:**
+  $$|Z| = \sqrt{R^2 + (X_L - X_C)^2}, \quad \theta = \tan^{-1}\left(\frac{X_L - X_C}{R}\right)$$
+
+When two electrical circuits have mismatched impedances, electrical energy is reflected backward rather than transferred efficiently, creating signal distortion and power loss.
+
+---
+
+### 2. The Computer Science Metaphor: OOP vs. RDBMS Friction
+
+In software engineering, **Object-Relational Impedance Mismatch** refers to the conceptual, structural, and technical friction encountered when bridging **Object-Oriented Programming (OOP)** languages with **Relational Database Management Systems (RDBMS)**.
+
+```
+[ Object-Oriented Application Layer ]  --> (Objects: State, Behavior, Pointer Graphs)
+                 |
+                 |  <-- Bridge Layer: ORM (Hibernate, EF Core, Prisma) / Active Record
+                 v
+[ Relational Database Management (RDBMS) ] --> (Tables, Mathematical Relations, Tuples)
+                 |
+                 |  <-- Data Processing: ETL Engines (dbt, Apache Spark, Airflow)
+                 v
+[ Analytical Data Warehouse (OLAP) ]   --> (Star Schemas, Facts, Columnar Parquet)
+```
+
+#### The Five Core Dimensions of Mismatch:
+
+1. **Granularity Mismatch:**
+   * *OOP:* Objects are composed of fine-grained, domain-rich classes (e.g., a `User` class containing an embedded `Address` value object containing a `PostalCode` object).
+   * *RDBMS:* Databases either flatten these into a single wide table or split them into multiple foreign-key tables requiring joins.
+2. **Subtypes & Inheritance Mismatch:**
+   * *OOP:* Inheritance is fundamental (`CheckingAccount` extends `Account`).
+   * *RDBMS:* Relational theory has no native concept of inheritance, forcing awkward mapping strategies:
+     * *Single Table Inheritance:* One giant table with a discriminator column and dozens of nullable attributes.
+     * *Joined / Class Table Inheritance:* Separate tables joined on primary keys.
+     * *Concrete Table Inheritance:* Redundant schemas for each leaf class.
+3. **Identity Mismatch:**
+   * *OOP:* Identity is defined by memory address or pointer reference (`obj_a == obj_b`).
+   * *RDBMS:* Identity is defined strictly by primary keys and attribute uniqueness constraints.
+4. **Associations & Traversal Mismatch:**
+   * *OOP:* Associations are memory pointers or object references, naturally forming directed graphs. They are traversed via method chains (`user.getOrders().getItems()`).
+   * *RDBMS:* Associations are scalar foreign keys. Traversing relationships requires declarative `JOIN` operations across sets of tuples.
+5. **Data Navigation Mismatch:**
+   * *OOP:* Imperative, item-by-item pointer traversal.
+   * *RDBMS:* Declarative set theory (`SELECT ... WHERE`), returning bulk collections rather than single object references.
+
+---
+
+### 3. Mitigating the Mismatch: Programming Languages (PL) vs. ETL
+
+#### A. The Programming Language (PL) Layer: ORMs & The $N+1$ Trap
+To eliminate boilerplate SQL, modern programming languages utilize **Object-Relational Mappers (ORMs)** (such as Hibernate in Java, Entity Framework Core in C#, and Prisma in TypeScript):
+* **The Trade-Off:** ORMs abstract relational tables into domain objects, but they obscure the underlying query costs.
+* **The Infamous $N+1$ Query Problem:**
+  Fetching a list of 100 users (`1` query) and then accessing each user's orders inside an application loop triggers `100` additional individual SQL queries:
+  $$\text{Total Queries} = 1 + N = 101 \text{ roundtrips!}$$
+  *The Solution:* Eager loading via `JOIN FETCH` (Hibernate) or `.Include()` (Entity Framework).
+
+#### B. The ETL Layer: OLTP to OLAP Transformation
+In data engineering, impedance mismatch shifts from an Object-vs-Table conflict into a **Transactional (OLTP) vs. Analytical (OLAP)** structural divide:
+* **Extract:** Ingestion from normalized 3NF relational databases designed for high-concurrency ACID writes.
+* **Transform:** Reconciling conflicting schemas, joining fragmented entity tables, and denormalizing data structures.
+* **Load:** Storing into columnar data warehouses (Snowflake, BigQuery, ClickHouse) structured as **Star Schemas** (Fact and Dimension tables) or columnar **Parquet** files optimized for scan-heavy aggregation queries.
+
+---
+
+## 16. The Grand Cross-Engine Rosetta Stone
 
 | Feature | PostgreSQL | MySQL (8.0+) | SQL Server (T-SQL) | Oracle (19c+) | SQLite (3.25+) |
 |:---|:---|:---|:---|:---|:---|
 | **Limit / Paging** | `LIMIT n OFFSET m` | `LIMIT m, n` | `OFFSET m ROWS FETCH NEXT n ROWS ONLY` | `OFFSET m ROWS FETCH NEXT n ROWS ONLY` | `LIMIT n OFFSET m` |
 | **String Concat** | `a \|\| b` or `CONCAT()` | `CONCAT(a, b)` | `a + b` or `CONCAT()` | `a \|\| b` or `CONCAT()` | `a \|\| b` |
+| **Concat with Sep**| `CONCAT_WS(',', a, b)` | `CONCAT_WS(',', a, b)` | `CONCAT_WS(',', a, b)` | Custom function | Custom function |
 | **Group String Agg** | `STRING_AGG(x, ',')` | `GROUP_CONCAT(x)` | `STRING_AGG(x, ',')` | `LISTAGG(x, ',')` | `GROUP_CONCAT(x, ',')` |
 | **Array Unnest** | `UNNEST(arr)` | `JSON_TABLE()` | `OPENJSON()` / `STRING_SPLIT()` | `JSON_TABLE()` / `TABLE()` | `json_each()` |
 | **Set Difference** | `EXCEPT` / `EXCEPT ALL` | `EXCEPT` (8.0.31+) | `EXCEPT` | `MINUS` | `EXCEPT` / `EXCEPT ALL` |
+| **Multi-Col Join** | `USING (c1, c2)` or `ON` | `USING (c1, c2)` or `ON` | `ON` (no `USING`) | `USING (c1, c2)` or `ON` | `USING (c1, c2)` or `ON` |
+| **Null-Safe Equal**| `IS NOT DISTINCT FROM` | `<=>` | `IS NOT DISTINCT FROM` (2022+) | `DECODE(a, b, 1, 0) = 1` | `IS` |
 | **Recursive CTE** | `WITH RECURSIVE` | `WITH RECURSIVE` | `WITH` (no keyword) | `WITH` or `CONNECT BY` | `WITH RECURSIVE` |
 | **Bitwise XOR** | `#` | `^` | `^` | Custom / UDF | `^` |
 | **ASCII to Char** | `CHR(n)` | `CHAR(n)` | `CHAR(n)` | `CHR(n)` | `CHAR(n)` |
@@ -826,13 +1223,15 @@ ORDER BY project_id;
 
 ---
 
-## 15. References & Official Documentation
+## 17. References & Official Documentation
 
-1. **PostgreSQL Global Development Group.** *PostgreSQL 16 Documentation: Window Functions & Array Functions* (2024).
+1. **PostgreSQL Global Development Group.** *PostgreSQL 16 Documentation: Window Functions, Array Functions, and Set Operations* (2024).
 2. **Oracle Corporation.** *MySQL 8.0 Reference Manual: Window Function Concepts and Syntax* (2024).
 3. **Microsoft Learn.** *Transact-SQL (T-SQL) Reference: DENSE_RANK, STRING_AGG, EXCEPT, and CTEs* (2024).
 4. **Oracle Corporation.** *Database SQL Language Reference: Analytic Functions, Hierarchical Queries, and Set Operators* (2024).
 5. **SQLite Consortium.** *Window Functions, Set Operations, and JSON1 Extension Specifications* (2024).
 6. **Celko, Joe.** *SQL for Smarties: Advanced SQL Programming* (5th ed., Morgan Kaufmann, 2014).
-7. **Stewart, James.** *Calculus: Early Transcendentals* (8th ed., Cengage Learning). Chapters on discrete partitions and numerical series, underpinning how database query planners compute bounded intervals and Riemann-partition window frames.
+7. **Fowler, Martin.** *Patterns of Enterprise Application Architecture* (Addison-Wesley, 2002). Classical treatment of Object-Relational Impedance Mismatch, identity maps, and inheritance mapping.
+8. **Stewart, James.** *Calculus: Early Transcendentals* (8th ed., Cengage Learning). Chapters on discrete partitions and numerical series, underpinning how database query planners compute bounded intervals and Riemann-partition window frames.
+
 
