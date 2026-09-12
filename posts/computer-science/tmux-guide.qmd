@@ -1,21 +1,48 @@
 ---
-title: "The Complete Tmux Guide: From Essentials to Reboot Persistence"
-description: "Master terminal multiplexing: session management, multi-pane workflows, batch session killing, and surviving system reboots with tmux-resurrect and tmux-continuum."
+title: "The Complete Terminal Multiplexer Guide: Tmux and Zellij"
+subtitle: "Mastering session persistence, multi-pane workflows, OSC 52 remote clipboard over SSH, automated reboots, and modern Rust-based multiplexing with Zellij."
+author: "Igor Kan"
 date: "2026-07-21"
-categories: [Linux, CLI, Productivity, DevOps]
-draft: true
+categories: ["Linux", "CLI", "Productivity", "DevOps", "Tmux", "Zellij", "Rust"]
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
 ---
+
+## 1. Introduction: Why Terminal Multiplexing is Mandatory
 
 If you spend significant time in the Linux terminal, managing multiple SSH connections, background jobs, and split terminal windows can quickly become chaotic. Network drops during remote SSH sessions can terminate running scripts, wasting hours of work.
 
-[Tmux](https://github.com/tmux/tmux) (Terminal Multiplexer) solves these issues by decoupling terminal sessions from your physical terminal emulator. It lets you run multiple terminal sessions inside a single window, split screens into custom panes, detach long-running tasks, and persist full dev environments across system reboots.
+A **terminal multiplexer** decouples your running shell processes from the physical terminal emulator:
+1. **Session Persistence:** Disconnecting from SSH or closing your terminal window does not kill running processes. You can reconnect from another computer hours later and resume exactly where you left off.
+2. **Spatial Management:** Split a single terminal window into multiple rectangular panes and independent tabs (windows).
+3. **Remote Clipboard Synchronization:** Bridge the gap between remote headless servers and your local laptop's operating system clipboard via ANSI **OSC 52** escape sequences.
+
+Historically, **Tmux** has been the undisputed standard across the Unix landscape. In recent years, **Zellij**—a modern, Rust-based terminal multiplexer featuring a discoverable user interface, floating panes, and native WebAssembly plugins—has emerged as a powerful contender.
+
+This comprehensive guide covers both: from mastering Tmux's prefix architecture and automated session resurrection to configuring Zellij's modal layouts and seamless cross-network clipboard workflows.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    Terminal Multiplexer Architecture                        │
+├──────────────────────┬──────────────────────────────────────────────────────┤
+│ 1. Tmux (C / POSIX)  │ • Client-server daemon with 4-tier hierarchy         │
+│                      │ • Controlled via a global Prefix key (Ctrl+b)        │
+│                      │ • Ultra-low resource footprint; universally available│
+├──────────────────────┼──────────────────────────────────────────────────────┤
+│ 2. Zellij (Rust)     │ • Modern, discoverable UI with context-aware hints   │
+│                      │ • Modal architecture (Locked, Pane, Tab, Resize)     │
+│                      │ • Out-of-the-box OSC 52 clipboard & floating panes   │
+└──────────────────────┴──────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 1. Core Architecture of Tmux
+## 2. Core Architecture of Tmux
 
 Tmux operates on a 4-tier hierarchy:
-
 1. **Server:** The background daemon managing all tmux activity. Runs as long as at least one session exists (or until explicitly killed).
 2. **Sessions:** Isolated workspace containers. Each session runs independently and remains active even if you disconnect from SSH or close your terminal.
 3. **Windows:** Visual tabs within a session, each occupying the full display area.
@@ -38,18 +65,16 @@ Tmux operates on a 4-tier hierarchy:
 
 ---
 
-## 2. Getting Started: Commands & The Prefix Key
+## 3. Getting Started with Tmux: Commands & The Prefix Key
 
 ### The Prefix Key
-
 Once inside a tmux session, standard keyboard shortcuts are intercepted by your active shell unless preceded by the **Prefix key**. By default:
 
 $$\text{Prefix} = \text{Ctrl} + \text{b} \quad (\text{written as } \text{C-b})$$
 
-To execute a command, press `Ctrl + b`, release both keys, then press the desired key command.
+To execute a command, press `Ctrl + b`, release both keys, then press the desired command key.
 
 ### Essential Command Line Operations
-
 Execute these commands from your standard system shell:
 
 ```bash
@@ -74,10 +99,9 @@ tmux attach -t dev
 
 ---
 
-## 3. Windows and Panes Management
+## 4. Windows and Panes Management
 
 ### Window (Tab) Controls
-
 * **`Prefix` + `c`**: Create a new window.
 * **`Prefix` + `,`**: Rename current window.
 * **`Prefix` + `n`**: Switch to Next window.
@@ -87,7 +111,6 @@ tmux attach -t dev
 * **`Prefix` + `&`**: Kill current window.
 
 ### Pane Split Controls
-
 * **`Prefix` + `%`**: Split pane vertically (Left / Right).
 * **`Prefix` + `"`**: Split pane horizontally (Top / Bottom).
 * **`Prefix` + `Arrow Keys`**: Move cursor between adjacent panes.
@@ -96,205 +119,92 @@ tmux attach -t dev
 * **`Prefix` + `x`**: Kill active pane.
 * **`Prefix` + `{` or `}`**: Swap active pane left or right.
 
-### Copy & Scroll Mode
+---
 
-To scroll up or copy text using keyboard navigation:
+## 5. Remote SSH Clipboard Integration via OSC 52 in Tmux
+
+One of the most common friction points in cloud engineering occurs when you run Tmux on a remote server over SSH:
+* When you select and copy text in Tmux copy-mode, it saves into Tmux's internal buffer, but **fails to reach your local laptop's operating system clipboard**.
+* Forwarding X11 (`ssh -X`) is laggy, insecure, and requires a local X server.
+
+The modern industry standard solution is **ANSI OSC 52 (Operating System Command 52)**.
+
+### 5.1 Configuring Tmux for OSC 52 Passthrough
+Add the following configuration to `~/.tmux.conf` on the remote server:
+
+```ini
+# Enable OSC 52 clipboard passthrough
+set -s set-clipboard on
+
+# Ensure terminal features advertise clipboard capabilities to host
+set -as terminal-features ',xterm-256color:clipboard'
+
+# Enable vi-style keybindings in copy mode
+set-window-option -g mode-keys vi
+
+# Configure 'v' to begin selection and 'y' to yank directly to system clipboard
+bind -T copy-mode-vi v send-keys -X begin-selection
+bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel
+```
+
+### 5.2 Copying via Tmux Copy-Mode
 1. Press **`Prefix` + `[`** to enter copy mode.
-2. Use arrow keys, `PageUp`/`PageDown`, or Vi motion keys (`k`, `j`, `g`, `G`) to navigate history.
-3. Press `Space` to start selection, `Enter` to copy to tmux buffer, and `q` to exit copy mode.
-4. Press **`Prefix` + `]`** to paste the copied buffer.
+2. Navigate using Vi motion keys (`h`, `j`, `k`, `l`, `Ctrl+u`, `Ctrl+d`, `g`, `G`).
+3. Press **`v`** to begin text selection.
+4. Press **`y`** to yank. Tmux encodes the selection into Base64 and transmits it via an OSC 52 escape sequence directly across the SSH tunnel to your local terminal emulator (Kitty, Alacritty, iTerm2, Windows Terminal), landing immediately on your local clipboard!
+
+### 5.3 CLI Pipelining via the `osc-copy` Script
+To copy an entire file or command output directly to your local clipboard while inside an SSH Tmux session, create `~/bin/osc-copy`:
+
+```bash
+#!/usr/bin/env bash
+# Encodes stdin to Base64 and wraps in an OSC 52 escape sequence
+printf "\033]52;c;$(base64 | tr -d '\r\n')\007"
+```
+
+Usage inside your remote shell:
+```bash
+# Copy entire file to local device clipboard
+cat config.yaml | osc-copy
+
+# Copy command output directly
+git log -n 5 --oneline | osc-copy
+```
 
 ---
 
-## 4. How to Kill Multiple Sessions at Once (Batch Termination)
+## 6. Batch Session Termination & Pane Synchronization
 
-As your workflow expands, orphan or unused tmux sessions accumulate. Tmux provides several built-in commands and CLI tricks to kill multiple sessions at once.
+### 6.1 Batch Session Killing
+As development workflows expand, orphan sessions accumulate:
 
-> [!IMPORTANT]
-> Choose the method based on whether you want to wipe everything, target specific session names, keep your active session, or select sessions interactively.
-
-### Method 1: Kill ALL Sessions at Once (Server Wipe)
-To instantly destroy **all** running tmux sessions and stop the tmux server process:
 ```bash
+# Method 1: Kill ALL sessions and shut down tmux server
 tmux kill-server
-```
 
-### Method 2: Kill All Sessions EXCEPT the Active Session
-If you are inside a tmux session and want to clear out all other background sessions without losing your current workspace:
-
-```bash
-# Run from INSIDE your active tmux session:
+# Method 2: Kill all sessions EXCEPT the currently active one
 tmux kill-session -a
 
-# Run from OUTSIDE tmux (specify the session name to keep):
-tmux kill-session -a -t keep_this_session
-```
-
-### Method 3: Batch Kill Sessions Matching a Name Pattern (CLI One-Liners)
-
-If you have multiple sessions with matching names (e.g. `test-1`, `test-2`, `dev-api`), use shell pipelines to filter and kill them in bulk:
-
-```bash
-# Kill all sessions starting with "test"
+# Method 3: Kill all sessions matching a specific prefix (e.g., test-*)
 tmux ls | awk -F: '/^test/ {print $1}' | xargs -n 1 tmux kill-session -t
-
-# Kill all sessions containing "dev-"
-tmux ls | grep 'dev-' | cut -d: -f1 | xargs -I {} tmux kill-session -t {}
-
-# Batch kill using a Bash loop with wildcards
-for session in $(tmux ls | cut -d: -f1); do
-    if [[ $session == temp_* ]]; then
-        tmux kill-session -t "$session"
-    fi
-done
 ```
 
-### Method 4: Interactive Multi-Select Session Killing (Choose-Tree & Tagging)
-
-Tmux has a built-in interactive tree manager (`choose-tree`) that supports **multi-selecting (tagging)** sessions to kill them in batch:
-
-#### Step-by-step Multi-Selection:
-
-1. Press **`Prefix` + `s`** (or **`Prefix` + `w`**) to open the session tree view.
-2. Use **`j` / `k`** or **Up / Down Arrow keys** to navigate and highlight sessions.
-3. Press **`t`** on each session you want to select. A **`*` tag marker** will appear next to every tagged session.
-4. Once you have tagged all sessions to be removed, press **`X`** (Shift + X).
-5. Confirm deletion if prompted. All tagged sessions will be killed simultaneously!
-
-> [!TIP]
-> **Tree View Multi-Selection Shortcuts:**
-> * **`t`**: Tag / Untag current highlighted session.
-> * **`Ctrl-t`**: Tag ALL sessions in the list.
-> * **`T`**: Clear/remove all tags.
-> * **`x`**: Kill only the single highlighted session under cursor.
-> * **`X`**: Kill **ALL tagged sessions** at once.
+### 6.2 Pane Synchronization (Broadcast Editing)
+Broadcast identical keystrokes to all panes in the current window simultaneously:
+* **Enable:** `Prefix` + `:`, then `setw synchronize-panes on`
+* **Disable:** `Prefix` + `:`, then `setw synchronize-panes off`
+* **Toggle Shortcut in `~/.tmux.conf`:**
+  ```ini
+  bind y set-window-option synchronize-panes\; display-message "Synchronize panes: #{?synchronize-panes,on,off}"
+  ```
 
 ---
 
-### Method 5: Interactive Multi-Select Killing with FZF (`fzf -m`)
+## 7. Surviving Reboots: `tmux-resurrect` & `tmux-continuum`
 
-If you use [FZF (Fuzzy Finder)](https://github.com/junegunn/fzf), you can interactively search, check/highlight multiple sessions using `Tab`, and kill them all at once:
+By default, rebooting your machine destroys all tmux sessions. By leveraging the **Tmux Plugin Manager (TPM)**, you can persist session state across system power cycles.
 
-```bash
-# Multi-select sessions using FZF and kill selected sessions
-tmux ls | fzf -m --prompt="Select sessions to kill: " | cut -d: -f1 | xargs -I {} tmux kill-session -t {}
-```
-
-* Use **`Tab`** or **`Shift + Tab`** in FZF to check/select multiple sessions.
-* Press **`Enter`** to execute and kill all checked sessions in one go.
-
----
-
-## 5. Batch Editing & Synchronizing Multiple Terminals
-
-Tmux allows you to perform **batch editing**—executing the same keystrokes or commands across multiple terminal panes or sessions simultaneously.
-
-### Method 1: Pane Synchronization (Batch Editing Panes in Real-Time)
-
-When pane synchronization is enabled, every keypress, command, or edit you type in one pane is **broadcast to all panes** in the current window at the same time. This is invaluable when configuring multiple servers via SSH or running identical commands across environments.
-
-```
-+---------------------------+---------------------------+
-| Pane 1 (Server 1)         | Pane 2 (Server 2)         |
-| $ sudo apt update         | $ sudo apt update         |
-+---------------------------+---------------------------+
-| Pane 3 (Server 3)         | Pane 4 (Server 4)         |
-| $ sudo apt update         | $ sudo apt update         |
-+---------------------------+---------------------------+
-  ^ Keystrokes are broadcast to ALL 4 panes simultaneously!
-```
-
-#### How to Enable Pane Synchronization:
-1. Press **`Prefix` + `:`** to enter tmux command mode.
-2. Type `setw synchronize-panes on` and press `Enter`.
-3. Type your commands or perform edits—they will appear in **all** panes simultaneously.
-
-#### How to Disable Pane Synchronization:
-1. Press **`Prefix` + `:`**.
-2. Type `setw synchronize-panes off` and press `Enter`.
-
-#### Add a Toggle Shortcut to `~/.tmux.conf`:
-```ini
-# Toggle pane synchronization with Prefix + y
-bind y set-window-option synchronize-panes\; display-message "Synchronize panes: #{?synchronize-panes,on,off}"
-```
-
----
-
-### Method 2: Batch Command Execution Across Sessions (`tmux send-keys`)
-
-If you want to send a command or script to multiple running sessions in the background without manually attaching to each one:
-
-```bash
-# Send a command to a single target session in the background
-tmux send-keys -t dev_session "git pull && npm run build" C-m
-
-# Batch send a command to ALL active tmux sessions using a shell loop
-for session in $(tmux ls | cut -d: -f1); do
-    tmux send-keys -t "$session" "echo 'System update scheduled'" C-m
-done
-```
-
-*(Note: `C-m` simulates pressing the `Enter` key to execute the sent command).*
-
----
-
-## 6. Modern Configuration (`~/.tmux.conf`)
-
-Enhance usability by editing `~/.tmux.conf`:
-
-```ini
-# Enable full mouse support (click, resize, scroll)
-set -g mouse on
-
-# Set prefix to Ctrl+a (easier reach than Ctrl+b)
-unbind C-b
-set-option -g prefix C-a
-bind-option C-a send-prefix
-
-# Start window and pane indexing at 1 (instead of 0)
-set -g base-index 1
-setw -g pane-base-index 1
-
-# Intuitive split keybindings
-bind | split-window -h -c "#{pane_current_path}"
-bind - split-window -v -c "#{pane_current_path}"
-unbind '"'
-unbind %
-
-# Reload config easily
-bind r source-file ~/.tmux.conf \; display "Config Reloaded!"
-
-# True color support & status bar styling
-set -g default-terminal "screen-256color"
-set -g status-bg "#1e1e2e"
-set -g status-fg "#cdd6f4"
-```
-
-Reload configuration active sessions:
-```bash
-tmux source-file ~/.tmux.conf
-```
-
----
-
-## 6. Persisting Tmux Sessions Across Reboots
-
-By default, tmux sessions live in system memory. Reboots or server restarts destroy all running sessions. 
-
-Using **TPM (Tmux Plugin Manager)** with **`tmux-resurrect`** and **`tmux-continuum`**, you can automatically save and restore full session layouts, pane paths, terminal history, and active processes across reboot cycles.
-
-### Step 1: Install Tmux Plugin Manager (TPM)
-
-Clone TPM into your home directory:
-```bash
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-```
-
-### Step 2: Configure `~/.tmux.conf` for Persistence
-
-Add the following plugin setup to the bottom of `~/.tmux.conf`:
-
+### Configuration (`~/.tmux.conf`)
 ```ini
 # List of plugins
 set -g @plugin 'tmux-plugins/tpm'
@@ -302,83 +212,111 @@ set -g @plugin 'tmux-plugins/tmux-sensible'
 set -g @plugin 'tmux-plugins/tmux-resurrect'
 set -g @plugin 'tmux-plugins/tmux-continuum'
 
-# Restore pane contents & shell commands
+# Capture pane contents and restore active running processes
 set -g @resurrect-capture-pane-contents 'on'
 set -g @resurrect-processes 'vi vim nvim emacs man htop top ssh'
 
-# Enable automatic session restore on tmux server boot
+# Enable automatic continuous saving and boot restore
 set -g @continuum-restore 'on'
-set -g @continuum-save-interval '15' # Auto-save every 15 minutes
+set -g @continuum-save-interval '15'
 
-# Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)
+# Initialize TMUX plugin manager (keep at bottom of file)
 run '~/.tmux/plugins/tpm/tpm'
 ```
 
-### Step 3: Install Plugins inside Tmux
+* **Manual Save:** `Prefix` + `Ctrl + s`
+* **Manual Restore:** `Prefix` + `Ctrl + r`
 
-1. Open a tmux session or reload configuration: `tmux source-file ~/.tmux.conf`
-2. Press **`Prefix` + `I`** (capital `I`).
-3. TPM will download and install `tmux-resurrect` and `tmux-continuum`.
+---
 
-### Step 4: Manual vs. Automatic Persistence
+## 8. The Modern Alternative: Zellij (Rust-Based Multiplexer)
 
-* **Manual Save**: Press **`Prefix` + `Ctrl-s`** (`C-s`) to manually freeze current session state.
-* **Manual Restore**: Press **`Prefix` + `Ctrl-r`** (`C-r`) to restore saved session state.
-* **Automatic Save/Restore**: `tmux-continuum` automatically writes session metadata every 15 minutes and restores them automatically whenever the tmux server launches after a system reboot.
+[Zellij](https://zellij.dev/) is a modern terminal workspace written in Rust. It was designed from the ground up to eliminate the steep learning curve and prefix-key friction of Tmux.
 
-### Step 5: Auto-Starting Tmux on System Boot
-
-To guarantee tmux starts automatically upon system reboot (without waiting for manual login):
-
-#### Method A: Systemd User Service (Linux)
-
-Create `~/.config/systemd/user/tmux.service`:
-```ini
-[Unit]
-Description=Tmux Server Session Persistence
-After=network.target
-
-[Service]
-Type=forking
-ExecStart=/usr/bin/tmux new-session -s default -d
-ExecStop=/usr/bin/tmux kill-server
-Restart=on-failure
-
-[Install]
-WantedBy=default.target
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          The Zellij Interface                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ [Tab 1: Code] [Tab 2: Server] [+]                                           │
+│                                                                             │
+│  ┌──────────────────────────────┬────────────────────────────────────────┐  │
+│  │                              │                                        │  │
+│  │  $ nvim src/main.rs          │  $ cargo watch -x run                  │  │
+│  │                              │                                        │  │
+│  └──────────────────────────────┴────────────────────────────────────────┘  │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ HELP: Ctrl-p: Pane | Ctrl-t: Tab | Ctrl-n: Resize | Ctrl-s: Scroll | Ctrl-q │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Enable and start the service:
-```bash
-systemctl --user enable tmux
-systemctl --user start tmux
+### 8.1 Why Developers Gravitate Toward Zellij
+1. **Discoverable User Interface:** Zellij includes an interactive, context-sensitive status bar at the bottom. As you switch modes, the screen immediately displays all available keybindings, making memorization unnecessary for beginners.
+2. **Modal Input Architecture:** Rather than routing every single command through an awkward prefix key (`Ctrl + b`), Zellij uses dedicated operational modes:
+   * **`Ctrl + p` (Pane Mode):** Split, close, and navigate panes.
+   * **`Ctrl + t` (Tab Mode):** Create, rename, and toggle tabs.
+   * **`Ctrl + n` (Resize Mode):** Adjust pane dimensions using `h`, `j`, `k`, `l`.
+   * **`Ctrl + s` (Scroll Mode):** Search and navigate terminal history.
+   * **`Ctrl + g` (Locked Mode):** Bypasses all Zellij shortcuts, sending raw keystrokes directly to inner applications (like Vim or terminal games).
+3. **Floating & Stacked Panes:** Unlike Tmux, Zellij supports floating windows (`Ctrl + p` then `w`) and stacked layouts natively without third-party plugins.
+4. **WebAssembly (Wasm) Plugin System:** Plugins in Zellij run inside a secure WebAssembly sandbox, compiled from Rust or any language supporting Wasm.
+5. **Built-in Session Resurrector:** Zellij serializes layout structures and active directories automatically without needing external plugins.
+
+### 8.2 Zero-Config OSC 52 Clipboard in Zellij
+One of Zellij's greatest strengths is **native, out-of-the-box OSC 52 support**:
+* When running Zellij over an SSH session, selecting text with the mouse or copying from Scroll Mode (`Ctrl + s`) **automatically emits an OSC 52 escape sequence** to your local terminal.
+* You do not need to configure display variables, install `xclip`, or hack shell scripts.
+
+### 8.3 Zellij Configuration (`~/.config/zellij/config.kdl`)
+Zellij uses the clean, human-readable **KDL** configuration language:
+
+```kdl
+// ~/.config/zellij/config.kdl
+
+// Choose default theme
+theme "catppuccin-mocha"
+
+// Set default layout
+default_layout "compact"
+
+// Configure mouse selection and clipboard behavior
+copy_on_select true
+copy_clipboard "system" // Uses OSC 52 over SSH, or system clipboard locally
+
+// Simplified UI: hide the bottom helper bar once you know the shortcuts
+simplified_ui false
+
+// Configure default shell
+default_shell "zsh"
 ```
 
 ---
 
-## 7. Quick Reference Cheat Sheet
+## 9. Comprehensive Comparison: Tmux vs. Zellij
 
-| Action | Command / Keybinding |
-| :--- | :--- |
-| **New Named Session** | `tmux new -s <name>` |
-| **List Sessions** | `tmux ls` |
-| **Attach Session** | `tmux a -t <name>` |
-| **Kill Single Session** | `tmux kill-session -t <name>` |
-| **Kill ALL Sessions** | `tmux kill-server` |
-| **Kill All EXCEPT Active**| `tmux kill-session -a` |
-| **Detach Session** | `Prefix` + `d` |
-| **Create Window** | `Prefix` + `c` |
-| **Interactive Tree** | `Prefix` + `s` or `Prefix` + `w` |
-| **Split Vertically** | `Prefix` + `%` (or `Prefix` + `\|`) |
-| **Split Horizontally** | `Prefix` + `"` (or `Prefix` + `-`) |
-| **Toggle Zoom Pane** | `Prefix` + `z` |
-| **Copy / Scroll Mode** | `Prefix` + `[` |
-| **Save Sessions** | `Prefix` + `Ctrl-s` |
-| **Restore Sessions** | `Prefix` + `Ctrl-r` |
+| Dimension | Tmux | Zellij |
+| :--- | :--- | :--- |
+| **Implementation Language** | C (POSIX compliant) | Rust (Memory-safe) |
+| **User Interface** | Minimalist / Invisible status bar | Discoverable, context-sensitive footer |
+| **Command Invocation** | Global Prefix Key (`Ctrl + b`) | Modal Keybindings (`Ctrl+p`, `Ctrl+t`) |
+| **Floating Panes** | No native support (requires workarounds)| Native first-class support (`Ctrl+p` $\to$ `w`) |
+| **Remote SSH Clipboard**| Requires `set -s set-clipboard on` | **Native OSC 52 out-of-the-box** |
+| **Configuration Format**| `~/.tmux.conf` (Custom DSL) | `~/.config/zellij/config.kdl` (KDL format)|
+| **Plugin System** | Bash/Shell scripts via TPM | Sandboxed WebAssembly (Wasm) modules |
+| **Session Persistence** | Requires `tmux-resurrect` + `continuum` | Built-in session resurrection |
+| **Resource Footprint** | Ultra-light ($\approx 3\text{–}5\text{ MB}$ RAM) | Lightweight ($\approx 15\text{–}25\text{ MB}$ RAM) |
+| **System Ubiquity** | Pre-installed on almost all Unix servers | Must be installed via Cargo / package manager |
 
 ---
 
-## Conclusion
+## 10. Summary & Recommended Setup
 
-With `tmux`, terminal management shifts from a fragile process vulnerable to network drops into a resilient development environment. By incorporating **`tmux-resurrect`** and **`tmux-continuum`**, your terminal state survives server reboots seamlessly.
+* **Use Tmux if:** You administer heterogeneous enterprise servers, work on ultra-low-memory embedded nodes, or rely on decades of established custom shell scripts.
+* **Use Zellij if:** You want a modern, intuitive terminal IDE experience with zero-configuration remote clipboard synchronization, floating terminal windows, and a friendly learning curve.
 
+<br>
+<br>
+
+<div style="text-align: center; color: #888; font-size: 0.9em;">
+  © 2026 Igor Kan
+</div>

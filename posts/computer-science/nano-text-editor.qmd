@@ -1,9 +1,8 @@
 ---
 title: "A Beginner-Friendly Guide to the Nano Text Editor"
-description: "Learn how to open, edit, search, and configure the lightweight and intuitive Nano text editor directly from the Linux terminal."
+description: "Learn how to open, edit, search, configure, and copy entire documents to the system clipboard from the lightweight and intuitive GNU Nano text editor."
 date: "2026-06-27"
 categories: [Linux, CLI, Text Editors]
-draft: true
 ---
 
 For users new to the Linux terminal, command-line text editors like Vim or Emacs can feel intimidating due to their modal interfaces and steep learning curves. 
@@ -46,6 +45,8 @@ Here are the most important shortcuts to know:
 * **`Ctrl + \` (Replace):** Search for a word and replace it with another.
 * **`Ctrl + _` (Go to Line):** Jump directly to a specific line and column number.
 * **`Ctrl + C` (Cur Pos):** Show current line number, column number, and character count.
+* **`Alt + \` (Top):** Jump to the first line of the document.
+* **`Alt + /` (Bottom):** Jump to the last line of the document.
 
 ---
 
@@ -72,7 +73,7 @@ set tabsize 4
 # Convert typed tabs into spaces
 set tabstospaces
 
-# Enable auto-indentation of new lines
+# Automatically indent new lines to match preceding indentation
 set autoindent
 
 # Enable mouse support (allows clicking to position cursor)
@@ -82,4 +83,61 @@ set mouse
 include "/usr/share/nano/*.nanorc"
 ```
 
-Once saved, these settings will apply automatically every time you launch Nano.
+---
+
+## 4. Copying to the System Clipboard: Bypassing the Cutbuffer
+
+A common frustration with Nano is that its internal copy/paste buffer (the **"cutbuffer"**) is strictly isolated from the rest of your operating system. Text cut with `Ctrl + K` cannot be pasted into a web browser or external document.
+
+Here are the most reliable methods to copy an entire document from Nano to your system clipboard:
+
+### Method 1: Terminal Emulator Zoom & Copy (Quickest)
+1. In your terminal, zoom out by pressing **`Ctrl + -`** repeatedly until the entire text fits on your screen.
+2. Select the text using your mouse cursor.
+3. Press **`Ctrl + Shift + C`** (or `Cmd + C` on macOS) to copy to your system clipboard.
+4. Press **`Ctrl + 0`** to reset your zoom level.
+
+### Method 2: Command-Line Pipelining (Best for Long Files)
+To copy the entire file without even opening Nano:
+```bash
+# X11 (Linux)
+cat filename.txt | xclip -selection clipboard
+
+# Wayland (Linux)
+wl-copy < filename.txt
+
+# macOS
+pbcopy < filename.txt
+
+# Windows / WSL2
+clip.exe < filename.txt
+```
+
+### Method 3: Nano Internal Mark-and-Copy Trick (Within Nano)
+To duplicate all text without cutting:
+1. Press **`Alt + \`** to jump to the very beginning.
+2. Press **`Alt + A`** (or `Ctrl + 6`) to set the selection mark.
+3. Press **`Alt + /`** to jump to the very bottom (everything is now highlighted).
+4. Press **`Alt + 6`** to copy the selected text into the cutbuffer without deleting it.
+5. Paste with **`Ctrl + U`**.
+
+### Method 4: Remote SSH Sessions via OSC 52
+When connected to a remote server without GUI display access, you can send any file straight to your local client clipboard using an OSC 52 helper:
+```bash
+# Save to ~/bin/osc-copy:
+printf "\033]52;c;$(base64 | tr -d '\r\n')\007"
+```
+Pipe your file directly through it on the remote machine:
+```bash
+cat myfile.txt | osc-copy
+```
+Your local terminal emulator will intercept the escape sequence and write the contents directly to your laptop's clipboard.
+
+For advanced modal editing and deep clipboard integration, see our companion guide: [Terminal Text Editors: The Comprehensive Guide to Vim, Neovim, and Nano](file:///home/igorkan/repos/quarto-writing/posts/computer-science/vim-neovim-tutorial.qmd).
+
+<br>
+<br>
+
+<div style="text-align: center; color: #888; font-size: 0.9em;">
+  © 2026 Igor Kan
+</div>
