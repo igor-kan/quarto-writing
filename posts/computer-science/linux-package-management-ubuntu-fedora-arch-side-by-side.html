@@ -393,6 +393,12 @@ window.Quarto = {
   <li><a href="#corrupted-pgp-keys-signature-verification-failures" id="toc-corrupted-pgp-keys-signature-verification-failures" class="nav-link" data-scroll-target="#corrupted-pgp-keys-signature-verification-failures">6.2 Corrupted PGP Keys / Signature Verification Failures</a></li>
   </ul></li>
   <li><a href="#summary-best-practices" id="toc-summary-best-practices" class="nav-link" data-scroll-target="#summary-best-practices">7. Summary &amp; Best Practices</a></li>
+  <li><a href="#supplemental-tooling-snap-sudo-and-directory-hierarchies" id="toc-supplemental-tooling-snap-sudo-and-directory-hierarchies" class="nav-link" data-scroll-target="#supplemental-tooling-snap-sudo-and-directory-hierarchies">8. Supplemental Tooling: Snap, Sudo, and Directory Hierarchies</a>
+  <ul class="collapse">
+  <li><a href="#snap-packages-containerized-delivery" id="toc-snap-packages-containerized-delivery" class="nav-link" data-scroll-target="#snap-packages-containerized-delivery">8.1 Snap Packages (Containerized Delivery)</a></li>
+  <li><a href="#understanding-sudo" id="toc-understanding-sudo" class="nav-link" data-scroll-target="#understanding-sudo">8.2 Understanding `sudo`</a></li>
+  <li><a href="#filesystem-hierarchy-usrbin-vs-usrlocalbin" id="toc-filesystem-hierarchy-usrbin-vs-usrlocalbin" class="nav-link" data-scroll-target="#filesystem-hierarchy-usrbin-vs-usrlocalbin">8.3 Filesystem Hierarchy: `/usr/bin` vs `/usr/local/bin`</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -1035,12 +1041,33 @@ error: failed to commit transaction (invalid or corrupted package (PGP signature
 <li><strong>Always run <code>sudo pacman -Syu</code></strong> on Arch—never partial <code>pacman -Sy</code>.</li>
 <li><strong>Use <code>apt autoremove --purge</code> and <code>dnf autoremove</code></strong> regularly to eliminate dangling dependencies and prevent dependency bloat.</li>
 </ol>
+<hr>
+</section>
+<section id="supplemental-tooling-snap-sudo-and-directory-hierarchies" class="level2">
+<h2 class="anchored" data-anchor-id="supplemental-tooling-snap-sudo-and-directory-hierarchies">8. Supplemental Tooling: Snap, Sudo, and Directory Hierarchies</h2>
+<p>Beyond the core package managers, a modern Linux system relies on a few critical adjunct tools and filesystem conventions to function securely and cleanly.</p>
+<section id="snap-packages-containerized-delivery" class="level3">
+<h3 class="anchored" data-anchor-id="snap-packages-containerized-delivery">8.1 Snap Packages (Containerized Delivery)</h3>
+<p>While APT, DNF, and Pacman handle native dependencies, <strong>Snap</strong> (developed by Canonical) is a universal package manager that bundles an application and <em>all</em> its dependencies into a single compressed <code>squashfs</code> image. * <strong>Pros:</strong> Installs cleanly on almost any Linux distribution; runs sandboxed (via AppArmor); prevents dependency hell. * <strong>Cons:</strong> Slower startup times; higher disk space usage; mounts a virtual filesystem loop device for every installed Snap.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install snapd (if not on Ubuntu)</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install snapd</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Install a package via snap</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> snap install spotify</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="understanding-sudo" class="level3">
+<h3 class="anchored" data-anchor-id="understanding-sudo">8.2 Understanding `sudo`</h3>
+<p>The <code>sudo</code> (SuperUser DO) command allows an authorized user to execute a command as the superuser (root). Standard package managers strictly require root privileges because they modify core system directories. * Unlike <code>su</code>, which drops you into a root shell, <code>sudo</code> executes a single command and logs the action, maintaining a tighter audit trail.</p>
+</section>
+<section id="filesystem-hierarchy-usrbin-vs-usrlocalbin" class="level3">
+<h3 class="anchored" data-anchor-id="filesystem-hierarchy-usrbin-vs-usrlocalbin">8.3 Filesystem Hierarchy: `/usr/bin` vs `/usr/local/bin`</h3>
+<p>Linux adheres to the Filesystem Hierarchy Standard (FHS). Understanding the distinction between binary directories prevents conflicts between your package manager and manually installed software: * <strong>`/usr/bin`</strong>: Managed strictly by the system package manager (APT, DNF, Pacman). You should <strong>never</strong> manually copy binaries here. * <strong>`/usr/local/bin`</strong>: The designated safe haven for user-compiled software, standalone binaries, or tools downloaded outside the package manager. Your <code>$PATH</code> usually checks <code>/usr/local/bin</code> before <code>/usr/bin</code>, allowing local installations to safely override system packages.</p>
 <p><br> <br></p>
 <div style="text-align: center; color: #888; font-size: 0.9em;">
 <p>© 2026 Igor Kan</p>
 </div>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
