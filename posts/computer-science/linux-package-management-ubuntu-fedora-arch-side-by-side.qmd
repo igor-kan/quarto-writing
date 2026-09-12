@@ -1,0 +1,426 @@
+---
+title: "The Definitive Linux Package Management Guide: Ubuntu (APT), Fedora (DNF), and Arch (Pacman & AUR) Side-by-Side"
+subtitle: "A comparative operational manual for package installation, dependency resolution, orphan cleanup, repository internals, and resolving critical storage failures like 'No space left on device'."
+author: "Igor Kan"
+date: "2026-09-12"
+categories: ["Linux", "DevOps", "Systems", "Ubuntu", "Fedora", "Arch Linux", "CLI", "Sysadmin"]
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+---
+
+## 1. Introduction: The Three Linux Packaging Paradigms
+
+Package management is the central nervous system of any Linux distribution. It governs how binary software is discovered, verified through cryptographic signatures, resolved across intricate dependency graphs, installed into the root filesystem hierarchy, and cleanly uninstalled without stranding orphaned libraries.
+
+The mainstream Linux landscape is divided across three foundational packaging ecosystems:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       The Linux Packaging Triumvirate                       │
+├──────────────────────┬───────────────────────┬──────────────────────────────┤
+│ Distribution Family  │ Low-Level Archive     │ High-Level Dependency Engine │
+├──────────────────────┼───────────────────────┼──────────────────────────────┤
+│ Debian / Ubuntu      │ .deb (dpkg)           │ APT (Advanced Package Tool)  │
+│ Red Hat / Fedora     │ .rpm (rpm)            │ DNF / DNF5 (Dandified YUM)   │
+│ Arch Linux           │ .pkg.tar.zst (pacman) │ libalpm + AUR (yay / paru)   │
+└──────────────────────┴───────────────────────┴──────────────────────────────┘
+```
+
+While all three achieve the same ultimate goal—deploying software to your machine—their syntax, cache handling, third-party repository architectures, and failure modes diverge sharply.
+
+This guide provides a comprehensive **side-by-side reference manual** across **Ubuntu (APT)**, **Fedora (DNF)**, and **Arch Linux (Pacman & AUR)**, concluding with an in-depth troubleshooting lab for real-world storage errors such as *"No space left on device"* during heavy package builds.
+
+---
+
+## 2. Core Architectural Internals
+
+### 2.1 Debian / Ubuntu: APT & DPKG
+* **Binary Format:** `.deb` files are Unix `ar` archives containing two compressed tarballs: `control.tar.xz` (metadata, dependencies, pre/post-install scripts) and `data.tar.xz` (the payload binaries and assets).
+* **Low-Level Tool:** `dpkg` unpacks and registers `.deb` files directly into `/var/lib/dpkg/status` but **cannot** resolve or download missing dependencies from the internet.
+* **High-Level Manager:** `apt` (and `apt-get`) queries remote repository indices, calculates the dependency graph using SAT algorithms, downloads required packages to `/var/cache/apt/archives/`, and delegates installation to `dpkg`.
+* **Repository Configuration:** Traditionally `/etc/apt/sources.list`, modernized in Ubuntu 24.04+ to deb822-style files in `/etc/apt/sources.list.d/*.sources`.
+
+### 2.2 Red Hat / Fedora: DNF & RPM
+* **Binary Format:** `.rpm` files contain binary payloads wrapped with lead headers, GPG cryptographic signatures, and shell scriptlets.
+* **Low-Level Tool:** `rpm` installs local packages and manages the Berkeley DB / SQLite database at `/var/lib/rpm/`.
+* **High-Level Manager:** `dnf` (powered by `libsolv` for lightning-fast dependency graph resolution and `librepo` for downloading) handles remote mirrors, delta-RPMs, and transactions. Modern Fedora utilizes **DNF5**, rewritten in C++ for minimal memory overhead.
+* **Repository Configuration:** `/etc/yum.repos.d/*.repo`.
+
+### 2.3 Arch Linux: Pacman, libalpm, and the AUR
+* **Binary Format:** `.pkg.tar.zst` files are straightforward `tar` archives compressed with Facebook's high-speed Zstandard (`zstd`) algorithm. They contain the compiled files and a `.PKGINFO` metadata file.
+* **Architecture:** `pacman` is written in C around the **libalpm** (Arch Linux Package Management) library. There is no separation between low-level and high-level tools: `pacman` handles both remote dependency downloading and local archive extraction.
+* **Rolling Release Philosophy:** Arch does not have point releases (e.g., Ubuntu 24.04 or Fedora 40). Updates are continuous. **Partial upgrades are strictly unsupported.**
+* **The Arch User Repository (AUR):** A community-driven repository of `PKGBUILD` scripts. Software not distributed in official repos (like proprietary Google Chrome) is compiled or repackaged on the user's machine using `makepkg` or automated AUR helpers like `yay` or `paru`.
+
+---
+
+## 3. Side-by-Side Operations Reference Matrix
+
+Below is a direct command-by-command comparison across all three ecosystems.
+
+### 3.1 Repository Synchronization and System Updates
+
+| Action | Ubuntu / Debian (APT) | Fedora (DNF) | Arch Linux (Pacman) |
+| :--- | :--- | :--- | :--- |
+| **Refresh Repo Metadata** | `sudo apt update` | `sudo dnf check-update` | `sudo pacman -Sy` *(Caution: Do not run alone)* |
+| **Upgrade All Packages** | `sudo apt upgrade` | `sudo dnf upgrade` | `sudo pacman -Syu` |
+| **Full Distribution Upgrade** | `sudo apt dist-upgrade` | `sudo dnf system-upgrade` | `sudo pacman -Syu` *(Rolling release)* |
+| **Upgrade AUR Packages** | *N/A* | *N/A* | `yay -Syu` or `paru -Syu` |
+
+::: {.callout-warning}
+### Arch Linux: The Partial Upgrade Trap
+Never execute `sudo pacman -Sy` followed by `sudo pacman -S package`. This updates your local package database without upgrading existing system libraries. If the new package depends on a newer shared library (`.so`) than what is currently installed, your existing software or system libraries will break! **Always run `sudo pacman -Syu package`**.
+:::
+
+---
+
+### 3.2 Installing Packages
+
+| Action | Ubuntu / Debian (APT) | Fedora (DNF) | Arch Linux (Pacman) |
+| :--- | :--- | :--- | :--- |
+| **Install Single Package** | `sudo apt install git` | `sudo dnf install git` | `sudo pacman -S git` |
+| **Install Multiple Packages**| `sudo apt install htop curl tmux`| `sudo dnf install htop curl tmux`| `sudo pacman -S htop curl tmux` |
+| **Reinstall Existing** | `sudo apt install --reinstall git`| `sudo dnf reinstall git` | `sudo pacman -S git` |
+| **Install Local File** | `sudo apt install ./app.deb` | `sudo dnf install ./app.rpm` | `sudo pacman -U ./app.pkg.tar.zst` |
+| **Download Without Installing**| `apt download package` | `dnf download package` | `pacman -Sw package` |
+| **Install Build Dependencies** | `sudo apt build-dep package` | `sudo dnf builddep package` | `sudo pacman -S --needed base-devel` |
+
+---
+
+### 3.3 Removing and Purging Packages
+
+| Action | Ubuntu / Debian (APT) | Fedora (DNF) | Arch Linux (Pacman) |
+| :--- | :--- | :--- | :--- |
+| **Remove (Keep Configs)** | `sudo apt remove package` | `sudo dnf remove package` | `sudo pacman -R package` |
+| **Purge (Delete Configs)** | `sudo apt purge package` | `sudo dnf remove package` | `sudo pacman -Rn package` |
+| **Remove with Dependencies** | `sudo apt autoremove` | `sudo dnf autoremove` | `sudo pacman -Rs package` |
+| **Purge Unused Orphans** | `sudo apt autoremove --purge` | `sudo dnf autoremove` | `sudo pacman -Rs $(pacman -Qdtq)` |
+
+::: {.callout-tip}
+### Arch Orphan Purging Explained
+In Arch Linux, `pacman -Qdtq` outputs a clean list of all installed packages that were originally installed as dependencies (`-d`) but are now unrequired by any current package (`-t`) in quiet mode (`-q`). Feeding this to `pacman -Rs` safely prunes unused libraries from your system.
+:::
+
+---
+
+### 3.4 Searching and Inspecting Packages
+
+| Action | Ubuntu / Debian (APT) | Fedora (DNF) | Arch Linux (Pacman) |
+| :--- | :--- | :--- | :--- |
+| **Search Remote Repos** | `apt search keyword` | `dnf search keyword` | `pacman -Ss keyword` |
+| **Show Remote Package Info**| `apt show package` | `dnf info package` | `pacman -Si package` |
+| **Show Installed Package Info**| `dpkg -s package` | `rpm -qi package` | `pacman -Qi package` |
+| **List Installed Packages** | `apt list --installed` | `dnf list installed` | `pacman -Q` |
+| **Find Package Owning File**| `dpkg -S /path/to/file` | `dnf provides /path/to/file` | `pacman -Qo /path/to/file` |
+| **List Files in Package** | `dpkg -L package` | `rpm -ql package` | `pacman -Ql package` |
+
+---
+
+### 3.5 Cache Cleaning & Storage Reclamation
+
+| Action | Ubuntu / Debian (APT) | Fedora (DNF) | Arch Linux (Pacman) |
+| :--- | :--- | :--- | :--- |
+| **Cache Storage Path** | `/var/cache/apt/archives/` | `/var/cache/libdnf5/` | `/var/cache/pacman/pkg/` |
+| **Clean Obsolete Archives** | `sudo apt autoclean` | `sudo dnf clean packages` | `sudo pacman -Sc` *(Keeps current)* |
+| **Clean ENTIRE Cache** | `sudo apt clean` | `sudo dnf clean all` | `sudo pacman -Scc` *(Deletes all)* |
+| **Retain Last N Versions** | *N/A (Managed by apt)* | *Managed by retain_limit* | `paccache -r -k 2` *(Keeps last 2)* |
+| **Clean AUR Helper Cache** | *N/A* | *N/A* | `yay -Sc` or `rm -rf ~/.cache/yay` |
+
+---
+
+### 3.6 Package Locking & Version Pinning
+
+To prevent a critical package (e.g., Linux kernel or proprietary driver) from being upgraded during general updates:
+
+::: {.panel-tabset group="os"}
+## Ubuntu / Debian
+```bash
+# Hold package from updates
+sudo apt-mark hold linux-image-generic
+
+# Check held packages
+apt-mark showhold
+
+# Remove hold
+sudo apt-mark unhold linux-image-generic
+```
+
+## Fedora
+```bash
+# Install versionlock plugin
+sudo dnf install 'dnf-command(versionlock)'
+
+# Lock current version
+sudo dnf versionlock add kernel
+
+# View locks
+sudo dnf versionlock list
+
+# Remove lock
+sudo dnf versionlock delete kernel
+```
+
+## Arch Linux
+Edit `/etc/pacman.conf`:
+```ini
+# Add package name to IgnorePkg directive
+IgnorePkg = linux linux-headers nvidia
+```
+:::
+
+---
+
+## 4. Third-Party Ecosystems: PPA vs. Copr vs. AUR
+
+Standard repositories maintain strict software stability guidelines. When you require proprietary software (such as **Google Chrome**) or cutting-edge toolchains, each ecosystem provides a third-party mechanism:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    Third-Party Packaging Models                             │
+├──────────────────────┬──────────────────────────────────────────────────────┤
+│ Ubuntu PPA           │ Pre-compiled binary .deb archives built on Canonical │
+│ (Launchpad)          │ servers; integrated via apt GPG keys.                │
+├──────────────────────┼──────────────────────────────────────────────────────┤
+│ Fedora Copr          │ Pre-compiled binary .rpm packages built on Fedora    │
+│ (Cool Other Packages)│ build infrastructure; integrated via dnf.            │
+├──────────────────────┼──────────────────────────────────────────────────────┤
+│ Arch User Repository │ Source-based PKGBUILD recipes; compiled locally on   │
+│ (AUR)                │ your machine by makepkg or yay/paru.                 │
+└──────────────────────┴──────────────────────────────────────────────────────┘
+```
+
+### Case Study: Installing and Updating Google Chrome
+Google Chrome is proprietary freeware. Because its license forbids third-party binary redistribution, it cannot be hosted directly inside official distribution repositories.
+
+#### On Ubuntu:
+Google provides an official Debian repository. Installing the `.deb` automatically injects Google's repository into `/etc/apt/sources.list.d/`:
+```bash
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo apt install ./google-chrome-stable_current_amd64.deb
+# Subsequent updates occur automatically via:
+sudo apt update && sudo apt upgrade
+```
+
+#### On Fedora:
+Fedora maintains an official third-party repository toggle for Chrome:
+```bash
+sudo dnf install fedora-workstation-repositories
+sudo dnf config-manager --set-enabled google-chrome
+sudo dnf install google-chrome-stable
+# Subsequent updates occur via:
+sudo dnf upgrade
+```
+
+#### On Arch Linux (The AUR Model):
+On Arch, Google Chrome exists as the [`google-chrome`](https://aur.archlinux.org/packages/google-chrome) package in the AUR. The PKGBUILD downloads the official `.deb` binary directly from Google's servers, unpacks it using `ar` and `tar`, and repackages it into an Arch `.pkg.tar.zst` archive.
+
+##### Method 1: Using an AUR Helper (Recommended)
+```bash
+# Update everything including Chrome via yay:
+yay -Syu
+
+# Or using pamac:
+pamac upgrade -a
+```
+
+##### Method 2: Manual Git and Makepkg Compilation
+```bash
+# Clone the PKGBUILD from the AUR
+cd /tmp
+git clone https://aur.archlinux.org/google-chrome.git
+cd google-chrome
+
+# Build and install (-s installs missing build deps, -i installs final pkg)
+makepkg -si
+
+# Future updates:
+git pull && makepkg -si
+```
+
+---
+
+## 5. Deep Troubleshooting Lab: Resolving "No Space Left on Device"
+
+A catastrophic failure mode during package upgrades or AUR compilation is the sudden error:
+```text
+./opt/google/chrome/locales/pt-BR_NEUTER.pak: Failed to create dir: No space left on device
+./opt/google/chrome/locales/pt-PT.pak: Failed to create dir: No space left on device
+./opt/google/chrome/product_logo_128.png: Write failed: No space left on device
+```
+
+This error halts package installation immediately. Here is the rigorous diagnostic and remediation protocol:
+
+### Step 1: Accurate Diagnostic Mapping
+Run `df` to inspect available space across all mounted partitions:
+```bash
+df -h
+```
+Pay close attention to **four distinct filesystem mounts**:
+1. `/` (Root partition): Where binaries in `/opt/`, `/usr/`, and `/var/` live.
+2. `/var` (or `/var/cache`): Where package archives accumulate.
+3. `/tmp`: Where build tools extract temporary files.
+4. `/home`: Where user caches reside (`~/.cache/yay`).
+
+Also verify **inode exhaustion** (having available gigabytes but zero remaining file index pointers):
+```bash
+df -i
+```
+
+---
+
+### Step 2: Root Cause A — Pacman / APT Cache Bloat
+By default, Pacman never deletes old packages from `/var/cache/pacman/pkg/`. Over months of rolling updates, this directory easily swells to $20\text{–}60\text{ GB}$.
+
+#### Remediation:
+```bash
+# Remove all cached packages EXCEPT currently installed versions:
+sudo pacman -Sc
+
+# If critically low on disk, purge ALL cached packages (safe, but cannot downgrade offline):
+sudo pacman -Scc
+
+# Best Practice: Keep exactly the current and previous version using paccache:
+sudo pacman -S pacman-contrib
+paccache -r -k 2
+
+# For Ubuntu / Debian:
+sudo apt clean
+sudo apt autoclean
+
+# For Fedora:
+sudo dnf clean all
+```
+
+---
+
+### Step 3: Root Cause B — The `/tmp` (tmpfs) RAM Disk Trap during AUR Builds
+In Arch Linux (and modern Fedora), `/tmp` is not mounted on your physical hard drive or SSD; it is mounted as a **`tmpfs` (RAM disk)** in physical memory. By default, systemd limits `tmpfs` to **50% of your total physical RAM**.
+
+#### Why Heavy Packages Crash:
+When you compile or repackage Google Chrome, Electron, Unreal Engine, or the Linux kernel, the build script extracts gigabytes of archive data into `/tmp`. If your machine has $16\text{ GB}$ of RAM, `/tmp` is capped at $8\text{ GB}$. A Chrome build can easily burst past $8\text{ GB}$, triggering:
+```text
+Failed to create dir: No space left on device
+```
+
+#### Remediation: Move the Build Directory to Physical Disk
+
+##### For `yay`:
+Configure `yay` to build inside your persistent home directory on physical disk:
+```bash
+# Clean yay's cache first:
+yay -Sc
+
+# Build using an explicit build directory on your SSD:
+yay -S --builddir "$HOME/.cache/yay-builds" google-chrome
+```
+To make this permanent, edit `~/.config/yay/config.json`:
+```json
+{
+  "buildDir": "$HOME/.cache/yay-builds"
+}
+```
+
+##### For `makepkg` (Global Configuration):
+Edit `/etc/makepkg.conf`:
+```ini
+# Change BUILDDIR from /tmp to your home directory:
+BUILDDIR=/home/your_username/.cache/makepkg
+```
+
+##### Temporary Dynamic Resize of `/tmp`:
+If you have sufficient swap space, you can dynamically expand `/tmp` in place without rebooting:
+```bash
+sudo mount -o remount,size=16G /tmp
+```
+
+---
+
+### Step 4: Root Cause C — Orphaned Packages and Journal Logs
+Clean up lingering orphan libraries and systemd logs:
+
+```bash
+# Arch Linux: Remove all unneeded orphans
+sudo pacman -Rs $(pacman -Qdtq)
+
+# Vacuum systemd journal logs to a maximum of 200 MB
+sudo journalctl --vacuum-size=200M
+
+# Fedora: Remove orphans
+sudo dnf autoremove
+
+# Ubuntu: Purge orphans
+sudo apt autoremove --purge
+```
+
+---
+
+## 6. Troubleshooting Other Common Package Manager Failures
+
+### 6.1 Database Lock Contention
+
+#### Problem:
+```text
+error: failed to init transaction (unable to lock database)
+could not lock database: File exists (/var/lib/pacman/db.lck)
+```
+
+#### Cause:
+A previous update was interrupted, or a background process (PackageKit / Discover) is running.
+
+#### Safe Resolution:
+1. Verify no package manager is currently active:
+   ```bash
+   # Arch:
+   lsof /var/lib/pacman/db.lck
+   # Ubuntu:
+   sudo lsof /var/lib/dpkg/lock-frontend
+   # Fedora:
+   sudo lsof /var/lib/rpm/.rpm.lock
+   ```
+2. If no process is running, safely remove the stale lock file:
+   ```bash
+   sudo rm /var/lib/pacman/db.lck         # Arch
+   sudo rm /var/lib/dpkg/lock-frontend   # Ubuntu
+   sudo rm /var/lib/rpm/.rpm.lock        # Fedora
+   ```
+
+---
+
+### 6.2 Corrupted PGP Keys / Signature Verification Failures
+
+#### Problem (Arch Linux):
+```text
+error: package: signature from "Developer <dev@archlinux.org>" is unknown trust
+error: failed to commit transaction (invalid or corrupted package (PGP signature))
+```
+
+#### Solution:
+Update the Arch keyring before upgrading system packages:
+```bash
+# Update the official master keyring first
+sudo pacman -Sy archlinux-keyring
+sudo pacman-key --init
+sudo pacman-key --populate archlinux
+
+# Then perform system upgrade
+sudo pacman -Syu
+```
+
+---
+
+## 7. Summary & Best Practices
+
+1. **Use `paccache -r -k 2` on Arch** via a systemd timer (`systemctl enable --now paccache.timer`) to prevent `/var/cache` from exhausting disk space.
+2. **Never build huge AUR packages in `/tmp`** on low-RAM machines; redirect `BUILDDIR` to `$HOME/.cache` on physical NVMe storage.
+3. **Always run `sudo pacman -Syu`** on Arch—never partial `pacman -Sy`.
+4. **Use `apt autoremove --purge` and `dnf autoremove`** regularly to eliminate dangling dependencies and prevent dependency bloat.
+
+<br>
+<br>
+
+<div style="text-align: center; color: #888; font-size: 0.9em;">
+  © 2026 Igor Kan
+</div>
