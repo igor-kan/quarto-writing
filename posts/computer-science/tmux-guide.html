@@ -1,2 +1,1210 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"></html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Igor Kan">
+<meta name="dcterms.date" content="2026-07-21">
+
+<title>The Complete Terminal Multiplexer Guide: Tmux and Zellij – My Writings</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-a515e054079012129989d5397ee3c9c1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">My Writings</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../literature/index.html"> 
+<span class="menu-text">Literature</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../tutorials/index.html"> 
+<span class="menu-text">Tutorials</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction-why-terminal-multiplexing-is-mandatory" id="toc-introduction-why-terminal-multiplexing-is-mandatory" class="nav-link active" data-scroll-target="#introduction-why-terminal-multiplexing-is-mandatory">1. Introduction: Why Terminal Multiplexing is Mandatory</a></li>
+  <li><a href="#core-architecture-of-tmux" id="toc-core-architecture-of-tmux" class="nav-link" data-scroll-target="#core-architecture-of-tmux">2. Core Architecture of Tmux</a></li>
+  <li><a href="#getting-started-with-tmux-commands-the-prefix-key" id="toc-getting-started-with-tmux-commands-the-prefix-key" class="nav-link" data-scroll-target="#getting-started-with-tmux-commands-the-prefix-key">3. Getting Started with Tmux: Commands &amp; The Prefix Key</a>
+  <ul class="collapse">
+  <li><a href="#the-prefix-key" id="toc-the-prefix-key" class="nav-link" data-scroll-target="#the-prefix-key">The Prefix Key</a></li>
+  <li><a href="#essential-command-line-operations" id="toc-essential-command-line-operations" class="nav-link" data-scroll-target="#essential-command-line-operations">Essential Command Line Operations</a></li>
+  </ul></li>
+  <li><a href="#windows-and-panes-management" id="toc-windows-and-panes-management" class="nav-link" data-scroll-target="#windows-and-panes-management">4. Windows and Panes Management</a>
+  <ul class="collapse">
+  <li><a href="#window-tab-controls" id="toc-window-tab-controls" class="nav-link" data-scroll-target="#window-tab-controls">Window (Tab) Controls</a></li>
+  <li><a href="#pane-split-controls" id="toc-pane-split-controls" class="nav-link" data-scroll-target="#pane-split-controls">Pane Split Controls</a></li>
+  </ul></li>
+  <li><a href="#remote-ssh-clipboard-integration-via-osc-52-in-tmux" id="toc-remote-ssh-clipboard-integration-via-osc-52-in-tmux" class="nav-link" data-scroll-target="#remote-ssh-clipboard-integration-via-osc-52-in-tmux">5. Remote SSH Clipboard Integration via OSC 52 in Tmux</a>
+  <ul class="collapse">
+  <li><a href="#configuring-tmux-for-osc-52-passthrough" id="toc-configuring-tmux-for-osc-52-passthrough" class="nav-link" data-scroll-target="#configuring-tmux-for-osc-52-passthrough">5.1 Configuring Tmux for OSC 52 Passthrough</a></li>
+  <li><a href="#copying-via-tmux-copy-mode" id="toc-copying-via-tmux-copy-mode" class="nav-link" data-scroll-target="#copying-via-tmux-copy-mode">5.2 Copying via Tmux Copy-Mode</a></li>
+  <li><a href="#cli-pipelining-via-the-osc-copy-script" id="toc-cli-pipelining-via-the-osc-copy-script" class="nav-link" data-scroll-target="#cli-pipelining-via-the-osc-copy-script">5.3 CLI Pipelining via the <code>osc-copy</code> Script</a></li>
+  </ul></li>
+  <li><a href="#batch-session-termination-pane-synchronization" id="toc-batch-session-termination-pane-synchronization" class="nav-link" data-scroll-target="#batch-session-termination-pane-synchronization">6. Batch Session Termination &amp; Pane Synchronization</a>
+  <ul class="collapse">
+  <li><a href="#batch-session-killing" id="toc-batch-session-killing" class="nav-link" data-scroll-target="#batch-session-killing">6.1 Batch Session Killing</a></li>
+  <li><a href="#pane-synchronization-broadcast-editing" id="toc-pane-synchronization-broadcast-editing" class="nav-link" data-scroll-target="#pane-synchronization-broadcast-editing">6.2 Pane Synchronization (Broadcast Editing)</a></li>
+  </ul></li>
+  <li><a href="#surviving-reboots-tmux-resurrect-tmux-continuum" id="toc-surviving-reboots-tmux-resurrect-tmux-continuum" class="nav-link" data-scroll-target="#surviving-reboots-tmux-resurrect-tmux-continuum">7. Surviving Reboots: <code>tmux-resurrect</code> &amp; <code>tmux-continuum</code></a>
+  <ul class="collapse">
+  <li><a href="#configuration-.tmux.conf" id="toc-configuration-.tmux.conf" class="nav-link" data-scroll-target="#configuration-.tmux.conf">Configuration (<code>~/.tmux.conf</code>)</a></li>
+  </ul></li>
+  <li><a href="#the-modern-alternative-zellij-rust-based-multiplexer" id="toc-the-modern-alternative-zellij-rust-based-multiplexer" class="nav-link" data-scroll-target="#the-modern-alternative-zellij-rust-based-multiplexer">8. The Modern Alternative: Zellij (Rust-Based Multiplexer)</a>
+  <ul class="collapse">
+  <li><a href="#why-developers-gravitate-toward-zellij" id="toc-why-developers-gravitate-toward-zellij" class="nav-link" data-scroll-target="#why-developers-gravitate-toward-zellij">8.1 Why Developers Gravitate Toward Zellij</a></li>
+  <li><a href="#zero-config-osc-52-clipboard-in-zellij" id="toc-zero-config-osc-52-clipboard-in-zellij" class="nav-link" data-scroll-target="#zero-config-osc-52-clipboard-in-zellij">8.2 Zero-Config OSC 52 Clipboard in Zellij</a></li>
+  <li><a href="#zellij-configuration-.configzellijconfig.kdl" id="toc-zellij-configuration-.configzellijconfig.kdl" class="nav-link" data-scroll-target="#zellij-configuration-.configzellijconfig.kdl">8.3 Zellij Configuration (<code>~/.config/zellij/config.kdl</code>)</a></li>
+  </ul></li>
+  <li><a href="#comprehensive-comparison-tmux-vs.-zellij" id="toc-comprehensive-comparison-tmux-vs.-zellij" class="nav-link" data-scroll-target="#comprehensive-comparison-tmux-vs.-zellij">9. Comprehensive Comparison: Tmux vs.&nbsp;Zellij</a></li>
+  <li><a href="#summary-recommended-setup" id="toc-summary-recommended-setup" class="nav-link" data-scroll-target="#summary-recommended-setup">10. Summary &amp; Recommended Setup</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">The Complete Terminal Multiplexer Guide: Tmux and Zellij</h1>
+<p class="subtitle lead">Mastering session persistence, multi-pane workflows, OSC 52 remote clipboard over SSH, automated reboots, and modern Rust-based multiplexing with Zellij.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Linux</div>
+    <div class="quarto-category">CLI</div>
+    <div class="quarto-category">Productivity</div>
+    <div class="quarto-category">DevOps</div>
+    <div class="quarto-category">Tmux</div>
+    <div class="quarto-category">Zellij</div>
+    <div class="quarto-category">Rust</div>
+  </div>
+  </div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Igor Kan </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">July 21, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction-why-terminal-multiplexing-is-mandatory" class="level2">
+<h2 class="anchored" data-anchor-id="introduction-why-terminal-multiplexing-is-mandatory">1. Introduction: Why Terminal Multiplexing is Mandatory</h2>
+<p>If you spend significant time in the Linux terminal, managing multiple SSH connections, background jobs, and split terminal windows can quickly become chaotic. Network drops during remote SSH sessions can terminate running scripts, wasting hours of work.</p>
+<p>A <strong>terminal multiplexer</strong> decouples your running shell processes from the physical terminal emulator: 1. <strong>Session Persistence:</strong> Disconnecting from SSH or closing your terminal window does not kill running processes. You can reconnect from another computer hours later and resume exactly where you left off. 2. <strong>Spatial Management:</strong> Split a single terminal window into multiple rectangular panes and independent tabs (windows). 3. <strong>Remote Clipboard Synchronization:</strong> Bridge the gap between remote headless servers and your local laptop’s operating system clipboard via ANSI <strong>OSC 52</strong> escape sequences.</p>
+<p>Historically, <strong>Tmux</strong> has been the undisputed standard across the Unix landscape. In recent years, <strong>Zellij</strong>—a modern, Rust-based terminal multiplexer featuring a discoverable user interface, floating panes, and native WebAssembly plugins—has emerged as a powerful contender.</p>
+<p>This comprehensive guide covers both: from mastering Tmux’s prefix architecture and automated session resurrection to configuring Zellij’s modal layouts and seamless cross-network clipboard workflows.</p>
+<pre><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    Terminal Multiplexer Architecture                        │
+├──────────────────────┬──────────────────────────────────────────────────────┤
+│ 1. Tmux (C / POSIX)  │ • Client-server daemon with 4-tier hierarchy         │
+│                      │ • Controlled via a global Prefix key (Ctrl+b)        │
+│                      │ • Ultra-low resource footprint; universally available│
+├──────────────────────┼──────────────────────────────────────────────────────┤
+│ 2. Zellij (Rust)     │ • Modern, discoverable UI with context-aware hints   │
+│                      │ • Modal architecture (Locked, Pane, Tab, Resize)     │
+│                      │ • Out-of-the-box OSC 52 clipboard &amp; floating panes   │
+└──────────────────────┴──────────────────────────────────────────────────────┘</code></pre>
+<hr>
+</section>
+<section id="core-architecture-of-tmux" class="level2">
+<h2 class="anchored" data-anchor-id="core-architecture-of-tmux">2. Core Architecture of Tmux</h2>
+<p>Tmux operates on a 4-tier hierarchy: 1. <strong>Server:</strong> The background daemon managing all tmux activity. Runs as long as at least one session exists (or until explicitly killed). 2. <strong>Sessions:</strong> Isolated workspace containers. Each session runs independently and remains active even if you disconnect from SSH or close your terminal. 3. <strong>Windows:</strong> Visual tabs within a session, each occupying the full display area. 4. <strong>Panes:</strong> Individual rectangular splits inside a window running independent shell instances.</p>
+<pre><code>+-------------------------------------------------------------+
+| Tmux Server                                                 |
+|  +-------------------------------------------------------+  |
+|  | Session 1: "dev"                                      |  |
+|  |  +---------------------+---------------------------+  |  |
+|  |  | Window 0: "editor"  | Window 1: "server"        |  |  |
+|  |  |  +-------+-------+  |  +---------------------+  |  |  |
+|  |  |  | Pane 0| Pane 1|  |  | Pane 0              |  |  |  |
+|  |  |  +-------+-------+  |  +---------------------+  |  |  |
+|  |  +---------------------+---------------------------+  |  |
+|  +-------------------------------------------------------+  |
++-------------------------------------------------------------+</code></pre>
+<hr>
+</section>
+<section id="getting-started-with-tmux-commands-the-prefix-key" class="level2">
+<h2 class="anchored" data-anchor-id="getting-started-with-tmux-commands-the-prefix-key">3. Getting Started with Tmux: Commands &amp; The Prefix Key</h2>
+<section id="the-prefix-key" class="level3">
+<h3 class="anchored" data-anchor-id="the-prefix-key">The Prefix Key</h3>
+<p>Once inside a tmux session, standard keyboard shortcuts are intercepted by your active shell unless preceded by the <strong>Prefix key</strong>. By default:</p>
+<p><span class="math display">\[\text{Prefix} = \text{Ctrl} + \text{b} \quad (\text{written as } \text{C-b})\]</span></p>
+<p>To execute a command, press <code>Ctrl + b</code>, release both keys, then press the desired command key.</p>
+</section>
+<section id="essential-command-line-operations" class="level3">
+<h3 class="anchored" data-anchor-id="essential-command-line-operations">Essential Command Line Operations</h3>
+<p>Execute these commands from your standard system shell:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Start a new un-named session</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Start a new named session (recommended)</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> new <span class="at">-s</span> dev</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># List all active sessions</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> ls</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Attach to the last active session</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> a</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Attach to a specific named session</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> attach <span class="at">-t</span> dev</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Detach from inside an active tmux session</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Press: Ctrl+b, then d</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="windows-and-panes-management" class="level2">
+<h2 class="anchored" data-anchor-id="windows-and-panes-management">4. Windows and Panes Management</h2>
+<section id="window-tab-controls" class="level3">
+<h3 class="anchored" data-anchor-id="window-tab-controls">Window (Tab) Controls</h3>
+<ul>
+<li><strong><code>Prefix</code> + <code>c</code></strong>: Create a new window.</li>
+<li><strong><code>Prefix</code> + <code>,</code></strong>: Rename current window.</li>
+<li><strong><code>Prefix</code> + <code>n</code></strong>: Switch to Next window.</li>
+<li><strong><code>Prefix</code> + <code>p</code></strong>: Switch to Previous window.</li>
+<li><strong><code>Prefix</code> + <code>0..9</code></strong>: Switch to window by index.</li>
+<li><strong><code>Prefix</code> + <code>w</code></strong>: Display interactive tree menu of all windows &amp; sessions.</li>
+<li><strong><code>Prefix</code> + <code>&amp;</code></strong>: Kill current window.</li>
+</ul>
+</section>
+<section id="pane-split-controls" class="level3">
+<h3 class="anchored" data-anchor-id="pane-split-controls">Pane Split Controls</h3>
+<ul>
+<li><strong><code>Prefix</code> + <code>%</code></strong>: Split pane vertically (Left / Right).</li>
+<li><strong><code>Prefix</code> + <code>"</code></strong>: Split pane horizontally (Top / Bottom).</li>
+<li><strong><code>Prefix</code> + <code>Arrow Keys</code></strong>: Move cursor between adjacent panes.</li>
+<li><strong><code>Prefix</code> + <code>o</code></strong>: Rotate to next pane.</li>
+<li><strong><code>Prefix</code> + <code>z</code></strong>: Toggle Zoom (maximize active pane; press again to restore).</li>
+<li><strong><code>Prefix</code> + <code>x</code></strong>: Kill active pane.</li>
+<li><strong><code>Prefix</code> + <code>{</code> or <code>}</code></strong>: Swap active pane left or right.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="remote-ssh-clipboard-integration-via-osc-52-in-tmux" class="level2">
+<h2 class="anchored" data-anchor-id="remote-ssh-clipboard-integration-via-osc-52-in-tmux">5. Remote SSH Clipboard Integration via OSC 52 in Tmux</h2>
+<p>One of the most common friction points in cloud engineering occurs when you run Tmux on a remote server over SSH: * When you select and copy text in Tmux copy-mode, it saves into Tmux’s internal buffer, but <strong>fails to reach your local laptop’s operating system clipboard</strong>. * Forwarding X11 (<code>ssh -X</code>) is laggy, insecure, and requires a local X server.</p>
+<p>The modern industry standard solution is <strong>ANSI OSC 52 (Operating System Command 52)</strong>.</p>
+<section id="configuring-tmux-for-osc-52-passthrough" class="level3">
+<h3 class="anchored" data-anchor-id="configuring-tmux-for-osc-52-passthrough">5.1 Configuring Tmux for OSC 52 Passthrough</h3>
+<p>Add the following configuration to <code>~/.tmux.conf</code> on the remote server:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Enable OSC 52 clipboard passthrough</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="dt">set -s set-clipboard on</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Ensure terminal features advertise clipboard capabilities to host</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="dt">set -as terminal-features ',xterm-256color:clipboard'</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Enable vi-style keybindings in copy mode</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="dt">set-window-option -g mode-keys vi</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Configure 'v' to begin selection and 'y' to yank directly to system clipboard</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="dt">bind -T copy-mode-vi v send-keys -X begin-selection</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="dt">bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="copying-via-tmux-copy-mode" class="level3">
+<h3 class="anchored" data-anchor-id="copying-via-tmux-copy-mode">5.2 Copying via Tmux Copy-Mode</h3>
+<ol type="1">
+<li>Press <strong><code>Prefix</code> + <code>[</code></strong> to enter copy mode.</li>
+<li>Navigate using Vi motion keys (<code>h</code>, <code>j</code>, <code>k</code>, <code>l</code>, <code>Ctrl+u</code>, <code>Ctrl+d</code>, <code>g</code>, <code>G</code>).</li>
+<li>Press <strong><code>v</code></strong> to begin text selection.</li>
+<li>Press <strong><code>y</code></strong> to yank. Tmux encodes the selection into Base64 and transmits it via an OSC 52 escape sequence directly across the SSH tunnel to your local terminal emulator (Kitty, Alacritty, iTerm2, Windows Terminal), landing immediately on your local clipboard!</li>
+</ol>
+</section>
+<section id="cli-pipelining-via-the-osc-copy-script" class="level3">
+<h3 class="anchored" data-anchor-id="cli-pipelining-via-the-osc-copy-script">5.3 CLI Pipelining via the <code>osc-copy</code> Script</h3>
+<p>To copy an entire file or command output directly to your local clipboard while inside an SSH Tmux session, create <code>~/bin/osc-copy</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/usr/bin/env bash</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Encodes stdin to Base64 and wraps in an OSC 52 escape sequence</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">"\033]52;c;</span><span class="va">$(</span><span class="fu">base64</span> <span class="kw">|</span> <span class="fu">tr</span> <span class="at">-d</span> <span class="st">'\r\n'</span><span class="va">)</span><span class="st">\007"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Usage inside your remote shell:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Copy entire file to local device clipboard</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> config.yaml <span class="kw">|</span> <span class="ex">osc-copy</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Copy command output directly</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> log <span class="at">-n</span> 5 <span class="at">--oneline</span> <span class="kw">|</span> <span class="ex">osc-copy</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="batch-session-termination-pane-synchronization" class="level2">
+<h2 class="anchored" data-anchor-id="batch-session-termination-pane-synchronization">6. Batch Session Termination &amp; Pane Synchronization</h2>
+<section id="batch-session-killing" class="level3">
+<h3 class="anchored" data-anchor-id="batch-session-killing">6.1 Batch Session Killing</h3>
+<p>As development workflows expand, orphan sessions accumulate:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Method 1: Kill ALL sessions and shut down tmux server</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> kill-server</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Method 2: Kill all sessions EXCEPT the currently active one</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> kill-session <span class="at">-a</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Method 3: Kill all sessions matching a specific prefix (e.g., test-*)</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> ls <span class="kw">|</span> <span class="fu">awk</span> <span class="at">-F:</span> <span class="st">'/^test/ {print $1}'</span> <span class="kw">|</span> <span class="fu">xargs</span> <span class="at">-n</span> 1 tmux kill-session <span class="at">-t</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="pane-synchronization-broadcast-editing" class="level3">
+<h3 class="anchored" data-anchor-id="pane-synchronization-broadcast-editing">6.2 Pane Synchronization (Broadcast Editing)</h3>
+<p>Broadcast identical keystrokes to all panes in the current window simultaneously: * <strong>Enable:</strong> <code>Prefix</code> + <code>:</code>, then <code>setw synchronize-panes on</code> * <strong>Disable:</strong> <code>Prefix</code> + <code>:</code>, then <code>setw synchronize-panes off</code> * <strong>Toggle Shortcut in <code>~/.tmux.conf</code>:</strong> <code>ini   bind y set-window-option synchronize-panes\; display-message "Synchronize panes: #{?synchronize-panes,on,off}"</code></p>
+<hr>
+</section>
+</section>
+<section id="surviving-reboots-tmux-resurrect-tmux-continuum" class="level2">
+<h2 class="anchored" data-anchor-id="surviving-reboots-tmux-resurrect-tmux-continuum">7. Surviving Reboots: <code>tmux-resurrect</code> &amp; <code>tmux-continuum</code></h2>
+<p>By default, rebooting your machine destroys all tmux sessions. By leveraging the <strong>Tmux Plugin Manager (TPM)</strong>, you can persist session state across system power cycles.</p>
+<section id="configuration-.tmux.conf" class="level3">
+<h3 class="anchored" data-anchor-id="configuration-.tmux.conf">Configuration (<code>~/.tmux.conf</code>)</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># List of plugins</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @plugin 'tmux-plugins/tpm'</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @plugin 'tmux-plugins/tmux-sensible'</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @plugin 'tmux-plugins/tmux-resurrect'</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @plugin 'tmux-plugins/tmux-continuum'</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Capture pane contents and restore active running processes</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @resurrect-capture-pane-contents 'on'</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @resurrect-processes 'vi vim nvim emacs man htop top ssh'</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Enable automatic continuous saving and boot restore</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @continuum-restore 'on'</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="dt">set -g @continuum-save-interval '15'</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize TMUX plugin manager (keep at bottom of file)</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="dt">run '~/.tmux/plugins/tpm/tpm'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><strong>Manual Save:</strong> <code>Prefix</code> + <code>Ctrl + s</code></li>
+<li><strong>Manual Restore:</strong> <code>Prefix</code> + <code>Ctrl + r</code></li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="the-modern-alternative-zellij-rust-based-multiplexer" class="level2">
+<h2 class="anchored" data-anchor-id="the-modern-alternative-zellij-rust-based-multiplexer">8. The Modern Alternative: Zellij (Rust-Based Multiplexer)</h2>
+<p><a href="https://zellij.dev/">Zellij</a> is a modern terminal workspace written in Rust. It was designed from the ground up to eliminate the steep learning curve and prefix-key friction of Tmux.</p>
+<pre><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                          The Zellij Interface                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ [Tab 1: Code] [Tab 2: Server] [+]                                           │
+│                                                                             │
+│  ┌──────────────────────────────┬────────────────────────────────────────┐  │
+│  │                              │                                        │  │
+│  │  $ nvim src/main.rs          │  $ cargo watch -x run                  │  │
+│  │                              │                                        │  │
+│  └──────────────────────────────┴────────────────────────────────────────┘  │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ HELP: Ctrl-p: Pane | Ctrl-t: Tab | Ctrl-n: Resize | Ctrl-s: Scroll | Ctrl-q │
+└─────────────────────────────────────────────────────────────────────────────┘</code></pre>
+<section id="why-developers-gravitate-toward-zellij" class="level3">
+<h3 class="anchored" data-anchor-id="why-developers-gravitate-toward-zellij">8.1 Why Developers Gravitate Toward Zellij</h3>
+<ol type="1">
+<li><strong>Discoverable User Interface:</strong> Zellij includes an interactive, context-sensitive status bar at the bottom. As you switch modes, the screen immediately displays all available keybindings, making memorization unnecessary for beginners.</li>
+<li><strong>Modal Input Architecture:</strong> Rather than routing every single command through an awkward prefix key (<code>Ctrl + b</code>), Zellij uses dedicated operational modes:
+<ul>
+<li><strong><code>Ctrl + p</code> (Pane Mode):</strong> Split, close, and navigate panes.</li>
+<li><strong><code>Ctrl + t</code> (Tab Mode):</strong> Create, rename, and toggle tabs.</li>
+<li><strong><code>Ctrl + n</code> (Resize Mode):</strong> Adjust pane dimensions using <code>h</code>, <code>j</code>, <code>k</code>, <code>l</code>.</li>
+<li><strong><code>Ctrl + s</code> (Scroll Mode):</strong> Search and navigate terminal history.</li>
+<li><strong><code>Ctrl + g</code> (Locked Mode):</strong> Bypasses all Zellij shortcuts, sending raw keystrokes directly to inner applications (like Vim or terminal games).</li>
+</ul></li>
+<li><strong>Floating &amp; Stacked Panes:</strong> Unlike Tmux, Zellij supports floating windows (<code>Ctrl + p</code> then <code>w</code>) and stacked layouts natively without third-party plugins.</li>
+<li><strong>WebAssembly (Wasm) Plugin System:</strong> Plugins in Zellij run inside a secure WebAssembly sandbox, compiled from Rust or any language supporting Wasm.</li>
+<li><strong>Built-in Session Resurrector:</strong> Zellij serializes layout structures and active directories automatically without needing external plugins.</li>
+</ol>
+</section>
+<section id="zero-config-osc-52-clipboard-in-zellij" class="level3">
+<h3 class="anchored" data-anchor-id="zero-config-osc-52-clipboard-in-zellij">8.2 Zero-Config OSC 52 Clipboard in Zellij</h3>
+<p>One of Zellij’s greatest strengths is <strong>native, out-of-the-box OSC 52 support</strong>: * When running Zellij over an SSH session, selecting text with the mouse or copying from Scroll Mode (<code>Ctrl + s</code>) <strong>automatically emits an OSC 52 escape sequence</strong> to your local terminal. * You do not need to configure display variables, install <code>xclip</code>, or hack shell scripts.</p>
+</section>
+<section id="zellij-configuration-.configzellijconfig.kdl" class="level3">
+<h3 class="anchored" data-anchor-id="zellij-configuration-.configzellijconfig.kdl">8.3 Zellij Configuration (<code>~/.config/zellij/config.kdl</code>)</h3>
+<p>Zellij uses the clean, human-readable <strong>KDL</strong> configuration language:</p>
+<pre class="kdl"><code>// ~/.config/zellij/config.kdl
+
+// Choose default theme
+theme "catppuccin-mocha"
+
+// Set default layout
+default_layout "compact"
+
+// Configure mouse selection and clipboard behavior
+copy_on_select true
+copy_clipboard "system" // Uses OSC 52 over SSH, or system clipboard locally
+
+// Simplified UI: hide the bottom helper bar once you know the shortcuts
+simplified_ui false
+
+// Configure default shell
+default_shell "zsh"</code></pre>
+<hr>
+</section>
+</section>
+<section id="comprehensive-comparison-tmux-vs.-zellij" class="level2">
+<h2 class="anchored" data-anchor-id="comprehensive-comparison-tmux-vs.-zellij">9. Comprehensive Comparison: Tmux vs.&nbsp;Zellij</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Dimension</th>
+<th style="text-align: left;">Tmux</th>
+<th style="text-align: left;">Zellij</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Implementation Language</strong></td>
+<td style="text-align: left;">C (POSIX compliant)</td>
+<td style="text-align: left;">Rust (Memory-safe)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>User Interface</strong></td>
+<td style="text-align: left;">Minimalist / Invisible status bar</td>
+<td style="text-align: left;">Discoverable, context-sensitive footer</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Command Invocation</strong></td>
+<td style="text-align: left;">Global Prefix Key (<code>Ctrl + b</code>)</td>
+<td style="text-align: left;">Modal Keybindings (<code>Ctrl+p</code>, <code>Ctrl+t</code>)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Floating Panes</strong></td>
+<td style="text-align: left;">No native support (requires workarounds)</td>
+<td style="text-align: left;">Native first-class support (<code>Ctrl+p</code> <span class="math inline">\(\to\)</span> <code>w</code>)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Remote SSH Clipboard</strong></td>
+<td style="text-align: left;">Requires <code>set -s set-clipboard on</code></td>
+<td style="text-align: left;"><strong>Native OSC 52 out-of-the-box</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Configuration Format</strong></td>
+<td style="text-align: left;"><code>~/.tmux.conf</code> (Custom DSL)</td>
+<td style="text-align: left;"><code>~/.config/zellij/config.kdl</code> (KDL format)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Plugin System</strong></td>
+<td style="text-align: left;">Bash/Shell scripts via TPM</td>
+<td style="text-align: left;">Sandboxed WebAssembly (Wasm) modules</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Session Persistence</strong></td>
+<td style="text-align: left;">Requires <code>tmux-resurrect</code> + <code>continuum</code></td>
+<td style="text-align: left;">Built-in session resurrection</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Resource Footprint</strong></td>
+<td style="text-align: left;">Ultra-light (<span class="math inline">\(\approx 3\text{–}5\text{ MB}\)</span> RAM)</td>
+<td style="text-align: left;">Lightweight (<span class="math inline">\(\approx 15\text{–}25\text{ MB}\)</span> RAM)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>System Ubiquity</strong></td>
+<td style="text-align: left;">Pre-installed on almost all Unix servers</td>
+<td style="text-align: left;">Must be installed via Cargo / package manager</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="summary-recommended-setup" class="level2">
+<h2 class="anchored" data-anchor-id="summary-recommended-setup">10. Summary &amp; Recommended Setup</h2>
+<ul>
+<li><strong>Use Tmux if:</strong> You administer heterogeneous enterprise servers, work on ultra-low-memory embedded nodes, or rely on decades of established custom shell scripts.</li>
+<li><strong>Use Zellij if:</strong> You want a modern, intuitive terminal IDE experience with zero-configuration remote clipboard synchronization, floating terminal windows, and a friendly learning curve.</li>
+</ul>
+<p><br> <br></p>
+<div style="text-align: center; color: #888; font-size: 0.9em;">
+<p>© 2026 Igor Kan</p>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/igor-kan\.github\.io\/quarto-writing\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2026 Igor Kan</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
