@@ -25,6 +25,14 @@ description: Quarto Writing Main Blog Guidelines
 * "Unpublish" / "Draft" = set `draft: true` in the frontmatter.
 * When `draft: true` is enabled, Quarto will NOT render or index the article on the public website.
 
+### Precompilation & Instant Serving Architecture (Zero Wait Time)
+* With 500+ articles, **never run `quarto preview`** across the entire project (it hangs evaluating kernels).
+* **Instant Static Server**: Always run `./serve_drafts.sh` to preview the site on `http://localhost:4200` instantly.
+* **Draft Visibility**: `website.draft-mode: visible` is enabled in `_quarto.yml` so that Quarto generates complete HTML for `draft: true` files into `_site/`.
+* **Kernel Freeze Cache**: `execute.freeze: auto` caches Python/Jupyter execution states in `_freeze/`.
+* **Incremental Precompile**: Run `quarto render <file.qmd>` to render a single post in seconds, or `./precompile_drafts.sh` to update modified files.
+
 ### UI & Styling Standards
 * Adhere strictly to the Notion.so minimalist aesthetic in light and dark mode.
 * Footer must display: `© 2026 Igor Kan`.
+
