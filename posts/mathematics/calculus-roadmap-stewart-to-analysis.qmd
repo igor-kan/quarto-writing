@@ -231,6 +231,37 @@ der = imag(fz) / h;
 
 fprintf('MATLAB:   Value = %.8f, Exact Derivative = %.8f\n', val, der);
 ```
+## Lean 4
+```lean
+-- Lean 4: Formal definition of Dual Numbers as an R-Algebra
+import Mathlib.Algebra.Algebra.Basic
+
+structure Dual (R : Type*) [CommRing R] where
+  val : R
+  der : R
+
+namespace Dual
+
+variable {R : Type*} [CommRing R]
+
+def add (x y : Dual R) : Dual R :=
+  ⟨x.val + y.val, x.der + y.der⟩
+
+-- Dual multiplication: (a + b*ε)(c + d*ε) = ac + (ad + bc)*ε (since ε^2 = 0)
+def mul (x y : Dual R) : Dual R :=
+  ⟨x.val * y.val, x.val * y.der + x.der * y.val⟩
+
+instance : Add (Dual R) := ⟨add⟩
+instance : Mul (Dual R) := ⟨mul⟩
+
+-- Forward-mode derivative evaluation at x0
+def evalDiff (f : Dual R → Dual R) (x0 : R) : R × R :=
+  let res := f ⟨x0, 1⟩
+  (res.val, res.der)
+
+end Dual
+```
+
 :::
 
 ---

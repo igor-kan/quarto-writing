@@ -111,6 +111,23 @@ dx = diff(x); dy = diff(y); dz = diff(z);
 L = sum(sqrt(dx.^2 + dy.^2 + dz.^2));
 fprintf('MATLAB:   Length = %.6f\n', L);
 ```
+## Lean 4
+```lean
+-- Lean 4: Curves of Bounded Variation and Arc Length in Metric Spaces
+import Mathlib.Topology.MetricSpace.Basic
+
+-- Path variation over a finite partition in a metric space
+def PathVariation {X : Type*} [PseudoMetricSpace X] (γ : ℝ → X) (pts : List ℝ) : ℝ :=
+  match pts with
+  | [] => 0
+  | [_] => 0
+  | a :: b :: rest => dist (γ a) (γ b) + PathVariation γ (b :: rest)
+
+-- A curve is rectifiable if its polygonal variations are bounded above
+def IsRectifiable {X : Type*} [PseudoMetricSpace X] (γ : ℝ → X) (a b : ℝ) : Prop :=
+  BddAbove { v : ℝ | ∃ pts : List ℝ, pts.Head? = some a ∧ pts.getLast? = some b ∧ v = PathVariation γ pts }
+```
+
 :::
 
 ---
