@@ -125,6 +125,25 @@ eigs = eig(H);
 morse_idx = sum(eigs < -1e-5);
 fprintf('MATLAB:   Eigenvalues = [%.2f, %.2f] | Morse Index = %d\n', eigs(1), eigs(2), morse_idx);
 ```
+## Lean 4
+```lean
+-- Lean 4: Critical Points and the Extreme Value Theorem on Compact Spaces
+import Mathlib.Topology.ContinuousOn
+import Mathlib.Analysis.Calculus.Deriv.Basic
+
+-- Extreme Value Theorem: Continuous function on a compact space attains its supremum
+theorem evt_attains_maximum {X : Type*} [TopologicalSpace X] [CompactSpace X] [Nonempty X]
+    (f : X → ℝ) (hf : Continuous f) :
+    ∃ x_max : X, ∀ y : X, f y ≤ f x_max := by
+  obtain ⟨x_max, -, hmax⟩ := IsCompact.exists_isGreatest isCompact_univ Set.univ_nonempty hf.continuousOn
+  exact ⟨x_max, fun y => hmax (Set.mem_univ y)⟩
+
+-- Critical Point Definition: The Fréchet derivative is the zero linear operator
+def IsCriticalPoint {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (f : E → ℝ) (x : E) : Prop :=
+  HasFDerivAt f 0 x
+```
+
 :::
 
 ---

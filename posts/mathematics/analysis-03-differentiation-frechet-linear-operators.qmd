@@ -200,6 +200,26 @@ g_x2 = g_s * 1.0;
 
 fprintf('MATLAB:   y = %.1f, dy/dx1 = %.1f, dy/dx2 = %.1f\n', y, g_x1, g_x2);
 ```
+## Lean 4
+```lean
+-- Lean 4: Fréchet Derivative as a Bounded Continuous Linear Map
+import Mathlib.Analysis.Calculus.FDeriv.Basic
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+-- Formal definition: Fréchet derivative Df(x) ∈ E →L[ℝ] F
+def IsFrechetDifferentiableAt (f : E → F) (x : E) (f' : E →L[ℝ] F) : Prop :=
+  HasFDerivAt f f' x
+
+-- The Chain Rule for Fréchet derivatives
+theorem frechet_chain_rule {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (f : E → F) (g : F → G) (x : E) (f' : E →L[ℝ] F) (g' : F →L[ℝ] G)
+    (hf : HasFDerivAt f f' x) (hg : HasFDerivAt g g' (f x)) :
+    HasFDerivAt (g ∘ f) (g'.comp f') x :=
+  HasFDerivAt.comp x hg hf
+```
+
 :::
 
 ---
