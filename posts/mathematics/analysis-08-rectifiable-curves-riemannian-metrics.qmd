@@ -10,91 +10,115 @@ format:
     math: true
 ---
 
-## 1. The Conceptual Shift: Why Arc Length Requires Metric Analysis
+## 1. The Conceptual Shift: Metric Rectifiability vs. Differential Heuristics
 
-In elementary calculus (Stewart, Chapter 8), arc length and surface area are introduced using intuitive Pythagorean differentials: $ds = \sqrt{1 + (y')^2} dx$ or $ds = \sqrt{\dot{x}^2 + \dot{y}^2} dt$. Students integrate these infinitesimals without questioning whether every continuous curve has a well-defined length.
-
-In modern metric geometry and differential analysis:
-1. **Continuous Curves of Infinite Length**: Continuity does not imply rectifiability. The Koch snowflake and paths of Brownian motion are continuous everywhere but rectifiable nowhere; their lengths between any two points are infinite.
-2. **Metric Definition of Rectifiability**: The length of a curve $\gamma: [a, b] \to X$ in an arbitrary metric space $(X, d)$ is defined purely through the supremum over all finite polygonal partitions $\mathcal{P}$:
-   $$\Lambda(\gamma) = \sup_{P \in \mathcal{P}} \sum_{i=1}^n d(\gamma(t_i), \gamma(t_{i-1}))$$
-   A curve is **rectifiable** if and only if $\Lambda(\gamma) < \infty$. This requires $\gamma$ to have **bounded variation**.
-3. **Riemannian Pullback Perspective**: In smooth geometry, the arc length functional is the integral of the pullback of the ambient Riemannian metric tensor $g$ to the 1D parameter space $[a, b]$:
-   $$L(\gamma) = \int_a^b \sqrt{\gamma^* g} = \int_a^b \sqrt{g_{\mu\nu}(\gamma(t)) \dot{\gamma}^\mu(t) \dot{\gamma}^\nu(t)} \, dt$$
-   Length is invariant under orientation-preserving diffeomorphic reparametrization.
+Elementary calculus calculates arc length via $ds = \sqrt{1 + (y')^2} dx$. In metric geometry, curves are rectifiable if and only if their polygonal variations have a finite supremum:
+$$\Lambda(\gamma) = \sup_{P} \sum_{i=1}^n d(\gamma(t_i), \gamma(t_{i-1})) < \infty$$
+In Riemannian geometry, length is the integral of the pullback metric $L(\gamma) = \int \sqrt{\gamma^* g} dt$.
 
 ---
 
-## 2. Rigorous Foundations & Theorems
+## 2. Numerical Computation: Polygonal Arc Length Integrator
 
-### Bounded Variation and Rectifiability
-Let $\gamma: [a, b] \to \mathbb{R}^n$. A partition $P$ is a finite ordered sequence $a = t_0 < t_1 < \dots < t_k = b$.
-The variation of $\gamma$ with respect to $P$ is:
-$$V(\gamma, P) = \sum_{i=1}^k \|\gamma(t_i) - \gamma(t_{i-1})\|$$
-> **Theorem**: If $\gamma: [a, b] \to \mathbb{R}^n$ is continuously differentiable ($C^1$), then $\gamma$ is rectifiable, and its arc length is given by:
-> $$\Lambda(\gamma) = \int_a^b \|\gamma'(t)\| \, dt$$
-
-*Proof Sketch*: By the Fundamental Theorem of Calculus, $\gamma(t_i) - \gamma(t_{i-1}) = \int_{t_{i-1}}^{t_i} \gamma'(t) dt$. By the triangle inequality for integrals:
-$$\|\gamma(t_i) - \gamma(t_{i-1})\| \le \int_{t_{i-1}}^{t_i} \|\gamma'(t)\| dt \implies \sum_{i=1}^k \|\gamma(t_i) - \gamma(t_{i-1})\| \le \int_a^b \|\gamma'(t)\| dt$$
-Taking the supremum over all partitions gives $\Lambda(\gamma) \le \int_a^b \|\gamma'(t)\| dt$.
-For the reverse inequality, uniform continuity of $\gamma'$ on $[a, b]$ allows one to choose a partition fine enough that $\left\| \frac{\gamma(t_i) - \gamma(t_{i-1})}{t_i - t_{i-1}} - \gamma'(t_i) \right\| < \epsilon$, demonstrating convergence of the polygonal sum to the Riemann integral. $\blacksquare$
-
----
-
-## 3. Applications Across Disciplines
-
-### Physics: General Relativity and Proper Time
-In Lorentzian geometry (Einstein's General Relativity), the interval $ds^2 = g_{\mu\nu} dx^\mu dx^\nu$ has signature $(-, +, +, +)$. The physical proper time $\tau$ experienced by an accelerating clock traveling along worldline $x^\mu(\lambda)$ is the arc length functional of a timelike path:
-$$\tau = \int \sqrt{-g_{\mu\nu} \frac{dx^\mu}{d\lambda} \frac{dx^\nu}{d\lambda}} \, d\lambda$$
-Maximizing this functional yields gravitational geodesics (free fall).
-
-### Robotics & Autonomous Navigation: Minimum-Time Trajectories
-In autonomous robotics and quadrotor planning, finding optimal trajectories is formulated as finding geodesics under cost metrics $g_{ij}(x) = c(x)^2 \delta_{ij}$, where $c(x)$ represents local traversal resistance or obstacle proximity.
-
-### Finance: Fractal Dimensions of Financial Time Series
-Asset price paths modeled by fractional Brownian motion $B_H(t)$ have non-rectifiable paths. The Hausdorff dimension of the graph is $D = 2 - H$. When $H = 1/2$ (standard Brownian motion), the total variation is infinite, which necessitates Itô's quadratic variation $[X, X]_t = t$.
-
----
-
-## 4. Numerical Computation: Adaptive Polygonal Path Rectification
-
-Below is a Python algorithm that adaptively computes the rectifiable variation of a parametric curve up to a prescribed tolerance, comparing polygonal approximations against Gauss-Legendre quadrature:
-
+::: {.panel-tabset group="language"}
+## Python 3
 ```python
 import numpy as np
 
-def polygonal_arc_length(gamma, t_a: float, t_b: float, n_segments: int) -> float:
-    """Computes the total variation of gamma over a uniform partition of [t_a, t_b]."""
-    t_vals = np.linspace(t_a, t_b, n_segments + 1)
-    pts = np.array([gamma(t) for t in t_vals])
-    diffs = np.diff(pts, axis=0)
-    seg_lengths = np.linalg.norm(diffs, axis=1)
-    return float(np.sum(seg_lengths))
+def polygonal_arc_length(gamma, t0: float, t1: float, n: int) -> float:
+    t = np.linspace(t0, t1, n + 1)
+    pts = np.array([gamma(ti) for ti in t])
+    return float(np.sum(np.linalg.norm(np.diff(pts, axis=0), axis=1)))
 
-# Test on a logarithmic spiral: gamma(t) = (e^(0.1t) * cos(t), e^(0.1t) * sin(t))
-def spiral(t):
-    a = 0.1
-    return np.array([np.exp(a * t) * np.cos(t), np.exp(a * t) * np.sin(t)])
-
-# Analytical length: L = sqrt(1 + a^2)/a * (e^(a*t_b) - e^(a*t_a))
-t0, t1 = 0.0, 4.0 * np.pi
-a_param = 0.1
-exact_L = (np.sqrt(1.0 + a_param**2) / a_param) * (np.exp(a_param * t1) - np.exp(a_param * t0))
-
-print(f"Analytical Spiral Length: {exact_L:.8f}")
-for n in [10, 50, 200, 1000]:
-    L_poly = polygonal_arc_length(spiral, t0, t1, n)
-    print(f"Segments: {n:4d} | Polygonal Length: {L_poly:.8f} | Error: {abs(L_poly - exact_L):.2e}")
+# Helix: gamma(t) = (cos t, sin t, t), true length over [0, 2*pi] is 2*pi*sqrt(2)
+gamma_helix = lambda t: np.array([np.cos(t), np.sin(t), t])
+L = polygonal_arc_length(gamma_helix, 0.0, 2.0 * np.pi, 1000)
+print(f"Python 3: Length = {L:.6f} (True: {2.0 * np.pi * np.sqrt(2.0):.6f})")
 ```
+
+## C++20
+```cpp
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <iomanip>
+
+int main() {
+    int n = 1000;
+    double t0 = 0.0, t1 = 2.0 * M_PI;
+    double dt = (t1 - t0) / n;
+    double length = 0.0;
+
+    auto x = [](double t){ return std::cos(t); };
+    auto y = [](double t){ return std::sin(t); };
+    auto z = [](double t){ return t; };
+
+    for (int i = 0; i < n; ++i) {
+        double ta = t0 + i * dt, tb = ta + dt;
+        double dx = x(tb) - x(ta);
+        double dy = y(tb) - y(ta);
+        double dz = z(tb) - z(ta);
+        length += std::sqrt(dx*dx + dy*dy + dz*dz);
+    }
+    std::cout << std::fixed << std::setprecision(6);
+    std::cout << "C++20:    Length = " << length << "\n";
+    return 0;
+}
+```
+
+## Julia
+```julia
+n = 1000
+t = range(0.0, 2pi, length=n+1)
+x = cos.(t); y = sin.(t); z = collect(t)
+dx = diff(x); dy = diff(y); dz = diff(z)
+L = sum(sqrt.(dx.^2 .+ dy.^2 .+ dz.^2))
+println("Julia:    Length = $(round(L, digits=6))")
+```
+
+## Modern Fortran
+```fortran
+program arc_length
+  implicit none
+  integer, parameter :: n = 1000
+  integer :: i
+  real(8) :: t0, t1, dt, ta, tb, dx, dy, dz, length, pi
+
+  pi = 3.141592653589793d0
+  t0 = 0.0d0; t1 = 2.0d0 * pi
+  dt = (t1 - t0) / n
+  length = 0.0d0
+
+  do i = 0, n-1
+    ta = t0 + i * dt
+    tb = ta + dt
+    dx = cos(tb) - cos(ta)
+    dy = sin(tb) - sin(ta)
+    dz = tb - ta
+    length = length + sqrt(dx*dx + dy*dy + dz*dz)
+  end do
+
+  print '(A,F10.6)', "Fortran:  Length = ", length
+end program arc_length
+```
+
+## MATLAB / Octave
+```matlab
+n = 1000;
+t = linspace(0, 2*pi, n+1);
+x = cos(t); y = sin(t); z = t;
+dx = diff(x); dy = diff(y); dz = diff(z);
+L = sum(sqrt(dx.^2 + dy.^2 + dz.^2));
+fprintf('MATLAB:   Length = %.6f\n', L);
+```
+:::
 
 ---
 
 ## 5. Curated Sources & Further Reading
 
-* **Walter Rudin**, *Principles of Mathematical Analysis*, 3rd Edition, McGraw-Hill (1976), Chapter 6.26–6.27: *Rectifiable Curves*.
-* **John M. Lee**, *Introduction to Riemannian Manifolds*, Graduate Texts in Mathematics 176, Springer (2018), Chapter 2.
-* **Manfredo P. Do Carmo**, *Differential Geometry of Curves and Surfaces*, Prentice-Hall (1976), Chapter 1.
-* **Tom M. Apostol**, *Calculus, Vol. 1*, 2nd Edition, Wiley (1967), Chapter 14.
+* **Walter Rudin**, *Principles of Mathematical Analysis*, McGraw-Hill (1976), Ch 6.26.
+* **John M. Lee**, *Introduction to Riemannian Manifolds*, Springer (2018), Ch 2.
 <br>
 <br>
 

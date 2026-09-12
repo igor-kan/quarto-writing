@@ -12,90 +12,102 @@ format:
 
 ## 1. The Conceptual Shift: Beyond Iterated Slicing
 
-In introductory multivariable calculus (Stewart, Chapter 15), double and triple integrals are treated as iterated single-variable integrals: $\iint f(x, y) dx dy = \int (\int f dx) dy$. When switching to polar, cylindrical, or spherical coordinates, the area/volume conversion factors ($r dr d\theta, \rho^2 \sin\phi d\rho d\phi d\theta$) are justified with heuristic geometric sketches of distorted curvilinear wedges.
-
-In modern rigorous analysis:
-1. **Integration on $n$-Dimensional Blocks**: Integration is constructed on compact rectangles $B = [a_1, b_1] \times \dots \times [a_n, b_n] \subset \mathbb{R}^n$ via the oscillation of $f$: $\text{osc}(f, B) = \sup_B f - \inf_B f$. A bounded function is integrable if and only if its discontinuities form a set of measure zero.
-2. **Smooth Partitions of Unity**: To integrate over non-rectangular, topologically complex domains or curved manifolds, modern analysis patches local integrals together using a **partition of unity**: a collection of smooth bump functions $\{\rho_i\}$ with compact support such that $\sum_i \rho_i(x) \equiv 1$.
-3. **Fubini-Tonelli Theorem**: Fubini's theorem proves that the multidimensional integral equals the iterated integral if the function is absolutely integrable ($\int |f| < \infty$). Without absolute integrability, iterated integrals can yield wildly contradictory results (e.g., integrating $\frac{x^2 - y^2}{(x^2 + y^2)^2}$ on $[0, 1]^2$).
-4. **The Change of Variables Theorem**: The appearance of the absolute value of the Jacobian determinant $|\det D\Phi(u)|$ is not a geometric convenience; it is the unique factor by which a locally linear diffeomorphism $\Phi$ scales the infinitesimal Hausdorff $n$-measure.
+Integration on manifolds and curved domains relies on **smooth partitions of unity** $\sum \rho_i(x) \equiv 1$ and the **Change of Variables Theorem**, where the Jacobian determinant $|\det D\Phi|$ scales the infinitesimal Hausdorff volume.
 
 ---
 
-## 2. Rigorous Foundations & Theorems
+## 2. Numerical Computation: High-Dimensional Monte Carlo Cubature
 
-### The Fubini-Tonelli Theorem
-Let $X \subset \mathbb{R}^n$ and $Y \subset \mathbb{R}^m$ be compact rectangles, and $f: X \times Y \to \mathbb{R}$ measurable.
-> **Tonelli**: If $f \ge 0$, then:
-> $$\int_{X \times Y} f(x, y) \, d(x, y) = \int_X \left( \int_Y f(x, y) \, dy \right) dx = \int_Y \left( \int_X f(x, y) \, dx \right) dy$$
-> **Fubini**: If $\int_{X \times Y} |f(x, y)| \, d(x, y) < \infty$, then the iterated integrals exist, are finite, and equal the double integral.
-
-### The Change of Variables Theorem
-> **Theorem**: Let $U \subset \mathbb{R}^n$ be an open set and $\Phi: U \to \mathbb{R}^n$ a $C^1$ diffeomorphism onto its image. Let $f: \Phi(U) \to \mathbb{R}$ be a continuous, compactly supported function. Then:
-> $$\int_{\Phi(U)} f(x) \, dx = \int_U f(\Phi(u)) \, |\det D\Phi(u)| \, du$$
-
-*Proof Strategy (via Exterior Calculus / Manifolds)*:
-In exterior algebra, the standard volume form is $dx_1 \wedge \dots \wedge dx_n$. The pullback under $\Phi$ is:
-$$\Phi^*(dx_1 \wedge \dots \wedge dx_n) = d\Phi_1 \wedge \dots \wedge d\Phi_n = \left( \sum_j \frac{\partial \Phi_1}{\partial u_j} du_j \right) \wedge \dots \wedge \left( \sum_k \frac{\partial \Phi_n}{\partial u_k} du_k \right) = \det(D\Phi) \, du_1 \wedge \dots \wedge du_n$$
-Because differential forms are naturally oriented, integrating over oriented domains replaces $\det(D\Phi)$ with its absolute value $|\det(D\Phi)|$ when orientation is preserved. $\blacksquare$
-
----
-
-## 3. Applications Across Disciplines
-
-### Probability & Statistics: Multivariate Normal Transformations
-If $\mathbf{Z} \sim \mathcal{N}(\mathbf{0}, I_n)$ is a standard Gaussian vector, applying the affine transformation $\mathbf{X} = \mathbf{\mu} + A \mathbf{Z}$ yields a multivariate normal vector with covariance $\Sigma = A A^T$. By the Change of Variables theorem, the probability density scales by $|\det A|^{-1} = (\det \Sigma)^{-1/2}$:
-$$p(\mathbf{x}) = \frac{1}{(2\pi)^{n/2} \sqrt{\det \Sigma}} \exp\left( -\frac{1}{2} (\mathbf{x} - \mathbf{\mu})^T \Sigma^{-1} (\mathbf{x} - \mathbf{\mu}) \right)$$
-
-### Machine Learning: Normalizing Flows
-In generative AI, **Normalizing Flows** (RealNVP, Glow) generate complex data distributions by passing a simple Gaussian noise vector $z_0$ through a chain of invertible neural network layers $z_K = f_K \circ \dots \circ f_1(z_0)$. Evaluating exact log-likelihoods requires computing the sum of log-determinants of the Jacobians:
-$$\log p(x) = \log p(z_0) - \sum_{i=1}^K \log |\det Df_i(z_{i-1})|$$
-
-### Physics: Thermodynamic Partition Functions
-In statistical physics, calculating partition functions $Z = \int e^{-\beta H(p, q)} d^3p \, d^3q$ for central force potentials requires switching from Cartesian to spherical phase-space coordinates, where the Jacobian volume element $p^2 \sin\theta_p \, dp \, d\theta_p \, d\phi_p$ yields Maxwell-Boltzmann velocity distributions.
-
----
-
-## 4. Numerical Computation: Multidimensional Monte Carlo Cubature vs. Grid Integration
-
-Below is a Python algorithm demonstrating the "Curse of Dimensionality" in numerical integration, comparing grid-based tensor quadrature ($O(N^{-2/d})$) against **Monte Carlo integration** ($O(N^{-1/2})$ independent of dimension $d$):
-
+::: {.panel-tabset group="language"}
+## Python 3
 ```python
 import numpy as np
 
-def monte_carlo_cubature(func, dim: int, n_samples: int = 100000, bounds=(-1.0, 1.0)) -> tuple[float, float]:
-    """
-    Integrates func over hypercube bounds^dim using Monte Carlo sampling.
-    """
-    vol = (bounds[1] - bounds[0]) ** dim
-    pts = np.random.uniform(bounds[0], bounds[1], size=(n_samples, dim))
-    vals = func(pts)
-    
-    mean_val = np.mean(vals)
-    integral_est = vol * mean_val
-    stderr = vol * (np.std(vals) / np.sqrt(n_samples))
-    return float(integral_est), float(stderr)
+def mc_gaussian_5d(n: int = 100000, bounds=(-2.0, 2.0)):
+    vol = (bounds[1] - bounds[0])**5
+    pts = np.random.uniform(bounds[0], bounds[1], size=(n, 5))
+    vals = np.exp(-np.sum(pts**2, axis=1))
+    return float(vol * np.mean(vals))
 
-# Integrate the Gaussian density in d = 5 dimensions over [-2, 2]^5
-# Analytical integral for infinite bounds is (pi)^(5/2) approx 17.4934
-def gaussian_5d(pts):
-    return np.exp(-np.sum(pts**2, axis=1))
-
-d = 5
-mc_est, err = monte_carlo_cubature(gaussian_5d, dim=d, n_samples=200000, bounds=(-3.0, 3.0))
-print(f"5-Dimensional Gaussian Integral Estimate: {mc_est:.4f} +/- {err:.4f}")
-print("Monte Carlo error rate is strictly O(1/sqrt(N)) regardless of dimension d.")
+print(f"Python 3: 5D Gaussian Integral = {mc_gaussian_5d():.4f} (True: {np.pi**2.5:.4f})")
 ```
+
+## C++20
+```cpp
+#include <iostream>
+#include <random>
+#include <cmath>
+
+int main() {
+    std::mt19937_64 rng(42);
+    std::uniform_real_distribution<double> dist(-2.0, 2.0);
+    int n = 100000;
+    double vol = std::pow(4.0, 5);
+    double sum = 0.0;
+
+    for (int i = 0; i < n; ++i) {
+        double r2 = 0.0;
+        for (int d = 0; d < 5; ++d) {
+            double x = dist(rng);
+            r2 += x * x;
+        }
+        sum += std::exp(-r2);
+    }
+    std::cout << "C++20:    5D Gaussian Integral = " << (vol * sum / n) << "\n";
+    return 0;
+}
+```
+
+## Julia
+```julia
+n = 100000
+pts = rand(5, n) .* 4.0 .- 2.0
+vals = exp.(-sum(pts.^2, dims=1))
+integral_est = (4.0^5) * mean(vals)
+println("Julia:    5D Gaussian Integral = $(round(integral_est, digits=4))")
+```
+
+## Modern Fortran
+```fortran
+program mc_cubature
+  implicit none
+  integer, parameter :: n = 100000
+  integer :: i, d
+  real(8) :: r(5), x, r2, total_sum, vol
+
+  vol = 4.0d0**5
+  total_sum = 0.0d0
+
+  do i = 1, n
+    call random_number(r)
+    r2 = 0.0d0
+    do d = 1, 5
+      x = r(d)*4.0d0 - 2.0d0
+      r2 = r2 + x*x
+    end do
+    total_sum = total_sum + exp(-r2)
+  end do
+
+  print '(A,F8.4)', "Fortran:  5D Gaussian Integral = ", (vol * total_sum / n)
+end program mc_cubature
+```
+
+## MATLAB / Octave
+```matlab
+n = 100000;
+pts = rand(n, 5) * 4 - 2;
+vals = exp(-sum(pts.^2, 2));
+integral_est = (4^5) * mean(vals);
+fprintf('MATLAB:   5D Gaussian Integral = %.4f\n', integral_est);
+```
+:::
 
 ---
 
 ## 5. Curated Sources & Further Reading
 
-* **Michael Spivak**, *Calculus on Manifolds*, Addison-Wesley (1965), Chapter 3: *Integration*.
-* **James R. Munkres**, *Analysis on Manifolds*, Westview Press (1991), Chapters 3 & 4.
-* **Gerald B. Folland**, *Real Analysis: Modern Techniques and Their Applications*, 2nd Edition, Wiley (1999), Chapter 2.5: *The Fubini-Tonelli Theorem*.
-* **John H. Hubbard & Barbara Burke Hubbard**, *Vector Calculus, Linear Algebra, and Differential Forms*, Matrix Editions (2015), Chapters 4 & 5.
-* **Tom M. Apostol**, *Calculus, Vol. 2*, 2nd Edition, Wiley (1969), Chapter 10.
+* **Michael Spivak**, *Calculus on Manifolds*, Addison-Wesley (1965), Ch 3.
+* **Gerald B. Folland**, *Real Analysis*, Wiley (1999), Ch 2.5.
 <br>
 <br>
 

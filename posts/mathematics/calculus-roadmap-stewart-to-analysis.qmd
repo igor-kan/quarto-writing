@@ -16,9 +16,8 @@ Standard undergraduate calculus—exemplified by James Stewart's ubiquitous *Cal
 
 However, when entering advanced mathematics, theoretical physics, modern statistics, or artificial intelligence research, this intuitive framework undergoes a radical structural shift:
 * **From static formulas to function spaces**: Points are no longer just coordinates $(x, y) \in \mathbb{R}^2$; functions themselves become points in infinite-dimensional Banach and Hilbert spaces ($C(K), L^2(\Omega), H^s(\mathbb{R}^n)$).
-* **From coordinate computation to coordinate-free algebra**: Vector calculus ($
-abla, 	ext{curl}, 	ext{div}$) is subsumed by differential forms on smooth manifolds, where Green's, Stokes', and Gauss's formulas collapse into a single algebraic identity: $\int_{\partial M} \omega = \int_M d\omega$.
-* **From intuitive limits to point-set topology**: Continuity is decoupled from the metric $\epsilon$-$\delta$ paradigm and defined purely in terms of preimages of open sets in topological spaces ($f^{-1}(U) \in 	au_X$).
+* **From coordinate computation to coordinate-free algebra**: Vector calculus ($\nabla, \text{curl}, \text{div}$) is subsumed by differential forms on smooth manifolds, where Green's, Stokes', and Gauss's formulas collapse into a single algebraic identity: $\int_{\partial M} \omega = \int_M d\omega$.
+* **From intuitive limits to point-set topology**: Continuity is decoupled from the metric $\epsilon$-$\delta$ paradigm and defined purely in terms of preimages of open sets in topological spaces ($f^{-1}(U) \in \tau_X$).
 
 ```
 [Stewart Intuitive Calculus] 
@@ -53,7 +52,7 @@ To bridge the chasm from introductory computation to modern rigor, we follow a s
 * **Primary Texts**: John H. Hubbard & Barbara Burke Hubbard, *Vector Calculus, Linear Algebra, and Differential Forms: A Unified Approach*; James R. Munkres, *Analysis on Manifolds*.
 * **Core Conceptual Shifts**:
   1. **Derivative as a Linear Transformation**: The derivative is no longer a matrix of numbers or a tangent slope; it is the unique linear operator $Df(x_0) \in \mathcal{L}(\mathbb{R}^n, \mathbb{R}^m)$ satisfying:
-     $$\lim_{h 	o 0} rac{\|f(x_0 + h) - f(x_0) - Df(x_0)h\|}{\|h\|} = 0$$
+     $$\lim_{h \to 0} \frac{\|f(x_0 + h) - f(x_0) - Df(x_0)h\|}{\|h\|} = 0$$
   2. **Nonlinear Geometry via Submersions**: Surfaces are not merely graphs $z = f(x, y)$, but regular submanifolds defined as level sets $M = f^{-1}(c)$ where the Jacobian has maximal rank. Tangent spaces $T_x M$ are kernels of $Df(x)$, and Lagrange multipliers are vectors in the orthogonal complement $(T_x M)^\perp$.
   3. **Fixed-Point Theorems**: Utilizing the Banach Contraction Mapping Principle to prove the Inverse and Implicit Function Theorems.
 
@@ -64,7 +63,7 @@ To bridge the chasm from introductory computation to modern rigor, we follow a s
   2. **Exterior Derivative ($d$)**: A coordinate-free differential operator satisfying $d \circ d = 0$.
   3. **Generalized Stokes' Theorem**: The ultimate synthesis uniting the Fundamental Theorem of Calculus, Green's theorem, the classical Kelvin-Stokes theorem, and the Divergence theorem:
      $$\int_{\partial M} \omega = \int_M d\omega$$
-  4. **Cohomology and Topology**: De Rham cohomology $H^k_{	ext{dR}}(M) = \ker(d_k) / 	ext{im}(d_{k-1})$ showing how calculus detects global topological holes in spaces.
+  4. **Cohomology and Topology**: De Rham cohomology $H^k_{\text{dR}}(M) = \ker(d_k) / \text{im}(d_{k-1})$ showing how calculus detects global topological holes in spaces.
 
 ---
 
@@ -72,58 +71,37 @@ To bridge the chasm from introductory computation to modern rigor, we follow a s
 
 | Field | Classical Intuitive View | Modern Advanced Analysis View | Key Computational Tool |
 | :--- | :--- | :--- | :--- |
-| **Machine Learning / AI** | Gradient descent on loss curves $J(	heta)$ | Optimization of non-convex functionals on Riemannian manifolds; convergence of stochastic gradient flows via Itô calculus | Automatic Differentiation (Reverse-Mode / Dual Numbers) |
+| **Machine Learning / AI** | Gradient descent on loss curves $J(\theta)$ | Optimization of non-convex functionals on Riemannian manifolds; convergence of stochastic gradient flows via Itô calculus | Automatic Differentiation (Reverse-Mode / Dual Numbers) |
 | **Theoretical Physics** | Newton's force vectors $\mathbf{F} = m\mathbf{a}$ | Geodesic motion on pseudo-Riemannian manifolds; Lagrangian mechanics on tangent bundles $TQ$; Hamiltonian flows on symplectic manifolds $(M, \omega)$ | Symplectic Integrators (Verlet / Leapfrog) |
 | **Statistics** | Fitting curves via least squares | Information geometry; Fisher information metric as a Riemannian metric on parametric probability distributions | Markov Chain Monte Carlo (HMC / MALA) |
 | **Computer Science** | Floating point approximation of functions | Convex analysis, semidefinite programming, subgradient calculus, and interval arithmetic guarantees | Interior Point Methods, ADMM |
 
 ---
 
-## 4. Algorithmic Overview: The Unified Numerical Pipeline
+## 4. Algorithmic Overview: Forward-Mode Automatic Differentiation via Dual Numbers
 
-Below is a Python demonstration comparing a naive numerical derivative against modern **Forward-Mode Automatic Differentiation using Dual Numbers**, reflecting the shift from finite-difference heuristics to exact jet space evaluations on algebras:
+Below are complete, self-contained implementations of **Dual Number Automatic Differentiation** across major scientific languages, reflecting the transition from finite-difference heuristics to exact jet space evaluations:
 
+::: {.panel-tabset group="language"}
+## Python 3
 ```python
 import numpy as np
 
 class DualNumber:
-    """
-    Dual numbers: x = a + b * epsilon where epsilon^2 = 0.
-    Enables exact computation of derivatives up to machine precision
-    without numerical truncation error or catastrophic cancellation.
-    """
+    """Dual number: x = a + b*eps where eps^2 = 0."""
     def __init__(self, real: float, dual: float = 0.0):
         self.real = float(real)
         self.dual = float(dual)
-
-    def __repr__(self):
-        return f"{self.real:.6f} + {self.dual:.6f}ε"
 
     def __add__(self, other):
         if isinstance(other, (int, float)):
             return DualNumber(self.real + other, self.dual)
         return DualNumber(self.real + other.real, self.dual + other.dual)
 
-    __radd__ = __add__
-
-    def __sub__(self, other):
-        if isinstance(other, (int, float)):
-            return DualNumber(self.real - other, self.dual)
-        return DualNumber(self.real - other.real, self.dual - other.dual)
-
     def __mul__(self, other):
         if isinstance(other, (int, float)):
             return DualNumber(self.real * other, self.dual * other)
-        # (a + b*eps) * (c + d*eps) = ac + (ad + bc)*eps
         return DualNumber(self.real * other.real, self.real * other.dual + self.dual * other.real)
-
-    __rmul__ = __mul__
-
-    def __truediv__(self, other):
-        if isinstance(other, (int, float)):
-            return DualNumber(self.real / other, self.dual / other)
-        denom = other.real ** 2
-        return DualNumber(self.real / other.real, (self.dual * other.real - self.real * other.dual) / denom)
 
     def sin(self):
         return DualNumber(np.sin(self.real), self.dual * np.cos(self.real))
@@ -131,27 +109,129 @@ class DualNumber:
     def exp(self):
         return DualNumber(np.exp(self.real), self.dual * np.exp(self.real))
 
-def dual_derivative(f, x: float) -> tuple[float, float]:
-    """Evaluates f(x) and f'(x) simultaneously using dual numbers."""
-    x_dual = DualNumber(x, 1.0)
-    result = f(x_dual)
-    return result.real, result.dual
-
-# Example: f(x) = exp(x) * sin(x)
-# Exact derivative: f'(x) = exp(x) * (sin(x) + cos(x))
-def test_func(x):
-    return x.exp() * x.sin()
-
+# Evaluate f(x) = exp(x) * sin(x) at x = pi/4
 x_val = np.pi / 4.0
-val, grad = dual_derivative(test_func, x_val)
-exact_val = np.exp(x_val) * np.sin(x_val)
-exact_grad = np.exp(x_val) * (np.sin(x_val) + np.cos(x_val))
-
-print(f"Evaluation at x = pi/4:")
-print(f"Dual Number Output:  Value = {val:.10f}, Derivative = {grad:.10f}")
-print(f"Analytical Exact:    Value = {exact_val:.10f}, Derivative = {exact_grad:.10f}")
-print(f"Absolute Error:      {abs(grad - exact_grad):.2e}")
+x = DualNumber(x_val, 1.0)
+y = x.exp() * x.sin()
+print(f"Python 3: Value = {y.real:.8f}, Exact Derivative = {y.dual:.8f}")
 ```
+
+## C++20
+```cpp
+#include <iostream>
+#include <cmath>
+#include <iomanip>
+
+struct Dual {
+    double val;
+    double der;
+    Dual(double v = 0.0, double d = 0.0) : val(v), der(d) {}
+    Dual operator+(const Dual& o) const { return Dual(val + o.val, der + o.der); }
+    Dual operator*(const Dual& o) const { return Dual(val * o.val, val * o.der + der * o.val); }
+};
+
+Dual sin(const Dual& x) { return Dual(std::sin(x.val), x.der * std::cos(x.val)); }
+Dual exp(const Dual& x) { return Dual(std::exp(x.val), x.der * std::exp(x.val)); }
+
+int main() {
+    double x0 = M_PI / 4.0;
+    Dual x(x0, 1.0);
+    Dual y = exp(x) * sin(x);
+    std::cout << std::fixed << std::setprecision(8);
+    std::cout << "C++20:    Value = " << y.val << ", Exact Derivative = " << y.der << "\n";
+    return 0;
+}
+```
+
+## Julia
+```julia
+struct Dual{T<:Real}
+    val::T
+    der::T
+end
+
+Base.:+(a::Dual, b::Dual) = Dual(a.val + b.val, a.der + b.der)
+Base.:*(a::Dual, b::Dual) = Dual(a.val * b.val, a.val * b.der + a.der * b.val)
+Base.sin(a::Dual) = Dual(sin(a.val), a.der * cos(a.val))
+Base.exp(a::Dual) = Dual(exp(a.val), a.der * exp(a.val))
+
+x0 = pi / 4.0
+x = Dual(x0, 1.0)
+y = exp(x) * sin(x)
+println("Julia:    Value = $(y.val), Exact Derivative = $(y.der)")
+```
+
+## Modern Fortran
+```fortran
+module dual_mod
+  implicit none
+  type :: dual_t
+    real(8) :: val, der
+  end type dual_t
+
+  interface operator(+)
+    module procedure dual_add
+  end interface
+  interface operator(*)
+    module procedure dual_mul
+  end interface
+contains
+  function dual_add(a, b) result(c)
+    type(dual_t), intent(in) :: a, b
+    type(dual_t) :: c
+    c%val = a%val + b%val
+    c%der = a%der + b%der
+  end function dual_add
+
+  function dual_mul(a, b) result(c)
+    type(dual_t), intent(in) :: a, b
+    type(dual_t) :: c
+    c%val = a%val * b%val
+    c%der = a%val * b%der + a%der * b%val
+  end function dual_mul
+
+  function dual_sin(a) result(c)
+    type(dual_t), intent(in) :: a
+    type(dual_t) :: c
+    c%val = sin(a%val)
+    c%der = a%der * cos(a%val)
+  end function dual_sin
+
+  function dual_exp(a) result(c)
+    type(dual_t), intent(in) :: a
+    type(dual_t) :: c
+    c%val = exp(a%val)
+    c%der = a%der * exp(a%val)
+  end function dual_exp
+end module dual_mod
+
+program test_dual
+  use dual_mod
+  implicit none
+  real(8), parameter :: pi = 3.141592653589793d0
+  type(dual_t) :: x, y
+  x = dual_t(pi / 4.0d0, 1.0d0)
+  y = dual_exp(x) * dual_sin(x)
+  print '(A,F10.6,A,F10.6)', "Fortran:  Value = ", y%val, ", Exact Derivative = ", y%der
+end program test_dual
+```
+
+## MATLAB / Octave
+```matlab
+% Complex-step derivative approximation (exact to machine precision)
+% f(x + i*h) = f(x) + i*h*f'(x) - O(h^2)
+h = 1e-20;
+x0 = pi / 4.0;
+f = @(x) exp(x) .* sin(x);
+
+z = x0 + 1i * h;
+fz = f(z);
+val = real(fz);
+der = imag(fz) / h;
+
+fprintf('MATLAB:   Value = %.8f, Exact Derivative = %.8f\n', val, der);
+```
+:::
 
 ---
 
