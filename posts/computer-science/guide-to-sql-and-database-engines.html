@@ -1,2 +1,1667 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"></html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Igor Kan">
+<meta name="dcterms.date" content="2026-09-12">
+
+<title>The Definitive All-in-One SQL Guide: Multi-Engine Mastery across PostgreSQL, MySQL, SQL Server, Oracle, and SQLite – My Writings</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-a515e054079012129989d5397ee3c9c1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">My Writings</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../literature/index.html"> 
+<span class="menu-text">Literature</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../tutorials/index.html"> 
+<span class="menu-text">Tutorials</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction-the-declarative-power-of-sql" id="toc-introduction-the-declarative-power-of-sql" class="nav-link active" data-scroll-target="#introduction-the-declarative-power-of-sql">1. Introduction: The Declarative Power of SQL</a></li>
+  <li><a href="#the-true-order-of-sql-execution-why-where-fails-on-window-functions" id="toc-the-true-order-of-sql-execution-why-where-fails-on-window-functions" class="nav-link" data-scroll-target="#the-true-order-of-sql-execution-why-where-fails-on-window-functions">2. The True Order of SQL Execution (Why <code>WHERE</code> Fails on Window Functions)</a>
+  <ul class="collapse">
+  <li><a href="#the-two-critical-pitfalls-explained" id="toc-the-two-critical-pitfalls-explained" class="nav-link" data-scroll-target="#the-two-critical-pitfalls-explained">The Two Critical Pitfalls Explained:</a></li>
+  </ul></li>
+  <li><a href="#window-functions-masterclass-ranking-values-and-frames" id="toc-window-functions-masterclass-ranking-values-and-frames" class="nav-link" data-scroll-target="#window-functions-masterclass-ranking-values-and-frames">3. Window Functions Masterclass: Ranking, Values, and Frames</a>
+  <ul class="collapse">
+  <li><a href="#the-ranking-functions-compared-row_number-vs-rank-vs-dense_rank-vs-ntile" id="toc-the-ranking-functions-compared-row_number-vs-rank-vs-dense_rank-vs-ntile" class="nav-link" data-scroll-target="#the-ranking-functions-compared-row_number-vs-rank-vs-dense_rank-vs-ntile">1. The Ranking Functions Compared: <code>ROW_NUMBER</code> vs <code>RANK</code> vs <code>DENSE_RANK</code> vs <code>NTILE</code></a></li>
+  <li><a href="#positional-value-functions-lag-lead-first_value-last_value" id="toc-positional-value-functions-lag-lead-first_value-last_value" class="nav-link" data-scroll-target="#positional-value-functions-lag-lead-first_value-last_value">2. Positional &amp; Value Functions: <code>LAG</code>, <code>LEAD</code>, <code>FIRST_VALUE</code>, <code>LAST_VALUE</code></a></li>
+  </ul></li>
+  <li><a href="#common-table-expressions-ctes-recursive-hierarchies" id="toc-common-table-expressions-ctes-recursive-hierarchies" class="nav-link" data-scroll-target="#common-table-expressions-ctes-recursive-hierarchies">4. Common Table Expressions (CTEs) &amp; Recursive Hierarchies</a>
+  <ul class="collapse">
+  <li><a href="#non-recursive-cte-for-filtering-window-functions" id="toc-non-recursive-cte-for-filtering-window-functions" class="nav-link" data-scroll-target="#non-recursive-cte-for-filtering-window-functions">1. Non-Recursive CTE for Filtering Window Functions</a></li>
+  <li><a href="#recursive-ctes-for-hierarchical-and-graph-traversal" id="toc-recursive-ctes-for-hierarchical-and-graph-traversal" class="nav-link" data-scroll-target="#recursive-ctes-for-hierarchical-and-graph-traversal">2. Recursive CTEs for Hierarchical and Graph Traversal</a></li>
+  </ul></li>
+  <li><a href="#complex-joins-multi-column-keys-self-referential-rules" id="toc-complex-joins-multi-column-keys-self-referential-rules" class="nav-link" data-scroll-target="#complex-joins-multi-column-keys-self-referential-rules">5. Complex Joins, Multi-Column Keys &amp; Self-Referential Rules</a>
+  <ul class="collapse">
+  <li><a href="#multi-column-joins-composite-keys" id="toc-multi-column-joins-composite-keys" class="nav-link" data-scroll-target="#multi-column-joins-composite-keys">1. Multi-Column Joins (Composite Keys)</a></li>
+  <li><a href="#non-equi-joins-interval-range-matching" id="toc-non-equi-joins-interval-range-matching" class="nav-link" data-scroll-target="#non-equi-joins-interval-range-matching">2. Non-Equi Joins (Interval &amp; Range Matching)</a></li>
+  <li><a href="#self-joins-self-referential-matching" id="toc-self-joins-self-referential-matching" class="nav-link" data-scroll-target="#self-joins-self-referential-matching">3. Self-Joins &amp; Self-Referential Matching</a></li>
+  </ul></li>
+  <li><a href="#array-collection-unnesting-across-all-5-engines" id="toc-array-collection-unnesting-across-all-5-engines" class="nav-link" data-scroll-target="#array-collection-unnesting-across-all-5-engines">6. Array &amp; Collection Unnesting Across All 5 Engines</a>
+  <ul class="collapse">
+  <li><a href="#postgresql-native-arrays" id="toc-postgresql-native-arrays" class="nav-link" data-scroll-target="#postgresql-native-arrays">1. PostgreSQL (Native Arrays)</a></li>
+  <li><a href="#mysql-json-arrays-via-json_table" id="toc-mysql-json-arrays-via-json_table" class="nav-link" data-scroll-target="#mysql-json-arrays-via-json_table">2. MySQL (JSON Arrays via <code>JSON_TABLE</code>)</a></li>
+  <li><a href="#microsoft-sql-server-string_split-openjson" id="toc-microsoft-sql-server-string_split-openjson" class="nav-link" data-scroll-target="#microsoft-sql-server-string_split-openjson">3. Microsoft SQL Server (<code>STRING_SPLIT</code> &amp; <code>OPENJSON</code>)</a></li>
+  <li><a href="#oracle-json_table-nested-tables" id="toc-oracle-json_table-nested-tables" class="nav-link" data-scroll-target="#oracle-json_table-nested-tables">4. Oracle (<code>JSON_TABLE</code> &amp; Nested Tables)</a></li>
+  <li><a href="#sqlite-json_each" id="toc-sqlite-json_each" class="nav-link" data-scroll-target="#sqlite-json_each">5. SQLite (<code>json_each</code>)</a></li>
+  </ul></li>
+  <li><a href="#string-array-aggregations-the-reverse-of-unnesting" id="toc-string-array-aggregations-the-reverse-of-unnesting" class="nav-link" data-scroll-target="#string-array-aggregations-the-reverse-of-unnesting">7. String &amp; Array Aggregations (The Reverse of Unnesting)</a></li>
+  <li><a href="#bitwise-operations-parity-manipulation-in-sql" id="toc-bitwise-operations-parity-manipulation-in-sql" class="nav-link" data-scroll-target="#bitwise-operations-parity-manipulation-in-sql">8. Bitwise Operations &amp; Parity Manipulation in SQL</a>
+  <ul class="collapse">
+  <li><a href="#practical-leetcode-parity-trick-alternating-seat-swaps" id="toc-practical-leetcode-parity-trick-alternating-seat-swaps" class="nav-link" data-scroll-target="#practical-leetcode-parity-trick-alternating-seat-swaps">Practical LeetCode Parity Trick: Alternating Seat Swaps</a></li>
+  </ul></li>
+  <li><a href="#character-ascii-code-conversions" id="toc-character-ascii-code-conversions" class="nav-link" data-scroll-target="#character-ascii-code-conversions">9. Character &amp; ASCII Code Conversions</a>
+  <ul class="collapse">
+  <li><a href="#ascii-code-to-character" id="toc-ascii-code-to-character" class="nav-link" data-scroll-target="#ascii-code-to-character">1. ASCII Code to Character</a></li>
+  <li><a href="#character-to-ascii-code" id="toc-character-to-ascii-code" class="nav-link" data-scroll-target="#character-to-ascii-code">2. Character to ASCII Code</a></li>
+  <li><a href="#practical-example-generating-the-alphabet-a-z-in-pure-sql-postgresql" id="toc-practical-example-generating-the-alphabet-a-z-in-pure-sql-postgresql" class="nav-link" data-scroll-target="#practical-example-generating-the-alphabet-a-z-in-pure-sql-postgresql">3. Practical Example: Generating the Alphabet <span class="math inline">\(A-Z\)</span> in Pure SQL (PostgreSQL):</a></li>
+  </ul></li>
+  <li><a href="#statistical-bucketing-pure-sql-distribution-charts" id="toc-statistical-bucketing-pure-sql-distribution-charts" class="nav-link" data-scroll-target="#statistical-bucketing-pure-sql-distribution-charts">10. Statistical Bucketing &amp; Pure-SQL Distribution Charts</a>
+  <ul class="collapse">
+  <li><a href="#generating-equal-width-histogram-buckets" id="toc-generating-equal-width-histogram-buckets" class="nav-link" data-scroll-target="#generating-equal-width-histogram-buckets">1. Generating Equal-Width Histogram Buckets</a></li>
+  <li><a href="#rendering-ascii-bar-charts-in-pure-sql" id="toc-rendering-ascii-bar-charts-in-pure-sql" class="nav-link" data-scroll-target="#rendering-ascii-bar-charts-in-pure-sql">2. Rendering ASCII Bar Charts in Pure SQL</a></li>
+  </ul></li>
+  <li><a href="#classic-leetcode-sql-patterns-deconstructed-with-code" id="toc-classic-leetcode-sql-patterns-deconstructed-with-code" class="nav-link" data-scroll-target="#classic-leetcode-sql-patterns-deconstructed-with-code">11. Classic LeetCode SQL Patterns (Deconstructed with Code)</a>
+  <ul class="collapse">
+  <li><a href="#case-study-1-triangle-judgement-leetcode-610" id="toc-case-study-1-triangle-judgement-leetcode-610" class="nav-link" data-scroll-target="#case-study-1-triangle-judgement-leetcode-610">Case Study 1: Triangle Judgement (LeetCode 610)</a></li>
+  <li><a href="#case-study-2-department-top-three-salaries-leetcode-185" id="toc-case-study-2-department-top-three-salaries-leetcode-185" class="nav-link" data-scroll-target="#case-study-2-department-top-three-salaries-leetcode-185">Case Study 2: Department Top Three Salaries (LeetCode 185)</a></li>
+  <li><a href="#case-study-3-consecutive-numbers-leetcode-180" id="toc-case-study-3-consecutive-numbers-leetcode-180" class="nav-link" data-scroll-target="#case-study-3-consecutive-numbers-leetcode-180">Case Study 3: Consecutive Numbers (LeetCode 180)</a></li>
+  <li><a href="#case-study-4-exchange-seats-leetcode-626" id="toc-case-study-4-exchange-seats-leetcode-626" class="nav-link" data-scroll-target="#case-study-4-exchange-seats-leetcode-626">Case Study 4: Exchange Seats (LeetCode 626)</a></li>
+  </ul></li>
+  <li><a href="#the-grand-cross-engine-rosetta-stone" id="toc-the-grand-cross-engine-rosetta-stone" class="nav-link" data-scroll-target="#the-grand-cross-engine-rosetta-stone">12. The Grand Cross-Engine Rosetta Stone</a></li>
+  <li><a href="#references-official-documentation" id="toc-references-official-documentation" class="nav-link" data-scroll-target="#references-official-documentation">13. References &amp; Official Documentation</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">The Definitive All-in-One SQL Guide: Multi-Engine Mastery across PostgreSQL, MySQL, SQL Server, Oracle, and SQLite</h1>
+<p class="subtitle lead">From query execution order and window functions (DENSE_RANK, LAG/LEAD) to recursive CTEs, array unnesting, multi-column joins, bitwise operations, and LeetCode algorithmic patterns.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Computer Science</div>
+    <div class="quarto-category">Databases</div>
+    <div class="quarto-category">SQL</div>
+    <div class="quarto-category">PostgreSQL</div>
+    <div class="quarto-category">MySQL</div>
+    <div class="quarto-category">SQL Server</div>
+    <div class="quarto-category">Oracle</div>
+    <div class="quarto-category">SQLite</div>
+    <div class="quarto-category">LeetCode</div>
+    <div class="quarto-category">Data Engineering</div>
+  </div>
+  </div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Igor Kan </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 12, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction-the-declarative-power-of-sql" class="level2">
+<h2 class="anchored" data-anchor-id="introduction-the-declarative-power-of-sql">1. Introduction: The Declarative Power of SQL</h2>
+<p>Structured Query Language (<strong>SQL</strong>) is the universal lingua franca of data engineering, software architecture, and analytical systems. Unlike imperative languages (such as Python, C++, or Rust) where the programmer dictates <em>how</em> a machine iterates through memory, SQL is strictly <strong>declarative</strong>: you specify <em>what</em> mathematical relation you want to produce, and the database engine’s query planner compiles, optimizes, and executes an access path.</p>
+<p>However, writing performant, bug-free, and sophisticated SQL requires understanding how database engines actually interpret code. When developers transition from basic <code>SELECT ... FROM ... WHERE</code> queries to production data pipelines and algorithmic challenges (like LeetCode SQL), they run directly into engine discrepancies, execution order traps, and complex relational constructs.</p>
+<p>This comprehensive guide serves as an all-in-one, multi-dialect masterclass comparing the five dominant relational database engines:</p>
+<ul>
+<li><strong>PostgreSQL</strong> (<code>pgsql</code>) — The open-source extensible standard of modern backend engineering.</li>
+<li><strong>MySQL</strong> (<code>mysql</code>) — The ubiquitous web workhorse powering massive read-heavy systems.</li>
+<li><strong>Microsoft SQL Server</strong> (<code>msserver</code> / T-SQL) — The enterprise standard with deep tooling.</li>
+<li><strong>Oracle Database</strong> (<code>oracle</code> / PL-SQL) — The mission-critical financial and transaction powerhouse.</li>
+<li><strong>SQLite</strong> (<code>sqlite</code>) — The serverless, zero-configuration embedded engine running on billions of devices.</li>
+</ul>
+<hr>
+</section>
+<section id="the-true-order-of-sql-execution-why-where-fails-on-window-functions" class="level2">
+<h2 class="anchored" data-anchor-id="the-true-order-of-sql-execution-why-where-fails-on-window-functions">2. The True Order of SQL Execution (Why <code>WHERE</code> Fails on Window Functions)</h2>
+<p>One of the most pervasive misconceptions among intermediate developers is reading SQL in the order it is written. In written syntax, <code>SELECT</code> appears first:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> department_id, <span class="fu">AVG</span>(salary) <span class="kw">AS</span> avg_sal  <span class="co">-- Line 1</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> employees                                 <span class="co">-- Line 2</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> salary <span class="op">&gt;</span> <span class="dv">50000</span>                           <span class="co">-- Line 3</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">GROUP</span> <span class="kw">BY</span> department_id                         <span class="co">-- Line 4</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">HAVING</span> <span class="fu">AVG</span>(salary) <span class="op">&gt;</span> <span class="dv">80000</span>                     <span class="co">-- Line 5</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> avg_sal <span class="kw">DESC</span>                          <span class="co">-- Line 6</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">LIMIT</span> <span class="dv">10</span>;                                      <span class="co">-- Line 7</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>However, the database engine executes this query in a completely different, strict sequential order:</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TD
+    S1["&lt;b&gt;1. FROM &amp; JOIN&lt;/b&gt;&lt;br/&gt;Identify source tables, evaluate Cartesian products, apply ON filters"] --&gt; S2["&lt;b&gt;2. WHERE&lt;/b&gt;&lt;br/&gt;Filter raw individual rows before any grouping occurs"]
+    S2 --&gt; S3["&lt;b&gt;3. GROUP BY&lt;/b&gt;&lt;br/&gt;Aggregate rows into discrete bucket keys"]
+    S3 --&gt; S4["&lt;b&gt;4. HAVING&lt;/b&gt;&lt;br/&gt;Filter aggregated groups based on summary conditions"]
+    S4 --&gt; S5["&lt;b&gt;5. WINDOW&lt;/b&gt;&lt;br/&gt;Compute OVER partitions (DENSE_RANK, LAG, SUM OVER)"]
+    S5 --&gt; S6["&lt;b&gt;6. SELECT&lt;/b&gt;&lt;br/&gt;Evaluate expressions, assign column aliases"]
+    S6 --&gt; S7["&lt;b&gt;7. DISTINCT&lt;/b&gt;&lt;br/&gt;Eliminate duplicate projected rows"]
+    S7 --&gt; S8["&lt;b&gt;8. ORDER BY&lt;/b&gt;&lt;br/&gt;Sort final output records"]
+    S8 --&gt; S9["&lt;b&gt;9. LIMIT / OFFSET / FETCH&lt;/b&gt;&lt;br/&gt;Paginate the final emitted result set"]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<section id="the-two-critical-pitfalls-explained" class="level3">
+<h3 class="anchored" data-anchor-id="the-two-critical-pitfalls-explained">The Two Critical Pitfalls Explained:</h3>
+<ol type="1">
+<li><strong>Why <code>WHERE avg_sal &gt; 80000</code> Errors:</strong>
+<ul>
+<li>In Step 2 (<code>WHERE</code>), the <code>SELECT</code> clause (Step 6) has not executed yet. The alias <code>avg_sal</code> does not exist in memory!</li>
+<li>Furthermore, <code>AVG(salary)</code> is an aggregate, which can only be computed after rows are grouped in Step 3. Filtering aggregates must happen in <code>HAVING</code> (Step 4).</li>
+</ul></li>
+<li><strong>Why <code>WHERE DENSE_RANK() OVER (...) &lt;= 2</code> is Illegal:</strong>
+<ul>
+<li>Window functions execute in Step 5 (<code>WINDOW</code>), <em>after</em> <code>WHERE</code> has already executed in Step 2.</li>
+<li>A database cannot filter rows using a window function in the same query block because the window function requires the post-<code>WHERE</code> dataset to define its partitions!</li>
+<li><strong>The Universal Solution:</strong> Wrap the window function inside a <strong>Common Table Expression (CTE)</strong> or a derived subquery, allowing the outer query’s <code>WHERE</code> clause to filter the computed rank.</li>
+</ul></li>
+</ol>
+<hr>
+</section>
+</section>
+<section id="window-functions-masterclass-ranking-values-and-frames" class="level2">
+<h2 class="anchored" data-anchor-id="window-functions-masterclass-ranking-values-and-frames">3. Window Functions Masterclass: Ranking, Values, and Frames</h2>
+<p>Window functions perform calculations across a set of table rows that are related to the current row, without collapsing the individual rows into a single summary line (unlike <code>GROUP BY</code>).</p>
+<p><span class="math display">\[\text{\bf Syntax: } \text{FUNCTION}(\dots) \text{ OVER } \Big( [\text{PARTITION BY } c_1, c_2, \dots] \quad [\text{ORDER BY } s_1, s_2, \dots] \quad [\text{FRAME\_CLAUSE}] \Big)\]</span></p>
+<section id="the-ranking-functions-compared-row_number-vs-rank-vs-dense_rank-vs-ntile" class="level3">
+<h3 class="anchored" data-anchor-id="the-ranking-functions-compared-row_number-vs-rank-vs-dense_rank-vs-ntile">1. The Ranking Functions Compared: <code>ROW_NUMBER</code> vs <code>RANK</code> vs <code>DENSE_RANK</code> vs <code>NTILE</code></h3>
+<p>Suppose four students achieve test scores: <strong>[100, 95, 95, 80]</strong>. Here is how each function handles identical values (ties):</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Student</th>
+<th style="text-align: center;">Score</th>
+<th style="text-align: center;"><code>ROW_NUMBER()</code></th>
+<th style="text-align: center;"><code>RANK()</code></th>
+<th style="text-align: center;"><code>DENSE_RANK()</code></th>
+<th style="text-align: center;"><code>NTILE(2)</code></th>
+<th style="text-align: left;">Notes on Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Alice</td>
+<td style="text-align: center;">100</td>
+<td style="text-align: center;"><strong>1</strong></td>
+<td style="text-align: center;"><strong>1</strong></td>
+<td style="text-align: center;"><strong>1</strong></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: left;">Highest score.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Bob</td>
+<td style="text-align: center;">95</td>
+<td style="text-align: center;"><strong>2</strong></td>
+<td style="text-align: center;"><strong>2</strong></td>
+<td style="text-align: center;"><strong>2</strong></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: left;">Tied for 2nd place.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Charlie</td>
+<td style="text-align: center;">95</td>
+<td style="text-align: center;"><strong>3</strong></td>
+<td style="text-align: center;"><strong>2</strong></td>
+<td style="text-align: center;"><strong>2</strong></td>
+<td style="text-align: center;">2</td>
+<td style="text-align: left;">Tied for 2nd place. <code>ROW_NUMBER</code> breaks tie arbitrarily.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">David</td>
+<td style="text-align: center;">80</td>
+<td style="text-align: center;"><strong>4</strong></td>
+<td style="text-align: center;"><strong>4</strong></td>
+<td style="text-align: center;"><strong>3</strong></td>
+<td style="text-align: center;">2</td>
+<td style="text-align: left;"><code>RANK</code> leaves a gap (skips 3). <code>DENSE_RANK</code> has <strong>no gaps</strong>!</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong><code>ROW_NUMBER()</code></strong>: Assigns a strictly unique, contiguous integer to every row. Essential for deterministic pagination and deduplication.</li>
+<li><strong><code>RANK()</code></strong>: Assigns equal integers to ties, but <strong>leaves gaps</strong> in subsequent rankings (1, 2, 2, 4…). Matches Olympic medal standing.</li>
+<li><strong><code>DENSE_RANK()</code></strong>: Assigns equal integers to ties <strong>without gaps</strong> (1, 2, 2, 3…). Essential for “Find the Top <span class="math inline">\(N\)</span> highest unique salaries.”</li>
+<li><strong><code>NTILE(n)</code></strong>: Divides rows into <span class="math inline">\(n\)</span> roughly equal percentile buckets (quartiles, deciles).</li>
+</ul>
+<hr>
+</section>
+<section id="positional-value-functions-lag-lead-first_value-last_value" class="level3">
+<h3 class="anchored" data-anchor-id="positional-value-functions-lag-lead-first_value-last_value">2. Positional &amp; Value Functions: <code>LAG</code>, <code>LEAD</code>, <code>FIRST_VALUE</code>, <code>LAST_VALUE</code></h3>
+<p>Value functions inspect adjacent or boundary rows relative to the current row:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    emp_id, </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    department_id, </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    hire_date, </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    salary,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Inspect previous employee's salary in the department</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">LAG</span>(salary, <span class="dv">1</span>, <span class="dv">0</span>) <span class="kw">OVER</span> (</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">PARTITION</span> <span class="kw">BY</span> department_id </span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">ORDER</span> <span class="kw">BY</span> hire_date <span class="kw">ASC</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    ) <span class="kw">AS</span> prev_salary,</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Inspect next employee's salary in the department</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">LEAD</span>(salary, <span class="dv">1</span>, <span class="dv">0</span>) <span class="kw">OVER</span> (</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        <span class="kw">PARTITION</span> <span class="kw">BY</span> department_id </span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        <span class="kw">ORDER</span> <span class="kw">BY</span> hire_date <span class="kw">ASC</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    ) <span class="kw">AS</span> next_salary,</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Salary of the very first hire in the department</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">FIRST_VALUE</span>(salary) <span class="kw">OVER</span> (</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        <span class="kw">PARTITION</span> <span class="kw">BY</span> department_id </span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>        <span class="kw">ORDER</span> <span class="kw">BY</span> hire_date <span class="kw">ASC</span> </span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>        <span class="kw">ROWS</span> <span class="kw">BETWEEN</span> <span class="kw">UNBOUNDED</span> <span class="kw">PRECEDING</span> <span class="kw">AND</span> <span class="kw">CURRENT</span> <span class="kw">ROW</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    ) <span class="kw">AS</span> first_hire_salary</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> employees;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>The Infamous <code>LAST_VALUE()</code> Default Frame Trap
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>When an <code>ORDER BY</code> is provided inside an <code>OVER ()</code> clause, ANSI SQL mandates a default window frame: <span class="math display">\[\text{RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW}\]</span> Because the frame terminates at the <strong>CURRENT ROW</strong>, calling <code>LAST_VALUE(col) OVER (ORDER BY col)</code> will return the current row’s value rather than the last value of the entire partition! <strong>The Fix:</strong> Explicitly expand the window frame to the end of the partition:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">LAST_VALUE</span>(salary) <span class="kw">OVER</span> (</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">PARTITION</span> <span class="kw">BY</span> department_id </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ORDER</span> <span class="kw">BY</span> hire_date <span class="kw">ASC</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ROWS</span> <span class="kw">BETWEEN</span> <span class="kw">UNBOUNDED</span> <span class="kw">PRECEDING</span> <span class="kw">AND</span> <span class="kw">UNBOUNDED</span> <span class="kw">FOLLOWING</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>) <span class="kw">AS</span> true_last_hire_salary</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="common-table-expressions-ctes-recursive-hierarchies" class="level2">
+<h2 class="anchored" data-anchor-id="common-table-expressions-ctes-recursive-hierarchies">4. Common Table Expressions (CTEs) &amp; Recursive Hierarchies</h2>
+<p>A <strong>Common Table Expression (CTE)</strong> defines a temporary, named result set that exists solely within the execution scope of a single SQL statement.</p>
+<section id="non-recursive-cte-for-filtering-window-functions" class="level3">
+<h3 class="anchored" data-anchor-id="non-recursive-cte-for-filtering-window-functions">1. Non-Recursive CTE for Filtering Window Functions</h3>
+<p>As established in Section 2, window functions cannot be filtered directly in <code>WHERE</code>. The standard, clean architectural pattern is a CTE:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">WITH</span> RankedSalaries <span class="kw">AS</span> (</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">SELECT</span> </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        department_id,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        employee_id,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        salary,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="fu">DENSE_RANK</span>() <span class="kw">OVER</span> (</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>            <span class="kw">PARTITION</span> <span class="kw">BY</span> department_id </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>            <span class="kw">ORDER</span> <span class="kw">BY</span> salary <span class="kw">DESC</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        ) <span class="kw">AS</span> salary_rank</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">FROM</span> employees</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> department_id, employee_id, salary</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> RankedSalaries</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> salary_rank <span class="op">&lt;=</span> <span class="dv">3</span>;  <span class="co">-- Top 3 distinct earners per department</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="recursive-ctes-for-hierarchical-and-graph-traversal" class="level3">
+<h3 class="anchored" data-anchor-id="recursive-ctes-for-hierarchical-and-graph-traversal">2. Recursive CTEs for Hierarchical and Graph Traversal</h3>
+<p>Recursive CTEs solve self-referential tree problems (e.g., corporate reporting structures, folder directories, bill of materials).</p>
+<p>A recursive CTE consists of: 1. <strong>The Anchor Member:</strong> The base query that initializes the recursion (e.g., finding the CEO where <code>manager_id IS NULL</code>). 2. <strong><code>UNION ALL</code></strong> 3. <strong>The Recursive Member:</strong> The query referencing the CTE itself, joining the child rows to parent rows. 4. <strong>Termination Condition:</strong> Implicitly halts when the recursive join yields an empty set.</p>
+<section id="universal-recursive-cte-postgresql-mysql-8.0-sqlite" class="level4">
+<h4 class="anchored" data-anchor-id="universal-recursive-cte-postgresql-mysql-8.0-sqlite">Universal Recursive CTE (PostgreSQL, MySQL 8.0+, SQLite):</h4>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">WITH</span> RECURSIVE OrgTree <span class="kw">AS</span> (</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Anchor Member: Root CEO</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">SELECT</span> </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        employee_id, </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        manager_id, </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        employee_name, </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        <span class="dv">1</span> <span class="kw">AS</span> <span class="fu">depth</span>, </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">CAST</span>(employee_name <span class="kw">AS</span> <span class="dt">VARCHAR</span>(<span class="dv">1000</span>)) <span class="kw">AS</span> hierarchy_path</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">FROM</span> corporate_staff</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">WHERE</span> manager_id <span class="kw">IS</span> <span class="kw">NULL</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">UNION</span> <span class="kw">ALL</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Recursive Member: Subordinates</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">SELECT</span> </span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>        c.employee_id, </span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        c.manager_id, </span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>        c.employee_name, </span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>        p.<span class="fu">depth</span> <span class="op">+</span> <span class="dv">1</span>, </span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        <span class="fu">CAST</span>(<span class="fu">CONCAT</span>(p.hierarchy_path, <span class="st">' -&gt; '</span>, c.employee_name) <span class="kw">AS</span> <span class="dt">VARCHAR</span>(<span class="dv">1000</span>))</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">FROM</span> corporate_staff c</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">INNER</span> <span class="kw">JOIN</span> OrgTree p <span class="kw">ON</span> c.manager_id <span class="op">=</span> p.employee_id</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="fu">depth</span>, hierarchy_path </span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> OrgTree </span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> hierarchy_path;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="engine-dialect-differences-for-recursive-ctes" class="level4">
+<h4 class="anchored" data-anchor-id="engine-dialect-differences-for-recursive-ctes">Engine Dialect Differences for Recursive CTEs:</h4>
+<ul>
+<li><strong>SQL Server (T-SQL):</strong> Omits the <code>RECURSIVE</code> keyword (<code>WITH OrgTree AS (...)</code>).</li>
+<li><strong>Oracle:</strong> Supports both standard ANSI <code>WITH</code> recursive CTEs (11gR2+) and proprietary <code>START WITH manager_id IS NULL CONNECT BY PRIOR employee_id = manager_id</code>.</li>
+</ul>
+<hr>
+</section>
+</section>
+</section>
+<section id="complex-joins-multi-column-keys-self-referential-rules" class="level2">
+<h2 class="anchored" data-anchor-id="complex-joins-multi-column-keys-self-referential-rules">5. Complex Joins, Multi-Column Keys &amp; Self-Referential Rules</h2>
+<section id="multi-column-joins-composite-keys" class="level3">
+<h3 class="anchored" data-anchor-id="multi-column-joins-composite-keys">1. Multi-Column Joins (Composite Keys)</h3>
+<p>In enterprise databases and data warehouses, tables are frequently related by compound primary keys (e.g., multi-tenant systems where every table includes a <code>tenant_id</code> and <code>store_id</code>):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    f.transaction_id,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    f.amount,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    d.department_name</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> fact_sales f</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="kw">INNER</span> <span class="kw">JOIN</span> dim_department d </span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ON</span> f.tenant_id     <span class="op">=</span> d.tenant_id</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>   <span class="kw">AND</span> f.store_id      <span class="op">=</span> d.store_id</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>   <span class="kw">AND</span> f.department_id <span class="op">=</span> d.department_id</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> f.fiscal_year <span class="op">=</span> <span class="dv">2026</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="non-equi-joins-interval-range-matching" class="level3">
+<h3 class="anchored" data-anchor-id="non-equi-joins-interval-range-matching">2. Non-Equi Joins (Interval &amp; Range Matching)</h3>
+<p>Joins do not require equality (<code>=</code>). Non-equi joins match records across temporal ranges or thresholds:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Find employee performance ratings based on salary bands</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    e.employee_name,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    e.salary,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    b.grade_level</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> employees e</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="kw">INNER</span> <span class="kw">JOIN</span> salary_bands b </span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ON</span> e.salary <span class="op">&gt;=</span> b.min_salary </span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>   <span class="kw">AND</span> e.salary <span class="op">&lt;</span>  b.max_salary;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="self-joins-self-referential-matching" class="level3">
+<h3 class="anchored" data-anchor-id="self-joins-self-referential-matching">3. Self-Joins &amp; Self-Referential Matching</h3>
+<p>A self-join joins a table to itself under distinct aliases. Common use cases include:</p>
+<section id="a.-finding-managers-of-employees" class="level4">
+<h4 class="anchored" data-anchor-id="a.-finding-managers-of-employees">A. Finding Managers of Employees:</h4>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    emp.employee_name <span class="kw">AS</span> subordinate,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    mgr.employee_name <span class="kw">AS</span> manager</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> employees emp</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="kw">LEFT</span> <span class="kw">JOIN</span> employees mgr <span class="kw">ON</span> emp.manager_id <span class="op">=</span> mgr.employee_id;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="b.-overlapping-date-intervals-collision-detection" class="level4">
+<h4 class="anchored" data-anchor-id="b.-overlapping-date-intervals-collision-detection">B. Overlapping Date Intervals (Collision Detection):</h4>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Detect overlapping room reservations</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    r1.reservation_id <span class="kw">AS</span> res1,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    r2.reservation_id <span class="kw">AS</span> res2,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    r1.room_id</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> reservations r1</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="kw">INNER</span> <span class="kw">JOIN</span> reservations r2 </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ON</span> r1.room_id <span class="op">=</span> r2.room_id</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>   <span class="kw">AND</span> r1.reservation_id <span class="op">&lt;</span> r2.reservation_id  <span class="co">-- Avoid mirror pairs and self-match</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>   <span class="kw">AND</span> r1.start_time <span class="op">&lt;</span> r2.end_time </span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>   <span class="kw">AND</span> r1.end_time <span class="op">&gt;</span> r2.start_time;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+</section>
+<section id="array-collection-unnesting-across-all-5-engines" class="level2">
+<h2 class="anchored" data-anchor-id="array-collection-unnesting-across-all-5-engines">6. Array &amp; Collection Unnesting Across All 5 Engines</h2>
+<p>Modern schemas frequently store arrays, repeated records, or JSON documents. <strong>Unnesting</strong> (or “exploding”) expands an array of <span class="math inline">\(N\)</span> elements into <span class="math inline">\(N\)</span> separate rows.</p>
+<p>Because array implementations vary dramatically across engines, here is the concrete syntax for each:</p>
+<section id="postgresql-native-arrays" class="level3">
+<h3 class="anchored" data-anchor-id="postgresql-native-arrays">1. PostgreSQL (Native Arrays)</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Input: Table with an integer array column: tags INT[] = '{101, 102, 103}'</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    item_id, </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    unnested_tag.tag_id,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    unnested_tag.ordinality</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> items,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>UNNEST(items.tags) <span class="kw">WITH</span> ORDINALITY <span class="kw">AS</span> unnested_tag(tag_id, ordinality);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="mysql-json-arrays-via-json_table" class="level3">
+<h3 class="anchored" data-anchor-id="mysql-json-arrays-via-json_table">2. MySQL (JSON Arrays via <code>JSON_TABLE</code>)</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Input: Table with a JSON array column: tags_json = '[101, 102, 103]'</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    i.item_id, </span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    jt.tag_id</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> items i,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>JSON_TABLE(</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    i.tags_json, </span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'$[*]'</span> <span class="kw">COLUMNS</span> (tag_id <span class="dt">INT</span> PATH <span class="st">'$'</span>)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>) <span class="kw">AS</span> jt;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="microsoft-sql-server-string_split-openjson" class="level3">
+<h3 class="anchored" data-anchor-id="microsoft-sql-server-string_split-openjson">3. Microsoft SQL Server (<code>STRING_SPLIT</code> &amp; <code>OPENJSON</code>)</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- A. Unnesting comma-delimited strings:</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> item_id, <span class="fu">TRIM</span>(<span class="fu">value</span>) <span class="kw">AS</span> tag_id</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> items</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="kw">CROSS</span> APPLY STRING_SPLIT(tags_csv, <span class="st">','</span>);</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co">-- B. Unnesting JSON arrays:</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> item_id, <span class="fu">CAST</span>(<span class="fu">value</span> <span class="kw">AS</span> <span class="dt">INT</span>) <span class="kw">AS</span> tag_id</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> items</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="kw">CROSS</span> APPLY OPENJSON(tags_json);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="oracle-json_table-nested-tables" class="level3">
+<h3 class="anchored" data-anchor-id="oracle-json_table-nested-tables">4. Oracle (<code>JSON_TABLE</code> &amp; Nested Tables)</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Unnesting JSON array in Oracle 12c+:</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> i.item_id, jt.tag_id</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> items i,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>JSON_TABLE(</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    i.tags_json, </span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'$[*]'</span> <span class="kw">COLUMNS</span> (tag_id <span class="dt">NUMBER</span> PATH <span class="st">'$'</span>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>) jt;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="sqlite-json_each" class="level3">
+<h3 class="anchored" data-anchor-id="sqlite-json_each">5. SQLite (<code>json_each</code>)</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- SQLite supports JSON extension natively:</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> i.item_id, j.<span class="fu">value</span> <span class="kw">AS</span> tag_id</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> items i,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>json_each(i.tags_json) j;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="string-array-aggregations-the-reverse-of-unnesting" class="level2">
+<h2 class="anchored" data-anchor-id="string-array-aggregations-the-reverse-of-unnesting">7. String &amp; Array Aggregations (The Reverse of Unnesting)</h2>
+<p>When grouping rows, developers often need to collapse multiple child strings into a single comma-separated list:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Engine</th>
+<th style="text-align: left;">Aggregation Syntax</th>
+<th style="text-align: left;">Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>PostgreSQL</strong></td>
+<td style="text-align: left;"><code>STRING_AGG(col, delimiter [ORDER BY ...])</code></td>
+<td style="text-align: left;"><code>STRING_AGG(name, ', ' ORDER BY name ASC)</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>MySQL</strong></td>
+<td style="text-align: left;"><code>GROUP_CONCAT([DISTINCT] col [ORDER BY ...] SEPARATOR delimiter)</code></td>
+<td style="text-align: left;"><code>GROUP_CONCAT(name ORDER BY name ASC SEPARATOR ', ')</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>SQL Server</strong></td>
+<td style="text-align: left;"><code>STRING_AGG(col, delimiter) WITHIN GROUP (ORDER BY ...)</code></td>
+<td style="text-align: left;"><code>STRING_AGG(name, ', ') WITHIN GROUP (ORDER BY name ASC)</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Oracle</strong></td>
+<td style="text-align: left;"><code>LISTAGG(col, delimiter) WITHIN GROUP (ORDER BY ...)</code></td>
+<td style="text-align: left;"><code>LISTAGG(name, ', ') WITHIN GROUP (ORDER BY name ASC)</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>SQLite</strong></td>
+<td style="text-align: left;"><code>GROUP_CONCAT(col [, delimiter])</code></td>
+<td style="text-align: left;"><code>GROUP_CONCAT(name, ', ')</code></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="bitwise-operations-parity-manipulation-in-sql" class="level2">
+<h2 class="anchored" data-anchor-id="bitwise-operations-parity-manipulation-in-sql">8. Bitwise Operations &amp; Parity Manipulation in SQL</h2>
+<p>Bitwise operators allow lightning-fast bit-level arithmetic directly inside relational queries.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Operation</th>
+<th style="text-align: center;">PostgreSQL</th>
+<th style="text-align: center;">MySQL</th>
+<th style="text-align: center;">SQL Server</th>
+<th style="text-align: center;">SQLite</th>
+<th style="text-align: center;">Oracle</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Bitwise AND</strong></td>
+<td style="text-align: center;"><code>a &amp; b</code></td>
+<td style="text-align: center;"><code>a &amp; b</code></td>
+<td style="text-align: center;"><code>a &amp; b</code></td>
+<td style="text-align: center;"><code>a &amp; b</code></td>
+<td style="text-align: center;"><code>BITAND(a, b)</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Bitwise OR</strong></td>
+<td style="text-align: center;"><code>a \| b</code></td>
+<td style="text-align: center;"><code>a \| b</code></td>
+<td style="text-align: center;"><code>a \| b</code></td>
+<td style="text-align: center;"><code>a \| b</code></td>
+<td style="text-align: center;"><code>a + b - BITAND(a, b)</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Bitwise XOR</strong></td>
+<td style="text-align: center;"><code>a # b</code></td>
+<td style="text-align: center;"><code>a ^ b</code></td>
+<td style="text-align: center;"><code>a ^ b</code></td>
+<td style="text-align: center;"><code>a ^ b</code></td>
+<td style="text-align: center;">Proprietary formula / UDF</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Bitwise NOT</strong></td>
+<td style="text-align: center;"><code>~a</code></td>
+<td style="text-align: center;"><code>~a</code></td>
+<td style="text-align: center;"><code>~a</code></td>
+<td style="text-align: center;"><code>~a</code></td>
+<td style="text-align: center;"><code>-1 - a</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Left Shift</strong></td>
+<td style="text-align: center;"><code>a &lt;&lt; n</code></td>
+<td style="text-align: center;"><code>a &lt;&lt; n</code></td>
+<td style="text-align: center;">Not native (<code>a * POWER(2,n)</code>)</td>
+<td style="text-align: center;"><code>a &lt;&lt; n</code></td>
+<td style="text-align: center;"><code>a * POWER(2, n)</code></td>
+</tr>
+</tbody>
+</table>
+<section id="practical-leetcode-parity-trick-alternating-seat-swaps" class="level3">
+<h3 class="anchored" data-anchor-id="practical-leetcode-parity-trick-alternating-seat-swaps">Practical LeetCode Parity Trick: Alternating Seat Swaps</h3>
+<p>To swap odd/even IDs (<span class="math inline">\(1 \leftrightarrow 2, 3 \leftrightarrow 4\)</span>): * For zero-indexed numbers, XOR with 1 swaps pairs: <span class="math inline">\(0 \leftrightarrow 1, 2 \leftrightarrow 3\)</span>. * For one-indexed numbers: <span class="math display">\[\text{new\_id} = ((id - 1) \oplus 1) + 1\]</span> In MySQL / SQL Server / SQLite: <code>((id - 1) ^ 1) + 1</code>.</p>
+<hr>
+</section>
+</section>
+<section id="character-ascii-code-conversions" class="level2">
+<h2 class="anchored" data-anchor-id="character-ascii-code-conversions">9. Character &amp; ASCII Code Conversions</h2>
+<p>Converting between ASCII numerical values and their string character representations:</p>
+<section id="ascii-code-to-character" class="level3">
+<h3 class="anchored" data-anchor-id="ascii-code-to-character">1. ASCII Code to Character</h3>
+<ul>
+<li><strong>PostgreSQL / Oracle / SQLite:</strong> <code>CHR(65)</code> <span class="math inline">\(\longrightarrow\)</span> <code>'A'</code></li>
+<li><strong>MySQL / SQL Server:</strong> <code>CHAR(65)</code> <span class="math inline">\(\longrightarrow\)</span> <code>'A'</code></li>
+</ul>
+</section>
+<section id="character-to-ascii-code" class="level3">
+<h3 class="anchored" data-anchor-id="character-to-ascii-code">2. Character to ASCII Code</h3>
+<ul>
+<li><strong>Universal across all 5 engines:</strong> <code>ASCII('A')</code> <span class="math inline">\(\longrightarrow\)</span> <code>65</code></li>
+</ul>
+</section>
+<section id="practical-example-generating-the-alphabet-a-z-in-pure-sql-postgresql" class="level3">
+<h3 class="anchored" data-anchor-id="practical-example-generating-the-alphabet-a-z-in-pure-sql-postgresql">3. Practical Example: Generating the Alphabet <span class="math inline">\(A-Z\)</span> in Pure SQL (PostgreSQL):</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="fu">CHR</span>(ascii_code) <span class="kw">AS</span> letter</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> generate_series(<span class="dv">65</span>, <span class="dv">90</span>) <span class="kw">AS</span> ascii_code;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="statistical-bucketing-pure-sql-distribution-charts" class="level2">
+<h2 class="anchored" data-anchor-id="statistical-bucketing-pure-sql-distribution-charts">10. Statistical Bucketing &amp; Pure-SQL Distribution Charts</h2>
+<p>Visualizing distributions (such as LeetCode score distributions or transaction frequency histograms) can be accomplished directly inside SQL using bucketing and text repetition functions.</p>
+<section id="generating-equal-width-histogram-buckets" class="level3">
+<h3 class="anchored" data-anchor-id="generating-equal-width-histogram-buckets">1. Generating Equal-Width Histogram Buckets</h3>
+<p>PostgreSQL and Oracle feature the native <code>WIDTH_BUCKET()</code> function:</p>
+<p><span class="math display">\[\text{WIDTH\_BUCKET}(\text{value}, \text{min}, \text{max}, \text{num\_buckets})\]</span></p>
+<p>For engines lacking <code>WIDTH_BUCKET</code> (MySQL, SQL Server, SQLite), use math floor:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Put scores [0, 100] into 10 buckets of width 10:</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">FLOOR</span>(score <span class="op">/</span> <span class="fl">10.0</span>) <span class="op">*</span> <span class="dv">10</span> <span class="kw">AS</span> bucket_min,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">AS</span> frequency</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> exam_results</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="kw">GROUP</span> <span class="kw">BY</span> <span class="fu">FLOOR</span>(score <span class="op">/</span> <span class="fl">10.0</span>) <span class="op">*</span> <span class="dv">10</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> bucket_min;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="rendering-ascii-bar-charts-in-pure-sql" class="level3">
+<h3 class="anchored" data-anchor-id="rendering-ascii-bar-charts-in-pure-sql">2. Rendering ASCII Bar Charts in Pure SQL</h3>
+<p>By scaling counts and repeating a UTF-8 bar character (<code>█</code>), queries can output visual charts directly into terminal consoles:</p>
+<section id="postgresql-mysql" class="level4">
+<h4 class="anchored" data-anchor-id="postgresql-mysql">PostgreSQL &amp; MySQL:</h4>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">WITH</span> ScoreBins <span class="kw">AS</span> (</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">SELECT</span> </span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">FLOOR</span>(score <span class="op">/</span> <span class="fl">10.0</span>) <span class="op">*</span> <span class="dv">10</span> <span class="kw">AS</span> bin_start,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">AS</span> student_count</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">FROM</span> exam_results</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">GROUP</span> <span class="kw">BY</span> <span class="fu">FLOOR</span>(score <span class="op">/</span> <span class="fl">10.0</span>) <span class="op">*</span> <span class="dv">10</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">CONCAT</span>(bin_start, <span class="st">' - '</span>, bin_start <span class="op">+</span> <span class="dv">9</span>) <span class="kw">AS</span> score_range,</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    student_count,</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    REPEAT(<span class="st">'█'</span>, <span class="fu">CAST</span>(student_count <span class="op">/</span> <span class="dv">2</span> <span class="kw">AS</span> <span class="dt">INT</span>)) <span class="kw">AS</span> distribution_chart</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> ScoreBins</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> bin_start <span class="kw">ASC</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="output-representation" class="level4">
+<h4 class="anchored" data-anchor-id="output-representation">Output Representation:</h4>
+<pre><code>score_range  | student_count | distribution_chart
+0 - 9        | 2             | █
+10 - 19      | 5             | ██
+20 - 29      | 12            | ██████
+30 - 39      | 24            | ████████████
+40 - 49      | 18            | █████████</code></pre>
+<hr>
+</section>
+</section>
+</section>
+<section id="classic-leetcode-sql-patterns-deconstructed-with-code" class="level2">
+<h2 class="anchored" data-anchor-id="classic-leetcode-sql-patterns-deconstructed-with-code">11. Classic LeetCode SQL Patterns (Deconstructed with Code)</h2>
+<section id="case-study-1-triangle-judgement-leetcode-610" class="level3">
+<h3 class="anchored" data-anchor-id="case-study-1-triangle-judgement-leetcode-610">Case Study 1: Triangle Judgement (LeetCode 610)</h3>
+<ul>
+<li><strong>Problem:</strong> Given three side lengths <span class="math inline">\(x, y, z\)</span>, determine whether they can form a valid triangle.</li>
+<li><strong>Mathematical Condition:</strong> The sum of any two sides must be strictly greater than the remaining side: <span class="math display">\[(x + y &gt; z) \quad \land \quad (x + z &gt; y) \quad \land \quad (y + z &gt; x)\]</span></li>
+<li><strong>Universal SQL Solution:</strong></li>
+</ul>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    x, y, z,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">CASE</span> </span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">WHEN</span> x <span class="op">+</span> y <span class="op">&gt;</span> z <span class="kw">AND</span> x <span class="op">+</span> z <span class="op">&gt;</span> y <span class="kw">AND</span> y <span class="op">+</span> z <span class="op">&gt;</span> x <span class="cf">THEN</span> <span class="st">'Yes'</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ELSE</span> <span class="st">'No'</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">END</span> <span class="kw">AS</span> triangle</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> Triangle;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+<section id="case-study-2-department-top-three-salaries-leetcode-185" class="level3">
+<h3 class="anchored" data-anchor-id="case-study-2-department-top-three-salaries-leetcode-185">Case Study 2: Department Top Three Salaries (LeetCode 185)</h3>
+<ul>
+<li><strong>Problem:</strong> A company wants to find employees who earn top 3 <strong>unique</strong> salaries in each department.</li>
+<li><strong>Why <code>RANK()</code> Fails:</strong> If salaries are [100k, 90k, 90k, 80k], <code>RANK</code> assigns [1, 2, 2, 4]. Rank 4 is skipped, missing the third tier!</li>
+<li><strong>The <code>DENSE_RANK()</code> Solution:</strong></li>
+</ul>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">WITH</span> RankedEmployees <span class="kw">AS</span> (</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">SELECT</span> </span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>        d.name <span class="kw">AS</span> Department,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>        e.name <span class="kw">AS</span> Employee,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>        e.salary <span class="kw">AS</span> Salary,</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>        <span class="fu">DENSE_RANK</span>() <span class="kw">OVER</span> (</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>            <span class="kw">PARTITION</span> <span class="kw">BY</span> e.departmentId </span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>            <span class="kw">ORDER</span> <span class="kw">BY</span> e.salary <span class="kw">DESC</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>        ) <span class="kw">AS</span> rnk</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">FROM</span> Employee e</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">INNER</span> <span class="kw">JOIN</span> Department d <span class="kw">ON</span> e.departmentId <span class="op">=</span> d.<span class="kw">id</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> Department, Employee, Salary</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> RankedEmployees</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> rnk <span class="op">&lt;=</span> <span class="dv">3</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+<section id="case-study-3-consecutive-numbers-leetcode-180" class="level3">
+<h3 class="anchored" data-anchor-id="case-study-3-consecutive-numbers-leetcode-180">Case Study 3: Consecutive Numbers (LeetCode 180)</h3>
+<ul>
+<li><strong>Problem:</strong> Find all numbers that appear at least three times consecutively in a log table.</li>
+</ul>
+<section id="method-a-modern-window-functions-lag-lead" class="level4">
+<h4 class="anchored" data-anchor-id="method-a-modern-window-functions-lag-lead">Method A: Modern Window Functions (<code>LAG</code> &amp; <code>LEAD</code>)</h4>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">WITH</span> ConsecutiveScan <span class="kw">AS</span> (</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">SELECT</span> </span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>        num,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">LAG</span>(num, <span class="dv">1</span>)  <span class="kw">OVER</span> (<span class="kw">ORDER</span> <span class="kw">BY</span> <span class="kw">id</span>) <span class="kw">AS</span> prev_num,</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">LEAD</span>(num, <span class="dv">1</span>) <span class="kw">OVER</span> (<span class="kw">ORDER</span> <span class="kw">BY</span> <span class="kw">id</span>) <span class="kw">AS</span> next_num</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">FROM</span> Logs</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="kw">DISTINCT</span> num <span class="kw">AS</span> ConsecutiveNums</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> ConsecutiveScan</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> num <span class="op">=</span> prev_num <span class="kw">AND</span> num <span class="op">=</span> next_num;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="method-b-3-way-self-join-compatible-with-any-sql-version" class="level4">
+<h4 class="anchored" data-anchor-id="method-b-3-way-self-join-compatible-with-any-sql-version">Method B: 3-Way Self-Join (Compatible with any SQL version):</h4>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="kw">DISTINCT</span> l1.num <span class="kw">AS</span> ConsecutiveNums</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> Logs l1</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="kw">INNER</span> <span class="kw">JOIN</span> Logs l2 <span class="kw">ON</span> l1.<span class="kw">id</span> <span class="op">=</span> l2.<span class="kw">id</span> <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="kw">INNER</span> <span class="kw">JOIN</span> Logs l3 <span class="kw">ON</span> l1.<span class="kw">id</span> <span class="op">=</span> l3.<span class="kw">id</span> <span class="op">-</span> <span class="dv">2</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> l1.num <span class="op">=</span> l2.num <span class="kw">AND</span> l2.num <span class="op">=</span> l3.num;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="case-study-4-exchange-seats-leetcode-626" class="level3">
+<h3 class="anchored" data-anchor-id="case-study-4-exchange-seats-leetcode-626">Case Study 4: Exchange Seats (LeetCode 626)</h3>
+<ul>
+<li><strong>Problem:</strong> Swap consecutive odd and even seats. If the last seat is odd, do not swap it.</li>
+</ul>
+<section id="universal-sql-solution-via-case-window-count" class="level4">
+<h4 class="anchored" data-anchor-id="universal-sql-solution-via-case-window-count">Universal SQL Solution via <code>CASE</code> &amp; Window Count:</h4>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">CASE</span> </span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- If odd and last seat, keep as is</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">WHEN</span> <span class="kw">id</span> % <span class="dv">2</span> <span class="op">=</span> <span class="dv">1</span> <span class="kw">AND</span> <span class="kw">id</span> <span class="op">=</span> (<span class="kw">SELECT</span> <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">FROM</span> Seat) <span class="cf">THEN</span> <span class="kw">id</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- If odd, increment to next even seat</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">WHEN</span> <span class="kw">id</span> % <span class="dv">2</span> <span class="op">=</span> <span class="dv">1</span> <span class="cf">THEN</span> <span class="kw">id</span> <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- If even, decrement to previous odd seat</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ELSE</span> <span class="kw">id</span> <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">END</span> <span class="kw">AS</span> <span class="kw">id</span>,</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    student</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> Seat</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> <span class="kw">id</span> <span class="kw">ASC</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+</section>
+<section id="the-grand-cross-engine-rosetta-stone" class="level2">
+<h2 class="anchored" data-anchor-id="the-grand-cross-engine-rosetta-stone">12. The Grand Cross-Engine Rosetta Stone</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;">PostgreSQL</th>
+<th style="text-align: left;">MySQL (8.0+)</th>
+<th style="text-align: left;">SQL Server (T-SQL)</th>
+<th style="text-align: left;">Oracle (19c+)</th>
+<th style="text-align: left;">SQLite (3.25+)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Limit / Paging</strong></td>
+<td style="text-align: left;"><code>LIMIT n OFFSET m</code></td>
+<td style="text-align: left;"><code>LIMIT m, n</code></td>
+<td style="text-align: left;"><code>OFFSET m ROWS FETCH NEXT n ROWS ONLY</code></td>
+<td style="text-align: left;"><code>OFFSET m ROWS FETCH NEXT n ROWS ONLY</code></td>
+<td style="text-align: left;"><code>LIMIT n OFFSET m</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>String Concat</strong></td>
+<td style="text-align: left;"><code>a \|\| b</code> or <code>CONCAT()</code></td>
+<td style="text-align: left;"><code>CONCAT(a, b)</code></td>
+<td style="text-align: left;"><code>a + b</code> or <code>CONCAT()</code></td>
+<td style="text-align: left;"><code>a \|\| b</code> or <code>CONCAT()</code></td>
+<td style="text-align: left;"><code>a \|\| b</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Group String Agg</strong></td>
+<td style="text-align: left;"><code>STRING_AGG(x, ',')</code></td>
+<td style="text-align: left;"><code>GROUP_CONCAT(x)</code></td>
+<td style="text-align: left;"><code>STRING_AGG(x, ',')</code></td>
+<td style="text-align: left;"><code>LISTAGG(x, ',')</code></td>
+<td style="text-align: left;"><code>GROUP_CONCAT(x, ',')</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Array Unnest</strong></td>
+<td style="text-align: left;"><code>UNNEST(arr)</code></td>
+<td style="text-align: left;"><code>JSON_TABLE()</code></td>
+<td style="text-align: left;"><code>OPENJSON()</code> / <code>STRING_SPLIT()</code></td>
+<td style="text-align: left;"><code>JSON_TABLE()</code> / <code>TABLE()</code></td>
+<td style="text-align: left;"><code>json_each()</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Recursive CTE</strong></td>
+<td style="text-align: left;"><code>WITH RECURSIVE</code></td>
+<td style="text-align: left;"><code>WITH RECURSIVE</code></td>
+<td style="text-align: left;"><code>WITH</code> (no keyword)</td>
+<td style="text-align: left;"><code>WITH</code> or <code>CONNECT BY</code></td>
+<td style="text-align: left;"><code>WITH RECURSIVE</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Bitwise XOR</strong></td>
+<td style="text-align: left;"><code>#</code></td>
+<td style="text-align: left;"><code>^</code></td>
+<td style="text-align: left;"><code>^</code></td>
+<td style="text-align: left;">Custom / UDF</td>
+<td style="text-align: left;"><code>^</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>ASCII to Char</strong></td>
+<td style="text-align: left;"><code>CHR(n)</code></td>
+<td style="text-align: left;"><code>CHAR(n)</code></td>
+<td style="text-align: left;"><code>CHAR(n)</code></td>
+<td style="text-align: left;"><code>CHR(n)</code></td>
+<td style="text-align: left;"><code>CHAR(n)</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Regexp Match</strong></td>
+<td style="text-align: left;"><code>col ~ 'pattern'</code></td>
+<td style="text-align: left;"><code>REGEXP_LIKE()</code></td>
+<td style="text-align: left;"><code>LIKE</code> with brackets</td>
+<td style="text-align: left;"><code>REGEXP_LIKE()</code></td>
+<td style="text-align: left;"><code>REGEXP</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Date Add (1 Day)</strong></td>
+<td style="text-align: left;"><code>d + INTERVAL '1 day'</code></td>
+<td style="text-align: left;"><code>DATE_ADD(d, INTERVAL 1 DAY)</code></td>
+<td style="text-align: left;"><code>DATEADD(day, 1, d)</code></td>
+<td style="text-align: left;"><code>d + 1</code></td>
+<td style="text-align: left;"><code>date(d, '+1 day')</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Null Replacement</strong></td>
+<td style="text-align: left;"><code>COALESCE(a, b)</code></td>
+<td style="text-align: left;"><code>IFNULL(a, b)</code> / <code>COALESCE</code></td>
+<td style="text-align: left;"><code>ISNULL(a, b)</code> / <code>COALESCE</code></td>
+<td style="text-align: left;"><code>NVL(a, b)</code> / <code>COALESCE</code></td>
+<td style="text-align: left;"><code>IFNULL(a, b)</code> / <code>COALESCE</code></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="references-official-documentation" class="level2">
+<h2 class="anchored" data-anchor-id="references-official-documentation">13. References &amp; Official Documentation</h2>
+<ol type="1">
+<li><strong>PostgreSQL Global Development Group.</strong> <em>PostgreSQL 16 Documentation: Window Functions &amp; Array Functions</em> (2024).</li>
+<li><strong>Oracle Corporation.</strong> <em>MySQL 8.0 Reference Manual: Window Function Concepts and Syntax</em> (2024).</li>
+<li><strong>Microsoft Learn.</strong> <em>Transact-SQL (T-SQL) Reference: DENSE_RANK, STRING_AGG, and CTEs</em> (2024).</li>
+<li><strong>Oracle Corporation.</strong> <em>Database SQL Language Reference: Analytic Functions and Hierarchical Queries</em> (2024).</li>
+<li><strong>SQLite Consortium.</strong> <em>Window Functions and JSON1 Extension Specifications</em> (2024).</li>
+<li><strong>Celko, Joe.</strong> <em>SQL for Smarties: Advanced SQL Programming</em> (5th ed., Morgan Kaufmann, 2014).</li>
+<li><strong>Stewart, James.</strong> <em>Calculus: Early Transcendentals</em> (8th ed., Cengage Learning). Chapters on discrete partitions and numerical series, underpinning how database query planners compute bounded intervals and Riemann-partition window frames.</li>
+</ol>
+
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/igor-kan\.github\.io\/quarto-writing\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2026 Igor Kan</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
