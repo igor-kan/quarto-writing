@@ -1,0 +1,165 @@
+---
+title: "Mastering Espanso: The Cross-Platform Open-Source Text Expander"
+author: "Igor Kan"
+date: "2026-09-12"
+categories: ["Linux", "Windows", "Productivity", "Rust", "Open Source"]
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+---
+
+## 1. Introduction: Why Espanso?
+
+[Espanso](https://espanso.org/) is a privacy-first, open-source text expander written in Rust. Unlike many proprietary alternatives (like TextExpander or AutoHotkey which is Windows-only), Espanso works seamlessly across Windows, macOS, and Linux. It operates by detecting specific keywords you type and instantly replacing them with predefined text, code snippets, or dynamic variables.
+
+Because it is built on Rust, it is incredibly lightweight and fast. It also uses a simple YAML-based configuration, making it easy to version-control your snippets in Git.
+
+---
+
+## 2. Installation: Windows vs. Linux
+
+Installing Espanso on Windows is straightforward, but Linux requires a bit more care depending on whether you are using **X11** or **Wayland** as your display server.
+
+### 2.1 Windows Installation
+
+On Windows, Espanso runs quietly in the system tray. The easiest way to install it is via the official installer or using the `winget` package manager:
+
+```powershell
+# Install via Winget
+winget install espanso
+```
+After installation, press `ALT + Space` to open the Espanso search bar and verify it is running.
+
+### 2.2 Linux Installation (Side-by-Side)
+
+Modern Linux distributions are transitioning from X11 to Wayland. Espanso has a dedicated Wayland build, which you *must* use if your desktop environment (like modern GNOME on Ubuntu/Fedora or Hyprland on Arch) relies on Wayland.
+
+| Distribution | Installation Method (X11) | Installation Method (Wayland) |
+| :--- | :--- | :--- |
+| **Ubuntu / Debian** | `sudo snap install espanso --classic` | Download the `.deb` Wayland package from the official site, or use the AppImage. |
+| **Fedora** | Install via AppImage or compile from source. | Install via AppImage (requires setting `setcap` permissions for Wayland). |
+| **Arch Linux** | `yay -S espanso-x11` (AUR) | `yay -S espanso-wayland` (AUR) |
+
+::: {.callout-important}
+#### Checking your Display Server
+To determine if you are using X11 or Wayland, run:
+```bash
+echo $XDG_SESSION_TYPE
+```
+If it returns `wayland`, you **must** install the Wayland-compatible version of Espanso.
+:::
+
+#### Post-Installation (Linux)
+After installing, you need to register Espanso as a systemd service so it starts automatically:
+```bash
+espanso service register
+espanso start
+```
+
+---
+
+## 3. Configuration and Basic Usage
+
+Espanso relies entirely on configuration files written in YAML. To find where your configuration files are stored, run:
+```bash
+espanso path
+```
+* **Windows:** `C:\Users\<Username>\AppData\Roaming\espanso`
+* **Linux:** `~/.config/espanso`
+
+### 3.1 Basic Matches
+Navigate to the `match/base.yml` file in your Espanso directory. This is where you define your text replacements.
+
+```yaml
+matches:
+  # Simple text replacement
+  - trigger: ":brb"
+    replace: "Be right back!"
+
+  # Multi-line replacement
+  - trigger: ":sig"
+    replace: |
+      Best regards,
+      Igor Kan
+      Software Engineer
+```
+
+Whenever you type `:brb`, Espanso instantly deletes the trigger and types `Be right back!`.
+
+### 3.2 Dynamic Variables (Dates and Scripts)
+Espanso can execute scripts or fetch system data dynamically.
+
+```yaml
+matches:
+  # Insert the current date
+  - trigger: ":date"
+    replace: "{{mydate}}"
+    vars:
+      - name: mydate
+        type: date
+        params:
+          format: "%Y-%m-%d"
+
+  # Insert the contents of the clipboard
+  - trigger: ":clip"
+    replace: "{{clipboard}}"
+    vars:
+      - name: clipboard
+        type: clipboard
+```
+
+### 3.3 Shell Commands and Python Scripts
+You can pipe the output of standard shell commands or Python scripts directly into your text.
+
+```yaml
+matches:
+  # Run a bash command (Linux)
+  - trigger: ":ip"
+    replace: "{{output}}"
+    vars:
+      - name: output
+        type: shell
+        params:
+          cmd: "curl -s ifconfig.me"
+
+  # Run a Python script (Cross-platform)
+  - trigger: ":calc"
+    replace: "{{output}}"
+    vars:
+      - name: output
+        type: script
+        params:
+          args:
+            - python
+            - "C:\path\to\script.py"
+```
+
+---
+
+## 4. Advanced: App-Specific Configurations
+
+You might want certain snippets to only trigger in specific applications (like your IDE or terminal). Espanso allows app-specific routing.
+
+Create a new file at `config/code.yml` (inside your espanso directory):
+```yaml
+# This configuration only applies when the active window is VS Code
+filter_exec: "code"
+
+matches:
+  - trigger: ":log"
+    replace: "console.log('$|$');"
+```
+*(The `$|$` syntax tells Espanso where to place your cursor after the replacement!)*
+
+## 5. Conclusion
+
+Espanso's power lies in its simplicity. Because all configurations are plain-text YAML, you can easily sync your `~/.config/espanso` directory via Git or a cloud drive, ensuring your snippets, email templates, and code blocks follow you seamlessly across both Windows and Linux environments.
+
+<br>
+<br>
+
+<div style="text-align: center; color: #888; font-size: 0.9em;">
+  © 2026 Igor Kan
+</div>
