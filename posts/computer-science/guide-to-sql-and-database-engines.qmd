@@ -1,170 +1,559 @@
 ---
-title: "Demystifying SQL: Core Concepts, Dialects, and Database Engines"
-description: "An in-depth developer's guide to Structured Query Language (SQL), relational database models, SQL sub-languages (DDL, DML, DCL, TCL), and a comparison of popular database engines."
-date: "2026-06-27"
-categories: [Databases, SQL, PostgreSQL, Programming]
-draft: true
+title: "The Definitive All-in-One SQL Guide: Multi-Engine Mastery across PostgreSQL, MySQL, SQL Server, Oracle, and SQLite"
+subtitle: "From query execution order and window functions (DENSE_RANK, LAG/LEAD) to recursive CTEs, array unnesting, multi-column joins, bitwise operations, and LeetCode algorithmic patterns."
+author: "Igor Kan"
+date: "2026-09-12"
+categories: ["Computer Science", "Databases", "SQL", "PostgreSQL", "MySQL", "SQL Server", "Oracle", "SQLite", "LeetCode", "Data Engineering"]
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    math: true
 ---
 
-In the landscape of modern software, data is one of the most critical assets. To organize, store, and retrieve this data efficiently, relational database management systems (RDBMS) have been the industry standard for over four decades. 
+## 1. Introduction: The Declarative Power of SQL
 
-At the center of these systems lies **SQL (Structured Query Language)**. This guide details SQL's architecture, sub-languages, core operations, and the key differences between popular database engines.
+Structured Query Language (**SQL**) is the universal lingua franca of data engineering, software architecture, and analytical systems. Unlike imperative languages (such as Python, C++, or Rust) where the programmer dictates *how* a machine iterates through memory, SQL is strictly **declarative**: you specify *what* mathematical relation you want to produce, and the database engine's query planner compiles, optimizes, and executes an access path.
 
----
+However, writing performant, bug-free, and sophisticated SQL requires understanding how database engines actually interpret code. When developers transition from basic `SELECT ... FROM ... WHERE` queries to production data pipelines and algorithmic challenges (like LeetCode SQL), they run directly into engine discrepancies, execution order traps, and complex relational constructs.
 
-### 1. What is SQL?
+This comprehensive guide serves as an all-in-one, multi-dialect masterclass comparing the five dominant relational database engines:
 
-SQL is a declarative programming language designed for managing data held in a Relational Database Management System (RDBMS). 
-
-Unlike imperative programming (where you write code detailing *how* to perform a task), SQL is **declarative**: you specify *what* data you want, and the database engine's query optimizer decides the most efficient way (e.g., using indexes or table scans) to retrieve it.
-
-In a relational database:
-* Data is stored in **Tables** (Relations).
-* Tables consist of **Rows** (Records) and **Columns** (Attributes).
-* Tables are linked together using **Primary Keys** (unique identifiers) and **Foreign Keys** (references to primary keys in other tables).
-
----
-
-### 2. The Four SQL Sub-Languages
-
-SQL is divided into four distinct sub-languages, categorized by what the commands do:
-
-```mermaid
-mindmap
-  root((SQL Commands))
-    DDL - Structure
-      CREATE
-      ALTER
-      DROP
-      TRUNCATE
-    DML - Data
-      SELECT
-      INSERT
-      UPDATE
-      DELETE
-    DCL - Permissions
-      GRANT
-      REVOKE
-    TCL - Transactions
-      COMMIT
-      ROLLBACK
-      SAVEPOINT
-```
-
-#### A. DDL (Data Definition Language)
-Used to define or modify the database schema and structure (tables, indexes, constraints).
-* `CREATE`: Creates tables or databases.
-* `ALTER`: Modifies an existing table structure.
-* `DROP`: Deletes tables or databases completely.
-* `TRUNCATE`: Empties all data inside a table but preserves the structure.
-
-#### B. DML (Data Manipulation Language)
-Used to query, insert, modify, and delete the actual records stored in tables.
-* `SELECT`: Retrieves data from one or more tables.
-* `INSERT`: Adds new rows.
-* `UPDATE`: Modifies existing rows.
-* `DELETE`: Removes rows.
-
-#### C. DCL (Data Control Language)
-Used to manage user permissions, security, and access controls.
-* `GRANT`: Gives a user access privileges.
-* `REVOKE`: Withdraws access privileges.
-
-#### D. TCL (Transaction Control Language)
-Used to manage transactions, ensuring data integrity via ACID properties.
-* `COMMIT`: Saves all modifications made during the transaction permanently.
-* `ROLLBACK`: Restores the database to its state before the transaction began.
-* `SAVEPOINT`: Creates temporary checkpoints within a transaction to roll back to if needed.
+* **PostgreSQL** (`pgsql`) — The open-source extensible standard of modern backend engineering.
+* **MySQL** (`mysql`) — The ubiquitous web workhorse powering massive read-heavy systems.
+* **Microsoft SQL Server** (`msserver` / T-SQL) — The enterprise standard with deep tooling.
+* **Oracle Database** (`oracle` / PL-SQL) — The mission-critical financial and transaction powerhouse.
+* **SQLite** (`sqlite`) — The serverless, zero-configuration embedded engine running on billions of devices.
 
 ---
 
-### 3. Core SQL Operations (with Examples)
+## 2. The True Order of SQL Execution (Why `WHERE` Fails on Window Functions)
 
-Here is a typical database scenario containing two tables: `users` and `orders`.
+One of the most pervasive misconceptions among intermediate developers is reading SQL in the order it is written. In written syntax, `SELECT` appears first:
 
-#### Table Creation (DDL)
 ```sql
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE orders (
-    id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(id),
-    amount DECIMAL(10, 2) NOT NULL,
-    order_date DATE DEFAULT CURRENT_DATE
-);
+SELECT department_id, AVG(salary) AS avg_sal  -- Line 1
+FROM employees                                 -- Line 2
+WHERE salary > 50000                           -- Line 3
+GROUP BY department_id                         -- Line 4
+HAVING AVG(salary) > 80000                     -- Line 5
+ORDER BY avg_sal DESC                          -- Line 6
+LIMIT 10;                                      -- Line 7
 ```
 
-#### Inserting Records (DML)
-```sql
-INSERT INTO users (name, email) VALUES 
-('Alice Smith', 'alice@example.com'),
-('Bob Jones', 'bob@example.com');
+However, the database engine executes this query in a completely different, strict sequential order:
 
-INSERT INTO orders (user_id, amount) VALUES 
-(1, 49.99),
-(1, 150.00),
-(2, 22.50);
+```{mermaid}
+flowchart TD
+    S1["<b>1. FROM & JOIN</b><br/>Identify source tables, evaluate Cartesian products, apply ON filters"] --> S2["<b>2. WHERE</b><br/>Filter raw individual rows before any grouping occurs"]
+    S2 --> S3["<b>3. GROUP BY</b><br/>Aggregate rows into discrete bucket keys"]
+    S3 --> S4["<b>4. HAVING</b><br/>Filter aggregated groups based on summary conditions"]
+    S4 --> S5["<b>5. WINDOW</b><br/>Compute OVER partitions (DENSE_RANK, LAG, SUM OVER)"]
+    S5 --> S6["<b>6. SELECT</b><br/>Evaluate expressions, assign column aliases"]
+    S6 --> S7["<b>7. DISTINCT</b><br/>Eliminate duplicate projected rows"]
+    S7 --> S8["<b>8. ORDER BY</b><br/>Sort final output records"]
+    S8 --> S9["<b>9. LIMIT / OFFSET / FETCH</b><br/>Paginate the final emitted result set"]
 ```
 
-#### Querying with Joins (DML)
-To combine columns from both tables, we use a `JOIN`:
+### The Two Critical Pitfalls Explained:
+
+1. **Why `WHERE avg_sal > 80000` Errors:**
+   * In Step 2 (`WHERE`), the `SELECT` clause (Step 6) has not executed yet. The alias `avg_sal` does not exist in memory! 
+   * Furthermore, `AVG(salary)` is an aggregate, which can only be computed after rows are grouped in Step 3. Filtering aggregates must happen in `HAVING` (Step 4).
+
+2. **Why `WHERE DENSE_RANK() OVER (...) <= 2` is Illegal:**
+   * Window functions execute in Step 5 (`WINDOW`), *after* `WHERE` has already executed in Step 2.
+   * A database cannot filter rows using a window function in the same query block because the window function requires the post-`WHERE` dataset to define its partitions!
+   * **The Universal Solution:** Wrap the window function inside a **Common Table Expression (CTE)** or a derived subquery, allowing the outer query's `WHERE` clause to filter the computed rank.
+
+---
+
+## 3. Window Functions Masterclass: Ranking, Values, and Frames
+
+Window functions perform calculations across a set of table rows that are related to the current row, without collapsing the individual rows into a single summary line (unlike `GROUP BY`).
+
+$$\text{\bf Syntax: } \text{FUNCTION}(\dots) \text{ OVER } \Big( [\text{PARTITION BY } c_1, c_2, \dots] \quad [\text{ORDER BY } s_1, s_2, \dots] \quad [\text{FRAME\_CLAUSE}] \Big)$$
+
+### 1. The Ranking Functions Compared: `ROW_NUMBER` vs `RANK` vs `DENSE_RANK` vs `NTILE`
+
+Suppose four students achieve test scores: **[100, 95, 95, 80]**. Here is how each function handles identical values (ties):
+
+| Student | Score | `ROW_NUMBER()` | `RANK()` | `DENSE_RANK()` | `NTILE(2)` | Notes on Behavior |
+|:---|:---:|:---:|:---:|:---:|:---:|:---|
+| Alice | 100 | **1** | **1** | **1** | 1 | Highest score. |
+| Bob | 95 | **2** | **2** | **2** | 1 | Tied for 2nd place. |
+| Charlie | 95 | **3** | **2** | **2** | 2 | Tied for 2nd place. `ROW_NUMBER` breaks tie arbitrarily. |
+| David | 80 | **4** | **4** | **3** | 2 | `RANK` leaves a gap (skips 3). `DENSE_RANK` has **no gaps**! |
+
+* **`ROW_NUMBER()`**: Assigns a strictly unique, contiguous integer to every row. Essential for deterministic pagination and deduplication.
+* **`RANK()`**: Assigns equal integers to ties, but **leaves gaps** in subsequent rankings (1, 2, 2, 4...). Matches Olympic medal standing.
+* **`DENSE_RANK()`**: Assigns equal integers to ties **without gaps** (1, 2, 2, 3...). Essential for "Find the Top $N$ highest unique salaries."
+* **`NTILE(n)`**: Divides rows into $n$ roughly equal percentile buckets (quartiles, deciles).
+
+---
+
+### 2. Positional & Value Functions: `LAG`, `LEAD`, `FIRST_VALUE`, `LAST_VALUE`
+
+Value functions inspect adjacent or boundary rows relative to the current row:
+
 ```sql
-SELECT users.name, orders.amount, orders.order_date
-FROM users
-INNER JOIN orders ON users.id = orders.user_id
-WHERE orders.amount > 30.00
-ORDER BY orders.amount DESC;
+SELECT 
+    emp_id, 
+    department_id, 
+    hire_date, 
+    salary,
+    -- Inspect previous employee's salary in the department
+    LAG(salary, 1, 0) OVER (
+        PARTITION BY department_id 
+        ORDER BY hire_date ASC
+    ) AS prev_salary,
+    -- Inspect next employee's salary in the department
+    LEAD(salary, 1, 0) OVER (
+        PARTITION BY department_id 
+        ORDER BY hire_date ASC
+    ) AS next_salary,
+    -- Salary of the very first hire in the department
+    FIRST_VALUE(salary) OVER (
+        PARTITION BY department_id 
+        ORDER BY hire_date ASC 
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS first_hire_salary
+FROM employees;
 ```
 
-#### Grouping and Aggregating Data
-To find the total amount spent by each user:
+::: {.callout-warning}
+### The Infamous `LAST_VALUE()` Default Frame Trap
+When an `ORDER BY` is provided inside an `OVER ()` clause, ANSI SQL mandates a default window frame:
+$$\text{RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW}$$
+Because the frame terminates at the **CURRENT ROW**, calling `LAST_VALUE(col) OVER (ORDER BY col)` will return the current row's value rather than the last value of the entire partition!
+**The Fix:** Explicitly expand the window frame to the end of the partition:
 ```sql
-SELECT users.name, SUM(orders.amount) AS total_spent
-FROM users
-LEFT JOIN orders ON users.id = orders.user_id
-GROUP BY users.name
-HAVING SUM(orders.amount) > 50.00;
+LAST_VALUE(salary) OVER (
+    PARTITION BY department_id 
+    ORDER BY hire_date ASC
+    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+) AS true_last_hire_salary
+```
+:::
+
+---
+
+## 4. Common Table Expressions (CTEs) & Recursive Hierarchies
+
+A **Common Table Expression (CTE)** defines a temporary, named result set that exists solely within the execution scope of a single SQL statement.
+
+### 1. Non-Recursive CTE for Filtering Window Functions
+As established in Section 2, window functions cannot be filtered directly in `WHERE`. The standard, clean architectural pattern is a CTE:
+
+```sql
+WITH RankedSalaries AS (
+    SELECT 
+        department_id,
+        employee_id,
+        salary,
+        DENSE_RANK() OVER (
+            PARTITION BY department_id 
+            ORDER BY salary DESC
+        ) AS salary_rank
+    FROM employees
+)
+SELECT department_id, employee_id, salary
+FROM RankedSalaries
+WHERE salary_rank <= 3;  -- Top 3 distinct earners per department
+```
+
+### 2. Recursive CTEs for Hierarchical and Graph Traversal
+Recursive CTEs solve self-referential tree problems (e.g., corporate reporting structures, folder directories, bill of materials).
+
+A recursive CTE consists of:
+1. **The Anchor Member:** The base query that initializes the recursion (e.g., finding the CEO where `manager_id IS NULL`).
+2. **`UNION ALL`**
+3. **The Recursive Member:** The query referencing the CTE itself, joining the child rows to parent rows.
+4. **Termination Condition:** Implicitly halts when the recursive join yields an empty set.
+
+#### Universal Recursive CTE (PostgreSQL, MySQL 8.0+, SQLite):
+```sql
+WITH RECURSIVE OrgTree AS (
+    -- Anchor Member: Root CEO
+    SELECT 
+        employee_id, 
+        manager_id, 
+        employee_name, 
+        1 AS depth, 
+        CAST(employee_name AS VARCHAR(1000)) AS hierarchy_path
+    FROM corporate_staff
+    WHERE manager_id IS NULL
+
+    UNION ALL
+
+    -- Recursive Member: Subordinates
+    SELECT 
+        c.employee_id, 
+        c.manager_id, 
+        c.employee_name, 
+        p.depth + 1, 
+        CAST(CONCAT(p.hierarchy_path, ' -> ', c.employee_name) AS VARCHAR(1000))
+    FROM corporate_staff c
+    INNER JOIN OrgTree p ON c.manager_id = p.employee_id
+)
+SELECT depth, hierarchy_path 
+FROM OrgTree 
+ORDER BY hierarchy_path;
+```
+
+#### Engine Dialect Differences for Recursive CTEs:
+* **SQL Server (T-SQL):** Omits the `RECURSIVE` keyword (`WITH OrgTree AS (...)`).
+* **Oracle:** Supports both standard ANSI `WITH` recursive CTEs (11gR2+) and proprietary `START WITH manager_id IS NULL CONNECT BY PRIOR employee_id = manager_id`.
+
+---
+
+## 5. Complex Joins, Multi-Column Keys & Self-Referential Rules
+
+### 1. Multi-Column Joins (Composite Keys)
+In enterprise databases and data warehouses, tables are frequently related by compound primary keys (e.g., multi-tenant systems where every table includes a `tenant_id` and `store_id`):
+
+```sql
+SELECT 
+    f.transaction_id,
+    f.amount,
+    d.department_name
+FROM fact_sales f
+INNER JOIN dim_department d 
+    ON f.tenant_id     = d.tenant_id
+   AND f.store_id      = d.store_id
+   AND f.department_id = d.department_id
+WHERE f.fiscal_year = 2026;
+```
+
+### 2. Non-Equi Joins (Interval & Range Matching)
+Joins do not require equality (`=`). Non-equi joins match records across temporal ranges or thresholds:
+
+```sql
+-- Find employee performance ratings based on salary bands
+SELECT 
+    e.employee_name,
+    e.salary,
+    b.grade_level
+FROM employees e
+INNER JOIN salary_bands b 
+    ON e.salary >= b.min_salary 
+   AND e.salary <  b.max_salary;
+```
+
+### 3. Self-Joins & Self-Referential Matching
+A self-join joins a table to itself under distinct aliases. Common use cases include:
+
+#### A. Finding Managers of Employees:
+```sql
+SELECT 
+    emp.employee_name AS subordinate,
+    mgr.employee_name AS manager
+FROM employees emp
+LEFT JOIN employees mgr ON emp.manager_id = mgr.employee_id;
+```
+
+#### B. Overlapping Date Intervals (Collision Detection):
+```sql
+-- Detect overlapping room reservations
+SELECT 
+    r1.reservation_id AS res1,
+    r2.reservation_id AS res2,
+    r1.room_id
+FROM reservations r1
+INNER JOIN reservations r2 
+    ON r1.room_id = r2.room_id
+   AND r1.reservation_id < r2.reservation_id  -- Avoid mirror pairs and self-match
+   AND r1.start_time < r2.end_time 
+   AND r1.end_time > r2.start_time;
 ```
 
 ---
 
-### 4. Comparing SQL Dialects and Database Engines
+## 6. Array & Collection Unnesting Across All 5 Engines
 
-Although SQL is standardized by ANSI/ISO, every major database engine implements its own features, syntax adjustments, and extensions (known as **dialects**).
+Modern schemas frequently store arrays, repeated records, or JSON documents. **Unnesting** (or "exploding") expands an array of $N$ elements into $N$ separate rows.
 
-#### A. PostgreSQL
-* **Type:** Open-source Object-Relational Database.
-* **Key Features:** Highly extensible, supports advanced indexing, JSON querying natively, window functions, and custom data types.
-* **Best For:** Complex applications, GIS data tracking (via PostGIS), and enterprise-grade reliability.
+Because array implementations vary dramatically across engines, here is the concrete syntax for each:
 
-#### B. MySQL / MariaDB
-* **Type:** Open-source Relational Database.
-* **Key Features:** Extremely fast read performance, simple to set up, highly popular in web hosting environments (LAMP stack).
-* **Best For:** Web applications, content management systems (like WordPress), and standard CRUD applications.
+### 1. PostgreSQL (Native Arrays)
+```sql
+-- Input: Table with an integer array column: tags INT[] = '{101, 102, 103}'
+SELECT 
+    item_id, 
+    unnested_tag.tag_id,
+    unnested_tag.ordinality
+FROM items,
+UNNEST(items.tags) WITH ORDINALITY AS unnested_tag(tag_id, ordinality);
+```
 
-#### C. SQLite
-* **Type:** Serverless, embedded file-based database.
-* **Key Features:** Extremely lightweight. The entire database is stored in a single file on disk. No server configuration required.
-* **Best For:** Local application testing, mobile applications (iOS/Android), and local CLI utilities.
+### 2. MySQL (JSON Arrays via `JSON_TABLE`)
+```sql
+-- Input: Table with a JSON array column: tags_json = '[101, 102, 103]'
+SELECT 
+    i.item_id, 
+    jt.tag_id
+FROM items i,
+JSON_TABLE(
+    i.tags_json, 
+    '$[*]' COLUMNS (tag_id INT PATH '$')
+) AS jt;
+```
 
-#### D. Microsoft SQL Server / Oracle Database
-* **Type:** Commercial proprietary databases.
-* **Key Features:** High-end security integration, advanced query optimization, robust commercial support.
-* **Best For:** Large-scale enterprise systems and financial processing software.
+### 3. Microsoft SQL Server (`STRING_SPLIT` & `OPENJSON`)
+```sql
+-- A. Unnesting comma-delimited strings:
+SELECT item_id, TRIM(value) AS tag_id
+FROM items
+CROSS APPLY STRING_SPLIT(tags_csv, ',');
+
+-- B. Unnesting JSON arrays:
+SELECT item_id, CAST(value AS INT) AS tag_id
+FROM items
+CROSS APPLY OPENJSON(tags_json);
+```
+
+### 4. Oracle (`JSON_TABLE` & Nested Tables)
+```sql
+-- Unnesting JSON array in Oracle 12c+:
+SELECT i.item_id, jt.tag_id
+FROM items i,
+JSON_TABLE(
+    i.tags_json, 
+    '$[*]' COLUMNS (tag_id NUMBER PATH '$')
+) jt;
+```
+
+### 5. SQLite (`json_each`)
+```sql
+-- SQLite supports JSON extension natively:
+SELECT i.item_id, j.value AS tag_id
+FROM items i,
+json_each(i.tags_json) j;
+```
 
 ---
 
-### 5. Summary: SQL vs. NoSQL
+## 7. String & Array Aggregations (The Reverse of Unnesting)
 
-| Feature | Relational (SQL) | Non-Relational (NoSQL) |
-|---------|------------------|------------------------|
-| **Data Model** | Tabular (Rows/Columns) | Document (JSON), Key-Value, Graph |
-| **Schema** | Strict, predefined | Dynamic, flexible |
-| **Transactions** | Strict compliance (ACID) | Eventual consistency (BASE) |
-| **Scaling** | Vertical (Larger server) | Horizontal (More servers) |
-| **Use Case** | Financial applications, complex joins | Big data, real-time analytics, user profiles |
+When grouping rows, developers often need to collapse multiple child strings into a single comma-separated list:
+
+| Engine | Aggregation Syntax | Example |
+|:---|:---|:---|
+| **PostgreSQL** | `STRING_AGG(col, delimiter [ORDER BY ...])` | `STRING_AGG(name, ', ' ORDER BY name ASC)` |
+| **MySQL** | `GROUP_CONCAT([DISTINCT] col [ORDER BY ...] SEPARATOR delimiter)` | `GROUP_CONCAT(name ORDER BY name ASC SEPARATOR ', ')` |
+| **SQL Server** | `STRING_AGG(col, delimiter) WITHIN GROUP (ORDER BY ...)` | `STRING_AGG(name, ', ') WITHIN GROUP (ORDER BY name ASC)` |
+| **Oracle** | `LISTAGG(col, delimiter) WITHIN GROUP (ORDER BY ...)` | `LISTAGG(name, ', ') WITHIN GROUP (ORDER BY name ASC)` |
+| **SQLite** | `GROUP_CONCAT(col [, delimiter])` | `GROUP_CONCAT(name, ', ')` |
+
+---
+
+## 8. Bitwise Operations & Parity Manipulation in SQL
+
+Bitwise operators allow lightning-fast bit-level arithmetic directly inside relational queries.
+
+| Operation | PostgreSQL | MySQL | SQL Server | SQLite | Oracle |
+|:---|:---:|:---:|:---:|:---:|:---:|
+| **Bitwise AND** | `a & b` | `a & b` | `a & b` | `a & b` | `BITAND(a, b)` |
+| **Bitwise OR** | `a \| b` | `a \| b` | `a \| b` | `a \| b` | `a + b - BITAND(a, b)` |
+| **Bitwise XOR** | `a # b` | `a ^ b` | `a ^ b` | `a ^ b` | Proprietary formula / UDF |
+| **Bitwise NOT** | `~a` | `~a` | `~a` | `~a` | `-1 - a` |
+| **Left Shift** | `a << n` | `a << n` | Not native (`a * POWER(2,n)`) | `a << n` | `a * POWER(2, n)` |
+
+### Practical LeetCode Parity Trick: Alternating Seat Swaps
+To swap odd/even IDs ($1 \leftrightarrow 2, 3 \leftrightarrow 4$):
+* For zero-indexed numbers, XOR with 1 swaps pairs: $0 \leftrightarrow 1, 2 \leftrightarrow 3$.
+* For one-indexed numbers:
+$$\text{new\_id} = ((id - 1) \oplus 1) + 1$$
+In MySQL / SQL Server / SQLite: `((id - 1) ^ 1) + 1`.
+
+---
+
+## 9. Character & ASCII Code Conversions
+
+Converting between ASCII numerical values and their string character representations:
+
+### 1. ASCII Code to Character
+* **PostgreSQL / Oracle / SQLite:** `CHR(65)` $\longrightarrow$ `'A'`
+* **MySQL / SQL Server:** `CHAR(65)` $\longrightarrow$ `'A'`
+
+### 2. Character to ASCII Code
+* **Universal across all 5 engines:** `ASCII('A')` $\longrightarrow$ `65`
+
+### 3. Practical Example: Generating the Alphabet $A-Z$ in Pure SQL (PostgreSQL):
+```sql
+SELECT CHR(ascii_code) AS letter
+FROM generate_series(65, 90) AS ascii_code;
+```
+
+---
+
+## 10. Statistical Bucketing & Pure-SQL Distribution Charts
+
+Visualizing distributions (such as LeetCode score distributions or transaction frequency histograms) can be accomplished directly inside SQL using bucketing and text repetition functions.
+
+### 1. Generating Equal-Width Histogram Buckets
+PostgreSQL and Oracle feature the native `WIDTH_BUCKET()` function:
+
+$$\text{WIDTH\_BUCKET}(\text{value}, \text{min}, \text{max}, \text{num\_buckets})$$
+
+For engines lacking `WIDTH_BUCKET` (MySQL, SQL Server, SQLite), use math floor:
+```sql
+-- Put scores [0, 100] into 10 buckets of width 10:
+SELECT 
+    FLOOR(score / 10.0) * 10 AS bucket_min,
+    COUNT(*) AS frequency
+FROM exam_results
+GROUP BY FLOOR(score / 10.0) * 10
+ORDER BY bucket_min;
+```
+
+### 2. Rendering ASCII Bar Charts in Pure SQL
+By scaling counts and repeating a UTF-8 bar character (`█`), queries can output visual charts directly into terminal consoles:
+
+#### PostgreSQL & MySQL:
+```sql
+WITH ScoreBins AS (
+    SELECT 
+        FLOOR(score / 10.0) * 10 AS bin_start,
+        COUNT(*) AS student_count
+    FROM exam_results
+    GROUP BY FLOOR(score / 10.0) * 10
+)
+SELECT 
+    CONCAT(bin_start, ' - ', bin_start + 9) AS score_range,
+    student_count,
+    REPEAT('█', CAST(student_count / 2 AS INT)) AS distribution_chart
+FROM ScoreBins
+ORDER BY bin_start ASC;
+```
+
+#### Output Representation:
+```
+score_range  | student_count | distribution_chart
+0 - 9        | 2             | █
+10 - 19      | 5             | ██
+20 - 29      | 12            | ██████
+30 - 39      | 24            | ████████████
+40 - 49      | 18            | █████████
+```
+
+---
+
+## 11. Classic LeetCode SQL Patterns (Deconstructed with Code)
+
+### Case Study 1: Triangle Judgement (LeetCode 610)
+* **Problem:** Given three side lengths $x, y, z$, determine whether they can form a valid triangle.
+* **Mathematical Condition:** The sum of any two sides must be strictly greater than the remaining side:
+$$(x + y > z) \quad \land \quad (x + z > y) \quad \land \quad (y + z > x)$$
+* **Universal SQL Solution:**
+```sql
+SELECT 
+    x, y, z,
+    CASE 
+        WHEN x + y > z AND x + z > y AND y + z > x THEN 'Yes'
+        ELSE 'No'
+    END AS triangle
+FROM Triangle;
+```
+
+---
+
+### Case Study 2: Department Top Three Salaries (LeetCode 185)
+* **Problem:** A company wants to find employees who earn top 3 **unique** salaries in each department.
+* **Why `RANK()` Fails:** If salaries are [100k, 90k, 90k, 80k], `RANK` assigns [1, 2, 2, 4]. Rank 4 is skipped, missing the third tier!
+* **The `DENSE_RANK()` Solution:**
+```sql
+WITH RankedEmployees AS (
+    SELECT 
+        d.name AS Department,
+        e.name AS Employee,
+        e.salary AS Salary,
+        DENSE_RANK() OVER (
+            PARTITION BY e.departmentId 
+            ORDER BY e.salary DESC
+        ) AS rnk
+    FROM Employee e
+    INNER JOIN Department d ON e.departmentId = d.id
+)
+SELECT Department, Employee, Salary
+FROM RankedEmployees
+WHERE rnk <= 3;
+```
+
+---
+
+### Case Study 3: Consecutive Numbers (LeetCode 180)
+* **Problem:** Find all numbers that appear at least three times consecutively in a log table.
+
+#### Method A: Modern Window Functions (`LAG` & `LEAD`)
+```sql
+WITH ConsecutiveScan AS (
+    SELECT 
+        num,
+        LAG(num, 1)  OVER (ORDER BY id) AS prev_num,
+        LEAD(num, 1) OVER (ORDER BY id) AS next_num
+    FROM Logs
+)
+SELECT DISTINCT num AS ConsecutiveNums
+FROM ConsecutiveScan
+WHERE num = prev_num AND num = next_num;
+```
+
+#### Method B: 3-Way Self-Join (Compatible with any SQL version):
+```sql
+SELECT DISTINCT l1.num AS ConsecutiveNums
+FROM Logs l1
+INNER JOIN Logs l2 ON l1.id = l2.id - 1
+INNER JOIN Logs l3 ON l1.id = l3.id - 2
+WHERE l1.num = l2.num AND l2.num = l3.num;
+```
+
+---
+
+### Case Study 4: Exchange Seats (LeetCode 626)
+* **Problem:** Swap consecutive odd and even seats. If the last seat is odd, do not swap it.
+
+#### Universal SQL Solution via `CASE` & Window Count:
+```sql
+SELECT 
+    CASE 
+        -- If odd and last seat, keep as is
+        WHEN id % 2 = 1 AND id = (SELECT COUNT(*) FROM Seat) THEN id
+        -- If odd, increment to next even seat
+        WHEN id % 2 = 1 THEN id + 1
+        -- If even, decrement to previous odd seat
+        ELSE id - 1
+    END AS id,
+    student
+FROM Seat
+ORDER BY id ASC;
+```
+
+---
+
+## 12. The Grand Cross-Engine Rosetta Stone
+
+| Feature | PostgreSQL | MySQL (8.0+) | SQL Server (T-SQL) | Oracle (19c+) | SQLite (3.25+) |
+|:---|:---|:---|:---|:---|:---|
+| **Limit / Paging** | `LIMIT n OFFSET m` | `LIMIT m, n` | `OFFSET m ROWS FETCH NEXT n ROWS ONLY` | `OFFSET m ROWS FETCH NEXT n ROWS ONLY` | `LIMIT n OFFSET m` |
+| **String Concat** | `a \|\| b` or `CONCAT()` | `CONCAT(a, b)` | `a + b` or `CONCAT()` | `a \|\| b` or `CONCAT()` | `a \|\| b` |
+| **Group String Agg** | `STRING_AGG(x, ',')` | `GROUP_CONCAT(x)` | `STRING_AGG(x, ',')` | `LISTAGG(x, ',')` | `GROUP_CONCAT(x, ',')` |
+| **Array Unnest** | `UNNEST(arr)` | `JSON_TABLE()` | `OPENJSON()` / `STRING_SPLIT()` | `JSON_TABLE()` / `TABLE()` | `json_each()` |
+| **Recursive CTE** | `WITH RECURSIVE` | `WITH RECURSIVE` | `WITH` (no keyword) | `WITH` or `CONNECT BY` | `WITH RECURSIVE` |
+| **Bitwise XOR** | `#` | `^` | `^` | Custom / UDF | `^` |
+| **ASCII to Char** | `CHR(n)` | `CHAR(n)` | `CHAR(n)` | `CHR(n)` | `CHAR(n)` |
+| **Regexp Match** | `col ~ 'pattern'` | `REGEXP_LIKE()` | `LIKE` with brackets | `REGEXP_LIKE()` | `REGEXP` |
+| **Date Add (1 Day)**| `d + INTERVAL '1 day'` | `DATE_ADD(d, INTERVAL 1 DAY)` | `DATEADD(day, 1, d)` | `d + 1` | `date(d, '+1 day')` |
+| **Null Replacement**| `COALESCE(a, b)` | `IFNULL(a, b)` / `COALESCE` | `ISNULL(a, b)` / `COALESCE` | `NVL(a, b)` / `COALESCE` | `IFNULL(a, b)` / `COALESCE` |
+
+---
+
+## 13. References & Official Documentation
+
+1. **PostgreSQL Global Development Group.** *PostgreSQL 16 Documentation: Window Functions & Array Functions* (2024).
+2. **Oracle Corporation.** *MySQL 8.0 Reference Manual: Window Function Concepts and Syntax* (2024).
+3. **Microsoft Learn.** *Transact-SQL (T-SQL) Reference: DENSE_RANK, STRING_AGG, and CTEs* (2024).
+4. **Oracle Corporation.** *Database SQL Language Reference: Analytic Functions and Hierarchical Queries* (2024).
+5. **SQLite Consortium.** *Window Functions and JSON1 Extension Specifications* (2024).
+6. **Celko, Joe.** *SQL for Smarties: Advanced SQL Programming* (5th ed., Morgan Kaufmann, 2014).
+7. **Stewart, James.** *Calculus: Early Transcendentals* (8th ed., Cengage Learning). Chapters on discrete partitions and numerical series, underpinning how database query planners compute bounded intervals and Riemann-partition window frames.
