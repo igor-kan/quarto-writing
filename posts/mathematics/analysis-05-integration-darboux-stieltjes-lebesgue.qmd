@@ -1,6 +1,6 @@
 ---
 title: "Foundations of Integration: Darboux-Stieltjes Sums, Measure Zero, and Lebesgue's Criterion"
-subtitle: "Replacing intuitive Riemann area sums with upper/lower Darboux sums, the Riemann-Stieltjes integral, and Lebesgue's integrability theorem."
+subtitle: "Upper and lower Darboux sums, the refinement lemma, the Riemann-Stieltjes integral, and Lebesgue's integrability theorem."
 author: "Igor Kan"
 date: "2026-09-12"
 categories: ["Mathematics", "Analysis", "Calculus", "Probability", "Physics"]
@@ -10,31 +10,212 @@ format:
     math: true
 ---
 
-## 1. The Conceptual Shift: Why Riemann Sums Fail
+## 1. The Conceptual Shift: Beyond Naive Riemann Sums
 
-In elementary calculus, the definite integral is defined as the limit of Riemann sums. Modern analysis replaces naive sums with **Darboux sums**, generalizes integration via the **Riemann-Stieltjes integral** $\int f d\alpha$, and establishes **Lebesgue's Criterion of Integrability**: bounded $f$ is Riemann integrable iff its discontinuities have Lebesgue measure zero.
+In elementary introductory calculus, the definite integral $\int_a^b f(x) dx$ is introduced as the area under a curve, computed as the limit of Riemann sums $\sum_{i=1}^n f(x_i^*) \Delta x$. While intuitive, this formulation suffers from severe mathematical limitations:
+1. **Ambiguity of Tag Selection**: Arbitrary selection of intermediate points $x_i^* \in [x_{i-1}, x_i]$ obscures whether sums converge to a unique number or depend on the path of tags.
+2. **Failure on Pathological Functions**: Even innocent-looking functions like the Dirichlet indicator of the rationals $\mathbf{1}_\mathbb{Q}$ completely derail naive Riemann sums.
+3. **Rigid Uniform Weighting**: The differential $dx$ restricts integration to standard Euclidean length, preventing smooth integration against cumulative distribution functions (CDFs) or discrete point charges.
 
----
-
-## 2. Rigorous Foundations & Theorems
-
-### Upper and Lower Darboux Integrals
-Let $P = \{a = x_0 < x_1 < \dots < x_n = b\}$.
-$$U(f, P) = \sum_{i=1}^n M_i \Delta x_i, \quad L(f, P) = \sum_{i=1}^n m_i \Delta x_i$$
-A bounded function $f$ is Darboux integrable if and only if:
-$$\inf_{P} U(f, P) = \sup_{P} L(f, P)$$
+Modern mathematical analysis resolves these issues via three structural advancements:
+* **Darboux Sums & Squeeze Bounds**: Replacing arbitrary tags with the exact supremum $M_i$ and infimum $m_i$ on subintervals to create guaranteed upper and lower Darboux bounds $U(f, P)$ and $L(f, P)$.
+* **The Riemann-Stieltjes Generalization**: Integrating against an arbitrary monotonically increasing function $\alpha(x)$ via $\int_a^b f(x) d\alpha(x)$, unifying continuous density integration and discrete sum series into a single operator.
+* **Lebesgue's Criterion of Integrability**: Establishing the precise boundary of Riemann integrability using measure theory: a bounded function is Riemann integrable if and only if its set of discontinuities has **Lebesgue measure zero**.
 
 ---
 
-## 3. Applications Across Disciplines
+## 2. Foundational Definitions & Elementary Properties
 
-* **Probability**: CDF expectations $\mathbb{E}[g(X)] = \int g(x) dF(x)$ unify continuous and discrete variables.
-* **Physics**: Charge distributions containing point charges integrate against Heaviside step functions.
-* **Computer Science**: Guaranteed error intervals for safety-critical simulations.
+### Partitions and Mesh
+Let $[a, b] \subset \mathbb{R}$ be a compact interval.
+* A **partition** $P$ of $[a, b]$ is a finite ordered sequence of points:
+  $$P = \{a = x_0 < x_1 < x_2 < \dots < x_n = b\}$$
+* The width of the $i$-th subinterval is $\Delta x_i = x_i - x_{i-1}$.
+* The **mesh** (or norm) of the partition is the length of its longest subinterval:
+  $$\|P\| = \max_{1 \le i \le n} \Delta x_i$$
+* A partition $Q$ is a **refinement** of $P$ (written $P \subseteq Q$) if every partition point of $P$ is also in $Q$. The **common refinement** of two partitions $P_1, P_2$ is $P_1 \cup P_2$.
+
+### Darboux Sums and Integrals
+Let $f: [a, b] \to \mathbb{R}$ be a bounded function, so there exist $m, M \in \mathbb{R}$ such that $m \le f(x) \le M$ for all $x \in [a, b]$.
+For each subinterval $[x_{i-1}, x_i]$, define:
+$$M_i = \sup_{x \in [x_{i-1}, x_i]} f(x), \quad m_i = \inf_{x \in [x_{i-1}, x_i]} f(x)$$
+* The **Upper Darboux Sum** is: $U(f, P) = \sum_{i=1}^n M_i \Delta x_i$.
+* The **Lower Darboux Sum** is: $L(f, P) = \sum_{i=1}^n m_i \Delta x_i$.
+* The **Upper Darboux Integral** is: $\overline{\int_a^b} f(x) dx = \inf_{P} U(f, P)$.
+* The **Lower Darboux Integral** is: $\underline{\int_a^b} f(x) dx = \sup_{P} L(f, P)$.
+
+A bounded function $f$ is **Darboux integrable** (equivalently, Riemann integrable) on $[a, b]$ if:
+$$\underline{\int_a^b} f(x) dx = \overline{\int_a^b} f(x) dx$$
+The common value is the definite integral $\int_a^b f(x) dx$.
 
 ---
 
-## 4. Numerical Computation: Guaranteed Upper and Lower Darboux Bounds
+## 3. Intermediate Lemmas & Rigorous Proofs
+
+> **Lemma 5.1 (The Refinement Lemma)**: If $P$ is a partition of $[a, b]$ and $Q$ is a refinement of $P$ ($P \subseteq Q$), then:
+> $$L(f, P) \le L(f, Q) \le U(f, Q) \le U(f, P)$$
+
+*Proof*:
+It suffices to prove the lemma when $Q$ contains exactly one additional point $c$ not in $P$. Suppose $x_{k-1} < c < x_k$ for some $k \in \{1, \dots, n\}$.
+On the subinterval $[x_{k-1}, x_k]$, the contribution to $U(f, P)$ is $M_k (x_k - x_{k-1})$.
+In the refined partition $Q$, this subinterval is split into $[x_{k-1}, c]$ and $[c, x_k]$. Define:
+$$M_k^{(1)} = \sup_{[x_{k-1}, c]} f(x), \quad M_k^{(2)} = \sup_{[c, x_k]} f(x)$$
+Because a supremum over a subset cannot exceed the supremum over the whole set:
+$$M_k^{(1)} \le M_k \quad \text{and} \quad M_k^{(2)} \le M_k$$
+Noticing that $(x_k - x_{k-1}) = (c - x_{k-1}) + (x_k - c)$, we have:
+$$M_k (x_k - x_{k-1}) = M_k (c - x_{k-1}) + M_k (x_k - c) \ge M_k^{(1)} (c - x_{k-1}) + M_k^{(2)} (x_k - c)$$
+The sum of all other subintervals remains unchanged. Therefore:
+$$U(f, Q) \le U(f, P)$$
+By symmetric logic, $m_k^{(1)} \ge m_k$ and $m_k^{(2)} \ge m_k$, which guarantees $L(f, P) \le L(f, Q)$.
+By induction, adding any finite number of points preserves these inequalities. Since $L(f, Q) \le U(f, Q)$ always holds, the chain of inequalities is established. $\blacksquare$
+
+> **Lemma 5.2 (Universal Comparison of Lower and Upper Sums)**: For *any* two arbitrary partitions $P_1$ and $P_2$ of $[a, b]$:
+> $$L(f, P_1) \le U(f, P_2)$$
+
+*Proof*:
+Form the common refinement $Q = P_1 \cup P_2$. Since $P_1 \subseteq Q$ and $P_2 \subseteq Q$, applying Lemma 5.1 yields:
+$$L(f, P_1) \le L(f, Q) \le U(f, Q) \le U(f, P_2)$$
+Hence $L(f, P_1) \le U(f, P_2)$ for all partitions $P_1, P_2$. Taking the supremum over all $P_1$ and infimum over all $P_2$ gives $\underline{\int_a^b} f \le \overline{\int_a^b} f$. $\blacksquare$
+
+> **Lemma 5.3 (Darboux's Integrability Criterion)**: A bounded function $f: [a, b] \to \mathbb{R}$ is Darboux integrable if and only if for every $\epsilon > 0$, there exists a partition $P$ of $[a, b]$ such that:
+> $$U(f, P) - L(f, P) < \epsilon$$
+
+*Proof*:
+$(\implies)$ Suppose $f$ is integrable, so $\underline{\int_a^b} f = \overline{\int_a^b} f = I$.
+Given $\epsilon > 0$, by the properties of supremum and infimum:
+* There exists a partition $P_1$ such that $U(f, P_1) < I + \frac{\epsilon}{2}$.
+* There exists a partition $P_2$ such that $L(f, P_2) > I - \frac{\epsilon}{2}$.
+Let $P = P_1 \cup P_2$. Applying Lemma 5.1:
+$$U(f, P) - L(f, P) \le U(f, P_1) - L(f, P_2) < \left(I + \frac{\epsilon}{2}\right) - \left(I - \frac{\epsilon}{2}\right) = \epsilon$$
+
+$(\impliedby)$ Suppose for every $\epsilon > 0$ there exists $P$ with $U(f, P) - L(f, P) < \epsilon$.
+Since $L(f, P) \le \underline{\int_a^b} f \le \overline{\int_a^b} f \le U(f, P)$, we have:
+$$0 \le \overline{\int_a^b} f - \underline{\int_a^b} f \le U(f, P) - L(f, P) < \epsilon$$
+Since $\epsilon > 0$ is arbitrary, $\overline{\int_a^b} f - \underline{\int_a^b} f = 0$, so $f$ is integrable. $\blacksquare$
+
+---
+
+## 4. Rigorous Construction & Advanced Theorems
+
+### Integrability of Continuous Functions
+> **Theorem 5.1 (Integrability of Continuous Functions)**: If $f: [a, b] \to \mathbb{R}$ is continuous, then $f$ is Riemann/Darboux integrable on $[a, b]$.
+
+*Proof*:
+Since $[a, b]$ is compact, by the Heine-Cantor theorem, $f$ is **uniformly continuous** on $[a, b]$.
+Therefore, for any $\epsilon > 0$, there exists $\delta > 0$ such that:
+$$|x - y| < \delta \implies |f(x) - f(y)| < \frac{\epsilon}{b - a}$$
+Choose a partition $P = \{x_0, x_1, \dots, x_n\}$ with mesh $\|P\| < \delta$.
+On each subinterval $[x_{i-1}, x_i]$, by the Extreme Value Theorem, $f$ attains its minimum at some $u_i$ and its maximum at some $v_i$.
+Because $|v_i - u_i| \le \Delta x_i < \delta$, we have:
+$$M_i - m_i = f(v_i) - f(u_i) < \frac{\epsilon}{b - a}$$
+Now compute the difference between upper and lower Darboux sums:
+$$U(f, P) - L(f, P) = \sum_{i=1}^n (M_i - m_i) \Delta x_i < \sum_{i=1}^n \left(\frac{\epsilon}{b - a}\right) \Delta x_i = \frac{\epsilon}{b - a} \sum_{i=1}^n \Delta x_i = \frac{\epsilon}{b - a}(b - a) = \epsilon$$
+By Lemma 5.3, $f$ is Darboux integrable. $\blacksquare$
+
+### Lebesgue's Integrability Criterion
+> **Theorem 5.2 (Lebesgue's Criterion for Riemann Integrability)**: A bounded function $f: [a, b] \to \mathbb{R}$ is Riemann integrable if and only if its set of discontinuities:
+> $$D_f = \{x \in [a, b] : f \text{ is not continuous at } x\}$$
+> has **Lebesgue measure zero** ($\lambda(D_f) = 0$).
+
+A set $S \subset \mathbb{R}$ has Lebesgue measure zero if for every $\epsilon > 0$, there exists a countable sequence of open intervals $\{(a_k, b_k)\}_{k=1}^\infty$ covering $S$ ($S \subseteq \bigcup_{k=1}^\infty (a_k, b_k)$) such that $\sum_{k=1}^\infty (b_k - a_k) < \epsilon$.
+The oscillation of $f$ at $x$ is defined as $\omega_f(x) = \lim_{r \to 0} (\sup_{B_r(x)} f - \inf_{B_r(x)} f)$. $f$ is continuous at $x \iff \omega_f(x) = 0$. The proof follows by decomposing $D_f = \bigcup_{k=1}^\infty \{x : \omega_f(x) \ge 1/k\}$ into compact sets of positive oscillation.
+
+### Riemann-Stieltjes Integration by Parts
+> **Theorem 5.3 (Riemann-Stieltjes Integration by Parts)**: If $f$ is Riemann-Stieltjes integrable with respect to a monotonically increasing function $\alpha$ on $[a, b]$ ($f \in \mathcal{R}(\alpha)$), then $\alpha \in \mathcal{R}(f)$ and:
+> $$\int_a^b f(x) d\alpha(x) + \int_a^b \alpha(x) df(x) = f(b)\alpha(b) - f(a)\alpha(a)$$
+
+*Proof*:
+Let $P = \{a = x_0 < x_1 < \dots < x_n = b\}$ be a partition and choose tags $t_i \in [x_{i-1}, x_i]$.
+Consider the Riemann-Stieltjes sum:
+$$S(f, P, \alpha) = \sum_{i=1}^n f(t_i)(\alpha(x_i) - \alpha(x_{i-1}))$$
+Expanding and regrouping terms using Abel summation (summation by parts):
+$$S(f, P, \alpha) = f(b)\alpha(b) - f(a)\alpha(a) - \sum_{i=1}^{n-1} \alpha(x_i)(f(t_{i+1}) - f(t_i))$$
+The second sum is precisely a Riemann-Stieltjes sum for $\alpha$ with respect to $f$ on the refined partition $\{a = t_1 \le t_2 \le \dots \le t_n \le b\}$. Taking the limit as $\|P\| \to 0$ yields the theorem. $\blacksquare$
+
+---
+
+## 5. Concrete Worked Examples & Step-by-Step Calculations
+
+### Worked Example 5.1: Rigorous Darboux Integration of $f(x) = x^2$ on $[0, 1]$
+Let us evaluate $\int_0^1 x^2 dx$ directly from the definition of Darboux sums without invoking the Fundamental Theorem of Calculus.
+
+1. **Partition Setup**:
+   Choose the uniform partition $P_n$ dividing $[0, 1]$ into $n$ equal subintervals:
+   $$x_i = \frac{i}{n}, \quad \Delta x_i = \frac{1}{n}, \quad \text{for } i \in \{0, 1, \dots, n\}$$
+
+2. **Suprema and Infima on Subintervals**:
+   Since $f(x) = x^2$ is strictly increasing on $[0, 1]$:
+   * $m_i = \inf_{[x_{i-1}, x_i]} x^2 = x_{i-1}^2 = \left(\frac{i-1}{n}\right)^2 = \frac{(i-1)^2}{n^2}$
+   * $M_i = \sup_{[x_{i-1}, x_i]} x^2 = x_i^2 = \left(\frac{i}{n}\right)^2 = \frac{i^2}{n^2}$
+
+3. **Computing Lower Darboux Sum**:
+   $$L(f, P_n) = \sum_{i=1}^n m_i \Delta x_i = \sum_{i=1}^n \frac{(i-1)^2}{n^2} \cdot \frac{1}{n} = \frac{1}{n^3} \sum_{k=0}^{n-1} k^2$$
+   Using the power sum formula $\sum_{k=1}^m k^2 = \frac{m(m+1)(2m+1)}{6}$ with $m = n - 1$:
+   $$L(f, P_n) = \frac{(n-1)n(2n-1)}{6n^3} = \frac{2n^3 - 3n^2 + n}{6n^3} = \frac{1}{3} - \frac{1}{2n} + \frac{1}{6n^2}$$
+
+4. **Computing Upper Darboux Sum**:
+   $$U(f, P_n) = \sum_{i=1}^n M_i \Delta x_i = \sum_{i=1}^n \frac{i^2}{n^2} \cdot \frac{1}{n} = \frac{1}{n^3} \sum_{i=1}^n i^2 = \frac{n(n+1)(2n+1)}{6n^3} = \frac{1}{3} + \frac{1}{2n} + \frac{1}{6n^2}$$
+
+5. **Darboux Difference & Convergence**:
+   $$U(f, P_n) - L(f, P_n) = \left(\frac{1}{3} + \frac{1}{2n} + \frac{1}{6n^2}\right) - \left(\frac{1}{3} - \frac{1}{2n} + \frac{1}{6n^2}\right) = \frac{1}{n}$$
+   Given any $\epsilon > 0$, choose $n > \frac{1}{\epsilon}$. Then $U(f, P_n) - L(f, P_n) < \epsilon$.
+   Taking the limit as $n \to \infty$:
+   $$\sup_n L(f, P_n) = \frac{1}{3} = \inf_n U(f, P_n) \implies \int_0^1 x^2 dx = \frac{1}{3}$$
+
+### Worked Example 5.2: The Thomae Function (Popcorn Function)
+Consider the **Thomae function** $f: [0, 1] \to \mathbb{R}$ defined by:
+$$f(x) = \begin{cases} \frac{1}{q}, & \text{if } x = \frac{p}{q} \in \mathbb{Q} \text{ in lowest terms } (p, q \in \mathbb{N}, \gcd(p, q) = 1) \\ 0, & \text{if } x \notin \mathbb{Q} \text{ or } x = 0 \end{cases}$$
+
+1. **Continuity Analysis**:
+   * At any rational $x_0 = p/q$, $f(x_0) = 1/q > 0$. Every neighborhood contains irrationals where $f(x) = 0$. Hence $|f(x) - f(x_0)| = 1/q$, so $f$ is **discontinuous at every rational**.
+   * At any irrational $x_0$, $f(x_0) = 0$. For any $\epsilon > 0$, there are only finitely many integers $q \le \lceil 1/\epsilon \rceil$. The set of rationals in $[0, 1]$ with denominator $q \le 1/\epsilon$ is finite.
+   * Choosing $\delta = \min \{|x_0 - r| : r \in \mathbb{Q}, \text{ denom}(r) \le 1/\epsilon\} > 0$, for all $x$ with $|x - x_0| < \delta$, either $x$ is irrational ($f(x) = 0$) or $x$ has denominator $q > 1/\epsilon$ ($f(x) < \epsilon$).
+   * Thus $|f(x) - f(x_0)| < \epsilon$, proving $f$ is **continuous at every irrational**.
+
+2. **Integrability via Lebesgue's Criterion**:
+   The set of discontinuities is $D_f = \mathbb{Q} \cap [0, 1]$.
+   Since $\mathbb{Q}$ is countable, its measure is $\lambda(\mathbb{Q} \cap [0, 1]) = 0$.
+   By Lebesgue's Criterion (Theorem 5.2), $f$ is **Riemann integrable**!
+
+3. **Evaluation of the Integral**:
+   In any subinterval $[x_{i-1}, x_i]$, density of irrationals guarantees $m_i = \inf f = 0$.
+   Therefore, for every partition $P$, $L(f, P) = \sum 0 \cdot \Delta x_i = 0$.
+   Since $f$ is integrable, the integral must equal the supremum of lower sums:
+   $$\int_0^1 f(x) dx = \sup_P L(f, P) = 0$$
+
+### Worked Example 5.3: Riemann-Stieltjes with a Jump Discontinuity
+Evaluate the Riemann-Stieltjes integral:
+$$I = \int_{-1}^2 x^3 dH(x - 1)$$
+where $H(t)$ is the Heaviside step function: $H(t) = 0$ for $t < 0$, and $H(t) = 1$ for $t \ge 0$.
+
+1. **Integrator Analysis**:
+   Here $\alpha(x) = H(x - 1)$ is monotonically increasing, with $\alpha(x) = 0$ for $x < 1$ and $\alpha(x) = 1$ for $x \ge 1$.
+   The integrator is constant everywhere except for a single jump of magnitude $\Delta \alpha = 1$ at $x = 1$.
+
+2. **Partition Evaluation**:
+   For any partition $P$ with subinterval $[x_{k-1}, x_k]$ containing the jump point $1$:
+   $$\Delta \alpha_i = \alpha(x_i) - \alpha(x_{i-1}) = \begin{cases} 1, & \text{if } x_{k-1} < 1 \le x_k \\ 0, & \text{otherwise} \end{cases}$$
+   Therefore, the Riemann-Stieltjes sum reduces to a single term:
+   $$S(f, P, \alpha) = f(t_k) \cdot 1 = t_k^3, \quad t_k \in [x_{k-1}, x_k]$$
+   As the mesh $\|P\| \to 0$, the interval $[x_{k-1}, x_k]$ shrinks to the point $\{1\}$, forcing $t_k \to 1$.
+   By continuity of $f(x) = x^3$:
+   $$\int_{-1}^2 x^3 dH(x - 1) = \lim_{\|P\| \to 0} t_k^3 = 1^3 = 1$$
+   This illustrates how the Riemann-Stieltjes integral rigorously formalizes Dirac delta sampling: $\int f(x) \delta(x - x_0) dx = f(x_0)$.
+
+---
+
+## 6. Multi-Disciplinary Applications
+
+* **Probability Theory & Statistics**: The Riemann-Stieltjes integral unifies discrete probability mass functions and continuous probability densities. For any random variable $X$ with cumulative distribution function $F(x) = P(X \le x)$, the expectation is universally defined as $\mathbb{E}[g(X)] = \int_{-\infty}^\infty g(x) dF(x)$, eliminating the need to write separate formulas for discrete sums and continuous integrals.
+* **Theoretical Physics**: In electrodynamics, charge densities can be composed of continuous volume charge clouds $\rho(x)$ and discrete point charges $q_k$. Writing total charge as $Q = \int \rho(x) dx + \sum q_k$ is unified under the Stieltjes measure $Q = \int dQ(x)$.
+* **Quantitative Finance**: Asset pricing models integrate cash flow discount factors against jump-diffusion processes using Stieltjes path integration.
+* **Computer Science / Interval Analysis**: Safety-critical robotics and avionics simulations compute upper and lower Darboux sums using interval arithmetic to guarantee that roundoff and truncation errors never exceed safety margins.
+
+---
+
+## 7. Numerical Computation: Guaranteed Upper and Lower Darboux Bounds
+
+Below are complete, self-contained implementations of **Upper and Lower Darboux Integration with Guaranteed Squeeze Bounds** across six scientific computing environments:
 
 ::: {.panel-tabset group="language"}
 ## Python 3
@@ -43,7 +224,8 @@ import numpy as np
 
 def darboux_bounds(func, a: float, b: float, n_intervals: int):
     grid = np.linspace(a, b, n_intervals + 1)
-    lower_sum = 0.0; upper_sum = 0.0
+    lower_sum = 0.0
+    upper_sum = 0.0
     for i in range(n_intervals):
         pts = np.linspace(grid[i], grid[i+1], 30)
         vals = func(pts)
@@ -54,95 +236,103 @@ def darboux_bounds(func, a: float, b: float, n_intervals: int):
 
 f = lambda x: x**2
 lo, hi = darboux_bounds(f, 0.0, 1.0, 100)
-print(f"Python 3: Lower = {lo:.6f}, Upper = {hi:.6f}, True = {1/3:.6f}")
+print(f"Python 3: Lower = {lo:.6f}, Upper = {hi:.6f}, Exact = {1/3:.6f}")
 ```
 
 ## C++20
 ```cpp
 #include <iostream>
 #include <vector>
-#include <cmath>
 #include <algorithm>
+#include <iomanip>
 
 int main() {
-    auto f = [](double x){ return x * x; };
     int n = 100;
-    double a = 0.0, b = 1.0, dx = (b - a) / n;
+    double a = 0.0, b = 1.0;
+    double dx = (b - a) / n;
     double lower_sum = 0.0, upper_sum = 0.0;
 
+    auto f = [](double x) { return x * x; };
+
     for (int i = 0; i < n; ++i) {
-        double m = 1e9, M = -1e9;
-        for (int k = 0; k <= 20; ++k) {
-            double x = a + i * dx + k * (dx / 20.0);
-            double y = f(x);
-            m = std::min(m, y);
-            M = std::max(M, y);
-        }
-        lower_sum += m * dx;
-        upper_sum += M * dx;
+        double x_left = a + i * dx;
+        double x_right = a + (i + 1) * dx;
+        // For monotonically increasing functions: min is at left, max is at right
+        double m_i = f(x_left);
+        double M_i = f(x_right);
+        lower_sum += m_i * dx;
+        upper_sum += M_i * dx;
     }
-    std::cout << "C++20:    Lower = " << lower_sum << ", Upper = " << upper_sum << "\n";
+
+    std::cout << std::fixed << std::setprecision(6);
+    std::cout << "C++20:    Lower = " << lower_sum << ", Upper = " << upper_sum 
+              << ", Squeeze Diff = " << (upper_sum - lower_sum) << "\n";
     return 0;
 }
 ```
 
 ## Julia
 ```julia
-f(x) = x^2
-n = 100; dx = 1.0 / n
-lo = 0.0; hi = 0.0
-
-for i in 0:(n-1)
-    pts = range(i*dx, (i+1)*dx, length=25)
-    vals = f.(pts)
-    global lo += minimum(vals) * dx
-    global hi += maximum(vals) * dx
+function darboux_bounds(f, a, b, n)
+    dx = (b - a) / n
+    lower_sum = 0.0
+    upper_sum = 0.0
+    for i in 0:(n-1)
+        xl = a + i * dx
+        xr = a + (i + 1) * dx
+        lower_sum += f(xl) * dx
+        upper_sum += f(xr) * dx
+    end
+    return lower_sum, upper_sum
 end
 
+f(x) = x^2
+lo, hi = darboux_bounds(f, 0.0, 1.0, 100)
 println("Julia:    Lower = $(round(lo, digits=6)), Upper = $(round(hi, digits=6))")
 ```
 
 ## Modern Fortran
 ```fortran
-program darboux
+program darboux_test
   implicit none
   integer, parameter :: n = 100
-  integer :: i, k
-  real(8) :: dx, lo, hi, m, M_val, x, y
+  real(8) :: a, b, dx, xl, xr, lower_sum, upper_sum
+  integer :: i
 
-  dx = 1.0d0 / n
-  lo = 0.0d0; hi = 0.0d0
+  a = 0.0d0; b = 1.0d0
+  dx = (b - a) / dble(n)
+  lower_sum = 0.0d0
+  upper_sum = 0.0d0
 
-  do i = 0, n-1
-    m = 1.0d9; M_val = -1.0d9
-    do k = 0, 20
-      x = i*dx + k*(dx / 20.0d0)
-      y = x**2
-      m = min(m, y)
-      M_val = max(M_val, y)
-    end do
-    lo = lo + m * dx
-    hi = hi + M_val * dx
+  do i = 0, n - 1
+     xl = a + dble(i) * dx
+     xr = a + dble(i + 1) * dx
+     lower_sum = lower_sum + (xl**2) * dx
+     upper_sum = upper_sum + (xr**2) * dx
   end do
 
-  print '(A,F8.6,A,F8.6)', "Fortran:  Lower = ", lo, ", Upper = ", hi
-end program darboux
+  print '(A,F10.6,A,F10.6)', "Fortran:  Lower = ", lower_sum, ", Upper = ", upper_sum
+end program darboux_test
 ```
 
 ## MATLAB / Octave
 ```matlab
-n = 100; dx = 1 / n;
-lo = 0; hi = 0;
+% Darboux bounds for monotonic f(x) = x^2
+n = 100;
+a = 0.0; b = 1.0;
+dx = (b - a) / n;
+x = linspace(a, b, n + 1);
 
-for i = 0:(n-1)
-    x = linspace(i*dx, (i+1)*dx, 25);
-    y = x.^2;
-    lo = lo + min(y) * dx;
-    hi = hi + max(y) * dx;
-end
+m_i = x(1:end-1).^2;
+M_i = x(2:end).^2;
 
-fprintf('MATLAB:   Lower = %.6f, Upper = %.6f\n', lo, hi);
+lower_sum = sum(m_i * dx);
+upper_sum = sum(M_i * dx);
+
+fprintf('MATLAB:   Lower = %.6f, Upper = %.6f, True = %.6f\n', ...
+        lower_sum, upper_sum, 1/3);
 ```
+
 ## Lean 4
 ```lean
 -- Lean 4: Lebesgue Measure and Integration
@@ -162,18 +352,17 @@ def MeasureZeroEquivalence (s : Set ℝ) (h : volume s = 0) :
     ∫ x in s, (1 : ℝ) = 0 := by
   exact setIntegral_measure_zero h
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 8. Curated Primary Literature & Canonical Syllabi
 
-* **Walter Rudin**, *Principles of Mathematical Analysis*, McGraw-Hill (1976), Ch 6.
-* **Gerald B. Folland**, *Real Analysis*, Wiley (1999), Ch 2.
-* **Terence Tao**, *An Introduction to Measure Theory*, AMS (2011), Ch 1.
-* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015), Chapter 5.
-
+* **Tom M. Apostol**, *Mathematical Analysis*, 2nd Edition, Addison-Wesley (1974). Chapter 7 provides one of the most comprehensive treatments of the Riemann-Stieltjes integral.
+* **Walter Rudin**, *Principles of Mathematical Analysis*, 3rd Edition, McGraw-Hill (1976). Chapter 6 (The Riemann-Stieltjes Integral) and Chapter 11 (The Lebesgue Theory).
+* **Michael Spivak**, *Calculus*, 4th Edition, Publish or Perish (2008). Chapter 13 (Integrals) rigorously constructs the Darboux integral and proves integrability.
+* **Terence Tao**, *Analysis I*, Texts and Readings in Mathematics, Hindustan Book Agency (2016). Chapter 11 (Riemann Integration).
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Chapter 5 (Integrals).
 <br>
 <br>
 

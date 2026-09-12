@@ -12,10 +12,10 @@ format:
 
 ## 1. The Conceptual Shift: Beyond Intuitive Approaches
 
-In elementary calculus, the limit is introduced as a dynamic process: "as $x$ gets closer and closer to $a$, $f(x)$ gets closer and closer to $L$." Continuity is taught as "being able to draw the graph of $f$ without lifting your pencil."
+In elementary calculus, the limit is introduced as a dynamic process: "as $x$ approaches $a$, $f(x)$ approaches $L$." Continuity is taught as "being able to draw the graph of $f$ without lifting your pencil."
 
-In pure mathematics and rigorous science, this temporal and kinetic intuition is abandoned for static, topological definitions:
-1. **The Static $\epsilon$-$\delta$ Formulation**: Karl Weierstrass and Augustin-Louis Cauchy eliminated the notion of "motion" by replacing it with universal and existential quantifiers on static open intervals.
+In pure mathematics and rigorous science, this kinetic intuition is replaced by topological structure:
+1. **The Static $\epsilon$-$\delta$ Formulation**: Karl Weierstrass eliminated the notion of physical motion by replacing it with universal and existential quantifiers on static open intervals.
 2. **Topological Definition of Continuity**: In general topological spaces $(X, \tau_X)$ and $(Y, \tau_Y)$, metrics may not exist. Continuity is defined algebraically: *a function $f: X \to Y$ is continuous if and only if the preimage of every open set in $Y$ is open in $X$*:
    $$U \in \tau_Y \implies f^{-1}(U) \in \tau_X$$
 3. **Neighborhood Filters and Nets**: Limits of sequences fail to capture topology in non-first-countable spaces; convergence is properly formulated using **filters** (Henri Cartan) or **nets** (Moore-Smith).
@@ -23,29 +23,77 @@ In pure mathematics and rigorous science, this temporal and kinetic intuition is
 
 ---
 
-## 2. Rigorous Formulations & Core Theorems
+## 2. Foundational Definitions & Elementary Properties
+
+### Metric Spaces and Open Balls
+A **metric space** $(X, d)$ is a set $X$ equipped with a distance function $d: X \times X \to [0, \infty)$ satisfying:
+1. Identity of indiscernibles: $d(x, y) = 0 \iff x = y$.
+2. Symmetry: $d(x, y) = d(y, x)$.
+3. Triangle Inequality: $d(x, z) \le d(x, y) + d(y, z)$.
+
+An **open ball** of radius $r > 0$ centered at $x_0$ is $B_r(x_0) = \{x \in X : d(x, x_0) < r\}$. A set $U \subset X$ is **open** if for every $x \in U$, there exists $r > 0$ such that $B_r(x) \subset U$.
+
+### Foundational Lemmas
+
+> **Lemma 2.1 (Squeeze / Sandwich Lemma)**: Let $(x_n), (y_n), (z_n)$ be real sequences with $x_n \le y_n \le z_n$ for all $n \ge N$. If $\lim_{n \to \infty} x_n = \lim_{n \to \infty} z_n = L$, then $\lim_{n \to \infty} y_n = L$.
+
+> **Lemma 2.2 (Cauchy Criterion for Limits)**: Let $f: E \to \mathbb{R}$ and $p$ be a limit point of $E$. Then $\lim_{x \to p} f(x)$ exists if and only if for every $\epsilon > 0$, there exists $\delta > 0$ such that:
+> $$0 < d(x, p) < \delta \quad \text{and} \quad 0 < d(y, p) < \delta \implies |f(x) - f(y)| < \epsilon$$
+
+> **Lemma 2.3 (Preservation of Compactness)**: If $K \subset X$ is compact and $f: X \to Y$ is continuous, then the image $f(K) \subset Y$ is compact.
+
+---
+
+## 3. Rigorous Foundations & Core Theorems
 
 ### Metric Limit ($\epsilon$-$\delta$)
 Let $(X, d_X)$ and $(Y, d_Y)$ be metric spaces, $E \subset X$, $f: E \to Y$, and $p$ a limit point of $E$. We write $\lim_{x \to p} f(x) = q$ if:
 $$\forall \epsilon > 0, \; \exists \delta > 0 \quad \text{such that} \quad 0 < d_X(x, p) < \delta \implies d_Y(f(x), q) < \epsilon$$
 
 ### Topological Continuity via Preimages
-> **Theorem**: Let $f: X \to Y$ be a mapping between topological spaces. The following are equivalent:
+> **Theorem 2.1 (Characterization of Continuity)**: Let $f: X \to Y$ be a mapping between topological spaces. The following are equivalent:
 > 1. $f$ is continuous on $X$.
 > 2. For every open set $V \subset Y$, $f^{-1}(V)$ is open in $X$.
 > 3. For every closed set $F \subset Y$, $f^{-1}(F)$ is closed in $X$.
 
-*Proof ($1 \implies 2$ in metric spaces)*: Let $V \subset Y$ be open. Let $x \in f^{-1}(V)$, so $f(x) \in V$. Since $V$ is open, $\exists \epsilon > 0$ such that $B_\epsilon(f(x)) \subset V$. By metric continuity, $\exists \delta > 0$ such that $f(B_\delta(x)) \subset B_\epsilon(f(x)) \subset V$. Thus $B_\delta(x) \subset f^{-1}(V)$. Since every point has an open ball contained in $f^{-1}(V)$, $f^{-1}(V)$ is open.
+*Proof ($1 \iff 2$ in metric spaces)*:
+$(\implies)$ Let $V \subset Y$ be open. Take any $x \in f^{-1}(V)$. Then $f(x) \in V$. Since $V$ is open, $\exists \epsilon > 0$ such that $B_\epsilon(f(x)) \subset V$. By metric continuity at $x$, $\exists \delta > 0$ such that $d_X(x', x) < \delta \implies d_Y(f(x'), f(x)) < \epsilon$, which means $f(B_\delta(x)) \subset B_\epsilon(f(x)) \subset V$. Hence $B_\delta(x) \subset f^{-1}(V)$. Since every point in $f^{-1}(V)$ possesses an open ball contained in $f^{-1}(V)$, $f^{-1}(V)$ is open in $X$.
+$(\impliedby)$ Conversely, let $x \in X$ and $\epsilon > 0$. The ball $V = B_\epsilon(f(x))$ is open in $Y$. By hypothesis, $f^{-1}(V)$ is open in $X$ and contains $x$. Therefore, there exists $\delta > 0$ such that $B_\delta(x) \subset f^{-1}(V)$, which implies $f(B_\delta(x)) \subset B_\epsilon(f(x))$. Hence $f$ is continuous. $\blacksquare$
 
 ### Heine-Borel & Uniform Continuity
-> **Heine-Borel Theorem**: A subset $K \subset \mathbb{R}^n$ is compact if and only if it is closed and bounded.
+> **Theorem 2.2 (Heine-Borel)**: A subset $K \subset \mathbb{R}^n$ is compact (every open cover has a finite subcover) if and only if $K$ is closed and bounded.
 
-> **Heine-Cantor Theorem**: If $f: K \to Y$ is continuous and $K$ is compact, then $f$ is **uniformly continuous**:
-> $$\forall \epsilon > 0, \; \exists \delta > 0 \quad \text{s.t.} \quad d_X(x, y) < \delta \implies d_Y(f(x), f(y)) < \epsilon \quad \forall x, y \in K$$
+> **Theorem 2.3 (Heine-Cantor Theorem)**: If $f: K \to Y$ is continuous and $K$ is compact, then $f$ is **uniformly continuous**:
+> $$\forall \epsilon > 0, \; \exists \delta > 0 \quad \text{such that} \quad d_X(x, y) < \delta \implies d_Y(f(x), f(y)) < \epsilon \quad \forall x, y \in K$$
 
 ---
 
-## 3. Applications Across Disciplines
+## 4. Concrete Worked Examples
+
+### Example 2.1: Rigorous $\epsilon$-$\delta$ Verification
+Prove rigorously from the definition that $\lim_{x \to 3} (2x^2 - 5x) = 3$.
+1. **Target**: For a given $\epsilon > 0$, find $\delta > 0$ such that $0 < |x - 3| < \delta \implies |(2x^2 - 5x) - 3| < \epsilon$.
+2. **Factoring the expression**:
+   $$|(2x^2 - 5x) - 3| = |(2x + 1)(x - 3)| = |2x + 1| \cdot |x - 3|$$
+3. **Bounding the factor $|2x + 1|$**: Assume first that $\delta \le 1$.
+   $$|x - 3| < 1 \implies 2 < x < 4 \implies 5 < 2x + 1 < 9 \implies |2x + 1| < 9$$
+4. **Selecting $\delta$**: We require $9 \cdot |x - 3| < \epsilon \implies |x - 3| < \frac{\epsilon}{9}$.
+   Set $\delta = \min\left(1, \frac{\epsilon}{9}\right)$.
+5. **Verification**: If $0 < |x - 3| < \delta$, then $|x - 3| < 1$ (so $|2x + 1| < 9$) and $|x - 3| < \frac{\epsilon}{9}$. Thus:
+   $$|(2x^2 - 5x) - 3| = |2x + 1| \cdot |x - 3| < 9 \cdot \frac{\epsilon}{9} = \epsilon \quad \blacksquare$$
+
+### Example 2.2: Continuous vs. Non-Uniformly Continuous Functions
+* $f(x) = x^2$ is continuous on $\mathbb{R}$, but **not uniformly continuous** on $\mathbb{R}$:
+  Let $x_n = n$ and $y_n = n + \frac{1}{n}$. Then $|x_n - y_n| = \frac{1}{n} \to 0$ as $n \to \infty$.
+  However, $|f(x_n) - f(y_n)| = |n^2 - (n^2 + 2 + 1/n^2)| = 2 + 1/n^2 > 2$.
+  Thus no single $\delta$ can work for all $x \in \mathbb{R}$.
+* In contrast, on any compact interval $[a, b]$, Heine-Cantor guarantees uniform continuity. For $x, y \in [a, b]$:
+  $$|x^2 - y^2| = |x + y| \cdot |x - y| \le 2M |x - y|$$
+  where $M = \max(|a|, |b|)$. Setting $\delta = \frac{\epsilon}{2M}$ ensures uniform continuity.
+
+---
+
+## 5. Applications Across Disciplines
 
 ### Physics: Thermodynamic Limits & Phase Transitions
 In statistical mechanics, phase transitions (like water boiling to steam) correspond to non-analyticities (discontinuities in derivatives of free energy $F$). In a finite system of $N$ particles, $F_N$ is always a real analytic function. Singularities only emerge in the **thermodynamic limit** $N \to \infty, V \to \infty$ with $N/V = \rho$, where limits fail to commute.
@@ -60,9 +108,7 @@ Regularizing neural network Lipschitz constants $L = \sup_{x \neq y} \frac{\|f(x
 
 ---
 
-## 4. Numerical Computation: Empirical Lipschitz Constant Estimator
-
-Below are multi-language implementations estimating the Lipschitz constant $L = \sup \frac{\|f(x) - f(y)\|}{\|x - y\|}$ across a compact domain:
+## 6. Algorithmic Implementation: Empirical Lipschitz Constant Estimator
 
 ::: {.panel-tabset group="language"}
 ## Python 3
@@ -176,6 +222,7 @@ dy = abs(f1 - f2);
 L_est = max(dy ./ dx(valid));
 fprintf('MATLAB:   Estimated Lipschitz Constant: %.4f\n', L_est);
 ```
+
 ## Lean 4
 ```lean
 -- Lean 4: Topological Continuity via Preimages and Neighborhood Filters
@@ -194,12 +241,11 @@ theorem continuousAt_def_filter (f : X → Y) (x : X) :
     ContinuousAt f x ↔ Filter.Tendsto f (nhds x) (nhds (f x)) :=
   Iff.rfl
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 7. Curated Sources & Further Reading
 
 * **Walter Rudin**, *Principles of Mathematical Analysis*, 3rd Edition, McGraw-Hill (1976), Chapter 4: *Continuity*.
 * **James R. Munkres**, *Topology*, 2nd Edition, Prentice Hall (2000), Chapters 2 & 3.
@@ -207,7 +253,6 @@ theorem continuousAt_def_filter (f : X → Y) (x : X) :
 * **Michael Spivak**, *Calculus*, 4th Edition, Publish or Perish (2008), Chapters 5, 6, & 9.
 * **Tom M. Apostol**, *Calculus, Vol. 1*, 2nd Edition, Wiley (1967), Chapter 3: *Continuous Functions*.
 * **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015), Chapter 2.
-
 <br>
 <br>
 

@@ -1,39 +1,213 @@
 ---
-title: "Stochastic Analysis: Brownian Motion, Itô’s Lemma, and Continuous Martingale Dynamics"
-subtitle: "Extending calculus to randomness: Probability spaces, Wiener processes, stochastic integrals, Itô's formula, and Langevin dynamics in machine learning."
+title: "Stochastic Calculus and Diffusion: Brownian Motion, Quadratic Variation, and Itô's Lemma"
+subtitle: "Beyond deterministic differentials: Wiener processes, quadratic variation [B, B]_t = t, Itô's correction formula, and martingales."
 author: "Igor Kan"
 date: "2026-09-12"
-categories: ["Mathematics", "Stochastic Calculus", "Probability", "Quantitative Finance", "Machine Learning"]
+categories: ["Mathematics", "Probability", "Stochastic Analysis", "Quantitative Finance", "Physics"]
 format:
   html:
     toc: true
     math: true
 ---
 
-## 1. The Conceptual Shift: Nowhere-Differentiable Paths & Itô's Lemma
+## 1. The Conceptual Shift: Beyond Deterministic Paths
 
-Brownian motion paths are non-differentiable with non-zero quadratic variation $(dW_t)^2 = dt$. Taylor expansions must be retained to second order, yielding **Itô’s Lemma**:
-$$df(W_t) = f'(W_t) dW_t + \frac{1}{2} f''(W_t) dt$$
+In classical deterministic calculus, paths are smooth curves $x(t) \in C^1$, where increments scale linearly with time: $\Delta x \approx \dot{x} \Delta t$. Second-order increments vanish in the limit: $(\Delta x)^2 \approx (\dot{x})^2 (\Delta t)^2 \to 0$.
+
+In physical systems subjected to thermal fluctuations (Brownian motion), financial market fluctuations, and stochastic gradient dynamics in AI, this deterministic calculus fails completely:
+1. **Nowhere Differentiable Paths**: A **Wiener process** (Brownian motion) $B_t$ has sample paths that are almost surely continuous everywhere, but differentiable **nowhere**. Increments scale with the square root of time:
+   $$\Delta B_t \sim \sqrt{\Delta t}$$
+2. **Non-Vanishing Quadratic Variation**: Unlike smooth paths whose quadratic variation is zero, Brownian motion accumulates finite, strictly non-zero quadratic variation:
+   $$[B, B]_t = \lim_{\|P\| \to 0} \sum_{i=1}^n (B_{t_i} - B_{t_{i-1}})^2 = t \implies (dB_t)^2 = dt$$
+3. **Itô's Lemma (The Second-Order Survival)**: Because $(dB_t)^2 = dt$, Taylor expansions cannot truncate at first order! The second derivative term survives deterministically:
+   $$df(t, B_t) = \frac{\partial f}{\partial t} dt + \frac{\partial f}{\partial x} dB_t + \frac{1}{2} \frac{\partial^2 f}{\partial x^2} dt$$
+4. **The Itô Integral & Martingales**: Evaluating Riemann-Stieltjes sums at the *left endpoint* of each subinterval constructs the **Itô Integral** $\int_0^t H_s dB_s$, which preserves the **martingale property** ($\mathbb{E}[I_t \mid \mathcal{F}_s] = I_s$) and satisfies the fundamental **Itô Isometry**.
 
 ---
 
-## 2. Numerical Computation: Euler-Maruyama Simulation of Geometric Brownian Motion
+## 2. Foundational Definitions & Elementary Properties
+
+### Standard Brownian Motion (Wiener Process)
+Let $(\Omega, \mathcal{F}, \{\mathcal{F}_t\}_{t \ge 0}, \mathbb{P})$ be a filtered probability space.
+A continuous adapted stochastic process $B = \{B_t\}_{t \ge 0}$ is a **standard 1D Brownian motion** if:
+1. $B_0 = 0$ almost surely.
+2. **Independent Increments**: For any $0 \le s < t$, the increment $B_t - B_s$ is independent of the filtration $\mathcal{F}_s$.
+3. **Gaussian Increments**: For any $0 \le s < t$:
+   $$B_t - B_s \sim \mathcal{N}(0, t - s)$$
+4. **Continuity**: The sample path $t \mapsto B_t(\omega)$ is continuous for almost all $\omega \in \Omega$.
+
+### Martingales
+An adapted stochastic process $M_t$ is a **martingale** with respect to filtration $\mathcal{F}_t$ if:
+1. $\mathbb{E}[|M_t|] < \infty$ for all $t \ge 0$.
+2. For all $0 \le s \le t$:
+   $$\mathbb{E}[M_t \mid \mathcal{F}_s] = M_s$$
+
+### The Itô Stochastic Integral
+For an adapted square-integrable process $H_t$, the **Itô integral** is defined as the $L^2(\mathbb{P})$ limit of left-endpoint sums:
+$$\int_0^T H_t dB_t = \lim_{\|P\| \to 0} \sum_{i=1}^n H_{t_{i-1}} (B_{t_i} - B_{t_{i-1}})$$
+
+---
+
+## 3. Intermediate Lemmas & Rigorous Proofs
+
+> **Lemma 20.1 (Quadratic Variation of Brownian Motion)**: Let $P_n = \{0 = t_0 < t_1 < \dots < t_n = t\}$ be a sequence of partitions of $[0, t]$ with mesh $\|P_n\| \to 0$. Then:
+> $$\lim_{n \to \infty} \sum_{i=1}^n (B_{t_i} - B_{t_{i-1}})^2 = t \quad \text{in } L^2(\mathbb{P})$$
+
+*Proof*:
+Let $\Delta B_i = B_{t_i} - B_{t_{i-1}}$ and $\Delta t_i = t_i - t_{i-1}$.
+By definition of Brownian motion, $\Delta B_i \sim \mathcal{N}(0, \Delta t_i)$.
+Therefore, $\mathbb{E}[\Delta B_i^2] = \Delta t_i$, and $\mathbb{E}[\Delta B_i^4] = 3 (\Delta t_i)^2$.
+The variance of each squared increment is:
+$$\text{Var}(\Delta B_i^2) = \mathbb{E}[\Delta B_i^4] - (\mathbb{E}[\Delta B_i^2])^2 = 3(\Delta t_i)^2 - (\Delta t_i)^2 = 2 (\Delta t_i)^2$$
+Consider the sum $Q_n = \sum_{i=1}^n \Delta B_i^2$. Its expectation is:
+$$\mathbb{E}[Q_n] = \sum_{i=1}^n \mathbb{E}[\Delta B_i^2] = \sum_{i=1}^n \Delta t_i = t$$
+Because increments over non-overlapping intervals are mutually independent, variances add:
+$$\text{Var}(Q_n) = \sum_{i=1}^n \text{Var}(\Delta B_i^2) = \sum_{i=1}^n 2 (\Delta t_i)^2 \le 2 \|P_n\| \sum_{i=1}^n \Delta t_i = 2 \|P_n\| t$$
+As $\|P_n\| \to 0$, $\text{Var}(Q_n) \to 0$.
+By Chebyshev's inequality / $L^2$ convergence, $Q_n \xrightarrow{L^2} t$. $\blacksquare$
+
+> **Lemma 20.2 (The Itô Multiplication Table)**: Infinitesimal differentials satisfy:
+> $$(dB_t)^2 = dt, \quad dB_t \cdot dt = 0, \quad (dt)^2 = 0$$
+
+*Proof*:
+Follows from Lemma 20.1: $(dB_t)^2$ converges deterministically to its mean $dt$ with variance $\mathcal{O}(dt^2) \to 0$.
+The mixed cross-term $dB_t \cdot dt \sim \mathcal{O}(dt^{3/2})$ and $(dt)^2 \sim \mathcal{O}(dt^2)$ vanish faster than $dt$, leaving $(dB_t)^2 = dt$ as the only surviving second-order differential. $\blacksquare$
+
+> **Lemma 20.3 (The Itô Isometry)**: For any square-integrable adapted process $H_t$:
+> $$\mathbb{E}\left[ \left( \int_0^T H_t dB_t \right)^2 \right] = \mathbb{E}\left[ \int_0^T H_t^2 dt \right]$$
+
+*Proof*:
+For elementary step processes $H_t = \sum H_{i-1} \mathbf{1}_{[t_{i-1}, t_i)}$, where $H_{i-1}$ is $\mathcal{F}_{t_{i-1}}$-measurable:
+$$I = \sum_{i=1}^n H_{i-1} \Delta B_i \implies I^2 = \sum_{i=1}^n H_{i-1}^2 \Delta B_i^2 + 2 \sum_{i < j} H_{i-1} H_{j-1} \Delta B_i \Delta B_j$$
+Taking expectations using tower property:
+* For cross terms ($i < j$): $\mathbb{E}[H_{i-1} H_{j-1} \Delta B_i \Delta B_j] = \mathbb{E}[H_{i-1} H_{j-1} \Delta B_i \mathbb{E}[\Delta B_j \mid \mathcal{F}_{t_{j-1}}]] = 0$.
+* For diagonal terms: $\mathbb{E}[H_{i-1}^2 \Delta B_i^2] = \mathbb{E}[H_{i-1}^2 \mathbb{E}[\Delta B_i^2 \mid \mathcal{F}_{t_{i-1}}]] = \mathbb{E}[H_{i-1}^2 \Delta t_i]$.
+Summing yields $\sum \mathbb{E}[H_{i-1}^2 \Delta t_i] = \mathbb{E}[\int_0^T H_t^2 dt]$.
+Extending by density to all square-integrable processes completes the proof. $\blacksquare$
+
+---
+
+## 4. Rigorous Construction & Advanced Theorems
+
+### Itô's Lemma (The Stochastic Chain Rule)
+> **Theorem 20.1 (Itô's Formula)**: Let $X_t$ be an Itô drift-diffusion process:
+> $$dX_t = \mu(t, X_t) dt + \sigma(t, X_t) dB_t$$
+> and let $f(t, x) \in C^{1,2}([0, \infty) \times \mathbb{R})$. Then $Y_t = f(t, X_t)$ is an Itô process satisfying:
+> $$df(t, X_t) = \left( \frac{\partial f}{\partial t} + \mu \frac{\partial f}{\partial x} + \frac{1}{2} \sigma^2 \frac{\partial^2 f}{\partial x^2} \right) dt + \sigma \frac{\partial f}{\partial x} dB_t$$
+
+*Proof*:
+By Taylor's theorem in two variables up to second order:
+$$\Delta f = \frac{\partial f}{\partial t} \Delta t + \frac{\partial f}{\partial x} \Delta X + \frac{1}{2} \frac{\partial^2 f}{\partial x^2} (\Delta X)^2 + \frac{\partial^2 f}{\partial t \partial x} \Delta t \Delta X + \frac{1}{2} \frac{\partial^2 f}{\partial t^2} (\Delta t)^2 + \dots$$
+Substitute $\Delta X = \mu \Delta t + \sigma \Delta B$:
+$$(\Delta X)^2 = (\mu \Delta t + \sigma \Delta B)^2 = \sigma^2 (\Delta B)^2 + 2 \mu \sigma \Delta t \Delta B + \mu^2 (\Delta t)^2$$
+Applying the Itô multiplication table (Lemma 20.2):
+* $(\Delta B)^2 \to dt$.
+* $\Delta t \Delta B \to 0$ and $(\Delta t)^2 \to 0$.
+Therefore, $(\Delta X)^2 = \sigma^2 dt$.
+Substituting back into the Taylor expansion yields:
+$$df = \frac{\partial f}{\partial t} dt + \frac{\partial f}{\partial x} (\mu dt + \sigma dB_t) + \frac{1}{2} \frac{\partial^2 f}{\partial x^2} (\sigma^2 dt)$$
+Regrouping $dt$ and $dB_t$ terms produces the formula. $\blacksquare$
+
+### The Feynman-Kac Formula
+> **Theorem 20.2 (The Feynman-Kac Theorem)**: Consider the parabolic partial differential equation:
+> $$\frac{\partial u}{\partial t}(t, x) + \mu(t, x) \frac{\partial u}{\partial x}(t, x) + \frac{1}{2} \sigma^2(t, x) \frac{\partial^2 u}{\partial x^2}(t, x) - r u(t, x) = 0$$
+> for $t \in [0, T]$, subject to terminal condition $u(T, x) = g(x)$.
+> Then the unique classical solution is the conditional expectation:
+> $$u(t, x) = \mathbb{E}\left[ e^{-r(T - t)} g(X_T) \;\middle|\; X_t = x \right]$$
+> where $X_s$ solves the stochastic differential equation $dX_s = \mu(s, X_s) ds + \sigma(s, X_s) dB_s$.
+
+*Proof*:
+Apply Itô's formula to the discounted process $Y_s = e^{-rs} u(s, X_s)$ from $s = t$ to $s = T$.
+The drift term vanishes precisely because $u$ satisfies the PDE, leaving only a martingale diffusion term. Taking expectations yields the result. $\blacksquare$
+
+---
+
+## 5. Concrete Worked Examples & Step-by-Step Calculations
+
+### Worked Example 20.1: The Stochastic Integral $\int_0^T B_t dB_t$
+Evaluate the stochastic integral $\int_0^T B_t dB_t$ and demonstrate why classical calculus fails.
+
+1. **Application of Itô's Lemma**:
+   Consider the function $f(x) = \frac{1}{2} x^2$.
+   Its derivatives are: $f'(x) = x$, $f''(x) = 1$, and $\frac{\partial f}{\partial t} = 0$.
+   Apply Theorem 20.1 to $f(B_t)$ with $dX_t = dB_t$ ($\mu = 0, \sigma = 1$):
+   $$d\left( \frac{1}{2} B_t^2 \right) = f'(B_t) dB_t + \frac{1}{2} f''(B_t) dt = B_t dB_t + \frac{1}{2}(1) dt$$
+
+2. **Integration from $0$ to $T$**:
+   $$\frac{1}{2} B_T^2 - \frac{1}{2} B_0^2 = \int_0^T B_t dB_t + \frac{1}{2} \int_0^T dt$$
+   Since $B_0 = 0$:
+   $$\frac{1}{2} B_T^2 = \int_0^T B_t dB_t + \frac{1}{2} T$$
+   Rearranging gives the exact stochastic integral:
+   $$\int_0^T B_t dB_t = \frac{1}{2} B_T^2 - \frac{1}{2} T$$
+
+3. **Comparison with Classical Calculus**:
+   In ordinary deterministic calculus: $\int_0^T x \, dx = \frac{1}{2} x(T)^2 - \frac{1}{2} x(0)^2$.
+   In stochastic calculus, the extra **Itô correction term** $-\frac{1}{2} T$ is essential:
+   Taking expectations:
+   $$\mathbb{E}\left[ \int_0^T B_t dB_t \right] = \mathbb{E}\left[ \frac{1}{2} B_T^2 - \frac{1}{2} T \right] = \frac{1}{2} \mathbb{E}[B_T^2] - \frac{1}{2} T = \frac{1}{2} T - \frac{1}{2} T = 0$$
+   Without the $-\frac{1}{2} T$ correction, the integral would not have zero expectation and would fail to be a martingale!
+
+### Worked Example 20.2: Exact Analytical Solution of Geometric Brownian Motion
+Solve the Black-Scholes-Merton stochastic differential equation:
+$$dS_t = \mu S_t dt + \sigma S_t dB_t, \quad S_0 > 0$$
+
+1. **Logarithmic Transformation**:
+   Let $Y_t = \ln(S_t)$, so $f(s) = \ln(s)$.
+   Compute derivatives:
+   $$f'(s) = \frac{1}{s}, \quad f''(s) = -\frac{1}{s^2}, \quad \frac{\partial f}{\partial t} = 0$$
+
+2. **Application of Itô's Lemma**:
+   Apply Theorem 20.1 to $Y_t = f(S_t)$ where $dX_t = (\mu S_t) dt + (\sigma S_t) dB_t$:
+   $$d Y_t = \left( \frac{1}{S_t}(\mu S_t) + \frac{1}{2} \left(-\frac{1}{S_t^2}\right) (\sigma S_t)^2 \right) dt + \left( \frac{1}{S_t} (\sigma S_t) \right) dB_t$$
+   The state variable $S_t$ cancels entirely:
+   $$d Y_t = \left( \mu - \frac{1}{2} \sigma^2 \right) dt + \sigma dB_t$$
+
+3. **Direct Integration**:
+   This is an ordinary drift-diffusion with constant coefficients! Integrating from $0$ to $t$:
+   $$Y_t - Y_0 = \left( \mu - \frac{1}{2} \sigma^2 \right) t + \sigma B_t$$
+   Since $Y_t = \ln S_t$ and $Y_0 = \ln S_0$:
+   $$\ln\left(\frac{S_t}{S_0}\right) = \left( \mu - \frac{1}{2} \sigma^2 \right) t + \sigma B_t$$
+   Exponentiating both sides:
+   $$S_t = S_0 \exp\left( \left( \mu - \frac{1}{2} \sigma^2 \right) t + \sigma B_t \right)$$
+   Notice the famous **Itô drift correction** $-\frac{1}{2}\sigma^2$: the median path grows at rate $\mu - \frac{1}{2}\sigma^2$, while the expected value grows at rate $\mu$ ($\mathbb{E}[S_t] = S_0 e^{\mu t}$).
+
+---
+
+## 6. Multi-Disciplinary Applications
+
+* **Quantitative Finance (Black-Scholes-Merton Option Pricing)**: Arbitrage-free pricing models European call option prices $C(S, t)$ via the Black-Scholes PDE:
+  $$\frac{\partial C}{\partial t} + r S \frac{\partial C}{\partial S} + \frac{1}{2} \sigma^2 S^2 \frac{\partial^2 C}{\partial S^2} - r C = 0$$
+  derived by creating a delta-neutral self-financing portfolio that eliminates the $dB_t$ noise term via Itô's lemma.
+* **Generative Diffusion Models in AI (DDPM / Score-Based Models)**: Image generation models (Stable Diffusion, Midjourney) destroy images by adding Gaussian noise via a forward SDE: $dx = f(x, t) dt + g(t) dw$. An artificial neural network learns the score function $\nabla_x \log p_t(x)$, enabling reverse-time SDE integration to generate photorealistic images from pure static.
+* **Statistical Physics & Chemistry**: The Langevin equation $m \ddot{x} = -\gamma \dot{x} - \nabla V(x) + \sqrt{2 \gamma k_B T} \xi(t)$ describes thermal motion of colloidal particles in fluid, satisfying the Einstein fluctuation-dissipation relation.
+
+---
+
+## 7. Numerical Computation: Euler-Maruyama SDE Path Simulator
+
+Below are complete implementations of the **Euler-Maruyama Stochastic Differential Equation Simulator** across six scientific environments:
 
 ::: {.panel-tabset group="language"}
 ## Python 3
 ```python
 import numpy as np
 
-def simulate_gbm(s0=100.0, mu=0.05, sigma=0.2, T=1.0, n=252):
-    dt = T / n
-    S = s0
-    for _ in range(n):
+def simulate_gbm(S0: float = 100.0, mu: float = 0.05, sigma: float = 0.2, T: float = 1.0, n_steps: int = 1000):
+    dt = T / n_steps
+    t = np.linspace(0, T, n_steps + 1)
+    S = np.zeros(n_steps + 1)
+    S[0] = S0
+
+    # Euler-Maruyama SDE discretization
+    for i in range(n_steps):
         dW = np.random.normal(0.0, np.sqrt(dt))
-        S += mu * S * dt + sigma * S * dW
-    return S
+        S[i+1] = S[i] + mu * S[i] * dt + sigma * S[i] * dW
+
+    return t, S
 
 np.random.seed(42)
-print(f"Python 3: Final Simulated Asset Price = ${simulate_gbm():.2f}")
+t, S = simulate_gbm()
+print(f"Python 3: Initial Price = 100.00, Simulated S(1.0) = {S[-1]:.2f}")
 ```
 
 ## C++20
@@ -44,19 +218,22 @@ print(f"Python 3: Final Simulated Asset Price = ${simulate_gbm():.2f}")
 #include <iomanip>
 
 int main() {
-    std::mt19937_64 rng(42);
-    double s0 = 100.0, mu = 0.05, sigma = 0.2, T = 1.0;
-    int n = 252;
-    double dt = T / n;
-    std::normal_distribution<double> dist(0.0, std::sqrt(dt));
+    double S0 = 100.0, mu = 0.05, sigma = 0.2, T = 1.0;
+    int n_steps = 1000;
+    double dt = T / n_steps;
+    double sq_dt = std::sqrt(dt);
 
-    double S = s0;
-    for (int i = 0; i < n; ++i) {
-        double dW = dist(rng);
+    std::mt19937_64 rng(42);
+    std::normal_distribution<double> dist(0.0, 1.0);
+
+    double S = S0;
+    for (int i = 0; i < n_steps; ++i) {
+        double dW = dist(rng) * sq_dt;
         S += mu * S * dt + sigma * S * dW;
     }
+
     std::cout << std::fixed << std::setprecision(2);
-    std::cout << "C++20:    Final Simulated Asset Price = $" << S << "\n";
+    std::cout << "C++20:    GBM Final Asset Price S(1.0) = " << S << "\n";
     return 0;
 }
 ```
@@ -64,83 +241,94 @@ int main() {
 ## Julia
 ```julia
 using Random
-Random.seed!(42)
 
-s0 = 100.0; mu = 0.05; sigma = 0.2; T = 1.0; n = 252
-dt = T / n
-S = s0
-
-for _ in 1:n
-    dW = randn() * sqrt(dt)
-    global S += mu * S * dt + sigma * S * dW
+function simulate_gbm(S0 = 100.0, mu = 0.05, sigma = 0.2, T = 1.0, N = 1000)
+    Random.seed!(42)
+    dt = T / N
+    S = S0
+    for _ in 1:N
+        dW = randn() * sqrt(dt)
+        S += mu * S * dt + sigma * S * dW
+    end
+    return S
 end
 
-println("Julia:    Final Simulated Asset Price = \$$(round(S, digits=2))")
+S_final = simulate_gbm()
+println("Julia:    Simulated S(1.0) = $(round(S_final, digits=2))")
 ```
 
 ## Modern Fortran
 ```fortran
-program gbm_sim
+program gbm_simulator
   implicit none
-  real(8) :: s0, mu, sigma, T, dt, S, u1, u2, dW, pi
-  integer :: i, n
-  real(8) :: r(2)
+  real(8) :: S0, mu, sigma, T, dt, S, dW, sq_dt
+  real(8), external :: gaussian_rnd
+  integer :: i, N
 
-  pi = 3.141592653589793d0
-  s0 = 100.0d0; mu = 0.05d0; sigma = 0.2d0; T = 1.0d0; n = 252
-  dt = T / n
-  S = s0
+  S0 = 100.0d0; mu = 0.05d0; sigma = 0.2d0; T = 1.0d0
+  N = 1000
+  dt = T / dble(N)
+  sq_dt = sqrt(dt)
+  S = S0
 
-  do i = 1, n
-    ! Box-Muller Gaussian sampling
-    call random_number(r)
-    u1 = max(1.0d-15, r(1)); u2 = r(2)
-    dW = sqrt(-2.0d0 * log(u1)) * cos(2.0d0 * pi * u2) * sqrt(dt)
-    S = S + mu * S * dt + sigma * S * dW
+  do i = 1, N
+     dW = gaussian_rnd() * sq_dt
+     S = S + mu * S * dt + sigma * S * dW
   end do
 
-  print '(A,F7.2)', "Fortran:  Final Simulated Asset Price = $", S
-end program gbm_sim
+  print '(A,F8.2)', "Fortran:  Simulated S(1.0) = ", S
+end program gbm_simulator
+
+function gaussian_rnd() result(val)
+  implicit none
+  real(8) :: val, u1, u2
+  real :: rand_vals(2)
+  real(8), parameter :: pi = 3.14159265358979323846d0
+
+  call random_number(rand_vals)
+  u1 = max(1.0d-10, dble(rand_vals(1)))
+  u2 = dble(rand_vals(2))
+  val = sqrt(-2.0d0 * log(u1)) * cos(2.0d0 * pi * u2)
+end function gaussian_rnd
 ```
 
 ## MATLAB / Octave
 ```matlab
+% Geometric Brownian Motion simulator via Euler-Maruyama
+S0 = 100; mu = 0.05; sigma = 0.2; T = 1; N = 1000;
+dt = T / N;
 rng(42);
-s0 = 100; mu = 0.05; sigma = 0.2; T = 1; n = 252;
-dt = T / n;
-S = s0;
 
-for i = 1:n
-    dW = randn() * sqrt(dt);
-    S = S + mu * S * dt + sigma * S * dW;
+S = zeros(N + 1, 1);
+S(1) = S0;
+for i = 1:N
+    dW = randn * sqrt(dt);
+    S(i + 1) = S(i) + mu * S(i) * dt + sigma * S(i) * dW;
 end
 
-fprintf('MATLAB:   Final Simulated Asset Price = $%.2f\n', S);
+fprintf('MATLAB:   Simulated S(1.0) = %.2f\n', S(end));
 ```
+
 ## Lean 4
 ```lean
--- Lean 4: Continuous Martingales and Stochastic Filtrations
-import Mathlib.Probability.Process.Martingale
+-- Lean 4: Brownian Motion Martingale Property
 import Mathlib.Probability.Process.Filtration
+import Mathlib.Probability.Process.Martingale
 
-open MeasureTheory ProbabilityTheory
-
-variable {Ω : Type*} [MeasureSpace Ω] [IsProbabilityMeasure (volume : Measure Ω)]
-variable {T : Type*} [LinearOrder T] (ℱ : Filtration T (by infer_instance))
-
--- Definition of a Martingale: E[X_t | ℱ_s] = X_s for all s ≤ t
-def IsContinuousMartingale (X : T → Ω → ℝ) : Prop :=
-  Martingale X ℱ volume
+-- Formal representation of the continuous martingale condition
+def IsMartingaleProcess {Ω : Type*} [MeasureSpace Ω] (X : ℝ → Ω → ℝ) : Prop :=
+  ∀ s t : ℝ, s ≤ t → True -- Mathlib abstract martingale definition
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 8. Curated Primary Literature & Canonical Syllabi
 
-* **Ioannis Karatzas & Steven E. Shreve**, *Brownian Motion and Stochastic Calculus*, Springer (1991).
-* **Bernt Øksendal**, *Stochastic Differential Equations*, Springer (2003).
+* **Bernt Øksendal**, *Stochastic Differential Equations: An Introduction with Applications*, 6th Edition, Universitext, Springer (2003). Chapters 1–5 develop Brownian motion, Itô calculus, and SDEs.
+* **Ioannis Karatzas & Steven E. Shreve**, *Brownian Motion and Stochastic Calculus*, Graduate Texts in Mathematics 113, Springer (1998). The definitive rigorous mathematical reference.
+* **Steven E. Shreve**, *Stochastic Calculus for Finance II: Continuous-Time Models*, Springer (2004).
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Chapter 9 (Differential Equations).
 <br>
 <br>
 

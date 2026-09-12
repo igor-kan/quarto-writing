@@ -12,13 +12,188 @@ format:
 
 ## 1. The Conceptual Shift: Metric Rectifiability vs. Differential Heuristics
 
-Elementary calculus calculates arc length via $ds = \sqrt{1 + (y')^2} dx$. In metric geometry, curves are rectifiable if and only if their polygonal variations have a finite supremum:
-$$\Lambda(\gamma) = \sup_{P} \sum_{i=1}^n d(\gamma(t_i), \gamma(t_{i-1})) < \infty$$
-In Riemannian geometry, length is the integral of the pullback metric $L(\gamma) = \int \sqrt{\gamma^* g} dt$.
+In elementary calculus, arc length is introduced via the heuristic Pythagorean differential $ds = \sqrt{dx^2 + dy^2} = \sqrt{1 + (y')^2} dx$. Students integrate this formula assuming that every continuous curve has a well-defined physical length.
+
+In rigorous metric geometry and modern differential analysis, this naive perspective breaks down:
+1. **Continuous Curves of Infinite Length**: Continuity of a curve $\gamma: [a, b] \to \mathbb{R}^n$ does *not* guarantee that it has finite length. Famous counterexamples include fractal paths (e.g., the Koch snowflake, Brownian motion paths of Hausdorff dimension 1.5), and oscillatory functions such as $f(x) = x \sin(1/x)$ on $[0, 1]$, whose length diverges to infinity.
+2. **Metric Definition of Rectifiability**: A curve is defined to be **rectifiable** purely through supremum of finite polygonal chord partitions without requiring differentiability:
+   $$\Lambda(\gamma) = \sup_{P} \sum_{i=1}^k d(\gamma(t_i), \gamma(t_{i-1})) < \infty$$
+   A curve is rectifiable if and only if its coordinate functions have **bounded variation** ($BV$).
+3. **Riemannian Pullback Metrics**: When moving from flat Euclidean space to a smooth Riemannian manifold $(M, g)$, arc length is the integral of the square root of the pullback tensor:
+   $$L(\gamma) = \int_a^b \sqrt{\gamma^* g} = \int_a^b \sqrt{g_{ij}(\gamma(t)) \dot{\gamma}^i(t) \dot{\gamma}^j(t)} \, dt$$
+   The natural parameterization by arc length ($s(t) = \int_a^t \|\dot{\gamma}(u)\| du$) reduces the speed to unity: $\|\dot{\gamma}(s)\|_g \equiv 1$.
 
 ---
 
-## 2. Numerical Computation: Polygonal Arc Length Integrator
+## 2. Foundational Definitions & Elementary Properties
+
+### Paths, Partitions, and Polygonal Variations
+Let $(X, d)$ be a metric space.
+* A **continuous curve** (or path) is a continuous map $\gamma: [a, b] \to X$.
+* A **partition** $P$ of $[a, b]$ is an ordered finite set of parameter values:
+  $$P = \{a = t_0 < t_1 < t_2 < \dots < t_k = b\}$$
+* The **polygonal chord variation** of $\gamma$ with respect to $P$ is:
+  $$V(\gamma, P) = \sum_{i=1}^k d(\gamma(t_i), \gamma(t_{i-1}))$$
+* The **length** $\Lambda(\gamma)$ of the curve is the supremum over all possible finite partitions:
+  $$\Lambda(\gamma) = \sup_{P} V(\gamma, P)$$
+* The curve $\gamma$ is **rectifiable** if $\Lambda(\gamma) < \infty$. If $\Lambda(\gamma) = \infty$, the curve is **non-rectifiable**.
+
+### Regular Curves and Unit Speed
+In Euclidean space $\mathbb{R}^n$:
+* A differentiable curve $\gamma: [a, b] \to \mathbb{R}^n$ is **regular** if its velocity vector never vanishes: $\dot{\gamma}(t) \neq \mathbf{0}$ for all $t \in [a, b]$.
+* The **arc length parameter** $s: [a, b] \to [0, L]$ is defined by:
+  $$s(t) = \int_a^t \|\dot{\gamma}(u)\| du$$
+* Because $\dot{\gamma}(t) \neq \mathbf{0}$, $\frac{ds}{dt} = \|\dot{\gamma}(t)\| > 0$, so $s(t)$ is strictly increasing and invertible. The reparameterized curve $\tilde{\gamma}(s) = \gamma(t(s))$ is parameterized by **unit speed**:
+  $$\left\| \frac{d\tilde{\gamma}}{ds} \right\| = \left\| \frac{d\gamma}{dt} \frac{dt}{ds} \right\| = \|\dot{\gamma}(t)\| \frac{1}{\|\dot{\gamma}(t)\|} = 1$$
+
+---
+
+## 3. Intermediate Lemmas & Rigorous Proofs
+
+> **Lemma 8.1 (Refinement Monotonicity of Polygonal Length)**: If $P$ and $Q$ are partitions of $[a, b]$ and $P \subseteq Q$, then:
+> $$V(\gamma, P) \le V(\gamma, Q)$$
+
+*Proof*:
+It suffices to prove the case where $Q$ contains one extra point $\tau$ inserted between $t_{i-1}$ and $t_i$.
+By the triangle inequality in metric space $(X, d)$:
+$$d(\gamma(t_{i-1}), \gamma(t_i)) \le d(\gamma(t_{i-1}), \gamma(\tau)) + d(\gamma(\tau), \gamma(t_i))$$
+The distances between all other adjacent partition points are identical in $V(\gamma, P)$ and $V(\gamma, Q)$.
+Summing over all intervals yields $V(\gamma, P) \le V(\gamma, Q)$. By mathematical induction, adding any finite number of points preserves the inequality. $\blacksquare$
+
+> **Lemma 8.2 (Additivity of Arc Length)**: For any $c \in (a, b)$, a curve $\gamma: [a, b] \to X$ is rectifiable if and only if both restrictions $\gamma_1 = \gamma|_{[a, c]}$ and $\gamma_2 = \gamma|_{[c, b]}$ are rectifiable, and:
+> $$\Lambda(\gamma) = \Lambda(\gamma_1) + \Lambda(\gamma_2)$$
+
+*Proof*:
+1. Let $P_1$ be a partition of $[a, c]$ and $P_2$ a partition of $[c, b]$. Then $P = P_1 \cup P_2$ is a partition of $[a, b]$, and:
+   $$V(\gamma_1, P_1) + V(\gamma_2, P_2) = V(\gamma, P) \le \Lambda(\gamma)$$
+   Taking the supremum over all $P_1$ and $P_2$ independently:
+   $$\Lambda(\gamma_1) + \Lambda(\gamma_2) \le \Lambda(\gamma)$$
+2. Conversely, let $P$ be any arbitrary partition of $[a, b]$. Form the refinement $P' = P \cup \{c\}$.
+   Then $P'$ splits naturally into $P'_1$ on $[a, c]$ and $P'_2$ on $[c, b]$.
+   By Lemma 8.1:
+   $$V(\gamma, P) \le V(\gamma, P') = V(\gamma_1, P'_1) + V(\gamma_2, P'_2) \le \Lambda(\gamma_1) + \Lambda(\gamma_2)$$
+   Taking the supremum over all partitions $P$ of $[a, b]$ gives $\Lambda(\gamma) \le \Lambda(\gamma_1) + \Lambda(\gamma_2)$.
+   Combining both inequalities yields exact equality. $\blacksquare$
+
+> **Lemma 8.3 (Reparameterization Invariance)**: Let $\phi: [\alpha, \beta] \to [a, b]$ be a continuous, strictly increasing bijection. Then:
+> $$\Lambda(\gamma \circ \phi) = \Lambda(\gamma)$$
+
+*Proof*:
+The map $\phi$ induces a one-to-one correspondence between partitions $P_\tau = \{\tau_0, \dots, \tau_k\}$ of $[\alpha, \beta]$ and partitions $P_t = \{\phi(\tau_0), \dots, \phi(\tau_k)\}$ of $[a, b]$.
+Because $\phi$ preserves order, the chord lengths are identical:
+$$d((\gamma \circ \phi)(\tau_i), (\gamma \circ \phi)(\tau_{i-1})) = d(\gamma(t_i), \gamma(t_{i-1}))$$
+Taking suprema over all partitions on either side preserves the value: $\Lambda(\gamma \circ \phi) = \Lambda(\gamma)$. $\blacksquare$
+
+---
+
+## 4. Rigorous Construction & Advanced Theorems
+
+### The Integral Formula for $C^1$ Curves
+> **Theorem 8.1 (Arc Length of Differentiable Curves)**: Let $\gamma: [a, b] \to \mathbb{R}^n$ be continuously differentiable ($C^1$). Then $\gamma$ is rectifiable, and its length is given by:
+> $$\Lambda(\gamma) = \int_a^b \|\dot{\gamma}(t)\| dt$$
+
+*Proof*:
+1. Let $P = \{t_0, t_1, \dots, t_k\}$ be any partition of $[a, b]$.
+   By the Fundamental Theorem of Calculus applied componentwise:
+   $$\gamma(t_i) - \gamma(t_{i-1}) = \int_{t_{i-1}}^{t_i} \dot{\gamma}(t) dt$$
+   By the triangle inequality for vector integrals:
+   $$\|\gamma(t_i) - \gamma(t_{i-1})\| = \left\| \int_{t_{i-1}}^{t_i} \dot{\gamma}(t) dt \right\| \le \int_{t_{i-1}}^{t_i} \|\dot{\gamma}(t)\| dt$$
+   Summing over all $i$:
+   $$V(\gamma, P) \le \sum_{i=1}^k \int_{t_{i-1}}^{t_i} \|\dot{\gamma}(t)\| dt = \int_a^b \|\dot{\gamma}(t)\| dt$$
+   Taking the supremum over all $P$ establishes: $\Lambda(\gamma) \le \int_a^b \|\dot{\gamma}(t)\| dt$.
+2. To prove the reverse inequality, let $\epsilon > 0$.
+   Since $\dot{\gamma}$ is continuous on the compact interval $[a, b]$, it is uniformly continuous.
+   Choose $\delta > 0$ such that $|u - v| < \delta \implies \|\dot{\gamma}(u) - \dot{\gamma}(v)\| < \frac{\epsilon}{b - a}$.
+   Choose a partition $P$ with mesh $\|P\| < \delta$. For any $t \in [t_{i-1}, t_i]$:
+   $$\|\dot{\gamma}(t)\| \le \|\dot{\gamma}(t_{i-1})\| + \frac{\epsilon}{b - a}$$
+   Integrating over $[t_{i-1}, t_i]$:
+   $$\int_{t_{i-1}}^{t_i} \|\dot{\gamma}(t)\| dt \le \|\dot{\gamma}(t_{i-1})\| \Delta t_i + \frac{\epsilon \Delta t_i}{b - a}$$
+   Notice that:
+   $$\left\| \gamma(t_i) - \gamma(t_{i-1}) - \dot{\gamma}(t_{i-1}) \Delta t_i \right\| = \left\| \int_{t_{i-1}}^{t_i} (\dot{\gamma}(t) - \dot{\gamma}(t_{i-1})) dt \right\| \le \int_{t_{i-1}}^{t_i} \frac{\epsilon}{b - a} dt = \frac{\epsilon \Delta t_i}{b - a}$$
+   By the reverse triangle inequality:
+   $$\|\dot{\gamma}(t_{i-1})\| \Delta t_i \le \|\gamma(t_i) - \gamma(t_{i-1})\| + \frac{\epsilon \Delta t_i}{b - a}$$
+   Combining these estimates and summing over all $i$:
+   $$\int_a^b \|\dot{\gamma}(t)\| dt \le \sum_{i=1}^k \|\gamma(t_i) - \gamma(t_{i-1})\| + 2\epsilon = V(\gamma, P) + 2\epsilon \le \Lambda(\gamma) + 2\epsilon$$
+   Since $\epsilon > 0$ was arbitrary, $\int_a^b \|\dot{\gamma}(t)\| dt \le \Lambda(\gamma)$.
+   Therefore, $\Lambda(\gamma) = \int_a^b \|\dot{\gamma}(t)\| dt$. $\blacksquare$
+
+### Existence of Non-Rectifiable Continuous Curves
+> **Theorem 8.2 (Failure of Rectifiability for Continuous Curves)**: The continuous curve $f: [0, 1] \to \mathbb{R}^2$ given by $f(x) = (x, x \sin(1/x))$ for $x > 0$ and $f(0) = (0, 0)$ is non-rectifiable ($\Lambda(f) = \infty$).
+
+*Proof*:
+Consider the partition points where $\sin(1/x) = \pm 1$, namely:
+$$x_k = \frac{2}{(2k + 1)\pi}, \quad \text{for } k \in \{1, 2, \dots, 2m\}$$
+At these points, $f(x_k) = \left( x_k, (-1)^k x_k \right)$.
+The vertical distance between adjacent points $x_{k-1}$ and $x_k$ is:
+$$|y_k - y_{k-1}| = x_k + x_{k-1} > x_k = \frac{2}{(2k + 1)\pi}$$
+The Euclidean chord distance is bounded below by the vertical distance:
+$$d(f(x_k), f(x_{k-1})) \ge |y_k - y_{k-1}| > \frac{2}{(2k + 1)\pi}$$
+Summing over $k = 1$ to $2m$:
+$$V(f, P) \ge \sum_{k=1}^{2m} \frac{2}{(2k + 1)\pi} \ge \frac{1}{\pi} \sum_{k=1}^{2m} \frac{1}{k + 1}$$
+This is a tail of the divergent harmonic series. As $m \to \infty$, the chord sum diverges to $+\infty$.
+Therefore, $\Lambda(f) = \sup_P V(f, P) = \infty$. $\blacksquare$
+
+---
+
+## 5. Concrete Worked Examples & Step-by-Step Calculations
+
+### Worked Example 8.1: Arc Length of a 3D Circular Helix
+Consider the regular space curve parameterized by:
+$$\gamma(t) = (R \cos t, \, R \sin t, \, c t), \quad t \in [0, 2\pi]$$
+where $R > 0$ is the cylinder radius and $c > 0$ is the vertical pitch factor.
+
+1. **Velocity Vector**:
+   $$\dot{\gamma}(t) = \left( \frac{d}{dt}(R \cos t), \frac{d}{dt}(R \sin t), \frac{d}{dt}(c t) \right) = (-R \sin t, \, R \cos t, \, c)$$
+
+2. **Speed Calculation**:
+   $$\|\dot{\gamma}(t)\| = \sqrt{(-R \sin t)^2 + (R \cos t)^2 + c^2} = \sqrt{R^2(\sin^2 t + \cos^2 t) + c^2} = \sqrt{R^2 + c^2}$$
+   Notice that the speed is **identically constant** along the entire trajectory.
+
+3. **Arc Length Integration**:
+   By Theorem 8.1:
+   $$\Lambda(\gamma) = \int_0^{2\pi} \|\dot{\gamma}(t)\| dt = \int_0^{2\pi} \sqrt{R^2 + c^2} dt = 2\pi \sqrt{R^2 + c^2}$$
+
+4. **Numerical Evaluation**:
+   For $R = 1.0$ and $c = 1.0$:
+   $$\Lambda(\gamma) = 2\pi \sqrt{1^2 + 1^2} = 2\pi \sqrt{2} \approx 2 \times 3.14159265 \times 1.41421356 \approx 8.885766$$
+
+### Worked Example 8.2: Arc Length of the Parabola $y = x^2$ via Hyperbolic Substitution
+Compute the arc length of the parabolic arc $\gamma(x) = (x, x^2)$ for $x \in [0, 1]$.
+
+1. **Integral Setup**:
+   Here $\dot{\gamma}(x) = (1, 2x)$, so $\|\dot{\gamma}(x)\| = \sqrt{1 + 4x^2}$.
+   $$\Lambda = \int_0^1 \sqrt{1 + 4x^2} dx$$
+
+2. **Hyperbolic Substitution**:
+   Let $2x = \sinh(u)$, so $2 dx = \cosh(u) du \implies dx = \frac{1}{2}\cosh(u) du$.
+   Since $1 + 4x^2 = 1 + \sinh^2(u) = \cosh^2(u)$, the integrand becomes $\cosh(u)$.
+   $$\int \sqrt{1 + 4x^2} dx = \frac{1}{2} \int \cosh^2(u) du = \frac{1}{4} \int (1 + \cosh(2u)) du = \frac{1}{4} \left( u + \frac{1}{2}\sinh(2u) \right) = \frac{1}{4}(u + \sinh(u)\cosh(u))$$
+
+3. **Back-Substitution**:
+   $\sinh(u) = 2x$, $\cosh(u) = \sqrt{1 + 4x^2}$, and $u = \text{arsinh}(2x) = \ln(2x + \sqrt{1 + 4x^2})$.
+   $$\int \sqrt{1 + 4x^2} dx = \frac{1}{4} \left( \ln(2x + \sqrt{1 + 4x^2}) + 2x\sqrt{1 + 4x^2} \right)$$
+
+4. **Evaluation at Limits $[0, 1]$**:
+   * At $x = 1$: $\frac{1}{4} (\ln(2 + \sqrt{5}) + 2\sqrt{5})$.
+   * At $x = 0$: $\frac{1}{4} (\ln(1) + 0) = 0$.
+   $$\Lambda = \frac{\sqrt{5}}{2} + \frac{1}{4}\ln(2 + \sqrt{5}) \approx \frac{2.236068}{2} + \frac{1.443635}{4} \approx 1.118034 + 0.360909 = 1.478943$$
+
+---
+
+## 6. Multi-Disciplinary Applications
+
+* **Robotics & Autonomous Trajectory Generation**: Minimum-time trajectory planning along robot arm paths parameterizes joints by arc length $s$. Velocity profiling along paths uses speed constraints $\dot{s} \le \sqrt{a_{\max} / \kappa(s)}$ to prevent actuator saturation.
+* **General Relativity**: The spacetime interval along a particle worldline in a pseudo-Riemannian metric $g_{\mu\nu}$ is the proper time:
+  $$\tau = \int \sqrt{-g_{\mu\nu} \dot{x}^\mu \dot{x}^\nu} \, d\lambda$$
+  Geodesics maximize proper time for timelike particles (the principle of maximal aging).
+* **Computer Graphics & CAD Splines**: NURBS (Non-Uniform Rational B-Splines) are reparameterized by arc length to ensure uniform texture mapping and constant-speed camera motion along animation tracks.
+* **Structural Biophysics**: DNA supercoiling and protein backbone chains are modeled as rectifiable space curves where total contour length dictates polymer entropic elasticity via the worm-like chain (WLC) model.
+
+---
+
+## 7. Numerical Computation: Polygonal Arc Length Integrator
+
+Below are complete, self-contained implementations of **Polygonal Arc Length Computation** (evaluating the 3D helix from Worked Example 8.1) across six scientific computing environments:
 
 ::: {.panel-tabset group="language"}
 ## Python 3
@@ -28,12 +203,16 @@ import numpy as np
 def polygonal_arc_length(gamma, t0: float, t1: float, n: int) -> float:
     t = np.linspace(t0, t1, n + 1)
     pts = np.array([gamma(ti) for ti in t])
-    return float(np.sum(np.linalg.norm(np.diff(pts, axis=0), axis=1)))
+    # Euclidean distances between adjacent polygonal vertices
+    diffs = np.diff(pts, axis=0)
+    chords = np.linalg.norm(diffs, axis=1)
+    return float(np.sum(chords))
 
 # Helix: gamma(t) = (cos t, sin t, t), true length over [0, 2*pi] is 2*pi*sqrt(2)
 gamma_helix = lambda t: np.array([np.cos(t), np.sin(t), t])
-L = polygonal_arc_length(gamma_helix, 0.0, 2.0 * np.pi, 1000)
-print(f"Python 3: Length = {L:.6f} (True: {2.0 * np.pi * np.sqrt(2.0):.6f})")
+L_est = polygonal_arc_length(gamma_helix, 0.0, 2.0 * np.pi, 2000)
+L_exact = 2.0 * np.pi * np.sqrt(2.0)
+print(f"Python 3: Polygonal Est = {L_est:.6f}, Exact = {L_exact:.6f}")
 ```
 
 ## C++20
@@ -44,9 +223,9 @@ print(f"Python 3: Length = {L:.6f} (True: {2.0 * np.pi * np.sqrt(2.0):.6f})")
 #include <iomanip>
 
 int main() {
-    int n = 1000;
-    double t0 = 0.0, t1 = 2.0 * M_PI;
-    double dt = (t1 - t0) / n;
+    const int n = 2000;
+    const double t0 = 0.0, t1 = 2.0 * M_PI;
+    const double dt = (t1 - t0) / n;
     double length = 0.0;
 
     auto x = [](double t){ return std::cos(t); };
@@ -54,90 +233,118 @@ int main() {
     auto z = [](double t){ return t; };
 
     for (int i = 0; i < n; ++i) {
-        double ta = t0 + i * dt, tb = ta + dt;
+        double ta = t0 + i * dt;
+        double tb = ta + dt;
         double dx = x(tb) - x(ta);
         double dy = y(tb) - y(ta);
         double dz = z(tb) - z(ta);
-        length += std::sqrt(dx*dx + dy*dy + dz*dz);
+        length += std::sqrt(dx * dx + dy * dy + dz * dz);
     }
+
+    double exact = 2.0 * M_PI * std::sqrt(2.0);
     std::cout << std::fixed << std::setprecision(6);
-    std::cout << "C++20:    Length = " << length << "\n";
+    std::cout << "C++20:    Polygonal Est = " << length << ", Exact = " << exact << "\n";
     return 0;
 }
 ```
 
 ## Julia
 ```julia
-n = 1000
-t = range(0.0, 2pi, length=n+1)
-x = cos.(t); y = sin.(t); z = collect(t)
-dx = diff(x); dy = diff(y); dz = diff(z)
-L = sum(sqrt.(dx.^2 .+ dy.^2 .+ dz.^2))
-println("Julia:    Length = $(round(L, digits=6))")
+function polygonal_arc_length(gamma, t0, t1, n)
+    dt = (t1 - t0) / n
+    len = 0.0
+    for i in 0:(n-1)
+        ta = t0 + i * dt
+        tb = ta + dt
+        p1 = gamma(ta)
+        p2 = gamma(tb)
+        len += norm(p2 - p1)
+    end
+    return len
+end
+
+using LinearAlgebra
+gamma_helix(t) = [cos(t), sin(t), t]
+L_est = polygonal_arc_length(gamma_helix, 0.0, 2*pi, 2000)
+L_exact = 2 * pi * sqrt(2.0)
+println("Julia:    Polygonal Est = $(round(L_est, digits=6)), Exact = $(round(L_exact, digits=6))")
 ```
 
 ## Modern Fortran
 ```fortran
-program arc_length
+program test_arc_length
   implicit none
-  integer, parameter :: n = 1000
+  integer, parameter :: n = 2000
+  real(8), parameter :: pi = 3.14159265358979323846d0
+  real(8) :: t0, t1, dt, ta, tb, dx, dy, dz, length, exact
   integer :: i
-  real(8) :: t0, t1, dt, ta, tb, dx, dy, dz, length, pi
 
-  pi = 3.141592653589793d0
-  t0 = 0.0d0; t1 = 2.0d0 * pi
-  dt = (t1 - t0) / n
+  t0 = 0.0d0
+  t1 = 2.0d0 * pi
+  dt = (t1 - t0) / dble(n)
   length = 0.0d0
 
-  do i = 0, n-1
-    ta = t0 + i * dt
-    tb = ta + dt
-    dx = cos(tb) - cos(ta)
-    dy = sin(tb) - sin(ta)
-    dz = tb - ta
-    length = length + sqrt(dx*dx + dy*dy + dz*dz)
+  do i = 0, n - 1
+     ta = t0 + dble(i) * dt
+     tb = ta + dt
+     dx = cos(tb) - cos(ta)
+     dy = sin(tb) - sin(ta)
+     dz = tb - ta
+     length = length + sqrt(dx**2 + dy**2 + dz**2)
   end do
 
-  print '(A,F10.6)', "Fortran:  Length = ", length
-end program arc_length
+  exact = 2.0d0 * pi * sqrt(2.0d0)
+  print '(A,F10.6,A,F10.6)', "Fortran:  Polygonal Est = ", length, ", Exact = ", exact
+end program test_arc_length
 ```
 
 ## MATLAB / Octave
 ```matlab
-n = 1000;
-t = linspace(0, 2*pi, n+1);
-x = cos(t); y = sin(t); z = t;
-dx = diff(x); dy = diff(y); dz = diff(z);
-L = sum(sqrt(dx.^2 + dy.^2 + dz.^2));
-fprintf('MATLAB:   Length = %.6f\n', L);
+% Polygonal chord length of 3D Helix
+n = 2000;
+t = linspace(0, 2 * pi, n + 1);
+x = cos(t);
+y = sin(t);
+z = t;
+
+dx = diff(x);
+dy = diff(y);
+dz = diff(z);
+
+chords = sqrt(dx.^2 + dy.^2 + dz.^2);
+L_est = sum(chords);
+L_exact = 2 * pi * sqrt(2);
+
+fprintf('MATLAB:   Polygonal Est = %.6f, Exact = %.6f\n', L_est, L_exact);
 ```
+
 ## Lean 4
 ```lean
 -- Lean 4: Curves of Bounded Variation and Arc Length in Metric Spaces
 import Mathlib.Topology.MetricSpace.Basic
 
 -- Path variation over a finite partition in a metric space
-def PathVariation {X : Type*} [PseudoMetricSpace X] (γ : ℝ → X) (pts : List ℝ) : ℝ :=
+def ChordVariation {X : Type*} [PseudoMetricSpace X] (γ : ℝ → X) (pts : List ℝ) : ℝ :=
   match pts with
   | [] => 0
   | [_] => 0
-  | a :: b :: rest => dist (γ a) (γ b) + PathVariation γ (b :: rest)
+  | x1 :: x2 :: rest => dist (γ x1) (γ x2) + ChordVariation γ (x2 :: rest)
 
--- A curve is rectifiable if its polygonal variations are bounded above
+-- Definition of Rectifiability: Variation is bounded over all partitions
 def IsRectifiable {X : Type*} [PseudoMetricSpace X] (γ : ℝ → X) (a b : ℝ) : Prop :=
-  BddAbove { v : ℝ | ∃ pts : List ℝ, pts.Head? = some a ∧ pts.getLast? = some b ∧ v = PathVariation γ pts }
+  ∃ M : ℝ, ∀ pts : List ℝ, (∀ x ∈ pts, a ≤ x ∧ x ≤ b) → ChordVariation γ pts ≤ M
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 8. Curated Primary Literature & Canonical Syllabi
 
-* **Walter Rudin**, *Principles of Mathematical Analysis*, McGraw-Hill (1976), Ch 6.26.
-* **John M. Lee**, *Introduction to Riemannian Manifolds*, Springer (2018), Ch 2.
-* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015), Chapter 8.
-
+* **Manfredo P. do Carmo**, *Differential Geometry of Curves and Surfaces*, 2nd Edition, Prentice-Hall (2016). Chapters 1 & 2 develop regular curves, arc length parameterization, and moving frames.
+* **John M. Lee**, *Introduction to Riemannian Manifolds*, Graduate Texts in Mathematics 176, Springer (2018). Chapter 2 (Riemannian Metrics and Length).
+* **Tom M. Apostol**, *Mathematical Analysis*, 2nd Edition, Addison-Wesley (1974). Chapter 6 (Curves and Arc Length).
+* **Michael Spivak**, *A Comprehensive Introduction to Differential Geometry, Vol. 1*, Publish or Perish (1999).
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Chapter 8 (Further Applications of Integration) and Chapter 13 (Vector Functions).
 <br>
 <br>
 

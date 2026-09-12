@@ -12,36 +12,239 @@ format:
 
 ## 1. The Conceptual Shift: Coordinate Grids vs. Coordinate-Free Spaces
 
-Quadric surfaces $Q = \{x : x^T A x + b^T x + c = 0\}$ are classified intrinsically by diagonalizing the symmetric bilinear form $A$ via the **Spectral Theorem**. Orthogonal eigenvectors define the principal axes of inertia.
+In elementary introductory calculus, vectors are introduced as arrows in 2D or 3D space, or as column tuples of numbers $(x_1, x_2, x_3)^T$. Quadric surfaces—such as ellipsoids, paraboloids, and hyperboloids—are presented as a memorized catalog of standard Cartesian equations: $\frac{x^2}{a^2} + \frac{y^2}{b^2} \pm \frac{z^2}{c^2} = 1$. When cross-terms like $2xy$ or $-4xz$ appear, students lack the theoretical apparatus to understand how coordinates relate to intrinsic geometric shapes.
+
+In modern geometric linear algebra and functional analysis, this coordinate-bound perspective is dismantled:
+1. **Coordinate-Free Vector Spaces**: A Euclidean space is an abstract real vector space $V$ equipped with an intrinsic positive-definite symmetric bilinear form $\langle \cdot, \cdot \rangle$. Bases are merely arbitrary frames of reference.
+2. **Dual Spaces and Covectors ($V^*$)**: Linear functionals $\phi: V \to \mathbb{R}$ constitute the **dual space** $V^*$. Gradients and differentials ($df$) are not vectors; they are **covectors** (1-forms) that ingest tangent vectors to produce directional rates of change.
+3. **The Riesz Representation Isomorphism**: The inner product establishes a canonical isomorphism between vectors and covectors: the "musical isomorphisms" $\flat: V \to V^*$ and $\sharp: V^* \to V$.
+4. **Spectral Decomposition of Quadrics**: Quadric surfaces $Q = \{x \in V : \langle x, A x \rangle + \langle b, x \rangle + c = 0\}$ are classified intrinsically by the **Spectral Theorem for Self-Adjoint Operators**. Diagonalizing $A$ via an orthonormal basis of eigenvectors aligns the coordinate axes with the principal axes of symmetry.
 
 ---
 
-## 2. Numerical Computation: Spectral Quadric Diagonalizer & PCA Engine
+## 2. Foundational Definitions & Elementary Properties
+
+### Real Inner Product Spaces
+Let $V$ be a real vector space. An **inner product** is a map $\langle \cdot, \cdot \rangle: V \times V \to \mathbb{R}$ satisfying for all $u, v, w \in V$ and $\alpha \in \mathbb{R}$:
+1. **Symmetry**: $\langle u, v \rangle = \langle v, u \rangle$.
+2. **Linearity**: $\langle \alpha u + v, w \rangle = \alpha \langle u, w \rangle + \langle v, w \rangle$.
+3. **Positive-Definiteness**: $\langle v, v \rangle \ge 0$, and $\langle v, v \rangle = 0 \iff v = \mathbf{0}$.
+The **norm** induced by the inner product is $\|v\| = \sqrt{\langle v, v \rangle}$.
+
+### Dual Spaces and Dual Bases
+* The **dual space** of $V$ is $V^* = \mathcal{L}(V, \mathbb{R})$, the vector space of all continuous linear functionals on $V$.
+* If $\{e_1, \dots, e_n\}$ is a basis for $V$, the unique **dual basis** $\{e^1, \dots, e^n\}$ of $V^*$ satisfies:
+  $$e^i(e_j) = \delta^i_j = \begin{cases} 1, & i = j \\ 0, & i \neq j \end{cases}$$
+* Any vector $v = \sum v^i e_i$ has coordinates given by evaluating the dual functionals: $v^i = e^i(v)$.
+
+### Self-Adjoint Operators
+A linear operator $A: V \to V$ on an inner product space is **self-adjoint** (or symmetric) if:
+$$\langle A u, v \rangle = \langle u, A v \rangle, \quad \forall u, v \in V$$
+In any orthonormal basis, the matrix representation of a self-adjoint operator satisfies $A^T = A$.
+
+---
+
+## 3. Intermediate Lemmas & Rigorous Proofs
+
+> **Lemma 12.1 (The Cauchy-Schwarz Inequality)**: For any vectors $u, v$ in a real inner product space $V$:
+> $$|\langle u, v \rangle| \le \|u\| \|v\|$$
+> with equality if and only if $u$ and $v$ are linearly dependent.
+
+*Proof*:
+If $v = \mathbf{0}$, both sides equal zero, so the inequality holds trivially.
+Assume $v \neq \mathbf{0}$. For any real scalar $t \in \mathbb{R}$, consider the norm square:
+$$p(t) = \|u + t v\|^2 = \langle u + t v, u + t v \rangle = \langle u, u \rangle + 2 t \langle u, v \rangle + t^2 \langle v, v \rangle = \|u\|^2 + 2 t \langle u, v \rangle + t^2 \|v\|^2$$
+By positive-definiteness, $p(t) \ge 0$ for all $t \in \mathbb{R}$.
+This is a quadratic polynomial $a t^2 + b t + c \ge 0$ in $t$, where $a = \|v\|^2 > 0$, $b = 2\langle u, v \rangle$, and $c = \|u\|^2$.
+Because a quadratic polynomial that is non-negative everywhere cannot have two distinct real roots, its discriminant must be non-positive:
+$$\Delta = b^2 - 4ac = 4 \langle u, v \rangle^2 - 4 \|v\|^2 \|u\|^2 \le 0$$
+Dividing by 4 gives:
+$$\langle u, v \rangle^2 \le \|u\|^2 \|v\|^2$$
+Taking the square root of both sides yields $|\langle u, v \rangle| \le \|u\| \|v\|$.
+Equality holds if and only if $\Delta = 0$, meaning there is a unique real root $t_0$ such that $\|u + t_0 v\|^2 = 0 \iff u = -t_0 v$, meaning $u$ and $v$ are collinear. $\blacksquare$
+
+> **Lemma 12.2 (Riesz Representation Theorem — Finite Dimensions)**: Let $V$ be a finite-dimensional real inner product space. For every linear functional $\phi \in V^*$, there exists a unique vector $v_\phi \in V$ such that:
+> $$\phi(u) = \langle u, v_\phi \rangle, \quad \forall u \in V$$
+
+*Proof*:
+1. **Existence**: Choose an orthonormal basis $\{e_1, \dots, e_n\}$ of $V$ (satisfying $\langle e_i, e_j \rangle = \delta_{ij}$).
+   Define the candidate vector:
+   $$v_\phi = \sum_{i=1}^n \phi(e_i) e_i$$
+   For any arbitrary vector $u = \sum_{j=1}^n u^j e_j \in V$, linearity of $\phi$ gives $\phi(u) = \sum_{j=1}^n u^j \phi(e_j)$.
+   Evaluating the inner product:
+   $$\langle u, v_\phi \rangle = \left\langle \sum_{j=1}^n u^j e_j, \sum_{i=1}^n \phi(e_i) e_i \right\rangle = \sum_{i,j} u^j \phi(e_i) \langle e_j, e_i \rangle = \sum_{i=1}^n u^i \phi(e_i) = \phi(u)$$
+2. **Uniqueness**: Suppose there exists another vector $w \in V$ such that $\langle u, w \rangle = \phi(u)$ for all $u$.
+   Then $\langle u, v_\phi - w \rangle = 0$ for all $u \in V$.
+   Setting $u = v_\phi - w$ yields $\|v_\phi - w\|^2 = 0 \implies w = v_\phi$. $\blacksquare$
+
+> **Lemma 12.3 (Orthogonality of Eigenspaces of Self-Adjoint Operators)**: Let $A: V \to V$ be self-adjoint.
+> 1. All eigenvalues of $A$ are real.
+> 2. Eigenvectors corresponding to distinct eigenvalues are mutually orthogonal.
+
+*Proof*:
+1. Let $\lambda$ be an eigenvalue with eigenvector $v \neq \mathbf{0}$, so $A v = \lambda v$.
+   In the complexification $V_\mathbb{C}$, $\lambda \langle v, v \rangle = \langle \lambda v, v \rangle = \langle A v, v \rangle = \langle v, A v \rangle = \langle v, \lambda v \rangle = \bar{\lambda} \langle v, v \rangle$.
+   Since $\|v\|^2 > 0$, we have $\lambda = \bar{\lambda} \implies \lambda \in \mathbb{R}$.
+2. Let $A v_1 = \lambda_1 v_1$ and $A v_2 = \lambda_2 v_2$ with $\lambda_1 \neq \lambda_2$.
+   Compute $\langle A v_1, v_2 \rangle$:
+   $$\lambda_1 \langle v_1, v_2 \rangle = \langle A v_1, v_2 \rangle = \langle v_1, A v_2 \rangle = \langle v_1, \lambda_2 v_2 \rangle = \lambda_2 \langle v_1, v_2 \rangle$$
+   Regrouping: $(\lambda_1 - \lambda_2) \langle v_1, v_2 \rangle = 0$.
+   Because $\lambda_1 \neq \lambda_2$, we must have $\langle v_1, v_2 \rangle = 0$. $\blacksquare$
+
+---
+
+## 4. Rigorous Construction & Advanced Theorems
+
+### The Spectral Theorem for Real Symmetric Operators
+> **Theorem 12.1 (The Spectral Theorem)**: Let $V$ be an $n$-dimensional real inner product space and $A: V \to V$ a self-adjoint operator.
+> Then there exists an **orthonormal basis** $\{u_1, \dots, u_n\}$ of $V$ consisting entirely of eigenvectors of $A$.
+> Equivalently, any real symmetric $n \times n$ matrix $A$ can be orthogonally diagonalized:
+> $$A = Q \Lambda Q^T, \quad Q \in O(n), \quad \Lambda = \text{diag}(\lambda_1, \dots, \lambda_n)$$
+
+*Proof (Variational Method via Rayleigh Quotient)*:
+1. Consider the unit sphere $S = \{x \in V : \|x\| = 1\}$.
+   $S$ is closed and bounded in $\mathbb{R}^n$, hence compact by the Heine-Borel theorem.
+2. Define the quadratic Rayleigh functional $R(x) = \langle x, A x \rangle$.
+   Because $R$ is continuous and $S$ is compact, by the Extreme Value Theorem (Theorem 4.1), $R$ attains its maximum on $S$ at some point $u_1 \in S$.
+   Let $\lambda_1 = R(u_1) = \langle u_1, A u_1 \rangle$.
+3. By Lagrange multipliers (or directional derivatives on $S$), for any vector $w$ orthogonal to $u_1$ ($\langle w, u_1 \rangle = 0$), the curve $\gamma(t) = \frac{u_1 + t w}{\|u_1 + t w\|}$ lies on $S$ with $\gamma(0) = u_1$.
+   The derivative of $R(\gamma(t))$ at $t = 0$ must vanish because $t = 0$ is a maximum:
+   $$\left. \frac{d}{dt} R(\gamma(t)) \right|_{t=0} = 2 \langle A u_1 - \lambda_1 u_1, w \rangle = 0$$
+   Since this holds for all $w \in \{u_1\}^\perp$, the vector $A u_1 - \lambda_1 u_1$ must be proportional to $u_1$.
+   Taking the inner product with $u_1$ confirms $A u_1 = \lambda_1 u_1$.
+   Thus $u_1$ is an eigenvector with eigenvalue $\lambda_1$.
+4. Consider the orthogonal complement $W = \{u_1\}^\perp$.
+   If $w \in W$, then $\langle A w, u_1 \rangle = \langle w, A u_1 \rangle = \langle w, \lambda_1 u_1 \rangle = \lambda_1 \langle w, u_1 \rangle = 0$.
+   Hence $A(W) \subseteq W$ ($W$ is an invariant subspace under $A$).
+   The restriction $A|_W: W \to W$ is a self-adjoint operator on the $(n-1)$-dimensional inner product space $W$.
+   By induction on dimension, $W$ possesses an orthonormal basis of eigenvectors $\{u_2, \dots, u_n\}$.
+   The combined set $\{u_1, u_2, \dots, u_n\}$ forms an orthonormal eigenbasis of $V$. $\blacksquare$
+
+### Spectral Classification of Quadric Surfaces
+> **Theorem 12.2 (Canonical Quadric Classification in $\mathbb{R}^3$)**: Every general second-degree algebraic surface:
+> $$x^T A x + 2 b^T x + c = 0, \quad A = A^T \in \mathbb{R}^{3 \times 3}, \ b \in \mathbb{R}^3, \ c \in \mathbb{R}$$
+> is equivalent, under a rigid Euclidean motion $x = Q y + x_0$ ($Q \in SO(3)$), to one of the canonical forms:
+> 1. **Ellipsoid**: $\frac{y_1^2}{a^2} + \frac{y_2^2}{b^2} + \frac{y_3^2}{c^2} = 1$ ($\lambda_1, \lambda_2, \lambda_3 > 0$).
+> 2. **Hyperboloid of One Sheet**: $\frac{y_1^2}{a^2} + \frac{y_2^2}{b^2} - \frac{y_3^2}{c^2} = 1$ (two positive eigenvalues, one negative).
+> 3. **Hyperboloid of Two Sheets**: $\frac{y_1^2}{a^2} - \frac{y_2^2}{b^2} - \frac{y_3^2}{c^2} = 1$ (one positive eigenvalue, two negative).
+> 4. **Elliptic Paraboloid**: $\frac{y_1^2}{a^2} + \frac{y_2^2}{b^2} = 2 p y_3$ ($\lambda_1, \lambda_2 > 0, \lambda_3 = 0$).
+> 5. **Hyperbolic Paraboloid (Saddle)**: $\frac{y_1^2}{a^2} - \frac{y_2^2}{b^2} = 2 p y_3$ ($\lambda_1 > 0 > \lambda_2, \lambda_3 = 0$).
+
+---
+
+## 5. Concrete Worked Examples & Step-by-Step Calculations
+
+### Worked Example 12.1: Orthogonal Diagonalization and Principal Axes of an Ellipse
+Classify and rotate into canonical form the rotated ellipse in $\mathbb{R}^2$:
+$$5 x^2 - 4 x y + 8 y^2 = 36$$
+
+1. **Matrix Representation**:
+   Rewrite the quadratic form as $x^T A x = 36$, where $x = \begin{pmatrix} x \\ y \end{pmatrix}$:
+   $$A = \begin{pmatrix} 5 & -2 \\ -2 & 8 \end{pmatrix}$$
+
+2. **Eigenvalue Computation**:
+   $$\det(A - \lambda I) = \det \begin{pmatrix} 5 - \lambda & -2 \\ -2 & 8 - \lambda \end{pmatrix} = (5 - \lambda)(8 - \lambda) - (-2)^2 = \lambda^2 - 13\lambda + 40 - 4 = \lambda^2 - 13\lambda + 36 = 0$$
+   Factoring the quadratic equation:
+   $$(\lambda - 9)(\lambda - 4) = 0 \implies \lambda_1 = 9, \quad \lambda_2 = 4$$
+
+3. **Eigenvector Computation & Orthonormalization**:
+   * For $\lambda_1 = 9$:
+     $$(A - 9I) v = \begin{pmatrix} -4 & -2 \\ -2 & -1 \end{pmatrix} \begin{pmatrix} x \\ y \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \end{pmatrix} \implies -4x - 2y = 0 \implies y = -2x$$
+     Normalized eigenvector:
+     $$u_1 = \frac{1}{\sqrt{1^2 + (-2)^2}} \begin{pmatrix} 1 \\ -2 \end{pmatrix} = \frac{1}{\sqrt{5}} \begin{pmatrix} 1 \\ -2 \end{pmatrix}$$
+   * For $\lambda_2 = 4$:
+     $$(A - 4I) v = \begin{pmatrix} 1 & -2 \\ -2 & 4 \end{pmatrix} \begin{pmatrix} x \\ y \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \end{pmatrix} \implies x - 2y = 0 \implies x = 2y$$
+     Normalized eigenvector:
+     $$u_2 = \frac{1}{\sqrt{2^2 + 1^2}} \begin{pmatrix} 2 \\ 1 \end{pmatrix} = \frac{1}{\sqrt{5}} \begin{pmatrix} 2 \\ 1 \end{pmatrix}$$
+   Notice that $\langle u_1, u_2 \rangle = \frac{1}{5}(1 \cdot 2 + (-2) \cdot 1) = 0$ (rigorous confirmation of Lemma 12.3).
+
+4. **Orthogonal Coordinate Transformation**:
+   Form the rotation matrix $Q = [u_1 \mid u_2] = \frac{1}{\sqrt{5}} \begin{pmatrix} 1 & 2 \\ -2 & 1 \end{pmatrix}$.
+   In rotated coordinates $\begin{pmatrix} \xi \\ \eta \end{pmatrix} = Q^T \begin{pmatrix} x \\ y \end{pmatrix}$, the equation becomes:
+   $$\lambda_1 \xi^2 + \lambda_2 \eta^2 = 36 \implies 9 \xi^2 + 4 \eta^2 = 36$$
+   Dividing by 36:
+   $$\frac{\xi^2}{4} + \frac{\eta^2}{9} = 1 \implies \frac{\xi^2}{2^2} + \frac{\eta^2}{3^2} = 1$$
+
+5. **Geometric Interpretation**:
+   The curve is an **ellipse** with semi-minor axis $a = 2$ along the direction $u_1$ and semi-major axis $b = 3$ along the direction $u_2$.
+   The rotation angle is $\theta = \arctan(-2) \approx -63.43^\circ$.
+
+### Worked Example 12.2: The Gradient as a Covector under Non-Euclidean Metrics
+Let $f(x, y) = 3x^2 + 2xy - y^2$.
+Compute the differential 1-form $df$ and contrast it with the gradient vector $\nabla f = (df)^\sharp$ under a non-standard Riemannian metric tensor:
+$$g = \begin{pmatrix} 2 & 1 \\ 1 & 2 \end{pmatrix}$$
+
+1. **The Differential (Covector)**:
+   The differential is independent of any metric:
+   $$df = \frac{\partial f}{\partial x} dx + \frac{\partial f}{\partial y} dy = (6x + 2y) dx + (2x - 2y) dy$$
+   At the point $(x_0, y_0) = (1, 1)$:
+   $$df|_{(1, 1)} = 8 dx + 0 dy = 8 dx \in V^*$$
+
+2. **Musical Isomorphism $\sharp$ (Vector Gradient)**:
+   By the Riesz Representation Theorem, the gradient $\nabla_g f$ is the unique vector satisfying:
+   $$g(\nabla_g f, v) = df(v), \quad \forall v \in V \implies \nabla_g f = g^{-1} (df)^T$$
+   Invert the metric tensor: $\det g = 4 - 1 = 3$.
+   $$g^{-1} = \frac{1}{3} \begin{pmatrix} 2 & -1 \\ -1 & 2 \end{pmatrix}$$
+   Applying $g^{-1}$ to the covector components $\begin{pmatrix} 8 \\ 0 \end{pmatrix}$:
+   $$\nabla_g f = \frac{1}{3} \begin{pmatrix} 2 & -1 \\ -1 & 2 \end{pmatrix} \begin{pmatrix} 8 \\ 0 \end{pmatrix} = \begin{pmatrix} 16/3 \\ -8/3 \end{pmatrix}$$
+   Notice that under the standard Euclidean metric $g = I$, the gradient would be $\begin{pmatrix} 8 \\ 0 \end{pmatrix}$. The metric rotates and stretches the gradient vector!
+
+---
+
+## 6. Multi-Disciplinary Applications
+
+* **Machine Learning & Data Science (PCA)**: Principal Component Analysis is the spectral decomposition of the empirical covariance matrix $\Sigma = \frac{1}{N} X^T X = Q \Lambda Q^T$. The principal axes of highest variance correspond to the largest eigenvalues $\lambda_1 \ge \lambda_2 \ge \dots$, enabling dimensionality reduction.
+* **Quantum Mechanics**: Physical observables (energy, momentum, angular momentum) are represented by self-adjoint operators $\hat{A}$ on infinite-dimensional Hilbert spaces. By the Spectral Theorem, the possible measurement outcomes are precisely the eigenvalues $\lambda \in \sigma(\hat{A})$, and states collapse into corresponding eigenstates.
+* **Continuum Mechanics**: The Cauchy stress tensor $\sigma_{ij}$ is a symmetric $3 \times 3$ tensor. Its eigenvalues are the **principal stresses** ($\sigma_1, \sigma_2, \sigma_3$), and its eigenvectors give the orientations of planes experiencing zero shear stress.
+
+---
+
+## 7. Numerical Computation: Spectral Quadric Diagonalizer & PCA Engine
+
+Below are complete implementations of **Spectral Decomposition and Principal Axis Diagonalization** (for Worked Example 12.1) across six environments:
 
 ::: {.panel-tabset group="language"}
 ## Python 3
 ```python
 import numpy as np
 
-A = np.array([[3.0, 1.0], [1.0, 2.0]])
-eigenvalues, eigenvectors = np.linalg.eigh(A)
-print(f"Python 3: Eigenvalues: {eigenvalues}")
-print(f"Principal Axis 1: {eigenvectors[:, 0]}")
+def diagonalize_quadric_2d(A: np.ndarray):
+    # eigh is optimized for symmetric / Hermitian matrices
+    eigenvalues, eigenvectors = np.linalg.eigh(A)
+    return eigenvalues, eigenvectors
+
+# Quadratic form: 5x^2 - 4xy + 8y^2 = 36
+A = np.array([[5.0, -2.0], [-2.0, 8.0]])
+vals, vecs = diagonalize_quadric_2d(A)
+
+print(f"Python 3: Eigenvalues = {vals}")
+print(f"  Axis 1 (lambda = {vals[0]:.1f}): {vecs[:, 0]}")
+print(f"  Axis 2 (lambda = {vals[1]:.1f}): {vecs[:, 1]}")
 ```
 
 ## C++20
 ```cpp
 #include <iostream>
 #include <cmath>
+#include <iomanip>
 
 int main() {
-    // Diagonalize 2x2 symmetric [[a, b], [b, c]] = [[3, 1], [1, 2]]
-    double a = 3.0, b = 1.0, c = 2.0;
-    double tr = a + c, det = a * c - b * b;
+    // Diagonalize symmetric [[5, -2], [-2, 8]]
+    double a = 5.0, b = -2.0, c = 8.0;
+    double tr = a + c;
+    double det = a * c - b * b;
     double disc = std::sqrt(tr * tr - 4.0 * det);
-    double l1 = (tr + disc) / 2.0;
-    double l2 = (tr - disc) / 2.0;
-    std::cout << "C++20:    Eigenvalues = (" << l1 << ", " << l2 << ")\n";
+    double l1 = (tr - disc) / 2.0; // lambda = 4
+    double l2 = (tr + disc) / 2.0; // lambda = 9
+
+    // Eigenvectors
+    double u1_x = 2.0 / std::sqrt(5.0), u1_y = 1.0 / std::sqrt(5.0);
+    double u2_x = 1.0 / std::sqrt(5.0), u2_y = -2.0 / std::sqrt(5.0);
+
+    std::cout << std::fixed << std::setprecision(4);
+    std::cout << "C++20:    Eigenvalues: (" << l1 << ", " << l2 << ")\n"
+              << "          Axis 1: (" << u1_x << ", " << u1_y << ")\n"
+              << "          Axis 2: (" << u2_x << ", " << u2_y << ")\n";
     return 0;
 }
 ```
@@ -49,9 +252,13 @@ int main() {
 ## Julia
 ```julia
 using LinearAlgebra
-A = [3.0 1.0; 1.0 2.0]
-eigs = eigvals(Symmetric(A))
-println("Julia:    Eigenvalues = $(eigs)")
+
+A = [5.0 -2.0; -2.0 8.0]
+decomp = eigen(Symmetric(A))
+
+println("Julia:    Eigenvalues = $(decomp.values)")
+println("          Principal Vectors:")
+println(decomp.vectors)
 ```
 
 ## Modern Fortran
@@ -59,46 +266,51 @@ println("Julia:    Eigenvalues = $(eigs)")
 program spectral_quadric
   implicit none
   real(8) :: a, b, c, tr, det, disc, l1, l2
-  a = 3.0d0; b = 1.0d0; c = 2.0d0
+
+  a = 5.0d0; b = -2.0d0; c = 8.0d0
   tr = a + c
-  det = a*c - b*b
-  disc = sqrt(tr*tr - 4.0d0*det)
-  l1 = (tr + disc) / 2.0d0
-  l2 = (tr - disc) / 2.0d0
-  print '(A,F8.4,A,F8.4)', "Fortran:  Eigenvalues = ", l1, ", ", l2
+  det = a * c - b * b
+  disc = sqrt(tr**2 - 4.0d0 * det)
+  l1 = (tr - disc) / 2.0d0
+  l2 = (tr + disc) / 2.0d0
+
+  print '(A,F8.4,A,F8.4)', "Fortran:  lambda_1 = ", l1, ", lambda_2 = ", l2
 end program spectral_quadric
 ```
 
 ## MATLAB / Octave
 ```matlab
-A = [3.0, 1.0; 1.0, 2.0];
+% Spectral diagonalization of quadric matrix
+A = [5.0, -2.0; -2.0, 8.0];
 [V, D] = eig(A);
-fprintf('MATLAB:   Eigenvalues = [%.4f, %.4f]\n', D(1,1), D(2,2));
+
+fprintf('MATLAB:   Eigenvalues: %.4f, %.4f\n', D(1,1), D(2,2));
+disp('Principal Axes (columns):');
+disp(V);
 ```
+
 ## Lean 4
 ```lean
--- Lean 4: Dual Spaces and the Riesz Representation Theorem
-import Mathlib.Analysis.InnerProductSpace.Dual
+-- Lean 4: Real Inner Product Spaces and the Cauchy-Schwarz Inequality
 import Mathlib.Analysis.InnerProductSpace.Basic
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
--- Riesz Representation: every continuous linear functional is an inner product pairing
-theorem riesz_representation_thm (ϕ : NormedSpace.Dual ℝ E) :
-    ∃! v : E, ∀ x : E, ϕ x = @inner ℝ E _ x v := by
-  exact (InnerProductSpace.toDual ℝ E).bijective.existsUnique ϕ
+-- Mathlib's formalized Cauchy-Schwarz Inequality
+theorem inner_le_norm_mul_norm (x y : E) :
+    |@inner ℝ E _ x y| ≤ ‖x‖ * ‖y‖ :=
+  abs_real_inner_le_norm x y
 ```
-
 :::
 
 ---
 
-## 5. Curated Sources & Further Reading
+## 8. Curated Primary Literature & Canonical Syllabi
 
-* **Sheldon Axler**, *Linear Algebra Done Right*, Springer (2015), Ch 6 & 7.
-* **Paul R. Halmos**, *Finite-Dimensional Vector Spaces*, Springer (1974).
-* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015), Chapter 12.
-
+* **Sheldon Axler**, *Linear Algebra Done Right*, 3rd Edition, Undergraduate Texts in Mathematics, Springer (2015). Chapter 6 (Inner Product Spaces) and Chapter 7 (Operators on Inner Product Spaces / Spectral Theorem).
+* **Paul R. Halmos**, *Finite-Dimensional Vector Spaces*, Undergraduate Texts in Mathematics, Springer-Verlag (1974). The definitive coordinate-free treatment.
+* **Gilbert Strang**, *Linear Algebra and Its Applications*, 4th Edition, Cengage (2006).
+* **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Chapter 12 (Vectors and the Geometry of Space).
 <br>
 <br>
 
