@@ -157,19 +157,34 @@ Or via `udisksctl`:
 udisksctl mount -b /dev/disk/by-label/Windows --options ro
 ```
 
-#### 2. Discarding the Windows Hibernation Session
-If you need read-write access and do not care about preserving the hibernated Windows session (any unsaved application state in Windows will be discarded):
+#### 2. Why `-o remove_hiberfile` Alone Can Still Fail: The `$MFTMirr` Mismatch
+A common pitfall occurs when attempting:
 ```bash
-sudo mount -t ntfs-3g -o remove_hiberfile,uid=1000,gid=1000 /dev/disk/by-label/Windows /mnt/windows
+sudo mount -t ntfs-3g -o remove_hiberfile,uid=1000,gid=1000 /dev/sdc3 /mnt/windows
 ```
-Alternatively, use `ntfsfix` to clear the dirty/hibernation bit:
+And receiving the exact same failure:
+`$MFTMirr does not match $MFT (record 3). Failed to mount: Input/output error`
+
+**Why this happens:**
+In NTFS, the Master File Table (`$MFT`) contains all inode records, while `$MFTMirr` holds a backup copy of the first 4 records (record 0 = `$MFT`, 1 = `$MFTMirr`, 2 = `$LogFile`, 3 = `$Volume`). When a Windows drive experiences an unclean unplug or hybrid hibernation, record 3 (`$Volume`) often diverges between the primary table and the backup mirror.
+
+The `remove_hiberfile` option **only deletes `hiberfil.sys`**; it does not repair a desynchronized `$MFTMirr`. The `ntfs-3g` driver's consistency check aborts *before* even touching `hiberfil.sys` to prevent writing to a corrupted table.
+
+**The Fix:**
+You must run `ntfsfix` to resynchronize `$MFT` and `$MFTMirr` and clear the dirty flag first:
 ```bash
+# 1. Ensure the device is unmounted
+udisksctl unmount -b /dev/disk/by-label/Windows 2>/dev/null || sudo umount /mnt/windows 2>/dev/null
+
+# 2. Resynchronize MFT mirror and clear dirty bit
 sudo ntfsfix -d /dev/disk/by-label/Windows
-udisksctl mount -b /dev/disk/by-label/Windows
+
+# 3. Mount read-write
+sudo mount -t ntfs-3g -o remove_hiberfile,uid=1000,gid=1000 /dev/disk/by-label/Windows /mnt/windows
 ```
 
 #### 3. The Clean Windows Shutdown Fix
-The cleanest and safest approach: plug the drive back into the Windows machine, click **Start ➔ Restart** (restarts perform a complete, clean dismount without hibernation), and unplug the drive once the machine finishes rebooting.
+The cleanest, non-destructive approach: plug the drive into a Windows machine, click **Start ➔ Restart** (restarts perform a complete, clean filesystem dismount without hibernation), and unplug the drive once the machine finishes rebooting. Alternatively, run `chkdsk /f E:` in Windows Command Prompt.
 
 ---
 
