@@ -414,3 +414,65 @@ def gcd_binary(u: int, v: int) -> int:
 
 #### Complexity Analysis:
 Each iteration of the main loop either reduces the value by a subtraction (yielding an even number) or shifts away at least one binary zero bit. Because the sum of the bit-lengths of $u$ and $v$ strictly decreases by at least 1 per iteration, the binary GCD completes in at most $O(\log_2 u + \log_2 v)$ single-cycle shift/subtract steps.
+
+---
+
+## 6. Generalization to Euclidean Domains: Polynomials and Gaussian Integers
+
+### 6.1 Definition of a Euclidean Domain
+The Euclidean algorithm extends beyond the standard integers $\mathbb{Z}$ to any integral domain equipped with a suitable size measure.
+
+::: {.callout-note appearance="simple"}
+#### Definition: Euclidean Domain
+An integral domain $R$ is called a **Euclidean domain** if there exists a function $N: R \setminus \{0\} \to \mathbb{N}_0$ (called a *Euclidean norm* or *valuation*) such that for any $a, b \in R$ with $b \neq 0$, there exist $q, r \in R$ satisfying:
+$$a = q \cdot b + r \quad \text{with} \quad r = 0 \;\text{ or }\; N(r) < N(b)$$
+:::
+
+In every Euclidean domain:
+1. Every ideal is principal ($R$ is a Principal Ideal Domain, or PID).
+2. Every non-zero element factors uniquely into irreducible elements ($R$ is a Unique Factorization Domain, or UFD).
+3. The Euclidean algorithm terminates and computes the greatest common divisor up to multiplication by units (invertible elements $R^\times$).
+
+---
+
+### 6.2 Gaussian Integers $\mathbb{Z}[i]$
+The ring of Gaussian integers $\mathbb{Z}[i] = \{a + bi : a, b \in \mathbb{Z}, i^2 = -1\}$ is a Euclidean domain under the field norm:
+$$N(a + bi) = a^2 + b^2 = |a + bi|^2$$
+
+#### Division with Remainder in $\mathbb{Z}[i]$:
+To divide $\alpha = a + bi$ by $\beta = c + di \neq 0$:
+1. Compute the exact quotient in the complex field $\mathbb{C}$:
+   $$\frac{\alpha}{\beta} = \frac{(a+bi)(c-di)}{c^2 + d^2} = u + vi \quad (u, v \in \mathbb{Q})$$
+2. Round $u$ and $v$ to the nearest integers $q_1 = \lfloor u + 0.5 \rfloor$ and $q_2 = \lfloor v + 0.5 \rfloor$. Let $q = q_1 + q_2 i \in \mathbb{Z}[i]$.
+3. The remainder is $r = \alpha - q \beta$.
+
+Since $|u - q_1| \leq 1/2$ and $|v - q_2| \leq 1/2$:
+$$\left|\frac{\alpha}{\beta} - q\right|^2 = (u - q_1)^2 + (v - q_2)^2 \leq \left(\frac{1}{2}\right)^2 + \left(\frac{1}{2}\right)^2 = \frac{1}{2} < 1$$
+Multiplying by $N(\beta) = |\beta|^2$:
+$$N(r) = |\alpha - q \beta|^2 = |\beta|^2 \left|\frac{\alpha}{\beta} - q\right|^2 \leq \frac{1}{2} N(\beta) < N(\beta)$$
+This guarantees strict norm reduction and finite termination!
+
+```python
+def gcd_gaussian(alpha: complex, beta: complex) -> complex:
+    """Computes the greatest common divisor in the ring of Gaussian integers Z[i]."""
+    while abs(beta) > 1e-9:
+        # Complex division
+        q_complex = alpha / beta
+        # Round real and imaginary components to nearest integer
+        q = complex(round(q_complex.real), round(q_complex.imag))
+        # Remainder
+        alpha, beta = beta, alpha - q * beta
+    return alpha
+```
+
+---
+
+### 6.3 Polynomial Rings $F[x]$ and Polynomial Remainder Sequences
+For polynomials over a field $F$ (e.g., $\mathbb{Q}[x]$ or $\mathbb{R}[x]$), the Euclidean valuation is the polynomial degree:
+$$N(P) = \deg(P)$$
+
+For polynomials $A(x), B(x) \in F[x]$ with $B(x) \neq 0$, polynomial long division gives:
+$$A(x) = Q(x) B(x) + R(x) \quad \text{with} \quad \deg(R) < \deg(B)$$
+The Euclidean algorithm generates a **Polynomial Remainder Sequence (PRS)**:
+$$R_0(x) = A(x), \quad R_1(x) = B(x), \quad R_{i-1}(x) = Q_i(x) R_i(x) + R_{i+1}(x)$$
+The last non-zero polynomial $R_k(x)$, normalized to be monic (leading coefficient $1$), is $\gcd(A(x), B(x))$.
