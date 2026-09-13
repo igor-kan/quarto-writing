@@ -461,3 +461,65 @@ In **continuum mechanics**, the deformation gradient tensor $F = \frac{\partial 
 For symmetric positive definite matrices $A \succ 0$, the Cholesky factorization is the numerical workhorse of linear solvers, Gaussian process regression, and Kalman filtering:
 $$A = L L^T$$
 where $L$ is a unique lower triangular matrix with strictly positive diagonal entries ($L_{ii} > 0$). It computes in $\frac{1}{3} n^3$ FLOPs—twice as fast as LU decomposition—with guaranteed numerical stability without pivoting.
+
+## 8. Higher-Order Tensor Decompositions: CP, HOSVD (Tucker), and Tensor Trains
+
+While 2nd-order tensors (matrices) possess a canonical SVD where singular values and singular vectors are unique up to phase, $N$-th order tensors ($N \ge 3$) exhibit much richer, non-trivial algebraic structures. The two principal generalisations of SVD to higher orders are **CP decomposition** and **Tucker decomposition**.
+
+```
+   CANDECOMP / PARAFAC (CP)                        TUCKER DECOMPOSITION (HOSVD)
+   (Sum of Rank-1 Outer Products)                 (Core Tensor + Mode Factor Matrices)
+
+         ┌───┐                                               ┌───┐
+         │   │                                               │ G │ Core Tensor
+         └───┘                                               └───┘
+       /   │   \                                            /  │  \
+      /    │    \                                       U⁽¹⁾  U⁽²⁾  U⁽³⁾ (Orthogonal)
+     /     │     \                                      │      │      │
+    aᵣ⁽¹⁾ aᵣ⁽²⁾  aᵣ⁽³⁾                                 Mode 1 Mode 2 Mode 3
+    Rank-1 Vector Factors
+```
+
+### 8.1 CANDECOMP / PARAFAC (CP) Decomposition
+
+CP decomposition expresses a tensor $\mathcal{T} \in \mathbb{R}^{I_1 \times I_2 \times \dots \times I_N}$ as a finite sum of rank-1 outer products.
+
+::: {.callout-note}
+### Definition: CP Decomposition
+The CP representation of an $N$-th order tensor $\mathcal{T}$ of rank $R$ is:
+$$\mathcal{T} = \sum_{r=1}^R \lambda_r \, \mathbf{a}_r^{(1)} \otimes \mathbf{a}_r^{(2)} \otimes \dots \otimes \mathbf{a}_r^{(N)}$$
+In component notation:
+$$\mathcal{T}_{i_1 i_2 \dots i_N} = \sum_{r=1}^R \lambda_r \, a_{i_1, r}^{(1)} a_{i_2, r}^{(2)} \dots a_{i_N, r}^{(N)}$$
+where $\mathbf{a}_r^{(n)} \in \mathbb{R}^{I_n}$ are normalized factor vectors, and $\lambda_r \in \mathbb{R}$ are weight coefficients.
+:::
+
+#### Tensor Rank and Uniqueness (Kruskal's Theorem)
+- **Tensor Rank**: The minimal integer $R$ required to express $\mathcal{T}$ as a sum of rank-1 tensors is the *canonical rank* $\operatorname{rank}(\mathcal{T})$. Unlike matrix rank, computing the tensor rank of an order-$N$ tensor ($N \ge 3$) is generally **NP-hard**.
+- **Kruskal's Uniqueness Condition**: If the sum of the Kruskal ranks $k_{\mathbf{A}^{(n)}}$ satisfies $\sum_{n=1}^N k_{\mathbf{A}^{(n)}} \ge 2R + (N - 1)$, the CP decomposition is **provably unique** up to trivial permutation and scaling of components—a property essential for unsupervised feature extraction in signal processing and neuroimaging.
+
+### 8.2 Tucker Decomposition and Higher-Order SVD (HOSVD)
+
+Tucker decomposition generalizes the matrix SVD by allowing interactions between different mode components via a compressed **core tensor**.
+
+::: {.callout-note}
+### Definition: Tucker Decomposition (HOSVD)
+Let $\mathcal{T} \in \mathbb{R}^{I_1 \times I_2 \times \dots \times I_N}$. Its Tucker decomposition with multilinear rank $(R_1, R_2, \dots, R_N)$ is:
+$$\mathcal{T} = \mathcal{G} \times_1 U^{(1)} \times_2 U^{(2)} \dots \times_N U^{(N)}$$
+where:
+- $\mathcal{G} \in \mathbb{R}^{R_1 \times R_2 \times \dots \times R_N}$ is the **core tensor**, governing the interactions among the latent factors.
+- $U^{(n)} \in \mathbb{R}^{I_n \times R_n}$ are column-orthogonal factor matrices ($(U^{(n)})^T U^{(n)} = I_{R_n}$).
+- $\times_n$ denotes the **mode-$n$ tensor-matrix product**.
+:::
+
+In index notation:
+$$\mathcal{T}_{i_1 i_2 \dots i_N} = \sum_{j_1=1}^{R_1} \sum_{j_2=1}^{R_2} \dots \sum_{j_N=1}^{R_N} \mathcal{G}_{j_1 j_2 \dots j_N} U_{i_1 j_1}^{(1)} U_{i_2 j_2}^{(2)} \dots U_{i_N j_N}^{(N)}$$
+
+The **Higher-Order SVD (HOSVD)** algorithm constructs the factor matrices $U^{(n)}$ directly by computing the leading left-singular vectors of the **mode-$n$ matricization (unfolding)** matrix $T_{(n)} \in \mathbb{R}^{I_n \times \prod_{k \neq n} I_k}$. The core tensor is subsequently computed by projecting $\mathcal{T}$ onto the factor subspaces:
+$$\mathcal{G} = \mathcal{T} \times_1 (U^{(1)})^T \times_2 (U^{(2)})^T \dots \times_N (U^{(N)})^T$$
+
+### 8.3 Tensor Trains (TT) and Matrix Product States (MPS)
+
+For very high dimensions $N \gg 1$, both CP and Tucker encounter limitations (Tucker's core tensor retains $R^N$ entries). The **Tensor Train (TT)** decomposition (known as **Matrix Product States (MPS)** in quantum physics) resolves this by decomposing the hyper-array into a chain of interconnected 3rd-order tensors:
+$$\mathcal{T}_{i_1 i_2 \dots i_N} = \sum_{\alpha_1, \alpha_2, \dots, \alpha_{N-1}} G_{1, \alpha_1}^{(1)}(i_1) \, G_{\alpha_1, \alpha_2}^{(2)}(i_2) \dots G_{\alpha_{N-1}, 1}^{(N)}(i_N)$$
+
+This contracts index complexity from exponential $O(I^N)$ to linear in dimension $O(N \cdot I \cdot D^2)$ where $D$ is the maximum virtual bond dimension $\alpha_k \le D$.
