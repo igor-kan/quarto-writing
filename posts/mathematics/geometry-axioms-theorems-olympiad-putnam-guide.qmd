@@ -11,6 +11,14 @@ format:
     math: true
 ---
 
+::: {.callout-tip collapse="true"}
+### Companion Treatises in this Series
+- [The Olympiad and Putnam Problem-Solving Machinery for Mathematical Physicists](putnam-and-olympiad-mathematical-physics-masterclass.qmd)
+- [The Computational Physicist's Engine: Symplectic Integrators, Spectral Methods, and Stochastic Simulation](../physics/computational-physics-symplectic-integrators-and-spectral-methods.qmd)
+- [The Anatomy of Discovery: Heuristics, Mathematical Intuition, and Breakthrough Problem Solving](../cognitive-science/heuristics-problem-solving-mathematical-intuition-and-breakthroughs.qmd)
+- [Foundational Primers in Physics, Mathematics, Statistics, and AI: A Self-Directed Master Curriculum](../curriculum/foundational-stem-primers-physics-math-cs-ai-roadmap.qmd)
+:::
+
 ## 1. Introduction: The Architecture of Spatial Reasoning
 
 Geometry is the oldest deductive mathematical discipline, originating as an empirical science of land surveying in ancient Egypt and Mesopotamia before being transformed by classical Greece into an axiomatic deductive framework. For over two millennia, Euclidean geometry stood as the paradigm of absolute truth.
@@ -302,7 +310,244 @@ Hence, $\angle PXY = \angle PXZ$, meaning points $X, Y, Z$ lie on the exact same
 
 ---
 
-## 8. Summary of Problem-Solving Strategies
+### Problem 3: The Fermat-Torricelli Point via Variational Mechanics
+
+**Problem:** Given an acute triangle $\triangle ABC$ with all angles less than $120^\circ$, find the point $P$ in the plane that minimizes the sum of distances to the three vertices:
+$$\min_{P} \Phi(P) = |PA| + |PB| + |PC|$$
+
+**Solution (The Mechanical / Variational Insight):**
+While this problem can be solved synthetically using a $60^\circ$ rotation of $\triangle ABP$ around $B$ (forming an equilateral triangle), the most illuminating proof for a mathematical physicist comes from **static force equilibrium**.
+
+Imagine a horizontal frictionless table with three small holes drilled at vertices $A, B, C$. Through each hole passes a string. The three strings are knotted together at a single point $P$ above the table. Beneath the table, each string is attached to an identical hanging mass $m$.
+
+1. **Potential Energy Formulation:**
+   The total gravitational potential energy of the three hanging masses (measured relative to the tabletop with depth $L - |PA|$, etc., where $L$ is string length) is:
+   $$U = -m g (L - |PA|) - m g (L - |PB|) - m g (L - |PC|) = m g (|PA| + |PB| + |PC|) - 3 m g L$$
+   By the Principle of Minimum Potential Energy, stable static equilibrium occurs precisely at the point $P$ where $U$ (and therefore $|PA| + |PB| + |PC|$) is **strictly minimized**.
+
+2. **Force Balance Equation:**
+   At equilibrium, the net vector force on the knot $P$ must vanish:
+   $$\vec{F}_{\text{net}} = \vec{T}_A + \vec{T}_B + \vec{T}_C = \mathbf{0}$$
+   Because all three hanging masses are identical, the magnitudes of the string tensions are equal:
+   $$|\vec{T}_A| = |\vec{T}_B| = |\vec{T}_C| = m g$$
+   The tension vectors point along the unit vectors from $P$ to the vertices:
+   $$\hat{u}_A = \frac{\vec{A} - \vec{P}}{|PA|}, \quad \hat{u}_B = \frac{\vec{B} - \vec{P}}{|PB|}, \quad \hat{u}_C = \frac{\vec{C} - \vec{P}}{|PC|}$$
+   Therefore:
+   $$\hat{u}_A + \hat{u}_B + \hat{u}_C = \mathbf{0}$$
+
+3. **Angle Determination:**
+   The only way three unit vectors in a 2D plane can sum to zero is if they are separated by equal angles of:
+   $$\frac{360^\circ}{3} = 120^\circ$$
+   Consequently, the minimizing point $P$ (the **Fermat-Torricelli point**) must "see" all three sides of $\triangle ABC$ under identical angles:
+   $$\angle APB = \angle BPC = \angle CPA = 120^\circ$$
+   *(Note: If any angle of $\triangle ABC \ge 120^\circ$, the knot pulls against that vertex hole, and the minimizer is that vertex itself.)* $\blacksquare$
+
+---
+
+### Problem 4: Circular Inversion and Ptolemy's Inequality
+
+**Definition (Inversion in a Circle):**
+Given an inversion circle $\Gamma$ with center $O$ and radius $R$, the inverse of a point $P \neq O$ is the unique point $P'$ on the ray $OP$ satisfying:
+$$OP \cdot OP' = R^2$$
+
+**Fundamental Properties of Inversion:**
+1. A circle passing through $O$ inverts to a straight line not passing through $O$.
+2. A straight line passing through $O$ inverts to itself.
+3. A circle not passing through $O$ inverts to another circle not passing through $O$.
+4. **Distance Formula under Inversion:** For any two points $P, Q \neq O$, their inverse points $P', Q'$ satisfy:
+   $$P'Q' = \frac{R^2}{OP \cdot OQ} \cdot PQ$$
+5. Inversion is **conformal**: it preserves angles between intersecting curves (reversing orientation).
+
+**Application: Proof of Ptolemy's Inequality via Inversion:**
+Let $A, B, C, D$ be four points in the plane. Invert the configuration centered at $D$ with arbitrary radius $R$.
+The image points are $A', B', C'$.
+By the standard Triangle Inequality on $\triangle A'B'C'$:
+$$A'B' + B'C' \ge A'C'$$
+Substituting the inversion distance formula:
+$$\frac{R^2}{DA \cdot DB} AB + \frac{R^2}{DB \cdot DC} BC \ge \frac{R^2}{DA \cdot DC} AC$$
+Multiplying both sides by the positive scalar $\frac{DA \cdot DB \cdot DC}{R^2}$:
+$$AB \cdot CD + BC \cdot DA \ge AC \cdot BD$$
+This is **Ptolemy's Inequality**!  
+Furthermore, equality holds if and only if $B'$ lies on the line segment between $A'$ and $C'$. Since the line $A'B'C'$ does not pass through the center of inversion $D$, its pre-image under inversion is a circle passing through $D, A, B, C$. Thus, **equality holds if and only if $A, B, C, D$ lie consecutively on a circle (a cyclic quadrilateral)**. $\blacksquare$
+
+---
+
+### Problem 5: Complex Coordinate "Bashing" of the Euler Line and Nine-Point Center
+
+In competition mathematics, "complex bashing" is an indispensable systematic engine when synthetic insight proves elusive. By choosing the origin at the circumcenter $O$ of $\triangle ABC$ and scaling such that the circumradius $R = 1$, the vertices lie on the unit circle:
+$$|a| = |b| = |c| = 1 \implies \bar{a} = \frac{1}{a}, \quad \bar{b} = \frac{1}{b}, \quad \bar{c} = \frac{1}{c}$$
+
+**Canonical Coordinates in Circumcircle Affine Frame:**
+1. **Circumcenter ($O$):**
+   $$o = 0$$
+2. **Centroid ($G$):** By definition of average position:
+   $$g = \frac{a + b + c}{3}$$
+3. **Orthocenter ($H$):**
+   We claim $h = a + b + c$.
+   *Proof:* The vector $\vec{AH}$ is represented by $h - a = b + c$.
+   The sideline $BC$ is represented by $b - c$.
+   For $AH \perp BC$, the ratio $\frac{h - a}{b - c} = \frac{b + c}{b - c}$ must be purely imaginary, i.e., $\left(\frac{b + c}{b - c}\right)^* = -\frac{b + c}{b - c}$.
+   Using $\bar{b} = 1/b$ and $\bar{c} = 1/c$:
+   $$\overline{\left(\frac{b + c}{b - c}\right)} = \frac{1/b + 1/c}{1/b - 1/c} = \frac{(c + b)/(bc)}{(c - b)/(bc)} = \frac{b + c}{c - b} = -\frac{b + c}{b - c}$$
+   This confirms $AH \perp BC$. By cyclic symmetry, $BH \perp CA$ and $CH \perp AB$. Thus $h = a + b + c$ is indeed the orthocenter!
+
+4. **The Euler Line Collinearity:**
+   Notice the remarkable linear relation:
+   $$g = \frac{1}{3} h + \frac{2}{3} o = \frac{h}{3}$$
+   This proves that $O, G, H$ are collinear, with $G$ dividing the segment $OH$ in the exact internal ratio $OG : GH = 1 : 2$.
+
+5. **The Nine-Point Center ($N$):**
+   The nine-point circle passes through the midpoints of the sides, the feet of the altitudes, and the midpoints of the segments joining $H$ to the vertices.
+   Its center $N$ is the midpoint of $OH$:
+   $$n = \frac{o + h}{2} = \frac{a + b + c}{2}$$
+   Its radius is $R_N = \frac{R}{2} = \frac{1}{2}$.
+
+---
+
+### Problem 6: Mass Point Geometry and Center of Mass Proof of Ceva's and Menelaus' Theorems
+
+The physicist's concept of **Center of Mass (Barycenter)** provides an instant, arithmetic solution to concurrency and collinearity problems that otherwise require complex trigonometric or area calculations.
+
+**Axiom of Mass Points:**
+A point mass $(m_A, A)$ consists of a positive scalar mass $m_A$ placed at position $A$.
+The center of mass $G$ of two masses $(m_A, A)$ and $(m_B, B)$ lies on the segment $AB$ such that:
+$$m_A \vec{GA} + m_B \vec{GB} = \mathbf{0} \iff m_A |GA| = m_B |GB| \iff \frac{|AG|}{|GB|} = \frac{m_B}{m_A}$$
+This is simply Archimedes' Law of the Lever!
+
+**Theorem (Ceva via Mass Points):**
+Let $AD, BE, CF$ be cevians of $\triangle ABC$ concurring at point $P$. Then:
+$$\frac{AF}{FB} \cdot \frac{BD}{DC} \cdot \frac{CE}{EA} = 1$$
+
+*Proof via Static Equilibrium:*
+Place masses $m_A, m_B, m_C$ at vertices $A, B, C$ such that their total center of mass is precisely $P$.
+By the associative property of centers of mass:
+1. The sub-system of masses at $B$ and $C$ has a center of mass on the segment $BC$ at point $D$. Therefore:
+   $$\frac{BD}{DC} = \frac{m_C}{m_B}$$
+2. The sub-system of masses at $C$ and $A$ has a center of mass on $CA$ at point $E$. Therefore:
+   $$\frac{CE}{EA} = \frac{m_A}{m_C}$$
+3. The sub-system of masses at $A$ and $B$ has a center of mass on $AB$ at point $F$. Therefore:
+   $$\frac{AF}{FB} = \frac{m_B}{m_A}$$
+Multiplying the three ratios together:
+$$\left(\frac{m_B}{m_A}\right) \cdot \left(\frac{m_C}{m_B}\right) \cdot \left(\frac{m_A}{m_C}\right) = 1$$
+The cevian product cancels telescopically and equals 1 identically! $\blacksquare$
+
+---
+
+### Problem 7: Putnam Classical Problem (Lattice Triangles & Pick's Theorem)
+
+**Putnam Problem Archetype:** Can an equilateral triangle have all three vertices on the 2D integer lattice $\mathbb{Z}^2$?
+
+**Proof:**
+Suppose there exists an equilateral triangle $\triangle ABC$ with integer coordinates $A = (x_1, y_1)$, $B = (x_2, y_2)$, $C = (x_3, y_3) \in \mathbb{Z}^2$.
+Let $s^2$ be the square of its side length:
+$$s^2 = (x_2 - x_1)^2 + (y_2 - y_1)^2 \in \mathbb{Z}$$
+Because the coordinates are integers, $s^2$ is an integer!
+
+Now calculate the area $\Delta$ in two distinct ways:
+1. **Via Euclidean Geometry of Equilateral Triangles:**
+   $$\Delta = \frac{\sqrt{3}}{4} s^2$$
+   Since $s^2 \in \mathbb{Z}_{>0}$, the area $\Delta$ is an **irrational number** (a rational multiple of $\sqrt{3}$).
+2. **Via Pick's Theorem or the Shoelace Determinant:**
+   The shoelace formula gives:
+   $$\Delta = \frac{1}{2} \left| x_1(y_2 - y_3) + x_2(y_3 - y_1) + x_3(y_1 - y_2) \right|$$
+   Since all coordinates are integers, the quantity inside the absolute value is an integer, meaning $\Delta \in \frac{1}{2}\mathbb{Z}$, which is **strictly rational**!
+
+**Contradiction:** An area cannot be simultaneously irrational and rational:
+$$\Delta = \frac{\sqrt{3}}{4} s^2 \notin \mathbb{Q} \quad \text{vs.} \quad \Delta \in \mathbb{Q}$$
+Therefore, **no equilateral triangle can exist on the 2D integer lattice $\mathbb{Z}^2$**. $\blacksquare$
+
+---
+
+## 8. Computational Verification Laboratory in Python
+
+The following Python laboratory programmatically computes triangle invariants, verifies the Euler line collinearity $h = 3g - 2o$, and finds the Fermat-Torricelli point using numerical gradient optimization.
+
+```python
+import numpy as np
+from scipy.optimize import minimize
+
+def triangle_invariants(A, B, C):
+    """Computes side lengths, area, circumcenter, centroid, and orthocenter."""
+    A, B, C = np.array(A, dtype=float), np.array(B, dtype=float), np.array(C, dtype=float)
+    a = np.linalg.norm(B - C)
+    b = np.linalg.norm(A - C)
+    c = np.linalg.norm(A - B)
+    
+    # Area via cross product (Shoelace)
+    area = 0.5 * abs(np.cross(B - A, C - A))
+    
+    # Centroid
+    G = (A + B + C) / 3.0
+    
+    # Circumcenter (barycentric coordinates sin(2A):sin(2B):sin(2C))
+    D = 2 * (A[0]*(B[1] - C[1]) + B[0]*(C[1] - A[1]) + C[0]*(A[1] - B[1]))
+    Ux = ((A[0]**2 + A[1]**2)*(B[1] - C[1]) + (B[0]**2 + B[1]**2)*(C[1] - A[1]) + (C[0]**2 + C[1]**2)*(A[1] - B[1])) / D
+    Uy = ((A[0]**2 + A[1]**2)*(C[0] - B[0]) + (B[0]**2 + B[1]**2)*(A[0] - C[0]) + (C[0]**2 + C[1]**2)*(B[0] - A[0])) / D
+    O = np.array([Ux, Uy])
+    
+    # Orthocenter via Euler line relation: H = 3G - 2O
+    H = 3 * G - 2 * O
+    
+    # Nine-point center: N = (O + H) / 2
+    N = (O + H) / 2.0
+    
+    return {
+        "sides": (a, b, c),
+        "area": area,
+        "centroid": G,
+        "circumcenter": O,
+        "orthocenter": H,
+        "nine_point_center": N
+    }
+
+def find_fermat_torricelli_point(A, B, C):
+    """Numerically minimizes |PA| + |PB| + |PC|."""
+    A, B, C = np.array(A), np.array(B), np.array(C)
+    G = (A + B + C) / 3.0
+    
+    def objective(P):
+        return np.linalg.norm(P - A) + np.linalg.norm(P - B) + np.linalg.norm(P - C)
+        
+    res = minimize(objective, G, method="Nelder-Mead")
+    P = res.x
+    
+    # Compute angles subtended at P
+    vA = (A - P) / np.linalg.norm(A - P)
+    vB = (B - P) / np.linalg.norm(B - P)
+    vC = (C - P) / np.linalg.norm(C - P)
+    
+    angle_AB = np.degrees(np.arccos(np.clip(np.dot(vA, vB), -1.0, 1.0)))
+    angle_BC = np.degrees(np.arccos(np.clip(np.dot(vB, vC), -1.0, 1.0)))
+    angle_CA = np.degrees(np.arccos(np.clip(np.dot(vC, vA), -1.0, 1.0)))
+    
+    return P, (angle_AB, angle_BC, angle_CA)
+
+# Test with acute triangle
+A = [0.0, 0.0]
+B = [6.0, 0.0]
+C = [2.0, 5.0]
+
+inv = triangle_invariants(A, B, C)
+print(f"Sides (a, b, c): {inv['sides']}")
+print(f"Area:            {inv['area']:.4f}")
+print(f"Centroid G:      {inv['centroid']}")
+print(f"Circumcenter O:  {inv['circumcenter']}")
+print(f"Orthocenter H:   {inv['orthocenter']}")
+print(f"Nine-Point N:    {inv['nine_point_center']}")
+
+# Verify Euler line: G - O and H - G should be parallel and in 1:2 ratio
+vec_OG = inv['centroid'] - inv['circumcenter']
+vec_GH = inv['orthocenter'] - inv['centroid']
+print(f"Ratio |GH| / |OG|: {np.linalg.norm(vec_GH) / np.linalg.norm(vec_OG):.4f} (Expected: 2.0)")
+
+P_fermat, angles = find_fermat_torricelli_point(A, B, C)
+print(f"\nFermat-Torricelli Point P: {P_fermat}")
+print(f"Angles at P: {angles[0]:.2f}°, {angles[1]:.2f}°, {angles[2]:.2f}° (Expected: 120°, 120°, 120°)")
+```
+
+---
+
+## 9. Summary of Problem-Solving Strategies
 
 | Difficulty / Context | Best Strategy / Tool | Rationale |
 |:---|:---|:---|
@@ -315,7 +560,7 @@ Hence, $\angle PXY = \angle PXZ$, meaning points $X, Y, Z$ lie on the exact same
 
 ---
 
-## 9. References & Further Reading
+## 10. References & Further Reading
 
 1. **Euclid.** *The Thirteen Books of The Elements* (Translated with introduction and commentary by Sir Thomas L. Heath, Dover Publications, 1956).
 2. **Hilbert, David.** *Foundations of Geometry (Grundlagen der Geometrie)* (Open Court Publishing, 1971).
