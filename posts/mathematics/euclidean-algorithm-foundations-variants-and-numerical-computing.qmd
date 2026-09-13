@@ -518,3 +518,53 @@ The **Gauss-Lagrange algorithm** reduces a 2D lattice basis $(\mathbf{u}, \mathb
 4. If $\|\mathbf{v}\| < \|\mathbf{u}\|$, swap $\mathbf{u}$ and $\mathbf{v}$ and repeat; otherwise stop.
 
 Just as the Euclidean algorithm reduces integers by subtracting multiples until the remainder is smaller than the divisor, the Gauss-Lagrange algorithm subtracts scalar multiples of basis vectors until the projection is minimized ($|\mu| \leq 1/2$), solving the 2D SVP exactly!
+
+---
+
+## 8. Numerical Computing: Half-GCD and Approximate GCD for Noisy Signals
+
+### 8.1 Knuth-Schönhage Half-GCD (Quasi-Linear $O(M(n) \log n)$)
+For numbers with thousands of digits (as in RSA key generation, prime factorization, or elliptic curve cryptography), the quadratic complexity $O(n^2)$ of the standard Euclidean algorithm becomes a major bottleneck.
+
+In 1971, Arnold Schönhage and Donald Knuth designed the **Half-GCD algorithm**, a divide-and-conquer strategy:
+1. The highest $n/2$ bits of two $n$-bit integers determine the first sequence of quotient matrices $Q_1, Q_2, \dots, Q_m$ with high accuracy.
+2. By recursively computing the transition matrix for the upper half of the bits:
+   $$M = \prod_{i=1}^m \begin{pmatrix} q_i & 1 \\ 1 & 0 \end{pmatrix}$$
+3. We multiply $M$ by the full-precision numbers using fast Karatsuba or FFT multiplication ($O(M(n))$ time) to reduce the problem size by half in a single step.
+4. The master recurrence:
+   $$T(n) = 2 T(n/2) + O(M(n)) \implies T(n) = O(M(n) \log n)$$
+Using Harvey-Hoeven $O(n \log n)$ integer multiplication, computing the GCD of two $n$-bit integers takes only $O(n \log^2 n)$ bit operations.
+
+---
+
+### 8.2 Approximate GCD for Floating-Point and Noisy Signals
+In real-world numerical computing, control systems, and computer vision, polynomial coefficients and measurement data contain floating-point roundoff or empirical sensor noise. Finding the common roots or transfer function cancellations requires computing an **Approximate GCD**.
+
+If $P(x) = \sum_{i=0}^m p_i x^i$ and $Q(x) = \sum_{j=0}^n q_j x^j$, their exact $\gcd$ is non-trivial if and only if their **Sylvester resultant matrix** $S(P, Q)$ is rank-deficient:
+$$S(P, Q) = \begin{pmatrix}
+p_m & p_{m-1} & \cdots & p_0 & 0 & \cdots & 0 \\
+0 & p_m & p_{m-1} & \cdots & p_0 & \cdots & 0 \\
+\vdots & & & & & & \vdots \\
+q_n & q_{n-1} & \cdots & q_0 & 0 & \cdots & 0 \\
+0 & q_n & q_{n-1} & \cdots & q_0 & \cdots & 0
+\end{pmatrix}$$
+
+#### Singular Value Decomposition (SVD) Approach:
+1. Compute the SVD of the Sylvester matrix: $S = U \Sigma V^T$.
+2. In the presence of noise $\epsilon$, inspect the singular values $\sigma_1 \geq \sigma_2 \geq \cdots \geq \sigma_{m+n}$.
+3. The numerical rank is the number of singular values greater than an error threshold $\tau > \epsilon$.
+4. The degree of the approximate $\gcd$ equals the numerical nullity $(m + n) - \operatorname{rank}(S)$, and the right singular vector associated with the smallest singular value provides the approximate common factor!
+
+---
+
+## 9. Comprehensive Comparative Synthesis
+
+| Algorithm Paradigm | Operations Used | Computational Complexity | Primary Use Case |
+| :--- | :--- | :--- | :--- |
+| **Anthyphairesis (Subtractive)** | Subtractions only | $O(\max(a, b))$ | Historical geometry, pedagogical foundations |
+| **Standard Euclidean (Remainder)** | Division / Modulo | $O(\log(\min(a, b)))$ | General software arithmetic, small to medium integers |
+| **Extended Euclidean (EEA)** | Division, back-substitution | $O(\log(\min(a, b)))$ | Modular inverse, RSA decryption, Diophantine equations |
+| **Stein's Binary GCD** | Shifts, bitwise AND, subtract | $O(\log a + \log b)$ | Embedded systems, microcontrollers, ALUs without hardware divider |
+| **Knuth-Schönhage Half-GCD** | FFT multiplication, matrix D&C | $O(M(n) \log n)$ | Giant-integer arithmetic (>10,000 bits), CAS, cryptography |
+| **Gaussian GCD ($\\mathbb{Z}[i]$)** | Complex division, round | $O(\log N(\alpha))$ | Sum-of-two-squares, quadratic reciprocity, factoring Gaussian primes |
+| **Approximate SVD GCD** | SVD, QR decomposition | $O((m+n)^3)$ | Signal processing, control theory, noisy numerical polynomials |
