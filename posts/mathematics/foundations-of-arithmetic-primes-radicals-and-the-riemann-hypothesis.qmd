@@ -760,6 +760,42 @@ for t in t_values:
     s = mp.mpc(0.5, t)
     val = mp.zeta(s)
     print(f"t = {t:9.6f} | zeta(1/2 + {t:9.6f}i) = {mp.nstr(val, 6)} | |zeta| = {mp.nstr(abs(val), 6)} (≈ 0)")
+
+print("\n=== 5. PERFECT NUMBERS: SUBTRACTIVE POWERS-OF-2 & BINARY SHIFTS ===")
+def analyze_perfect_number(p):
+    M_p = 2**p - 1
+    N = 2**(p - 1) * M_p
+    # Generate all divisors
+    divs = []
+    for d in range(1, int(N**0.5) + 1):
+        if N % d == 0:
+            divs.append(d)
+            if d*d != N:
+                divs.append(N // d)
+    all_divs = sorted(divs)
+    
+    is_perf = sum(all_divs[:-1]) == N
+    shift_matches = []
+    for k in range(p):
+        d_k = (2**k) * M_p
+        formula_val = 2**(p + k) - 2**k
+        shift_matches.append((k, d_k, formula_val, d_k == formula_val))
+        
+    bin_str = bin(N)[2:]
+    expected_bin = "1" * p + "0" * (p - 1)
+    harmonic_mean = len(all_divs) / sum(1.0 / d for d in all_divs)
+    
+    return {
+        "p": p, "N": N, "M_p": M_p, "is_perfect": is_perf,
+        "bin_str": bin_str, "bin_matches": bin_str == expected_bin,
+        "shift_matches": shift_matches, "harmonic_mean": harmonic_mean
+    }
+
+for p_val in [2, 3, 5, 7]:
+    res = analyze_perfect_number(p_val)
+    print(f"p = {res['p']} | N = {res['N']:5d} | M_p = {res['M_p']:3d} | Binary: {res['bin_str']} (Matches? {res['bin_matches']}) | H(N) = {res['harmonic_mean']:.1f}")
+    for k, d_k, form_val, ok in res['shift_matches']:
+        print(f"   k={k}: 2^{res['p']+k} - 2^{k} = {form_val:5d} == divisor {d_k:5d} ({ok})")
 ```
 
 ---
