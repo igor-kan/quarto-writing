@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Igor Kan">
+<meta name="dcterms.date" content="2026-09-13">
+<meta name="description" content="A rigorous, first-principles masterclass on the computational foundations of modern theoretical and mathematical physics: why standard ODE solvers (Runge-Kutta) fail for Hamiltonian systems, the geometric necessity of symplectic integrators (Verlet, Leapfrog, Forest-Ruth, Yoshida), backward error analysis and shadow Hamiltonians, boundary value spectral collocation methods, unitary split-operator FFT for the time-dependent Schrödinger equation, Markov Chain Monte Carlo (Metropolis-Hastings) for the 2D Ising model, and complete production Python laboratories.">
+
+<title>The Computational Physicist’s Engine: Symplectic Integrators, Spectral Methods, and Stochastic Simulation – My Writings</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-a515e054079012129989d5397ee3c9c1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">My Writings</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../literature/index.html"> 
+<span class="menu-text">Literature</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../chapters/index.html"> 
+<span class="menu-text">Chapters</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../tutorials/index.html"> 
+<span class="menu-text">Tutorials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction-the-crisis-of-standard-numerical-integration" id="toc-introduction-the-crisis-of-standard-numerical-integration" class="nav-link active" data-scroll-target="#introduction-the-crisis-of-standard-numerical-integration"><span class="header-section-number">1</span> 1. Introduction: The Crisis of Standard Numerical Integration</a></li>
+  <li><a href="#symplectic-geometry-and-hamiltonian-phase-space" id="toc-symplectic-geometry-and-hamiltonian-phase-space" class="nav-link" data-scroll-target="#symplectic-geometry-and-hamiltonian-phase-space"><span class="header-section-number">2</span> 2. Symplectic Geometry and Hamiltonian Phase Space</a>
+  <ul>
+  <li><a href="#the-symplectic-2-form-and-phase-space-manifold" id="toc-the-symplectic-2-form-and-phase-space-manifold" class="nav-link" data-scroll-target="#the-symplectic-2-form-and-phase-space-manifold"><span class="header-section-number">2.1</span> 2.1 The Symplectic 2-Form and Phase Space Manifold</a></li>
+  <li><a href="#symplectic-maps-and-liouvilles-theorem" id="toc-symplectic-maps-and-liouvilles-theorem" class="nav-link" data-scroll-target="#symplectic-maps-and-liouvilles-theorem"><span class="header-section-number">2.2</span> 2.2 Symplectic Maps and Liouville’s Theorem</a>
+  <ul class="collapse">
+  <li><a href="#liouvilles-theorem-as-an-exterior-derivative-consequence" id="toc-liouvilles-theorem-as-an-exterior-derivative-consequence" class="nav-link" data-scroll-target="#liouvilles-theorem-as-an-exterior-derivative-consequence"><span class="header-section-number">2.2.1</span> Liouville’s Theorem as an Exterior Derivative Consequence:</a></li>
+  </ul></li>
+  <li><a href="#hamiltons-equations-and-poisson-brackets" id="toc-hamiltons-equations-and-poisson-brackets" class="nav-link" data-scroll-target="#hamiltons-equations-and-poisson-brackets"><span class="header-section-number">2.3</span> 2.3 Hamilton’s Equations and Poisson Brackets</a></li>
+  </ul></li>
+  <li><a href="#symplectic-integrators-from-first-principles" id="toc-symplectic-integrators-from-first-principles" class="nav-link" data-scroll-target="#symplectic-integrators-from-first-principles"><span class="header-section-number">3</span> 3. Symplectic Integrators from First Principles</a>
+  <ul>
+  <li><a href="#operator-splitting-and-the-lie-poisson-formalism" id="toc-operator-splitting-and-the-lie-poisson-formalism" class="nav-link" data-scroll-target="#operator-splitting-and-the-lie-poisson-formalism"><span class="header-section-number">3.1</span> 3.1 Operator Splitting and the Lie-Poisson Formalism</a></li>
+  <li><a href="#the-verlet-and-velocity-verlet-algorithms" id="toc-the-verlet-and-velocity-verlet-algorithms" class="nav-link" data-scroll-target="#the-verlet-and-velocity-verlet-algorithms"><span class="header-section-number">3.2</span> 3.2 The Verlet and Velocity-Verlet Algorithms</a>
+  <ul class="collapse">
+  <li><a href="#algorithmic-execution-steps" id="toc-algorithmic-execution-steps" class="nav-link" data-scroll-target="#algorithmic-execution-steps"><span class="header-section-number">3.2.1</span> Algorithmic Execution Steps:</a></li>
+  <li><a href="#key-geometric-properties" id="toc-key-geometric-properties" class="nav-link" data-scroll-target="#key-geometric-properties"><span class="header-section-number">3.2.2</span> Key Geometric Properties:</a></li>
+  </ul></li>
+  <li><a href="#high-order-symplectic-splitting-the-yoshida-4th-order-integrator" id="toc-high-order-symplectic-splitting-the-yoshida-4th-order-integrator" class="nav-link" data-scroll-target="#high-order-symplectic-splitting-the-yoshida-4th-order-integrator"><span class="header-section-number">3.3</span> 3.3 High-Order Symplectic Splitting: The Yoshida 4th-Order Integrator</a>
+  <ul class="collapse">
+  <li><a href="#derivation-of-the-yoshida-coefficients" id="toc-derivation-of-the-yoshida-coefficients" class="nav-link" data-scroll-target="#derivation-of-the-yoshida-coefficients"><span class="header-section-number">3.3.1</span> Derivation of the Yoshida Coefficients:</a></li>
+  </ul></li>
+  <li><a href="#backward-error-analysis-and-the-shadow-hamiltonian" id="toc-backward-error-analysis-and-the-shadow-hamiltonian" class="nav-link" data-scroll-target="#backward-error-analysis-and-the-shadow-hamiltonian"><span class="header-section-number">3.4</span> 3.4 Backward Error Analysis and the “Shadow Hamiltonian”</a></li>
+  </ul></li>
+  <li><a href="#boundary-value-problems-and-spectral-methods" id="toc-boundary-value-problems-and-spectral-methods" class="nav-link" data-scroll-target="#boundary-value-problems-and-spectral-methods"><span class="header-section-number">4</span> 4. Boundary Value Problems and Spectral Methods</a>
+  <ul>
+  <li><a href="#finite-differences-vs.-spectral-convergence" id="toc-finite-differences-vs.-spectral-convergence" class="nav-link" data-scroll-target="#finite-differences-vs.-spectral-convergence"><span class="header-section-number">4.1</span> 4.1 Finite Differences vs.&nbsp;Spectral Convergence</a></li>
+  <li><a href="#chebyshev-differentiation-matrices" id="toc-chebyshev-differentiation-matrices" class="nav-link" data-scroll-target="#chebyshev-differentiation-matrices"><span class="header-section-number">4.2</span> 4.2 Chebyshev Differentiation Matrices</a></li>
+  <li><a href="#solving-the-time-independent-schrödinger-equation-tise" id="toc-solving-the-time-independent-schrödinger-equation-tise" class="nav-link" data-scroll-target="#solving-the-time-independent-schrödinger-equation-tise"><span class="header-section-number">4.3</span> 4.3 Solving the Time-Independent Schrödinger Equation (TISE)</a></li>
+  </ul></li>
+  <li><a href="#quantum-dynamics-split-operator-fft-for-the-tdse" id="toc-quantum-dynamics-split-operator-fft-for-the-tdse" class="nav-link" data-scroll-target="#quantum-dynamics-split-operator-fft-for-the-tdse"><span class="header-section-number">5</span> 5. Quantum Dynamics: Split-Operator FFT for the TDSE</a>
+  <ul>
+  <li><a href="#the-strang-unitary-splitting" id="toc-the-strang-unitary-splitting" class="nav-link" data-scroll-target="#the-strang-unitary-splitting"><span class="header-section-number">5.1</span> 5.1 The Strang Unitary Splitting</a>
+  <ul class="collapse">
+  <li><a href="#the-spatial-momentum-dual-trick" id="toc-the-spatial-momentum-dual-trick" class="nav-link" data-scroll-target="#the-spatial-momentum-dual-trick"><span class="header-section-number">5.1.1</span> The Spatial-Momentum Dual Trick:</a></li>
+  </ul></li>
+  <li><a href="#algorithmic-invariants-and-unconditional-stability" id="toc-algorithmic-invariants-and-unconditional-stability" class="nav-link" data-scroll-target="#algorithmic-invariants-and-unconditional-stability"><span class="header-section-number">5.2</span> 5.2 Algorithmic Invariants and Unconditional Stability</a></li>
+  </ul></li>
+  <li><a href="#statistical-mechanics-and-markov-chain-monte-carlo-mcmc" id="toc-statistical-mechanics-and-markov-chain-monte-carlo-mcmc" class="nav-link" data-scroll-target="#statistical-mechanics-and-markov-chain-monte-carlo-mcmc"><span class="header-section-number">6</span> 6. Statistical Mechanics and Markov Chain Monte Carlo (MCMC)</a>
+  <ul>
+  <li><a href="#the-canonical-ensemble-and-the-combinatorial-explosion" id="toc-the-canonical-ensemble-and-the-combinatorial-explosion" class="nav-link" data-scroll-target="#the-canonical-ensemble-and-the-combinatorial-explosion"><span class="header-section-number">6.1</span> 6.1 The Canonical Ensemble and the Combinatorial Explosion</a></li>
+  <li><a href="#the-metropolis-hastings-algorithm" id="toc-the-metropolis-hastings-algorithm" class="nav-link" data-scroll-target="#the-metropolis-hastings-algorithm"><span class="header-section-number">6.2</span> 6.2 The Metropolis-Hastings Algorithm</a>
+  <ul class="collapse">
+  <li><a href="#the-metropolis-acceptance-criterion" id="toc-the-metropolis-acceptance-criterion" class="nav-link" data-scroll-target="#the-metropolis-acceptance-criterion"><span class="header-section-number">6.2.1</span> The Metropolis Acceptance Criterion:</a></li>
+  </ul></li>
+  <li><a href="#the-2d-ising-model-and-onsagers-phase-transition" id="toc-the-2d-ising-model-and-onsagers-phase-transition" class="nav-link" data-scroll-target="#the-2d-ising-model-and-onsagers-phase-transition"><span class="header-section-number">6.3</span> 6.3 The 2D Ising Model and Onsager’s Phase Transition</a></li>
+  </ul></li>
+  <li><a href="#comprehensive-benchmarking-laboratory-in-python" id="toc-comprehensive-benchmarking-laboratory-in-python" class="nav-link" data-scroll-target="#comprehensive-benchmarking-laboratory-in-python"><span class="header-section-number">7</span> 7. Comprehensive Benchmarking Laboratory in Python</a></li>
+  <li><a href="#curated-references-foundational-literature" id="toc-curated-references-foundational-literature" class="nav-link" data-scroll-target="#curated-references-foundational-literature"><span class="header-section-number">8</span> 8. Curated References &amp; Foundational Literature</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title">The Computational Physicist’s Engine: Symplectic Integrators, Spectral Methods, and Stochastic Simulation</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+<p class="subtitle lead">From Hamiltonian Phase Space Preservation and Verlet/Yoshida Algorithms to Quantum Spectral Solvers and MCMC Statistical Mechanics</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Physics</div>
+    <div class="quarto-category">Computational Physics</div>
+    <div class="quarto-category">Hamiltonian Mechanics</div>
+    <div class="quarto-category">Numerical Methods</div>
+    <div class="quarto-category">Symplectic Geometry</div>
+    <div class="quarto-category">Quantum Mechanics</div>
+    <div class="quarto-category">Scientific Computing</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    A rigorous, first-principles masterclass on the computational foundations of modern theoretical and mathematical physics: why standard ODE solvers (Runge-Kutta) fail for Hamiltonian systems, the geometric necessity of symplectic integrators (Verlet, Leapfrog, Forest-Ruth, Yoshida), backward error analysis and shadow Hamiltonians, boundary value spectral collocation methods, unitary split-operator FFT for the time-dependent Schrödinger equation, Markov Chain Monte Carlo (Metropolis-Hastings) for the 2D Ising model, and complete production Python laboratories.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Igor Kan </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 13, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><em>“A numerical integrator for Hamiltonian dynamics should not merely approximate the trajectory with high local order; it must faithfully respect the symplectic 2-form of phase space. Preserving geometry is infinitely more important than minimizing instantaneous truncation error.”</em><br>
+— <strong>Foundations of Geometric Numerical Integration</strong></p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Companion Treatises in this Series
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li><a href="../../posts/mathematics/putnam-and-olympiad-mathematical-physics-masterclass.html">The Olympiad and Putnam Problem-Solving Machinery for Mathematical Physicists</a></li>
+<li><a href="../../posts/mathematics/geometry-axioms-theorems-olympiad-putnam-guide.html">The Foundations and Horizons of Geometry: From Euclidean Axioms to Olympiad and Putnam Problem Solving</a></li>
+<li><a href="../../posts/physics/calculus-of-variations.html">Calculus of Variations: Action Principles and Variational Extremals</a></li>
+<li><a href="../../posts/curriculum/foundational-stem-primers-physics-math-cs-ai-roadmap.html">Foundational Primers in Physics, Mathematics, Statistics, and AI: A Self-Directed Master Curriculum</a></li>
+<li><a href="../../posts/cognitive-science/heuristics-problem-solving-mathematical-intuition-and-breakthroughs.html">The Anatomy of Discovery: Heuristics, Mathematical Intuition, and Breakthrough Problem Solving</a></li>
+</ul>
+</div>
+</div>
+</div>
+<hr>
+<section id="introduction-the-crisis-of-standard-numerical-integration" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="introduction-the-crisis-of-standard-numerical-integration"><span class="header-section-number">1</span> 1. Introduction: The Crisis of Standard Numerical Integration</h2>
+<p>In theoretical physics, physical systems are governed by differential equations originating from <strong>variational principles, conservation laws, and geometric invariants</strong>. When physicists transition from analytical pencil-and-paper derivations to numerical simulation on a computer, they encounter an immediate, profound epistemological crisis.</p>
+<p>For generations, engineering curricula have taught the <strong>Runge-Kutta methods</strong> (especially the classical 4th-order Runge-Kutta, RK4) as the universal gold standard for integrating ordinary differential equations: <span class="math display">\[\frac{d\vec{y}}{dt} = \vec{f}(\vec{y}, t)\]</span></p>
+<p>Yet, if you apply RK4 to simulate the Solar System, the hydrogen atom, or a collisionless plasma over millions of periods, <strong>the simulation catastrophically fails</strong>: 1. <strong>Artificial Dissipation &amp; Energy Drift:</strong> RK4 is non-conservative; it acts as a numerical damper or amplifier. The Earth will either slowly spiral into the Sun or be flung out into deep space. 2. <strong>Phase Space Distortion:</strong> RK4 violates <strong>Liouville’s Theorem</strong>. It contracts or expands the differential volume of phase space, destroying the statistical mechanics of the system. 3. <strong>Broken First Integrals:</strong> Angular momentum, Laplace-Runge-Lenz vectors, and adiabatic invariants are steadily destroyed by secular numerical accumulation.</p>
+<pre><code>                   THE INTEGRATION PARADIGM COMPARISON
+                   
+  Standard ODE Solvers (RK4, Euler)              Geometric Symplectic Integrators (Verlet, Yoshida)
+  ─────────────────────────────────              ──────────────────────────────────────────────────
+  Focus: Local truncation error O(dt^p)          Focus: Global preservation of symplectic 2-form
+  Phase Space Volume: Violates Liouville         Phase Space Volume: Exactly preserved (det J = 1)
+  Long-Term Energy: Secular drift -&gt; infinity    Long-Term Energy: Oscillates in bounded band forever
+  First Integrals: Destroyed over long times     First Integrals: Preserved to machine precision
+  Philosophy: "Match Taylor expansion"           Philosophy: "Follow exact flow of shadow Hamiltonian"</code></pre>
+<p>To solve physical problems truthfully, computational physicists use <strong>Geometric Numerical Integration</strong>: designing discrete numerical maps that exactly preserve the continuous symmetries and differential geometry of the underlying physics.</p>
+<hr>
+</section>
+<section id="symplectic-geometry-and-hamiltonian-phase-space" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="symplectic-geometry-and-hamiltonian-phase-space"><span class="header-section-number">2</span> 2. Symplectic Geometry and Hamiltonian Phase Space</h2>
+<section id="the-symplectic-2-form-and-phase-space-manifold" class="level3" data-number="2.1">
+<h3 data-number="2.1" class="anchored" data-anchor-id="the-symplectic-2-form-and-phase-space-manifold"><span class="header-section-number">2.1</span> 2.1 The Symplectic 2-Form and Phase Space Manifold</h3>
+<p>Let <span class="math inline">\(\mathcal{Q}\)</span> be an <span class="math inline">\(n\)</span>-dimensional configuration manifold with generalized coordinates <span class="math inline">\(\vec{q} = (q_1, \dots, q_n)\)</span>. The state space of Hamiltonian mechanics is the cotangent bundle: <span class="math display">\[\mathcal{M} = T^* \mathcal{Q}\]</span> known as <strong>phase space</strong>, parameterized by canonical coordinates <span class="math inline">\(\vec{z} = (\vec{q}, \vec{p}) = (q_1, \dots, q_n, p_1, \dots, p_n) \in \mathbb{R}^{2n}\)</span>.</p>
+<p>Phase space is endowed with a canonical, closed, non-degenerate differential 2-form, the <strong>symplectic form</strong>: <span class="math display">\[\omega = \sum_{i=1}^n dq_i \wedge dp_i\]</span></p>
+<p>In matrix notation, for any two tangent vectors <span class="math inline">\(\vec{\xi}, \vec{\eta} \in T_z \mathcal{M}\)</span>: <span class="math display">\[\omega(\vec{\xi}, \vec{\eta}) = \vec{\xi}^T \Omega \vec{\eta}, \quad \text{where } \Omega = \begin{pmatrix} \mathbf{0}_n &amp; \mathbf{I}_n \\ -\mathbf{I}_n &amp; \mathbf{0}_n \end{pmatrix}\]</span> The fundamental symplectic matrix <span class="math inline">\(\Omega\)</span> satisfies: <span class="math display">\[\Omega^T = -\Omega, \quad \Omega^2 = -\mathbf{I}_{2n}, \quad \Omega^{-1} = -\Omega\]</span></p>
+<hr>
+</section>
+<section id="symplectic-maps-and-liouvilles-theorem" class="level3" data-number="2.2">
+<h3 data-number="2.2" class="anchored" data-anchor-id="symplectic-maps-and-liouvilles-theorem"><span class="header-section-number">2.2</span> 2.2 Symplectic Maps and Liouville’s Theorem</h3>
+<div id="def-symplectic-map" class="theorem definition">
+<p><span class="theorem-title"><strong>Definition 1 (Definition 2.1 (Symplectic Transformation))</strong></span> A smooth transformation <span class="math inline">\(\psi: \mathcal{M} \to \mathcal{M}\)</span> with Jacobian matrix <span class="math inline">\(J = \frac{\partial \psi}{\partial \vec{z}}\)</span> is called <strong>symplectic</strong> (or canonical) if it preserves the symplectic form: <span class="math display">\[\psi^* \omega = \omega \iff J^T \Omega J = \Omega\]</span></p>
+</div>
+<p>Taking the determinant of both sides: <span class="math display">\[\det(J^T \Omega J) = \det(\Omega) \implies (\det J)^2 \det(\Omega) = \det(\Omega) \implies (\det J)^2 = 1\]</span> In fact, every connected symplectic transformation has: <span class="math display">\[\det(J) = +1\]</span></p>
+<section id="liouvilles-theorem-as-an-exterior-derivative-consequence" class="level4" data-number="2.2.1">
+<h4 data-number="2.2.1" class="anchored" data-anchor-id="liouvilles-theorem-as-an-exterior-derivative-consequence"><span class="header-section-number">2.2.1</span> Liouville’s Theorem as an Exterior Derivative Consequence:</h4>
+<p>The <span class="math inline">\(2n\)</span>-dimensional phase space volume element is given by the top exterior power of <span class="math inline">\(\omega\)</span>: <span class="math display">\[d\mathcal{V} = \frac{(-1)^{n(n-1)/2}}{n!} \underbrace{\omega \wedge \omega \wedge \dots \wedge \omega}_{n \text{ times}} = dq_1 \wedge \dots \wedge dq_n \wedge dp_1 \wedge \dots \wedge dp_n\]</span> Because <span class="math inline">\(\psi^* \omega = \omega\)</span>, it follows immediately that: <span class="math display">\[\psi^* d\mathcal{V} = d\mathcal{V}\]</span> <strong>Liouville’s Theorem:</strong> <em>The volume of any arbitrary region in phase space is strictly conserved under the continuous time-evolution flow of a Hamiltonian system.</em></p>
+<hr>
+</section>
+</section>
+<section id="hamiltons-equations-and-poisson-brackets" class="level3" data-number="2.3">
+<h3 data-number="2.3" class="anchored" data-anchor-id="hamiltons-equations-and-poisson-brackets"><span class="header-section-number">2.3</span> 2.3 Hamilton’s Equations and Poisson Brackets</h3>
+<p>Given a smooth Hamiltonian function <span class="math inline">\(H(\vec{q}, \vec{p}, t)\)</span>, Hamilton’s equations of motion are: <span class="math display">\[\dot{q}_i = \frac{\partial H}{\partial p_i}, \quad \dot{p}_i = -\frac{\partial H}{\partial q_i}\]</span> In compact symplectic notation: <span class="math display">\[\dot{\vec{z}} = \Omega \nabla_{\vec{z}} H(\vec{z})\]</span></p>
+<p>The <strong>Poisson Bracket</strong> of two observables <span class="math inline">\(F, G: \mathcal{M} \to \mathbb{R}\)</span> is defined as: <span class="math display">\[\{F, G\} = \sum_{i=1}^n \left(\frac{\partial F}{\partial q_i}\frac{\partial G}{\partial p_i} - \frac{\partial F}{\partial p_i}\frac{\partial G}{\partial q_i}\right) = (\nabla F)^T \Omega (\nabla G)\]</span> The time evolution of any observable <span class="math inline">\(F\)</span> is given by: <span class="math display">\[\frac{dF}{dt} = \{F, H\} + \frac{\partial F}{\partial t}\]</span> An observable <span class="math inline">\(F\)</span> is a <strong>conserved first integral</strong> if and only if <span class="math inline">\(\{F, H\} = 0\)</span>.</p>
+<hr>
+</section>
+</section>
+<section id="symplectic-integrators-from-first-principles" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="symplectic-integrators-from-first-principles"><span class="header-section-number">3</span> 3. Symplectic Integrators from First Principles</h2>
+<section id="operator-splitting-and-the-lie-poisson-formalism" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="operator-splitting-and-the-lie-poisson-formalism"><span class="header-section-number">3.1</span> 3.1 Operator Splitting and the Lie-Poisson Formalism</h3>
+<p>Consider a separable Hamiltonian describing kinetic energy <span class="math inline">\(T(\vec{p})\)</span> and potential energy <span class="math inline">\(V(\vec{q})\)</span>: <span class="math display">\[H(\vec{q}, \vec{p}) = T(\vec{p}) + V(\vec{q}) = \frac{1}{2} \vec{p}^T M^{-1} \vec{p} + V(\vec{q})\]</span></p>
+<p>The Hamiltonian vector field generates time evolution via the formal exponential Lie operator: <span class="math display">\[\vec{z}(t) = \exp\left(t \hat{D}_H\right) \vec{z}(0), \quad \text{where } \hat{D}_H f = \{f, H\}\]</span> Since <span class="math inline">\(H = T + V\)</span>, the generator splits into: <span class="math display">\[\hat{D}_H = \hat{D}_T + \hat{D}_V\]</span> where: * <span class="math inline">\(\hat{D}_T \vec{z} = \{ \vec{z}, T \} = (M^{-1} \vec{p}, \mathbf{0})\)</span> (Pure drift step in configuration space). * <span class="math inline">\(\hat{D}_V \vec{z} = \{ \vec{z}, V \} = (\mathbf{0}, -\nabla V(\vec{q}))\)</span> (Pure kick step in momentum space).</p>
+<p>Crucially, <strong>each sub-Hamiltonian <span class="math inline">\(T\)</span> and <span class="math inline">\(V\)</span> can be integrated EXACTLY and analytically</strong>: * <strong>The Drift Map <span class="math inline">\(\Phi_T^\tau\)</span>:</strong> <span class="math display">\[q(t+\tau) = q(t) + \tau M^{-1} p(t), \quad p(t+\tau) = p(t)\]</span> * <strong>The Kick Map <span class="math inline">\(\Phi_V^\tau\)</span>:</strong> <span class="math display">\[q(t+\tau) = q(t), \quad p(t+\tau) = p(t) - \tau \nabla V(q(t))\]</span></p>
+<p>Both <span class="math inline">\(\Phi_T^\tau\)</span> and <span class="math inline">\(\Phi_V^\tau\)</span> are <strong>exact shears in phase space</strong>, having unit Jacobian determinants: <span class="math display">\[J_T = \begin{pmatrix} I &amp; \tau M^{-1} \\ 0 &amp; I \end{pmatrix} \implies \det J_T = 1, \quad J_V = \begin{pmatrix} I &amp; 0 \\ -\tau \nabla^2 V &amp; I \end{pmatrix} \implies \det J_V = 1\]</span> Because the product of two symplectic matrices is symplectic, <strong>any composition of exact drift and kick maps is unconditionally, exactly symplectic!</strong></p>
+<hr>
+</section>
+<section id="the-verlet-and-velocity-verlet-algorithms" class="level3" data-number="3.2">
+<h3 data-number="3.2" class="anchored" data-anchor-id="the-verlet-and-velocity-verlet-algorithms"><span class="header-section-number">3.2</span> 3.2 The Verlet and Velocity-Verlet Algorithms</h3>
+<p>The 2nd-order symmetric composition (Strang splitting) gives the celebrated <strong>Velocity-Verlet</strong> integrator: <span class="math display">\[\Psi_2^\tau = \Phi_V^{\tau/2} \circ \Phi_T^\tau \circ \Phi_V^{\tau/2}\]</span></p>
+<section id="algorithmic-execution-steps" class="level4" data-number="3.2.1">
+<h4 data-number="3.2.1" class="anchored" data-anchor-id="algorithmic-execution-steps"><span class="header-section-number">3.2.1</span> Algorithmic Execution Steps:</h4>
+<ol type="1">
+<li><strong>Half-Step Kick:</strong> <span class="math display">\[\vec{p}_{n + 1/2} = \vec{p}_n - \frac{\tau}{2} \nabla V(\vec{q}_n)\]</span></li>
+<li><strong>Full-Step Drift:</strong> <span class="math display">\[\vec{q}_{n+1} = \vec{q}_n + \tau M^{-1} \vec{p}_{n + 1/2}\]</span></li>
+<li><strong>Half-Step Kick:</strong> <span class="math display">\[\vec{p}_{n+1} = \vec{p}_{n + 1/2} - \frac{\tau}{2} \nabla V(\vec{q}_{n+1})\]</span></li>
+</ol>
+</section>
+<section id="key-geometric-properties" class="level4" data-number="3.2.2">
+<h4 data-number="3.2.2" class="anchored" data-anchor-id="key-geometric-properties"><span class="header-section-number">3.2.2</span> Key Geometric Properties:</h4>
+<ul>
+<li><strong>Symplectic:</strong> Exactly satisfies <span class="math inline">\(J^T \Omega J = \Omega\)</span>.</li>
+<li><strong>Time-Reversible:</strong> Inverting <span class="math inline">\(\tau \to -\tau\)</span> and reversing velocities traces the exact identical trajectory backwards in time.</li>
+<li><strong>Global Order:</strong> <span class="math inline">\(\mathcal{O}(\tau^2)\)</span> local error, <span class="math inline">\(\mathcal{O}(\tau^2)\)</span> global trajectory error.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="high-order-symplectic-splitting-the-yoshida-4th-order-integrator" class="level3" data-number="3.3">
+<h3 data-number="3.3" class="anchored" data-anchor-id="high-order-symplectic-splitting-the-yoshida-4th-order-integrator"><span class="header-section-number">3.3</span> 3.3 High-Order Symplectic Splitting: The Yoshida 4th-Order Integrator</h3>
+<p>Can we construct an unconditionally symplectic integrator of order 4?<br>
+In 1990, <strong>Haruo Yoshida</strong> proved that any 2nd-order symmetric integrator <span class="math inline">\(\Psi_2^\tau\)</span> can be combined into a 4th-order symmetric symplectic integrator <span class="math inline">\(\Psi_4^\tau\)</span> via fractal composition: <span class="math display">\[\Psi_4^\tau = \Psi_2^{w_1 \tau} \circ \Psi_2^{w_0 \tau} \circ \Psi_2^{w_1 \tau}\]</span></p>
+<section id="derivation-of-the-yoshida-coefficients" class="level4" data-number="3.3.1">
+<h4 data-number="3.3.1" class="anchored" data-anchor-id="derivation-of-the-yoshida-coefficients"><span class="header-section-number">3.3.1</span> Derivation of the Yoshida Coefficients:</h4>
+<p>By the Baker-Campbell-Hausdorff (BCH) formula: <span class="math display">\[\Psi_2^\tau = \exp\left(\tau \hat{D}_H + \tau^3 \hat{D}_3 + \tau^5 \hat{D}_5 + \dots\right)\]</span> The composition of three symmetric steps of lengths <span class="math inline">\(w_1 \tau, w_0 \tau, w_1 \tau\)</span> yields: <span class="math display">\[\Psi_4^\tau = \exp\left( (2w_1 + w_0) \tau \hat{D}_H + (2w_1^3 + w_0^3) \tau^3 \hat{D}_3 + \mathcal{O}(\tau^5) \right)\]</span> To eliminate the <span class="math inline">\(\tau^3\)</span> error term while preserving consistency ($ au^1$ coefficient equals 1): <span class="math display">\[2w_1 + w_0 = 1\]</span> <span class="math display">\[2w_1^3 + w_0^3 = 0\]</span></p>
+<p>Solving this non-linear algebraic system: <span class="math display">\[w_0^3 = -2w_1^3 \implies w_0 = -2^{1/3} w_1\]</span> Substituting into the first equation: <span class="math display">\[2w_1 - 2^{1/3} w_1 = 1 \implies w_1 \left(2 - 2^{1/3}\right) = 1\]</span> <span class="math display">\[w_1 = \frac{1}{2 - 2^{1/3}} \approx 1.351207191959657\]</span> <span class="math display">\[w_0 = -\frac{2^{1/3}}{2 - 2^{1/3}} = 1 - 2w_1 \approx -1.702414383919315\]</span></p>
+<p><em>(Remarkable Fact: To achieve 4th-order accuracy, the intermediate step <span class="math inline">\(w_0\)</span> must step <strong>backwards in time</strong>!)</em></p>
+<hr>
+</section>
+</section>
+<section id="backward-error-analysis-and-the-shadow-hamiltonian" class="level3" data-number="3.4">
+<h3 data-number="3.4" class="anchored" data-anchor-id="backward-error-analysis-and-the-shadow-hamiltonian"><span class="header-section-number">3.4</span> 3.4 Backward Error Analysis and the “Shadow Hamiltonian”</h3>
+<p>Why do symplectic integrators conserve energy so extraordinarily well without secular drift?<br>
+The answer is revealed by <strong>Backward Error Analysis</strong> (Moser, Benettin, Hairer).</p>
+<p>When you run a symplectic integrator <span class="math inline">\(\Psi^\tau\)</span> on a Hamiltonian <span class="math inline">\(H\)</span>, <strong>the numerical points do NOT follow the exact trajectory of <span class="math inline">\(H\)</span></strong>. Instead, they follow the <strong>EXACT trajectory of a modified “Shadow Hamiltonian” <span class="math inline">\(\tilde{H}\)</span></strong>: <span class="math display">\[\tilde{H}(\vec{q}, \vec{p}) = H(\vec{q}, \vec{p}) + \tau^2 H_2(\vec{q}, \vec{p}) + \tau^4 H_4(\vec{q}, \vec{p}) + \dots\]</span></p>
+<p>Because <span class="math inline">\(\Psi^\tau\)</span> is the exact flow of <span class="math inline">\(\tilde{H}\)</span>, the modified energy <span class="math inline">\(\tilde{H}(\vec{q}_n, \vec{p}_n)\)</span> is <strong>strictly, exactly conserved</strong>! <span class="math display">\[\tilde{H}(\vec{q}_n, \vec{p}_n) = \text{const}\]</span> Therefore, the true physical energy <span class="math inline">\(H\)</span> fluctuates within an extremely narrow bounded band: <span class="math display">\[|H(\vec{q}_n, \vec{p}_n) - H(\vec{q}_0, \vec{p}_0)| = \mathcal{O}(\tau^p)\]</span> <strong>There is zero secular drift over exponentially long times <span class="math inline">\(\sim e^{c/\tau}\)</span>!</strong><br>
+In contrast, standard RK4 does not possess a shadow Hamiltonian; its energy drifts linearly or quadratically with time: <span class="math inline">\(\Delta E_{\text{RK4}}(t) \sim t \tau^4\)</span>.</p>
+<hr>
+</section>
+</section>
+<section id="boundary-value-problems-and-spectral-methods" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="boundary-value-problems-and-spectral-methods"><span class="header-section-number">4</span> 4. Boundary Value Problems and Spectral Methods</h2>
+<section id="finite-differences-vs.-spectral-convergence" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="finite-differences-vs.-spectral-convergence"><span class="header-section-number">4.1</span> 4.1 Finite Differences vs.&nbsp;Spectral Convergence</h3>
+<p>When solving differential equations on spatial grids: * <strong>Finite Difference / Finite Element Methods:</strong> Local polynomial interpolation. Error decays algebraically: <span class="math display">\[\text{Error} \sim \mathcal{O}(N^{-p}) \quad (p = 2, 4)\]</span> * <strong>Spectral Methods (Fourier / Chebyshev):</strong> Global expansion in orthogonal polynomials. For analytic functions, error decays <strong>exponentially fast (spectral accuracy)</strong>: <span class="math display">\[\text{Error} \sim \mathcal{O}\left(e^{-c N}\right)\]</span></p>
+<pre><code>                         GRID CONVERGENCE SCALING
+                         
+  Log(Error)
+      │
+      │   \   Finite Difference O(N^-2)
+      │    \
+      │     \
+      │      \   Finite Difference O(N^-4)
+      │       \
+      │        \
+      │         \   Spectral Method O(e^-cN)  (Exponential Cliff!)
+      │          \
+      │           \
+      └────────────┴───────────────────────────► Number of Grid Points N</code></pre>
+<hr>
+</section>
+<section id="chebyshev-differentiation-matrices" class="level3" data-number="4.2">
+<h3 data-number="4.2" class="anchored" data-anchor-id="chebyshev-differentiation-matrices"><span class="header-section-number">4.2</span> 4.2 Chebyshev Differentiation Matrices</h3>
+<p>For non-periodic boundary value problems on <span class="math inline">\([-1, 1]\)</span>, equispaced grids cause catastrophic divergence near boundaries (<strong>Runge’s Phenomenon</strong>).<br>
+The cure is the <strong>Chebyshev-Gauss-Lobatto (CGL) grid</strong>: <span class="math display">\[x_j = \cos\left(\frac{\pi j}{N}\right), \quad j = 0, 1, \dots, N\]</span> These nodes are the horizontal projections of equally spaced points on the unit semicircle, clustering densely near the boundaries <span class="math inline">\(x = \pm 1\)</span> with density <span class="math inline">\(\propto 1/\sqrt{1 - x^2}\)</span>.</p>
+<p>The spectral derivative of an arbitrary vector of function values <span class="math inline">\(\vec{u} = (u(x_0), \dots, u(x_N))^T\)</span> is computed via a single dense matrix-vector product: <span class="math display">\[\vec{u}' = D_N \vec{u}\]</span> where <span class="math inline">\(D_N\)</span> is the <strong>Chebyshev Differentiation Matrix</strong>: <span class="math display">\[(D_N)_{jk} = \begin{cases} \frac{c_j}{c_k} \frac{(-1)^{j+k}}{x_j - x_k} &amp; j \neq k \\ -\frac{x_j}{2(1 - x_j^2)} &amp; 1 \le j = k \le N - 1 \\ \frac{2N^2 + 1}{6} &amp; j = k = 0 \\ -\frac{2N^2 + 1}{6} &amp; j = k = N \end{cases}\]</span> where <span class="math inline">\(c_0 = c_N = 2\)</span> and <span class="math inline">\(c_j = 1\)</span> otherwise.</p>
+<p>Higher derivatives are obtained by matrix exponentiation: <span class="math inline">\(\vec{u}'' = D_N^2 \vec{u}\)</span>.</p>
+<hr>
+</section>
+<section id="solving-the-time-independent-schrödinger-equation-tise" class="level3" data-number="4.3">
+<h3 data-number="4.3" class="anchored" data-anchor-id="solving-the-time-independent-schrödinger-equation-tise"><span class="header-section-number">4.3</span> 4.3 Solving the Time-Independent Schrödinger Equation (TISE)</h3>
+<p>The 1D TISE is: <span class="math display">\[\hat{H}\psi(x) = \left(-\frac{\hbar^2}{2m}\frac{d^2}{dx^2} + V(x)\right)\psi(x) = E\psi(x)\]</span> Discretizing on a Chebyshev grid with <span class="math inline">\(N\)</span> interior nodes, the differential operator becomes a finite <span class="math inline">\(N \times N\)</span> matrix: <span class="math display">\[H_{\text{spec}} = -\frac{\hbar^2}{2m} D_N^2 + \operatorname{diag}(V(x_0), \dots, V(x_N))\]</span> Solving for energy eigenvalues and quantum eigenstates reduces to a standard <strong>matrix eigenvalue problem</strong>: <span class="math display">\[H_{\text{spec}} \vec{\psi}_k = E_k \vec{\psi}_k\]</span> This yields machine-precision quantum ground and excited states with as few as <span class="math inline">\(N = 64\)</span> grid points!</p>
+<hr>
+</section>
+</section>
+<section id="quantum-dynamics-split-operator-fft-for-the-tdse" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="quantum-dynamics-split-operator-fft-for-the-tdse"><span class="header-section-number">5</span> 5. Quantum Dynamics: Split-Operator FFT for the TDSE</h2>
+<p>The Time-Dependent Schrödinger Equation (TDSE) describes non-relativistic wavepacket dynamics: <span class="math display">\[i\hbar \frac{\partial \psi(x, t)}{\partial t} = \left(-\frac{\hbar^2}{2m}\frac{\partial^2}{\partial x^2} + V(x)\right)\psi(x, t) = (\hat{T} + \hat{V})\psi(x, t)\]</span></p>
+<p>The formal solution is given by the unitary time evolution operator: <span class="math display">\[\psi(x, t + \Delta t) = \exp\left(-\frac{i}{\hbar}(\hat{T} + \hat{V})\Delta t\right)\psi(x, t)\]</span></p>
+<section id="the-strang-unitary-splitting" class="level3" data-number="5.1">
+<h3 data-number="5.1" class="anchored" data-anchor-id="the-strang-unitary-splitting"><span class="header-section-number">5.1</span> 5.1 The Strang Unitary Splitting</h3>
+<p>Because kinetic energy <span class="math inline">\(\hat{T} = \frac{\hat{p}^2}{2m}\)</span> and potential energy <span class="math inline">\(\hat{V} = V(\hat{x})\)</span> do not commute (<span class="math inline">\([\hat{x}, \hat{p}] = i\hbar\)</span>), their matrix exponential cannot be factored simply. Applying the symmetric Strang splitting: <span class="math display">\[\exp\left(-\frac{i}{\hbar}(\hat{T} + \hat{V})\Delta t\right) = \exp\left(-\frac{i}{2\hbar}\hat{V}\Delta t\right) \exp\left(-\frac{i}{\hbar}\hat{T}\Delta t\right) \exp\left(-\frac{i}{2\hbar}\hat{V}\Delta t\right) + \mathcal{O}(\Delta t^3)\]</span></p>
+<section id="the-spatial-momentum-dual-trick" class="level4" data-number="5.1.1">
+<h4 data-number="5.1.1" class="anchored" data-anchor-id="the-spatial-momentum-dual-trick"><span class="header-section-number">5.1.1</span> The Spatial-Momentum Dual Trick:</h4>
+<ul>
+<li><span class="math inline">\(\hat{V}\)</span> is <strong>strictly diagonal in position space <span class="math inline">\(x\)</span></strong>: <span class="math inline">\(\exp\left(-\frac{i}{2\hbar}V(x)\Delta t\right)\)</span> is a simple pointwise complex multiplication!</li>
+<li><span class="math inline">\(\hat{T}\)</span> is <strong>strictly diagonal in momentum space <span class="math inline">\(p\)</span></strong>: <span class="math inline">\(\exp\left(-\frac{i}{\hbar}\frac{p^2}{2m}\Delta t\right)\)</span> is a simple pointwise complex multiplication in Fourier space!</li>
+</ul>
+<pre><code>                      THE SPLIT-OPERATOR FFT ALGORITHM
+                      
+      Position Space psi(x)               Momentum Space psi_tilde(p)
+      ─────────────────────               ───────────────────────────
+      [ Initial State psi(x) ]
+                 │
+                 ▼ Pointwise: exp(-i V(x) dt / 2hbar)
+      [ Half-Kick in x ]
+                 │
+                 │─────── Fast Fourier Transform (FFT) ───────►
+                 │                                            │
+                                                              ▼ Pointwise: exp(-i p^2 dt / 2m hbar)
+                                                     [ Full-Drift in p ]
+                                                              │
+                 │◄─── Inverse Fast Fourier Transform (IFFT) ─│
+                 │
+                 ▼ Pointwise: exp(-i V(x) dt / 2hbar)
+      [ Half-Kick in x ]
+                 │
+                 ▼
+      [ Next State psi(x, t + dt) ]</code></pre>
+</section>
+</section>
+<section id="algorithmic-invariants-and-unconditional-stability" class="level3" data-number="5.2">
+<h3 data-number="5.2" class="anchored" data-anchor-id="algorithmic-invariants-and-unconditional-stability"><span class="header-section-number">5.2</span> 5.2 Algorithmic Invariants and Unconditional Stability</h3>
+<ol type="1">
+<li><strong>Exact Unitarity:</strong> Because both exponential factors are diagonal phases (<span class="math inline">\(|e^{-i \theta}| = 1\)</span>), the discrete <span class="math inline">\(L^2\)</span> norm of the wave function is conserved to machine precision: <span class="math display">\[\int |\psi(x, t)|^2 dx = 1 \quad \forall t \ge 0\]</span></li>
+<li><strong>Unconditional Stability:</strong> Unlike explicit finite difference schemes (which suffer from the stringent Courant-Friedrichs-Lewy condition <span class="math inline">\(\Delta t \le \frac{m \Delta x^2}{2\hbar}\)</span>), the Split-Operator FFT scheme is <strong>unconditionally stable for any time step <span class="math inline">\(\Delta t\)</span></strong>!</li>
+</ol>
+<hr>
+</section>
+</section>
+<section id="statistical-mechanics-and-markov-chain-monte-carlo-mcmc" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="statistical-mechanics-and-markov-chain-monte-carlo-mcmc"><span class="header-section-number">6</span> 6. Statistical Mechanics and Markov Chain Monte Carlo (MCMC)</h2>
+<section id="the-canonical-ensemble-and-the-combinatorial-explosion" class="level3" data-number="6.1">
+<h3 data-number="6.1" class="anchored" data-anchor-id="the-canonical-ensemble-and-the-combinatorial-explosion"><span class="header-section-number">6.1</span> 6.1 The Canonical Ensemble and the Combinatorial Explosion</h3>
+<p>In equilibrium statistical mechanics, the probability of finding a system in a microstate <span class="math inline">\(\sigma\)</span> with energy <span class="math inline">\(E(\sigma)\)</span> at temperature <span class="math inline">\(T\)</span> is given by the <strong>Boltzmann distribution</strong>: <span class="math display">\[P(\sigma) = \frac{1}{Z} e^{-\beta E(\sigma)}, \quad \beta = \frac{1}{k_B T}\]</span> where the normalizer is the <strong>canonical partition function</strong>: <span class="math display">\[Z = \sum_{\sigma \in \Omega} e^{-\beta E(\sigma)}\]</span></p>
+<p>For a modest <span class="math inline">\(20 \times 20\)</span> lattice of magnetic spins <span class="math inline">\(\sigma_i \in \{-1, +1\}\)</span>, the configuration space contains: <span class="math display">\[|\Omega| = 2^{400} \approx 2.58 \times 10^{120} \text{ states}\]</span> Evaluating <span class="math inline">\(Z\)</span> by exhaustive summation would require longer than the lifetime of the universe.</p>
+<hr>
+</section>
+<section id="the-metropolis-hastings-algorithm" class="level3" data-number="6.2">
+<h3 data-number="6.2" class="anchored" data-anchor-id="the-metropolis-hastings-algorithm"><span class="header-section-number">6.2</span> 6.2 The Metropolis-Hastings Algorithm</h3>
+<p>Instead of evaluating the denominator <span class="math inline">\(Z\)</span>, <strong>Markov Chain Monte Carlo (MCMC)</strong> constructs a random walk in configuration space whose stationary distribution is precisely the Boltzmann distribution.</p>
+<p>To guarantee that the Markov chain converges to <span class="math inline">\(P(\sigma)\)</span>, the transition probabilities <span class="math inline">\(W(\sigma \to \sigma')\)</span> must satisfy the <strong>Detailed Balance Condition</strong>: <span class="math display">\[P(\sigma) W(\sigma \to \sigma') = P(\sigma') W(\sigma' \to \sigma)\]</span> Rearranging: <span class="math display">\[\frac{W(\sigma \to \sigma')}{W(\sigma' \to \sigma)} = \frac{P(\sigma')}{P(\sigma)} = \frac{e^{-\beta E(\sigma')}}{e^{-\beta E(\sigma)}} = e^{-\beta \Delta E}\]</span> where <span class="math inline">\(\Delta E = E(\sigma') - E(\sigma)\)</span>. Notice that the intractable partition function <span class="math inline">\(Z\)</span> <strong>cancels completely!</strong></p>
+<section id="the-metropolis-acceptance-criterion" class="level4" data-number="6.2.1">
+<h4 data-number="6.2.1" class="anchored" data-anchor-id="the-metropolis-acceptance-criterion"><span class="header-section-number">6.2.1</span> The Metropolis Acceptance Criterion:</h4>
+<p>Propose a trial move <span class="math inline">\(\sigma \to \sigma'\)</span> by selecting a single random spin <span class="math inline">\(\sigma_i\)</span> and flipping it (<span class="math inline">\(\sigma_i \to -\sigma_i\)</span>).<br>
+Accept the flip with probability: <span class="math display">\[\alpha(\sigma \to \sigma') = \min\left(1, e^{-\beta \Delta E}\right)\]</span> * If <span class="math inline">\(\Delta E \le 0\)</span> (the flip lowers or maintains energy), <strong>accept unconditionally</strong> (probability 1). * If <span class="math inline">\(\Delta E &gt; 0\)</span> (the flip raises energy), generate a uniform random number <span class="math inline">\(r \sim U(0, 1)\)</span> and accept if: <span class="math display">\[r &lt; e^{-\beta \Delta E}\]</span></p>
+<hr>
+</section>
+</section>
+<section id="the-2d-ising-model-and-onsagers-phase-transition" class="level3" data-number="6.3">
+<h3 data-number="6.3" class="anchored" data-anchor-id="the-2d-ising-model-and-onsagers-phase-transition"><span class="header-section-number">6.3</span> 6.3 The 2D Ising Model and Onsager’s Phase Transition</h3>
+<p>The 2D ferromagnetic Ising model on a square periodic lattice of size <span class="math inline">\(L \times L\)</span> has energy: <span class="math display">\[E(\sigma) = -J \sum_{\langle i, j \rangle} \sigma_i \sigma_j\]</span> where <span class="math inline">\(\langle i, j \rangle\)</span> denotes nearest-neighbor pairs.</p>
+<p>In 1944, <strong>Lars Onsager</strong> published an exact analytical solution for the infinite 2D Ising model, proving the existence of a continuous 2nd-order ferromagnetic phase transition at the critical temperature: <span class="math display">\[\frac{k_B T_c}{J} = \frac{2}{\ln\left(1 + \sqrt{2}\right)} \approx 2.2691853\]</span> Below <span class="math inline">\(T_c\)</span>, spontaneous symmetry breaking occurs: spins align into macroscopic domains with non-zero spontaneous magnetization: <span class="math display">\[M(T) = \left(1 - \sinh^{-4}(2\beta J)\right)^{1/8} \quad (T &lt; T_c)\]</span></p>
+<hr>
+</section>
+</section>
+<section id="comprehensive-benchmarking-laboratory-in-python" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="comprehensive-benchmarking-laboratory-in-python"><span class="header-section-number">7</span> 7. Comprehensive Benchmarking Laboratory in Python</h2>
+<p>The following Python laboratory implements: 1. <strong>Kepler Two-Body Problem:</strong> Exact numerical comparison of RK4 vs.&nbsp;4th-Order Symplectic Yoshida Integrator, demonstrating energy boundedness. 2. <strong>Split-Operator FFT:</strong> Quantum wavepacket tunneling through a potential barrier. 3. <strong>2D Ising Model Metropolis MCMC:</strong> Spontaneous magnetization curve near <span class="math inline">\(T_c\)</span>.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== LAB 1: KEPLER ORBIT — RK4 VS. 4TH-ORDER SYMPLECTIC YOSHIDA ==="</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Gravitational parameters (G*M = 1)</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Hamiltonian: H(q, p) = 0.5 * |p|^2 - 1 / |q|</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> H_kepler(q, p):</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="fl">0.5</span> <span class="op">*</span> np.dot(p, p) <span class="op">-</span> <span class="fl">1.0</span> <span class="op">/</span> np.linalg.norm(q)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> force_kepler(q):</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    r <span class="op">=</span> np.linalg.norm(q)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">-</span>q <span class="op">/</span> (r<span class="op">**</span><span class="dv">3</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Classical 4th-Order Runge-Kutta (RK4) Step</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> step_rk4(q, p, dt):</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> deriv(q_curr, p_curr):</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> p_curr, force_kepler(q_curr)</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    k1_q, k1_p <span class="op">=</span> deriv(q, p)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    k2_q, k2_p <span class="op">=</span> deriv(q <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span>dt<span class="op">*</span>k1_q, p <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span>dt<span class="op">*</span>k1_p)</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    k3_q, k3_p <span class="op">=</span> deriv(q <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span>dt<span class="op">*</span>k2_q, p <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span>dt<span class="op">*</span>k2_p)</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    k4_q, k4_p <span class="op">=</span> deriv(q <span class="op">+</span> dt<span class="op">*</span>k3_q, p <span class="op">+</span> dt<span class="op">*</span>k3_p)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    q_next <span class="op">=</span> q <span class="op">+</span> (dt <span class="op">/</span> <span class="fl">6.0</span>) <span class="op">*</span> (k1_q <span class="op">+</span> <span class="dv">2</span><span class="op">*</span>k2_q <span class="op">+</span> <span class="dv">2</span><span class="op">*</span>k3_q <span class="op">+</span> k4_q)</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    p_next <span class="op">=</span> p <span class="op">+</span> (dt <span class="op">/</span> <span class="fl">6.0</span>) <span class="op">*</span> (k1_p <span class="op">+</span> <span class="dv">2</span><span class="op">*</span>k2_p <span class="op">+</span> <span class="dv">2</span><span class="op">*</span>k3_p <span class="op">+</span> k4_p)</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> q_next, p_next</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. 4th-Order Symplectic Yoshida Integrator</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>w1 <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> (<span class="fl">2.0</span> <span class="op">-</span> <span class="fl">2.0</span><span class="op">**</span>(<span class="fl">1.0</span><span class="op">/</span><span class="fl">3.0</span>))</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>w0 <span class="op">=</span> <span class="fl">1.0</span> <span class="op">-</span> <span class="fl">2.0</span> <span class="op">*</span> w1</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> step_velocity_verlet(q, p, tau):</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>    p_half <span class="op">=</span> p <span class="op">+</span> <span class="fl">0.5</span> <span class="op">*</span> tau <span class="op">*</span> force_kepler(q)</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>    q_next <span class="op">=</span> q <span class="op">+</span> tau <span class="op">*</span> p_half</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>    p_next <span class="op">=</span> p_half <span class="op">+</span> <span class="fl">0.5</span> <span class="op">*</span> tau <span class="op">*</span> force_kepler(q_next)</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> q_next, p_next</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> step_yoshida(q, p, dt):</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>    q, p <span class="op">=</span> step_velocity_verlet(q, p, w1 <span class="op">*</span> dt)</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>    q, p <span class="op">=</span> step_velocity_verlet(q, p, w0 <span class="op">*</span> dt)</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>    q, p <span class="op">=</span> step_velocity_verlet(q, p, w1 <span class="op">*</span> dt)</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> q, p</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a><span class="co"># Initial conditions: Elliptical Kepler orbit with eccentricity e = 0.6</span></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>q0 <span class="op">=</span> np.array([<span class="fl">1.0</span> <span class="op">-</span> <span class="fl">0.6</span>, <span class="fl">0.0</span>]) <span class="co"># Perihelion at r = 0.4</span></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>v_y <span class="op">=</span> np.sqrt((<span class="fl">1.0</span> <span class="op">+</span> <span class="fl">0.6</span>) <span class="op">/</span> <span class="fl">0.4</span>) <span class="co"># Specific angular momentum</span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>p0 <span class="op">=</span> np.array([<span class="fl">0.0</span>, v_y])</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>E0 <span class="op">=</span> H_kepler(q0, p0)</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>dt <span class="op">=</span> <span class="fl">0.02</span></span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>num_steps <span class="op">=</span> <span class="dv">50000</span> <span class="co"># ~150 complete orbits</span></span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a><span class="co"># Run RK4</span></span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>q_rk, p_rk <span class="op">=</span> np.copy(q0), np.copy(p0)</span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(num_steps):</span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>    q_rk, p_rk <span class="op">=</span> step_rk4(q_rk, p_rk, dt)</span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>E_rk_final <span class="op">=</span> H_kepler(q_rk, p_rk)</span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a><span class="co"># Run Yoshida Symplectic</span></span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a>q_yo, p_yo <span class="op">=</span> np.copy(q0), np.copy(p0)</span>
+<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(num_steps):</span>
+<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a>    q_yo, p_yo <span class="op">=</span> step_yoshida(q_yo, p_yo, dt)</span>
+<span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a>E_yo_final <span class="op">=</span> H_kepler(q_yo, p_yo)</span>
+<span id="cb4-64"><a href="#cb4-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-65"><a href="#cb4-65" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Initial Energy E0:           </span><span class="sc">{</span>E0<span class="sc">:.8f}</span><span class="ss">"</span>)</span>
+<span id="cb4-66"><a href="#cb4-66" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Final Energy RK4:            </span><span class="sc">{</span>E_rk_final<span class="sc">:.8f}</span><span class="ss"> | Absolute Drift: </span><span class="sc">{</span><span class="bu">abs</span>(E_rk_final <span class="op">-</span> E0)<span class="sc">:.4e}</span><span class="ss">"</span>)</span>
+<span id="cb4-67"><a href="#cb4-67" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Final Energy Yoshida (Symp): </span><span class="sc">{</span>E_yo_final<span class="sc">:.8f}</span><span class="ss"> | Absolute Drift: </span><span class="sc">{</span><span class="bu">abs</span>(E_yo_final <span class="op">-</span> E0)<span class="sc">:.4e}</span><span class="ss">"</span>)</span>
+<span id="cb4-68"><a href="#cb4-68" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Symplectic Integrator is </span><span class="sc">{</span><span class="bu">abs</span>(E_rk_final <span class="op">-</span> E0) <span class="op">/</span> <span class="bu">max</span>(<span class="bu">abs</span>(E_yo_final <span class="op">-</span> E0), <span class="fl">1e-16</span>)<span class="sc">:.1f}</span><span class="ss">x more energy-conserving!"</span>)</span>
+<span id="cb4-69"><a href="#cb4-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-70"><a href="#cb4-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-71"><a href="#cb4-71" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span></span>
+<span id="cb4-72"><a href="#cb4-72" aria-hidden="true" tabindex="-1"></a><span class="er">=== LAB 2: QUANTUM TUNNELING VIA SPLIT-OPERATOR FFT ===")</span></span>
+<span id="cb4-73"><a href="#cb4-73" aria-hidden="true" tabindex="-1"></a><span class="co"># Discretize 1D space: x in [-20, 20], N = 512 grid points</span></span>
+<span id="cb4-74"><a href="#cb4-74" aria-hidden="true" tabindex="-1"></a>Nx <span class="op">=</span> <span class="dv">512</span></span>
+<span id="cb4-75"><a href="#cb4-75" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.linspace(<span class="op">-</span><span class="fl">20.0</span>, <span class="fl">20.0</span>, Nx, endpoint<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb4-76"><a href="#cb4-76" aria-hidden="true" tabindex="-1"></a>dx <span class="op">=</span> x[<span class="dv">1</span>] <span class="op">-</span> x[<span class="dv">0</span>]</span>
+<span id="cb4-77"><a href="#cb4-77" aria-hidden="true" tabindex="-1"></a>dk <span class="op">=</span> <span class="fl">2.0</span> <span class="op">*</span> np.pi <span class="op">/</span> (Nx <span class="op">*</span> dx)</span>
+<span id="cb4-78"><a href="#cb4-78" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> np.fft.fftfreq(Nx, d<span class="op">=</span>dx) <span class="op">*</span> <span class="fl">2.0</span> <span class="op">*</span> np.pi <span class="co"># Momentum coordinates p = hbar * k</span></span>
+<span id="cb4-79"><a href="#cb4-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-80"><a href="#cb4-80" aria-hidden="true" tabindex="-1"></a><span class="co"># Potential barrier: V(x) = V0 for 0 &lt;= x &lt;= 2, else 0</span></span>
+<span id="cb4-81"><a href="#cb4-81" aria-hidden="true" tabindex="-1"></a>V0 <span class="op">=</span> <span class="fl">5.0</span></span>
+<span id="cb4-82"><a href="#cb4-82" aria-hidden="true" tabindex="-1"></a>V <span class="op">=</span> np.where((x <span class="op">&gt;=</span> <span class="fl">0.0</span>) <span class="op">&amp;</span> (x <span class="op">&lt;=</span> <span class="fl">2.0</span>), V0, <span class="fl">0.0</span>)</span>
+<span id="cb4-83"><a href="#cb4-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-84"><a href="#cb4-84" aria-hidden="true" tabindex="-1"></a><span class="co"># Initial Gaussian wavepacket centered at x = -8 with momentum k0 = 3.0</span></span>
+<span id="cb4-85"><a href="#cb4-85" aria-hidden="true" tabindex="-1"></a>x0, k0, sigma <span class="op">=</span> <span class="op">-</span><span class="fl">8.0</span>, <span class="fl">3.0</span>, <span class="fl">1.0</span></span>
+<span id="cb4-86"><a href="#cb4-86" aria-hidden="true" tabindex="-1"></a>psi <span class="op">=</span> np.exp(<span class="op">-</span><span class="fl">0.5</span> <span class="op">*</span> ((x <span class="op">-</span> x0)<span class="op">/</span>sigma)<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span> np.exp(<span class="ot">1j</span> <span class="op">*</span> k0 <span class="op">*</span> x)</span>
+<span id="cb4-87"><a href="#cb4-87" aria-hidden="true" tabindex="-1"></a>psi <span class="op">/=</span> np.sqrt(np.<span class="bu">sum</span>(np.<span class="bu">abs</span>(psi)<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span> dx) <span class="co"># Normalize</span></span>
+<span id="cb4-88"><a href="#cb4-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-89"><a href="#cb4-89" aria-hidden="true" tabindex="-1"></a>dt_q <span class="op">=</span> <span class="fl">0.01</span></span>
+<span id="cb4-90"><a href="#cb4-90" aria-hidden="true" tabindex="-1"></a>half_kick_phase <span class="op">=</span> np.exp(<span class="op">-</span><span class="ot">1j</span> <span class="op">*</span> <span class="fl">0.5</span> <span class="op">*</span> V <span class="op">*</span> dt_q)</span>
+<span id="cb4-91"><a href="#cb4-91" aria-hidden="true" tabindex="-1"></a>drift_phase <span class="op">=</span> np.exp(<span class="op">-</span><span class="ot">1j</span> <span class="op">*</span> <span class="fl">0.5</span> <span class="op">*</span> (k<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span> dt_q)</span>
+<span id="cb4-92"><a href="#cb4-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-93"><a href="#cb4-93" aria-hidden="true" tabindex="-1"></a><span class="co"># Evolve for 400 time steps</span></span>
+<span id="cb4-94"><a href="#cb4-94" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">400</span>):</span>
+<span id="cb4-95"><a href="#cb4-95" aria-hidden="true" tabindex="-1"></a>    psi <span class="op">=</span> half_kick_phase <span class="op">*</span> psi</span>
+<span id="cb4-96"><a href="#cb4-96" aria-hidden="true" tabindex="-1"></a>    psi_k <span class="op">=</span> np.fft.fft(psi)</span>
+<span id="cb4-97"><a href="#cb4-97" aria-hidden="true" tabindex="-1"></a>    psi_k <span class="op">=</span> drift_phase <span class="op">*</span> psi_k</span>
+<span id="cb4-98"><a href="#cb4-98" aria-hidden="true" tabindex="-1"></a>    psi <span class="op">=</span> np.fft.ifft(psi_k)</span>
+<span id="cb4-99"><a href="#cb4-99" aria-hidden="true" tabindex="-1"></a>    psi <span class="op">=</span> half_kick_phase <span class="op">*</span> psi</span>
+<span id="cb4-100"><a href="#cb4-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-101"><a href="#cb4-101" aria-hidden="true" tabindex="-1"></a>norm_final <span class="op">=</span> np.<span class="bu">sum</span>(np.<span class="bu">abs</span>(psi)<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span> dx</span>
+<span id="cb4-102"><a href="#cb4-102" aria-hidden="true" tabindex="-1"></a>tunneling_prob <span class="op">=</span> np.<span class="bu">sum</span>(np.<span class="bu">abs</span>(psi[x <span class="op">&gt;</span> <span class="fl">2.0</span>])<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span> dx</span>
+<span id="cb4-103"><a href="#cb4-103" aria-hidden="true" tabindex="-1"></a>reflection_prob <span class="op">=</span> np.<span class="bu">sum</span>(np.<span class="bu">abs</span>(psi[x <span class="op">&lt;</span> <span class="fl">0.0</span>])<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span> dx</span>
+<span id="cb4-104"><a href="#cb4-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-105"><a href="#cb4-105" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Norm after 400 steps:      </span><span class="sc">{</span>norm_final<span class="sc">:.8f}</span><span class="ss"> (Exact Unitarity = 1.00000000)"</span>)</span>
+<span id="cb4-106"><a href="#cb4-106" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Tunneling Probability T:   </span><span class="sc">{</span>tunneling_prob<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb4-107"><a href="#cb4-107" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Reflection Probability R:  </span><span class="sc">{</span>reflection_prob<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb4-108"><a href="#cb4-108" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"T + R Conservation Sum:    </span><span class="sc">{</span>tunneling_prob <span class="op">+</span> reflection_prob<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb4-109"><a href="#cb4-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-110"><a href="#cb4-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-111"><a href="#cb4-111" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span></span>
+<span id="cb4-112"><a href="#cb4-112" aria-hidden="true" tabindex="-1"></a><span class="er">=== LAB 3: 2D ISING MODEL METROPOLIS MCMC ===")</span></span>
+<span id="cb4-113"><a href="#cb4-113" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_ising_2d(L, temp, steps<span class="op">=</span><span class="dv">10000</span>):</span>
+<span id="cb4-114"><a href="#cb4-114" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initialize random spin lattice (+1 or -1)</span></span>
+<span id="cb4-115"><a href="#cb4-115" aria-hidden="true" tabindex="-1"></a>    spins <span class="op">=</span> np.random.choice([<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>], size<span class="op">=</span>(L, L))</span>
+<span id="cb4-116"><a href="#cb4-116" aria-hidden="true" tabindex="-1"></a>    beta <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> temp</span>
+<span id="cb4-117"><a href="#cb4-117" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-118"><a href="#cb4-118" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(steps):</span>
+<span id="cb4-119"><a href="#cb4-119" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Pick a random site (i, j)</span></span>
+<span id="cb4-120"><a href="#cb4-120" aria-hidden="true" tabindex="-1"></a>        i, j <span class="op">=</span> np.random.randint(<span class="dv">0</span>, L, size<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb4-121"><a href="#cb4-121" aria-hidden="true" tabindex="-1"></a>        s <span class="op">=</span> spins[i, j]</span>
+<span id="cb4-122"><a href="#cb4-122" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Nearest neighbors with periodic boundary conditions</span></span>
+<span id="cb4-123"><a href="#cb4-123" aria-hidden="true" tabindex="-1"></a>        neighbors <span class="op">=</span> (spins[(i<span class="op">+</span><span class="dv">1</span>)<span class="op">%</span>L, j] <span class="op">+</span> spins[(i<span class="op">-</span><span class="dv">1</span>)<span class="op">%</span>L, j] <span class="op">+</span> </span>
+<span id="cb4-124"><a href="#cb4-124" aria-hidden="true" tabindex="-1"></a>                     spins[i, (j<span class="op">+</span><span class="dv">1</span>)<span class="op">%</span>L] <span class="op">+</span> spins[i, (j<span class="op">-</span><span class="dv">1</span>)<span class="op">%</span>L])</span>
+<span id="cb4-125"><a href="#cb4-125" aria-hidden="true" tabindex="-1"></a>        dE <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> s <span class="op">*</span> neighbors</span>
+<span id="cb4-126"><a href="#cb4-126" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> dE <span class="op">&lt;=</span> <span class="dv">0</span> <span class="kw">or</span> np.random.rand() <span class="op">&lt;</span> np.exp(<span class="op">-</span>beta <span class="op">*</span> dE):</span>
+<span id="cb4-127"><a href="#cb4-127" aria-hidden="true" tabindex="-1"></a>            spins[i, j] <span class="op">=</span> <span class="op">-</span>s</span>
+<span id="cb4-128"><a href="#cb4-128" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb4-129"><a href="#cb4-129" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Measure final absolute magnetization per spin</span></span>
+<span id="cb4-130"><a href="#cb4-130" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">abs</span>(np.mean(spins))</span>
+<span id="cb4-131"><a href="#cb4-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-132"><a href="#cb4-132" aria-hidden="true" tabindex="-1"></a>L <span class="op">=</span> <span class="dv">16</span></span>
+<span id="cb4-133"><a href="#cb4-133" aria-hidden="true" tabindex="-1"></a>temps <span class="op">=</span> [<span class="fl">1.5</span>, <span class="fl">2.0</span>, <span class="fl">2.27</span>, <span class="fl">2.5</span>, <span class="fl">3.5</span>]</span>
+<span id="cb4-134"><a href="#cb4-134" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Lattice Size: 16x16 | Onsager Critical Temp Tc ≈ 2.269"</span>)</span>
+<span id="cb4-135"><a href="#cb4-135" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> T <span class="kw">in</span> temps:</span>
+<span id="cb4-136"><a href="#cb4-136" aria-hidden="true" tabindex="-1"></a>    m <span class="op">=</span> run_ising_2d(L, T, steps<span class="op">=</span><span class="dv">50000</span>)</span>
+<span id="cb4-137"><a href="#cb4-137" aria-hidden="true" tabindex="-1"></a>    phase <span class="op">=</span> <span class="st">"FERROMAGNETIC (Ordered)"</span> <span class="cf">if</span> T <span class="op">&lt;</span> <span class="fl">2.27</span> <span class="cf">else</span> <span class="st">"PARAMAGNETIC (Disordered)"</span></span>
+<span id="cb4-138"><a href="#cb4-138" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Temperature T = </span><span class="sc">{</span>T<span class="sc">:4.2f}</span><span class="ss"> | Magnetization |M| = </span><span class="sc">{</span>m<span class="sc">:.4f}</span><span class="ss"> | Phase: </span><span class="sc">{</span>phase<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+<section id="curated-references-foundational-literature" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="curated-references-foundational-literature"><span class="header-section-number">8</span> 8. Curated References &amp; Foundational Literature</h2>
+<ol type="1">
+<li><strong>Hairer, Ernst, Lubich, Christian, &amp; Wanner, Gerhard (2006)</strong>. <em>Geometric Numerical Integration: Structure-Preserving Algorithms for Ordinary Differential Equations</em> (2nd ed.). Springer Series in Computational Mathematics, Springer-Verlag.</li>
+<li><strong>Yoshida, Haruo (1990)</strong>. <em>“Construction of higher order symplectic integrators”</em>. Physics Letters A, 150(5–7): 262–268.</li>
+<li><strong>Verlet, Loup (1967)</strong>. <em>“Computer ‘Experiments’ on Classical Fluids. I. Thermodynamical Properties of Lennard-Jones Molecules”</em>. Physical Review, 159(1): 98–103.</li>
+<li><strong>Sanz-Serna, J. M., &amp; Calvo, M. P. (1994)</strong>. <em>Numerical Hamiltonian Problems</em>. Chapman &amp; Hall.</li>
+<li><strong>Trefethen, Lloyd N. (2000)</strong>. <em>Spectral Methods in MATLAB</em>. Society for Industrial and Applied Mathematics (SIAM).</li>
+<li><strong>Fleck, J. A., Morris, J. R., &amp; Feit, M. D. (1976)</strong>. <em>“Time-dependent propagation of high energy laser beams through the atmosphere”</em>. Applied Physics, 10(2): 129–160. (First introduction of Split-Operator FFT for wave equations).</li>
+<li><strong>Metropolis, Nicholas, Rosenbluth, Arianna W., Rosenbluth, Marshall N., Teller, Augusta H., &amp; Teller, Edward (1953)</strong>. <em>“Equation of State Calculations by Fast Computing Machines”</em>. The Journal of Chemical Physics, 21(6): 1087–1092.</li>
+<li><strong>Onsager, Lars (1944)</strong>. <em>“Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition”</em>. Physical Review, 65(3–4): 117–149.</li>
+<li><strong>Newman, Mark (2013)</strong>. <em>Computational Physics</em>. CreateSpace.</li>
+<li><strong>Landau, David P., &amp; Binder, Kurt (2021)</strong>. <em>A Guide to Monte Carlo Simulations in Statistical Physics</em> (5th ed.). Cambridge University Press.</li>
+</ol>
+
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const cellDetails = window.document.querySelectorAll(".cell details.code-fold");
+        for (let i=0; i<cellDetails.length; i++) {
+          const details = cellDetails[i];
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell div.sourceCode.cell-code");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/igor-kan\.github\.io\/quarto-writing\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "The Computational Physicist's Engine: Symplectic Integrators, Spectral Methods, and Stochastic Simulation"</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "From Hamiltonian Phase Space Preservation and Verlet/Yoshida Algorithms to Quantum Spectral Solvers and MCMC Statistical Mechanics"</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "Igor Kan"</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> "2026-09-13"</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="an">categories:</span><span class="co"> [Physics, Computational Physics, Hamiltonian Mechanics, Numerical Methods, Symplectic Geometry, Quantum Mechanics, Scientific Computing]</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="an">description:</span><span class="co"> "A rigorous, first-principles masterclass on the computational foundations of modern theoretical and mathematical physics: why standard ODE solvers (Runge-Kutta) fail for Hamiltonian systems, the geometric necessity of symplectic integrators (Verlet, Leapfrog, Forest-Ruth, Yoshida), backward error analysis and shadow Hamiltonians, boundary value spectral collocation methods, unitary split-operator FFT for the time-dependent Schrödinger equation, Markov Chain Monte Carlo (Metropolis-Hastings) for the 2D Ising model, and complete production Python laboratories."</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="an">toc:</span><span class="co"> true</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="an">toc-depth:</span><span class="co"> 4</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="an">number-sections:</span><span class="co"> true</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co">    math: mathjax</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: show</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>::: {.callout-note appearance="simple"}</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>*"A numerical integrator for Hamiltonian dynamics should not merely approximate the trajectory with high local order; it must faithfully respect the symplectic 2-form of phase space. Preserving geometry is infinitely more important than minimizing instantaneous truncation error."*  </span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>— **Foundations of Geometric Numerical Integration**</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip collapse="true"}</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="fu">### Companion Treatises in this Series</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">The Olympiad and Putnam Problem-Solving Machinery for Mathematical Physicists</span><span class="co">](../mathematics/putnam-and-olympiad-mathematical-physics-masterclass.qmd)</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">The Foundations and Horizons of Geometry: From Euclidean Axioms to Olympiad and Putnam Problem Solving</span><span class="co">](../mathematics/geometry-axioms-theorems-olympiad-putnam-guide.qmd)</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Calculus of Variations: Action Principles and Variational Extremals</span><span class="co">](calculus-of-variations.qmd)</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Foundational Primers in Physics, Mathematics, Statistics, and AI: A Self-Directed Master Curriculum</span><span class="co">](../curriculum/foundational-stem-primers-physics-math-cs-ai-roadmap.qmd)</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">The Anatomy of Discovery: Heuristics, Mathematical Intuition, and Breakthrough Problem Solving</span><span class="co">](../cognitive-science/heuristics-problem-solving-mathematical-intuition-and-breakthroughs.qmd)</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a><span class="fu">## 1. Introduction: The Crisis of Standard Numerical Integration</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>In theoretical physics, physical systems are governed by differential equations originating from **variational principles, conservation laws, and geometric invariants**. When physicists transition from analytical pencil-and-paper derivations to numerical simulation on a computer, they encounter an immediate, profound epistemological crisis.</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>For generations, engineering curricula have taught the **Runge-Kutta methods** (especially the classical 4th-order Runge-Kutta, RK4) as the universal gold standard for integrating ordinary differential equations:</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>$$\frac{d\vec{y}}{dt} = \vec{f}(\vec{y}, t)$$</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>Yet, if you apply RK4 to simulate the Solar System, the hydrogen atom, or a collisionless plasma over millions of periods, **the simulation catastrophically fails**:</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Artificial Dissipation &amp; Energy Drift:** RK4 is non-conservative; it acts as a numerical damper or amplifier. The Earth will either slowly spiral into the Sun or be flung out into deep space.</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Phase Space Distortion:** RK4 violates **Liouville's Theorem**. It contracts or expands the differential volume of phase space, destroying the statistical mechanics of the system.</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Broken First Integrals:** Angular momentum, Laplace-Runge-Lenz vectors, and adiabatic invariants are steadily destroyed by secular numerical accumulation.</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a><span class="in">                   THE INTEGRATION PARADIGM COMPARISON</span></span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a><span class="in">                   </span></span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a><span class="in">  Standard ODE Solvers (RK4, Euler)              Geometric Symplectic Integrators (Verlet, Yoshida)</span></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a><span class="in">  ─────────────────────────────────              ──────────────────────────────────────────────────</span></span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a><span class="in">  Focus: Local truncation error O(dt^p)          Focus: Global preservation of symplectic 2-form</span></span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a><span class="in">  Phase Space Volume: Violates Liouville         Phase Space Volume: Exactly preserved (det J = 1)</span></span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a><span class="in">  Long-Term Energy: Secular drift -&gt; infinity    Long-Term Energy: Oscillates in bounded band forever</span></span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a><span class="in">  First Integrals: Destroyed over long times     First Integrals: Preserved to machine precision</span></span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a><span class="in">  Philosophy: "Match Taylor expansion"           Philosophy: "Follow exact flow of shadow Hamiltonian"</span></span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>To solve physical problems truthfully, computational physicists use **Geometric Numerical Integration**: designing discrete numerical maps that exactly preserve the continuous symmetries and differential geometry of the underlying physics.</span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2. Symplectic Geometry and Hamiltonian Phase Space</span></span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a><span class="fu">### 2.1 The Symplectic 2-Form and Phase Space Manifold</span></span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a>Let $\mathcal{Q}$ be an $n$-dimensional configuration manifold with generalized coordinates $\vec{q} = (q_1, \dots, q_n)$. The state space of Hamiltonian mechanics is the cotangent bundle:</span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a>$$\mathcal{M} = T^* \mathcal{Q}$$</span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a>known as **phase space**, parameterized by canonical coordinates $\vec{z} = (\vec{q}, \vec{p}) = (q_1, \dots, q_n, p_1, \dots, p_n) \in \mathbb{R}^{2n}$.</span>
+<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a>Phase space is endowed with a canonical, closed, non-degenerate differential 2-form, the **symplectic form**:</span>
+<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a>$$\omega = \sum_{i=1}^n dq_i \wedge dp_i$$</span>
+<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-72"><a href="#cb5-72" aria-hidden="true" tabindex="-1"></a>In matrix notation, for any two tangent vectors $\vec{\xi}, \vec{\eta} \in T_z \mathcal{M}$:</span>
+<span id="cb5-73"><a href="#cb5-73" aria-hidden="true" tabindex="-1"></a>$$\omega(\vec{\xi}, \vec{\eta}) = \vec{\xi}^T \Omega \vec{\eta}, \quad \text{where } \Omega = \begin{pmatrix} \mathbf{0}_n &amp; \mathbf{I}_n <span class="sc">\\</span> -\mathbf{I}_n &amp; \mathbf{0}_n \end{pmatrix}$$</span>
+<span id="cb5-74"><a href="#cb5-74" aria-hidden="true" tabindex="-1"></a>The fundamental symplectic matrix $\Omega$ satisfies:</span>
+<span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a>$$\Omega^T = -\Omega, \quad \Omega^2 = -\mathbf{I}_{2n}, \quad \Omega^{-1} = -\Omega$$</span>
+<span id="cb5-76"><a href="#cb5-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-77"><a href="#cb5-77" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-78"><a href="#cb5-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-79"><a href="#cb5-79" aria-hidden="true" tabindex="-1"></a><span class="fu">### 2.2 Symplectic Maps and Liouville's Theorem</span></span>
+<span id="cb5-80"><a href="#cb5-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-81"><a href="#cb5-81" aria-hidden="true" tabindex="-1"></a>::: {#def-symplectic-map}</span>
+<span id="cb5-82"><a href="#cb5-82" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Definition 2.1 (Symplectic Transformation)</span></span>
+<span id="cb5-83"><a href="#cb5-83" aria-hidden="true" tabindex="-1"></a>A smooth transformation $\psi: \mathcal{M} \to \mathcal{M}$ with Jacobian matrix $J = \frac{\partial \psi}{\partial \vec{z}}$ is called **symplectic** (or canonical) if it preserves the symplectic form:</span>
+<span id="cb5-84"><a href="#cb5-84" aria-hidden="true" tabindex="-1"></a>$$\psi^* \omega = \omega \iff J^T \Omega J = \Omega$$</span>
+<span id="cb5-85"><a href="#cb5-85" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb5-86"><a href="#cb5-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-87"><a href="#cb5-87" aria-hidden="true" tabindex="-1"></a>Taking the determinant of both sides:</span>
+<span id="cb5-88"><a href="#cb5-88" aria-hidden="true" tabindex="-1"></a>$$\det(J^T \Omega J) = \det(\Omega) \implies (\det J)^2 \det(\Omega) = \det(\Omega) \implies (\det J)^2 = 1$$</span>
+<span id="cb5-89"><a href="#cb5-89" aria-hidden="true" tabindex="-1"></a>In fact, every connected symplectic transformation has:</span>
+<span id="cb5-90"><a href="#cb5-90" aria-hidden="true" tabindex="-1"></a>$$\det(J) = +1$$</span>
+<span id="cb5-91"><a href="#cb5-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-92"><a href="#cb5-92" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Liouville's Theorem as an Exterior Derivative Consequence:</span></span>
+<span id="cb5-93"><a href="#cb5-93" aria-hidden="true" tabindex="-1"></a>The $2n$-dimensional phase space volume element is given by the top exterior power of $\omega$:</span>
+<span id="cb5-94"><a href="#cb5-94" aria-hidden="true" tabindex="-1"></a>$$d\mathcal{V} = \frac{(-1)^{n(n-1)/2}}{n!} \underbrace{\omega \wedge \omega \wedge \dots \wedge \omega}_{n \text{ times}} = dq_1 \wedge \dots \wedge dq_n \wedge dp_1 \wedge \dots \wedge dp_n$$</span>
+<span id="cb5-95"><a href="#cb5-95" aria-hidden="true" tabindex="-1"></a>Because $\psi^* \omega = \omega$, it follows immediately that:</span>
+<span id="cb5-96"><a href="#cb5-96" aria-hidden="true" tabindex="-1"></a>$$\psi^* d\mathcal{V} = d\mathcal{V}$$</span>
+<span id="cb5-97"><a href="#cb5-97" aria-hidden="true" tabindex="-1"></a>**Liouville's Theorem:** *The volume of any arbitrary region in phase space is strictly conserved under the continuous time-evolution flow of a Hamiltonian system.*</span>
+<span id="cb5-98"><a href="#cb5-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-99"><a href="#cb5-99" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-100"><a href="#cb5-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-101"><a href="#cb5-101" aria-hidden="true" tabindex="-1"></a><span class="fu">### 2.3 Hamilton's Equations and Poisson Brackets</span></span>
+<span id="cb5-102"><a href="#cb5-102" aria-hidden="true" tabindex="-1"></a>Given a smooth Hamiltonian function $H(\vec{q}, \vec{p}, t)$, Hamilton's equations of motion are:</span>
+<span id="cb5-103"><a href="#cb5-103" aria-hidden="true" tabindex="-1"></a>$$\dot{q}_i = \frac{\partial H}{\partial p_i}, \quad \dot{p}_i = -\frac{\partial H}{\partial q_i}$$</span>
+<span id="cb5-104"><a href="#cb5-104" aria-hidden="true" tabindex="-1"></a>In compact symplectic notation:</span>
+<span id="cb5-105"><a href="#cb5-105" aria-hidden="true" tabindex="-1"></a>$$\dot{\vec{z}} = \Omega \nabla_{\vec{z}} H(\vec{z})$$</span>
+<span id="cb5-106"><a href="#cb5-106" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-107"><a href="#cb5-107" aria-hidden="true" tabindex="-1"></a>The **Poisson Bracket** of two observables $F, G: \mathcal{M} \to \mathbb{R}$ is defined as:</span>
+<span id="cb5-108"><a href="#cb5-108" aria-hidden="true" tabindex="-1"></a>$$<span class="sc">\{</span>F, G<span class="sc">\}</span> = \sum_{i=1}^n \left(\frac{\partial F}{\partial q_i}\frac{\partial G}{\partial p_i} - \frac{\partial F}{\partial p_i}\frac{\partial G}{\partial q_i}\right) = (\nabla F)^T \Omega (\nabla G)$$</span>
+<span id="cb5-109"><a href="#cb5-109" aria-hidden="true" tabindex="-1"></a>The time evolution of any observable $F$ is given by:</span>
+<span id="cb5-110"><a href="#cb5-110" aria-hidden="true" tabindex="-1"></a>$$\frac{dF}{dt} = <span class="sc">\{</span>F, H<span class="sc">\}</span> + \frac{\partial F}{\partial t}$$</span>
+<span id="cb5-111"><a href="#cb5-111" aria-hidden="true" tabindex="-1"></a>An observable $F$ is a **conserved first integral** if and only if $<span class="sc">\{</span>F, H<span class="sc">\}</span> = 0$.</span>
+<span id="cb5-112"><a href="#cb5-112" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-113"><a href="#cb5-113" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-114"><a href="#cb5-114" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-115"><a href="#cb5-115" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. Symplectic Integrators from First Principles</span></span>
+<span id="cb5-116"><a href="#cb5-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-117"><a href="#cb5-117" aria-hidden="true" tabindex="-1"></a><span class="fu">### 3.1 Operator Splitting and the Lie-Poisson Formalism</span></span>
+<span id="cb5-118"><a href="#cb5-118" aria-hidden="true" tabindex="-1"></a>Consider a separable Hamiltonian describing kinetic energy $T(\vec{p})$ and potential energy $V(\vec{q})$:</span>
+<span id="cb5-119"><a href="#cb5-119" aria-hidden="true" tabindex="-1"></a>$$H(\vec{q}, \vec{p}) = T(\vec{p}) + V(\vec{q}) = \frac{1}{2} \vec{p}^T M^{-1} \vec{p} + V(\vec{q})$$</span>
+<span id="cb5-120"><a href="#cb5-120" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-121"><a href="#cb5-121" aria-hidden="true" tabindex="-1"></a>The Hamiltonian vector field generates time evolution via the formal exponential Lie operator:</span>
+<span id="cb5-122"><a href="#cb5-122" aria-hidden="true" tabindex="-1"></a>$$\vec{z}(t) = \exp\left(t \hat{D}_H\right) \vec{z}(0), \quad \text{where } \hat{D}_H f = <span class="sc">\{</span>f, H<span class="sc">\}</span>$$</span>
+<span id="cb5-123"><a href="#cb5-123" aria-hidden="true" tabindex="-1"></a>Since $H = T + V$, the generator splits into:</span>
+<span id="cb5-124"><a href="#cb5-124" aria-hidden="true" tabindex="-1"></a>$$\hat{D}_H = \hat{D}_T + \hat{D}_V$$</span>
+<span id="cb5-125"><a href="#cb5-125" aria-hidden="true" tabindex="-1"></a>where:</span>
+<span id="cb5-126"><a href="#cb5-126" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>$\hat{D}_T \vec{z} = <span class="sc">\{</span> \vec{z}, T <span class="sc">\}</span> = (M^{-1} \vec{p}, \mathbf{0})$ (Pure drift step in configuration space).</span>
+<span id="cb5-127"><a href="#cb5-127" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>$\hat{D}_V \vec{z} = <span class="sc">\{</span> \vec{z}, V <span class="sc">\}</span> = (\mathbf{0}, -\nabla V(\vec{q}))$ (Pure kick step in momentum space).</span>
+<span id="cb5-128"><a href="#cb5-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-129"><a href="#cb5-129" aria-hidden="true" tabindex="-1"></a>Crucially, **each sub-Hamiltonian $T$ and $V$ can be integrated EXACTLY and analytically**:</span>
+<span id="cb5-130"><a href="#cb5-130" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**The Drift Map $\Phi_T^\tau$:**</span>
+<span id="cb5-131"><a href="#cb5-131" aria-hidden="true" tabindex="-1"></a>  $$q(t+\tau) = q(t) + \tau M^{-1} p(t), \quad p(t+\tau) = p(t)$$</span>
+<span id="cb5-132"><a href="#cb5-132" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**The Kick Map $\Phi_V^\tau$:**</span>
+<span id="cb5-133"><a href="#cb5-133" aria-hidden="true" tabindex="-1"></a>  $$q(t+\tau) = q(t), \quad p(t+\tau) = p(t) - \tau \nabla V(q(t))$$</span>
+<span id="cb5-134"><a href="#cb5-134" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-135"><a href="#cb5-135" aria-hidden="true" tabindex="-1"></a>Both $\Phi_T^\tau$ and $\Phi_V^\tau$ are **exact shears in phase space**, having unit Jacobian determinants:</span>
+<span id="cb5-136"><a href="#cb5-136" aria-hidden="true" tabindex="-1"></a>$$J_T = \begin{pmatrix} I &amp; \tau M^{-1} <span class="sc">\\</span> 0 &amp; I \end{pmatrix} \implies \det J_T = 1, \quad J_V = \begin{pmatrix} I &amp; 0 <span class="sc">\\</span> -\tau \nabla^2 V &amp; I \end{pmatrix} \implies \det J_V = 1$$</span>
+<span id="cb5-137"><a href="#cb5-137" aria-hidden="true" tabindex="-1"></a>Because the product of two symplectic matrices is symplectic, **any composition of exact drift and kick maps is unconditionally, exactly symplectic!**</span>
+<span id="cb5-138"><a href="#cb5-138" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-139"><a href="#cb5-139" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-140"><a href="#cb5-140" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-141"><a href="#cb5-141" aria-hidden="true" tabindex="-1"></a><span class="fu">### 3.2 The Verlet and Velocity-Verlet Algorithms</span></span>
+<span id="cb5-142"><a href="#cb5-142" aria-hidden="true" tabindex="-1"></a>The 2nd-order symmetric composition (Strang splitting) gives the celebrated **Velocity-Verlet** integrator:</span>
+<span id="cb5-143"><a href="#cb5-143" aria-hidden="true" tabindex="-1"></a>$$\Psi_2^\tau = \Phi_V^{\tau/2} \circ \Phi_T^\tau \circ \Phi_V^{\tau/2}$$</span>
+<span id="cb5-144"><a href="#cb5-144" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-145"><a href="#cb5-145" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Algorithmic Execution Steps:</span></span>
+<span id="cb5-146"><a href="#cb5-146" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Half-Step Kick:**</span>
+<span id="cb5-147"><a href="#cb5-147" aria-hidden="true" tabindex="-1"></a>   $$\vec{p}_{n + 1/2} = \vec{p}_n - \frac{\tau}{2} \nabla V(\vec{q}_n)$$</span>
+<span id="cb5-148"><a href="#cb5-148" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Full-Step Drift:**</span>
+<span id="cb5-149"><a href="#cb5-149" aria-hidden="true" tabindex="-1"></a>   $$\vec{q}_{n+1} = \vec{q}_n + \tau M^{-1} \vec{p}_{n + 1/2}$$</span>
+<span id="cb5-150"><a href="#cb5-150" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Half-Step Kick:**</span>
+<span id="cb5-151"><a href="#cb5-151" aria-hidden="true" tabindex="-1"></a>   $$\vec{p}_{n+1} = \vec{p}_{n + 1/2} - \frac{\tau}{2} \nabla V(\vec{q}_{n+1})$$</span>
+<span id="cb5-152"><a href="#cb5-152" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-153"><a href="#cb5-153" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Key Geometric Properties:</span></span>
+<span id="cb5-154"><a href="#cb5-154" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Symplectic:** Exactly satisfies $J^T \Omega J = \Omega$.</span>
+<span id="cb5-155"><a href="#cb5-155" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Time-Reversible:** Inverting $\tau \to -\tau$ and reversing velocities traces the exact identical trajectory backwards in time.</span>
+<span id="cb5-156"><a href="#cb5-156" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Global Order:** $\mathcal{O}(\tau^2)$ local error, $\mathcal{O}(\tau^2)$ global trajectory error.</span>
+<span id="cb5-157"><a href="#cb5-157" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-158"><a href="#cb5-158" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-159"><a href="#cb5-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-160"><a href="#cb5-160" aria-hidden="true" tabindex="-1"></a><span class="fu">### 3.3 High-Order Symplectic Splitting: The Yoshida 4th-Order Integrator</span></span>
+<span id="cb5-161"><a href="#cb5-161" aria-hidden="true" tabindex="-1"></a>Can we construct an unconditionally symplectic integrator of order 4?  </span>
+<span id="cb5-162"><a href="#cb5-162" aria-hidden="true" tabindex="-1"></a>In 1990, **Haruo Yoshida** proved that any 2nd-order symmetric integrator $\Psi_2^\tau$ can be combined into a 4th-order symmetric symplectic integrator $\Psi_4^\tau$ via fractal composition:</span>
+<span id="cb5-163"><a href="#cb5-163" aria-hidden="true" tabindex="-1"></a>$$\Psi_4^\tau = \Psi_2^{w_1 \tau} \circ \Psi_2^{w_0 \tau} \circ \Psi_2^{w_1 \tau}$$</span>
+<span id="cb5-164"><a href="#cb5-164" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-165"><a href="#cb5-165" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Derivation of the Yoshida Coefficients:</span></span>
+<span id="cb5-166"><a href="#cb5-166" aria-hidden="true" tabindex="-1"></a>By the Baker-Campbell-Hausdorff (BCH) formula:</span>
+<span id="cb5-167"><a href="#cb5-167" aria-hidden="true" tabindex="-1"></a>$$\Psi_2^\tau = \exp\left(\tau \hat{D}_H + \tau^3 \hat{D}_3 + \tau^5 \hat{D}_5 + \dots\right)$$</span>
+<span id="cb5-168"><a href="#cb5-168" aria-hidden="true" tabindex="-1"></a>The composition of three symmetric steps of lengths $w_1 \tau, w_0 \tau, w_1 \tau$ yields:</span>
+<span id="cb5-169"><a href="#cb5-169" aria-hidden="true" tabindex="-1"></a>$$\Psi_4^\tau = \exp\left( (2w_1 + w_0) \tau \hat{D}_H + (2w_1^3 + w_0^3) \tau^3 \hat{D}_3 + \mathcal{O}(\tau^5) \right)$$</span>
+<span id="cb5-170"><a href="#cb5-170" aria-hidden="true" tabindex="-1"></a>To eliminate the $\tau^3$ error term while preserving consistency ($    au^1$ coefficient equals 1):</span>
+<span id="cb5-171"><a href="#cb5-171" aria-hidden="true" tabindex="-1"></a>$$2w_1 + w_0 = 1$$</span>
+<span id="cb5-172"><a href="#cb5-172" aria-hidden="true" tabindex="-1"></a>$$2w_1^3 + w_0^3 = 0$$</span>
+<span id="cb5-173"><a href="#cb5-173" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-174"><a href="#cb5-174" aria-hidden="true" tabindex="-1"></a>Solving this non-linear algebraic system:</span>
+<span id="cb5-175"><a href="#cb5-175" aria-hidden="true" tabindex="-1"></a>$$w_0^3 = -2w_1^3 \implies w_0 = -2^{1/3} w_1$$</span>
+<span id="cb5-176"><a href="#cb5-176" aria-hidden="true" tabindex="-1"></a>Substituting into the first equation:</span>
+<span id="cb5-177"><a href="#cb5-177" aria-hidden="true" tabindex="-1"></a>$$2w_1 - 2^{1/3} w_1 = 1 \implies w_1 \left(2 - 2^{1/3}\right) = 1$$</span>
+<span id="cb5-178"><a href="#cb5-178" aria-hidden="true" tabindex="-1"></a>$$w_1 = \frac{1}{2 - 2^{1/3}} \approx 1.351207191959657$$</span>
+<span id="cb5-179"><a href="#cb5-179" aria-hidden="true" tabindex="-1"></a>$$w_0 = -\frac{2^{1/3}}{2 - 2^{1/3}} = 1 - 2w_1 \approx -1.702414383919315$$</span>
+<span id="cb5-180"><a href="#cb5-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-181"><a href="#cb5-181" aria-hidden="true" tabindex="-1"></a>*(Remarkable Fact: To achieve 4th-order accuracy, the intermediate step $w_0$ must step **backwards in time**!)*</span>
+<span id="cb5-182"><a href="#cb5-182" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-183"><a href="#cb5-183" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-184"><a href="#cb5-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-185"><a href="#cb5-185" aria-hidden="true" tabindex="-1"></a><span class="fu">### 3.4 Backward Error Analysis and the "Shadow Hamiltonian"</span></span>
+<span id="cb5-186"><a href="#cb5-186" aria-hidden="true" tabindex="-1"></a>Why do symplectic integrators conserve energy so extraordinarily well without secular drift?  </span>
+<span id="cb5-187"><a href="#cb5-187" aria-hidden="true" tabindex="-1"></a>The answer is revealed by **Backward Error Analysis** (Moser, Benettin, Hairer).</span>
+<span id="cb5-188"><a href="#cb5-188" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-189"><a href="#cb5-189" aria-hidden="true" tabindex="-1"></a>When you run a symplectic integrator $\Psi^\tau$ on a Hamiltonian $H$, **the numerical points do NOT follow the exact trajectory of $H$**. Instead, they follow the **EXACT trajectory of a modified "Shadow Hamiltonian" $\tilde{H}$**:</span>
+<span id="cb5-190"><a href="#cb5-190" aria-hidden="true" tabindex="-1"></a>$$\tilde{H}(\vec{q}, \vec{p}) = H(\vec{q}, \vec{p}) + \tau^2 H_2(\vec{q}, \vec{p}) + \tau^4 H_4(\vec{q}, \vec{p}) + \dots$$</span>
+<span id="cb5-191"><a href="#cb5-191" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-192"><a href="#cb5-192" aria-hidden="true" tabindex="-1"></a>Because $\Psi^\tau$ is the exact flow of $\tilde{H}$, the modified energy $\tilde{H}(\vec{q}_n, \vec{p}_n)$ is **strictly, exactly conserved**!</span>
+<span id="cb5-193"><a href="#cb5-193" aria-hidden="true" tabindex="-1"></a>$$\tilde{H}(\vec{q}_n, \vec{p}_n) = \text{const}$$</span>
+<span id="cb5-194"><a href="#cb5-194" aria-hidden="true" tabindex="-1"></a>Therefore, the true physical energy $H$ fluctuates within an extremely narrow bounded band:</span>
+<span id="cb5-195"><a href="#cb5-195" aria-hidden="true" tabindex="-1"></a>$$|H(\vec{q}_n, \vec{p}_n) - H(\vec{q}_0, \vec{p}_0)| = \mathcal{O}(\tau^p)$$</span>
+<span id="cb5-196"><a href="#cb5-196" aria-hidden="true" tabindex="-1"></a>**There is zero secular drift over exponentially long times $\sim e^{c/\tau}$!**  </span>
+<span id="cb5-197"><a href="#cb5-197" aria-hidden="true" tabindex="-1"></a>In contrast, standard RK4 does not possess a shadow Hamiltonian; its energy drifts linearly or quadratically with time: $\Delta E_{\text{RK4}}(t) \sim t \tau^4$.</span>
+<span id="cb5-198"><a href="#cb5-198" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-199"><a href="#cb5-199" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-200"><a href="#cb5-200" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-201"><a href="#cb5-201" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Boundary Value Problems and Spectral Methods</span></span>
+<span id="cb5-202"><a href="#cb5-202" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-203"><a href="#cb5-203" aria-hidden="true" tabindex="-1"></a><span class="fu">### 4.1 Finite Differences vs. Spectral Convergence</span></span>
+<span id="cb5-204"><a href="#cb5-204" aria-hidden="true" tabindex="-1"></a>When solving differential equations on spatial grids:</span>
+<span id="cb5-205"><a href="#cb5-205" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Finite Difference / Finite Element Methods:** Local polynomial interpolation. Error decays algebraically:</span>
+<span id="cb5-206"><a href="#cb5-206" aria-hidden="true" tabindex="-1"></a>  $$\text{Error} \sim \mathcal{O}(N^{-p}) \quad (p = 2, 4)$$</span>
+<span id="cb5-207"><a href="#cb5-207" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Spectral Methods (Fourier / Chebyshev):** Global expansion in orthogonal polynomials. For analytic functions, error decays **exponentially fast (spectral accuracy)**:</span>
+<span id="cb5-208"><a href="#cb5-208" aria-hidden="true" tabindex="-1"></a>  $$\text{Error} \sim \mathcal{O}\left(e^{-c N}\right)$$</span>
+<span id="cb5-209"><a href="#cb5-209" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-210"><a href="#cb5-210" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb5-211"><a href="#cb5-211" aria-hidden="true" tabindex="-1"></a><span class="in">                         GRID CONVERGENCE SCALING</span></span>
+<span id="cb5-212"><a href="#cb5-212" aria-hidden="true" tabindex="-1"></a><span class="in">                         </span></span>
+<span id="cb5-213"><a href="#cb5-213" aria-hidden="true" tabindex="-1"></a><span class="in">  Log(Error)</span></span>
+<span id="cb5-214"><a href="#cb5-214" aria-hidden="true" tabindex="-1"></a><span class="in">      │</span></span>
+<span id="cb5-215"><a href="#cb5-215" aria-hidden="true" tabindex="-1"></a><span class="in">      │   \   Finite Difference O(N^-2)</span></span>
+<span id="cb5-216"><a href="#cb5-216" aria-hidden="true" tabindex="-1"></a><span class="in">      │    \</span></span>
+<span id="cb5-217"><a href="#cb5-217" aria-hidden="true" tabindex="-1"></a><span class="in">      │     \</span></span>
+<span id="cb5-218"><a href="#cb5-218" aria-hidden="true" tabindex="-1"></a><span class="in">      │      \   Finite Difference O(N^-4)</span></span>
+<span id="cb5-219"><a href="#cb5-219" aria-hidden="true" tabindex="-1"></a><span class="in">      │       \</span></span>
+<span id="cb5-220"><a href="#cb5-220" aria-hidden="true" tabindex="-1"></a><span class="in">      │        \</span></span>
+<span id="cb5-221"><a href="#cb5-221" aria-hidden="true" tabindex="-1"></a><span class="in">      │         \   Spectral Method O(e^-cN)  (Exponential Cliff!)</span></span>
+<span id="cb5-222"><a href="#cb5-222" aria-hidden="true" tabindex="-1"></a><span class="in">      │          \</span></span>
+<span id="cb5-223"><a href="#cb5-223" aria-hidden="true" tabindex="-1"></a><span class="in">      │           \</span></span>
+<span id="cb5-224"><a href="#cb5-224" aria-hidden="true" tabindex="-1"></a><span class="in">      └────────────┴───────────────────────────► Number of Grid Points N</span></span>
+<span id="cb5-225"><a href="#cb5-225" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb5-226"><a href="#cb5-226" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-227"><a href="#cb5-227" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-228"><a href="#cb5-228" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-229"><a href="#cb5-229" aria-hidden="true" tabindex="-1"></a><span class="fu">### 4.2 Chebyshev Differentiation Matrices</span></span>
+<span id="cb5-230"><a href="#cb5-230" aria-hidden="true" tabindex="-1"></a>For non-periodic boundary value problems on $<span class="co">[</span><span class="ot">-1, 1</span><span class="co">]</span>$, equispaced grids cause catastrophic divergence near boundaries (**Runge's Phenomenon**).  </span>
+<span id="cb5-231"><a href="#cb5-231" aria-hidden="true" tabindex="-1"></a>The cure is the **Chebyshev-Gauss-Lobatto (CGL) grid**:</span>
+<span id="cb5-232"><a href="#cb5-232" aria-hidden="true" tabindex="-1"></a>$$x_j = \cos\left(\frac{\pi j}{N}\right), \quad j = 0, 1, \dots, N$$</span>
+<span id="cb5-233"><a href="#cb5-233" aria-hidden="true" tabindex="-1"></a>These nodes are the horizontal projections of equally spaced points on the unit semicircle, clustering densely near the boundaries $x = \pm 1$ with density $\propto 1/\sqrt{1 - x^2}$.</span>
+<span id="cb5-234"><a href="#cb5-234" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-235"><a href="#cb5-235" aria-hidden="true" tabindex="-1"></a>The spectral derivative of an arbitrary vector of function values $\vec{u} = (u(x_0), \dots, u(x_N))^T$ is computed via a single dense matrix-vector product:</span>
+<span id="cb5-236"><a href="#cb5-236" aria-hidden="true" tabindex="-1"></a>$$\vec{u}' = D_N \vec{u}$$</span>
+<span id="cb5-237"><a href="#cb5-237" aria-hidden="true" tabindex="-1"></a>where $D_N$ is the **Chebyshev Differentiation Matrix**:</span>
+<span id="cb5-238"><a href="#cb5-238" aria-hidden="true" tabindex="-1"></a>$$(D_N)_{jk} = \begin{cases} \frac{c_j}{c_k} \frac{(-1)^{j+k}}{x_j - x_k} &amp; j \neq k <span class="sc">\\</span> -\frac{x_j}{2(1 - x_j^2)} &amp; 1 \le j = k \le N - 1 <span class="sc">\\</span> \frac{2N^2 + 1}{6} &amp; j = k = 0 <span class="sc">\\</span> -\frac{2N^2 + 1}{6} &amp; j = k = N \end{cases}$$</span>
+<span id="cb5-239"><a href="#cb5-239" aria-hidden="true" tabindex="-1"></a>where $c_0 = c_N = 2$ and $c_j = 1$ otherwise.</span>
+<span id="cb5-240"><a href="#cb5-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-241"><a href="#cb5-241" aria-hidden="true" tabindex="-1"></a>Higher derivatives are obtained by matrix exponentiation: $\vec{u}'' = D_N^2 \vec{u}$.</span>
+<span id="cb5-242"><a href="#cb5-242" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-243"><a href="#cb5-243" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-244"><a href="#cb5-244" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-245"><a href="#cb5-245" aria-hidden="true" tabindex="-1"></a><span class="fu">### 4.3 Solving the Time-Independent Schrödinger Equation (TISE)</span></span>
+<span id="cb5-246"><a href="#cb5-246" aria-hidden="true" tabindex="-1"></a>The 1D TISE is:</span>
+<span id="cb5-247"><a href="#cb5-247" aria-hidden="true" tabindex="-1"></a>$$\hat{H}\psi(x) = \left(-\frac{\hbar^2}{2m}\frac{d^2}{dx^2} + V(x)\right)\psi(x) = E\psi(x)$$</span>
+<span id="cb5-248"><a href="#cb5-248" aria-hidden="true" tabindex="-1"></a>Discretizing on a Chebyshev grid with $N$ interior nodes, the differential operator becomes a finite $N \times N$ matrix:</span>
+<span id="cb5-249"><a href="#cb5-249" aria-hidden="true" tabindex="-1"></a>$$H_{\text{spec}} = -\frac{\hbar^2}{2m} D_N^2 + \operatorname{diag}(V(x_0), \dots, V(x_N))$$</span>
+<span id="cb5-250"><a href="#cb5-250" aria-hidden="true" tabindex="-1"></a>Solving for energy eigenvalues and quantum eigenstates reduces to a standard **matrix eigenvalue problem**:</span>
+<span id="cb5-251"><a href="#cb5-251" aria-hidden="true" tabindex="-1"></a>$$H_{\text{spec}} \vec{\psi}_k = E_k \vec{\psi}_k$$</span>
+<span id="cb5-252"><a href="#cb5-252" aria-hidden="true" tabindex="-1"></a>This yields machine-precision quantum ground and excited states with as few as $N = 64$ grid points!</span>
+<span id="cb5-253"><a href="#cb5-253" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-254"><a href="#cb5-254" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-255"><a href="#cb5-255" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-256"><a href="#cb5-256" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. Quantum Dynamics: Split-Operator FFT for the TDSE</span></span>
+<span id="cb5-257"><a href="#cb5-257" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-258"><a href="#cb5-258" aria-hidden="true" tabindex="-1"></a>The Time-Dependent Schrödinger Equation (TDSE) describes non-relativistic wavepacket dynamics:</span>
+<span id="cb5-259"><a href="#cb5-259" aria-hidden="true" tabindex="-1"></a>$$i\hbar \frac{\partial \psi(x, t)}{\partial t} = \left(-\frac{\hbar^2}{2m}\frac{\partial^2}{\partial x^2} + V(x)\right)\psi(x, t) = (\hat{T} + \hat{V})\psi(x, t)$$</span>
+<span id="cb5-260"><a href="#cb5-260" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-261"><a href="#cb5-261" aria-hidden="true" tabindex="-1"></a>The formal solution is given by the unitary time evolution operator:</span>
+<span id="cb5-262"><a href="#cb5-262" aria-hidden="true" tabindex="-1"></a>$$\psi(x, t + \Delta t) = \exp\left(-\frac{i}{\hbar}(\hat{T} + \hat{V})\Delta t\right)\psi(x, t)$$</span>
+<span id="cb5-263"><a href="#cb5-263" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-264"><a href="#cb5-264" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.1 The Strang Unitary Splitting</span></span>
+<span id="cb5-265"><a href="#cb5-265" aria-hidden="true" tabindex="-1"></a>Because kinetic energy $\hat{T} = \frac{\hat{p}^2}{2m}$ and potential energy $\hat{V} = V(\hat{x})$ do not commute ($<span class="co">[</span><span class="ot">\hat{x}, \hat{p}</span><span class="co">]</span> = i\hbar$), their matrix exponential cannot be factored simply. Applying the symmetric Strang splitting:</span>
+<span id="cb5-266"><a href="#cb5-266" aria-hidden="true" tabindex="-1"></a>$$\exp\left(-\frac{i}{\hbar}(\hat{T} + \hat{V})\Delta t\right) = \exp\left(-\frac{i}{2\hbar}\hat{V}\Delta t\right) \exp\left(-\frac{i}{\hbar}\hat{T}\Delta t\right) \exp\left(-\frac{i}{2\hbar}\hat{V}\Delta t\right) + \mathcal{O}(\Delta t^3)$$</span>
+<span id="cb5-267"><a href="#cb5-267" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-268"><a href="#cb5-268" aria-hidden="true" tabindex="-1"></a><span class="fu">#### The Spatial-Momentum Dual Trick:</span></span>
+<span id="cb5-269"><a href="#cb5-269" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>$\hat{V}$ is **strictly diagonal in position space $x$**: $\exp\left(-\frac{i}{2\hbar}V(x)\Delta t\right)$ is a simple pointwise complex multiplication!</span>
+<span id="cb5-270"><a href="#cb5-270" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>$\hat{T}$ is **strictly diagonal in momentum space $p$**: $\exp\left(-\frac{i}{\hbar}\frac{p^2}{2m}\Delta t\right)$ is a simple pointwise complex multiplication in Fourier space!</span>
+<span id="cb5-271"><a href="#cb5-271" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-272"><a href="#cb5-272" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb5-273"><a href="#cb5-273" aria-hidden="true" tabindex="-1"></a><span class="in">                      THE SPLIT-OPERATOR FFT ALGORITHM</span></span>
+<span id="cb5-274"><a href="#cb5-274" aria-hidden="true" tabindex="-1"></a><span class="in">                      </span></span>
+<span id="cb5-275"><a href="#cb5-275" aria-hidden="true" tabindex="-1"></a><span class="in">      Position Space psi(x)               Momentum Space psi_tilde(p)</span></span>
+<span id="cb5-276"><a href="#cb5-276" aria-hidden="true" tabindex="-1"></a><span class="in">      ─────────────────────               ───────────────────────────</span></span>
+<span id="cb5-277"><a href="#cb5-277" aria-hidden="true" tabindex="-1"></a><span class="in">      [ Initial State psi(x) ]</span></span>
+<span id="cb5-278"><a href="#cb5-278" aria-hidden="true" tabindex="-1"></a><span class="in">                 │</span></span>
+<span id="cb5-279"><a href="#cb5-279" aria-hidden="true" tabindex="-1"></a><span class="in">                 ▼ Pointwise: exp(-i V(x) dt / 2hbar)</span></span>
+<span id="cb5-280"><a href="#cb5-280" aria-hidden="true" tabindex="-1"></a><span class="in">      [ Half-Kick in x ]</span></span>
+<span id="cb5-281"><a href="#cb5-281" aria-hidden="true" tabindex="-1"></a><span class="in">                 │</span></span>
+<span id="cb5-282"><a href="#cb5-282" aria-hidden="true" tabindex="-1"></a><span class="in">                 │─────── Fast Fourier Transform (FFT) ───────►</span></span>
+<span id="cb5-283"><a href="#cb5-283" aria-hidden="true" tabindex="-1"></a><span class="in">                 │                                            │</span></span>
+<span id="cb5-284"><a href="#cb5-284" aria-hidden="true" tabindex="-1"></a><span class="in">                                                              ▼ Pointwise: exp(-i p^2 dt / 2m hbar)</span></span>
+<span id="cb5-285"><a href="#cb5-285" aria-hidden="true" tabindex="-1"></a><span class="in">                                                     [ Full-Drift in p ]</span></span>
+<span id="cb5-286"><a href="#cb5-286" aria-hidden="true" tabindex="-1"></a><span class="in">                                                              │</span></span>
+<span id="cb5-287"><a href="#cb5-287" aria-hidden="true" tabindex="-1"></a><span class="in">                 │◄─── Inverse Fast Fourier Transform (IFFT) ─│</span></span>
+<span id="cb5-288"><a href="#cb5-288" aria-hidden="true" tabindex="-1"></a><span class="in">                 │</span></span>
+<span id="cb5-289"><a href="#cb5-289" aria-hidden="true" tabindex="-1"></a><span class="in">                 ▼ Pointwise: exp(-i V(x) dt / 2hbar)</span></span>
+<span id="cb5-290"><a href="#cb5-290" aria-hidden="true" tabindex="-1"></a><span class="in">      [ Half-Kick in x ]</span></span>
+<span id="cb5-291"><a href="#cb5-291" aria-hidden="true" tabindex="-1"></a><span class="in">                 │</span></span>
+<span id="cb5-292"><a href="#cb5-292" aria-hidden="true" tabindex="-1"></a><span class="in">                 ▼</span></span>
+<span id="cb5-293"><a href="#cb5-293" aria-hidden="true" tabindex="-1"></a><span class="in">      [ Next State psi(x, t + dt) ]</span></span>
+<span id="cb5-294"><a href="#cb5-294" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb5-295"><a href="#cb5-295" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-296"><a href="#cb5-296" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.2 Algorithmic Invariants and Unconditional Stability</span></span>
+<span id="cb5-297"><a href="#cb5-297" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Exact Unitarity:** Because both exponential factors are diagonal phases ($|e^{-i \theta}| = 1$), the discrete $L^2$ norm of the wave function is conserved to machine precision:</span>
+<span id="cb5-298"><a href="#cb5-298" aria-hidden="true" tabindex="-1"></a>   $$\int |\psi(x, t)|^2 dx = 1 \quad \forall t \ge 0$$</span>
+<span id="cb5-299"><a href="#cb5-299" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Unconditional Stability:** Unlike explicit finite difference schemes (which suffer from the stringent Courant-Friedrichs-Lewy condition $\Delta t \le \frac{m \Delta x^2}{2\hbar}$), the Split-Operator FFT scheme is **unconditionally stable for any time step $\Delta t$**!</span>
+<span id="cb5-300"><a href="#cb5-300" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-301"><a href="#cb5-301" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-302"><a href="#cb5-302" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-303"><a href="#cb5-303" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. Statistical Mechanics and Markov Chain Monte Carlo (MCMC)</span></span>
+<span id="cb5-304"><a href="#cb5-304" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-305"><a href="#cb5-305" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.1 The Canonical Ensemble and the Combinatorial Explosion</span></span>
+<span id="cb5-306"><a href="#cb5-306" aria-hidden="true" tabindex="-1"></a>In equilibrium statistical mechanics, the probability of finding a system in a microstate $\sigma$ with energy $E(\sigma)$ at temperature $T$ is given by the **Boltzmann distribution**:</span>
+<span id="cb5-307"><a href="#cb5-307" aria-hidden="true" tabindex="-1"></a>$$P(\sigma) = \frac{1}{Z} e^{-\beta E(\sigma)}, \quad \beta = \frac{1}{k_B T}$$</span>
+<span id="cb5-308"><a href="#cb5-308" aria-hidden="true" tabindex="-1"></a>where the normalizer is the **canonical partition function**:</span>
+<span id="cb5-309"><a href="#cb5-309" aria-hidden="true" tabindex="-1"></a>$$Z = \sum_{\sigma \in \Omega} e^{-\beta E(\sigma)}$$</span>
+<span id="cb5-310"><a href="#cb5-310" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-311"><a href="#cb5-311" aria-hidden="true" tabindex="-1"></a>For a modest $20 \times 20$ lattice of magnetic spins $\sigma_i \in <span class="sc">\{</span>-1, +1<span class="sc">\}</span>$, the configuration space contains:</span>
+<span id="cb5-312"><a href="#cb5-312" aria-hidden="true" tabindex="-1"></a>$$|\Omega| = 2^{400} \approx 2.58 \times 10^{120} \text{ states}$$</span>
+<span id="cb5-313"><a href="#cb5-313" aria-hidden="true" tabindex="-1"></a>Evaluating $Z$ by exhaustive summation would require longer than the lifetime of the universe.</span>
+<span id="cb5-314"><a href="#cb5-314" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-315"><a href="#cb5-315" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-316"><a href="#cb5-316" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-317"><a href="#cb5-317" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.2 The Metropolis-Hastings Algorithm</span></span>
+<span id="cb5-318"><a href="#cb5-318" aria-hidden="true" tabindex="-1"></a>Instead of evaluating the denominator $Z$, **Markov Chain Monte Carlo (MCMC)** constructs a random walk in configuration space whose stationary distribution is precisely the Boltzmann distribution.</span>
+<span id="cb5-319"><a href="#cb5-319" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-320"><a href="#cb5-320" aria-hidden="true" tabindex="-1"></a>To guarantee that the Markov chain converges to $P(\sigma)$, the transition probabilities $W(\sigma \to \sigma')$ must satisfy the **Detailed Balance Condition**:</span>
+<span id="cb5-321"><a href="#cb5-321" aria-hidden="true" tabindex="-1"></a>$$P(\sigma) W(\sigma \to \sigma') = P(\sigma') W(\sigma' \to \sigma)$$</span>
+<span id="cb5-322"><a href="#cb5-322" aria-hidden="true" tabindex="-1"></a>Rearranging:</span>
+<span id="cb5-323"><a href="#cb5-323" aria-hidden="true" tabindex="-1"></a>$$\frac{W(\sigma \to \sigma')}{W(\sigma' \to \sigma)} = \frac{P(\sigma')}{P(\sigma)} = \frac{e^{-\beta E(\sigma')}}{e^{-\beta E(\sigma)}} = e^{-\beta \Delta E}$$</span>
+<span id="cb5-324"><a href="#cb5-324" aria-hidden="true" tabindex="-1"></a>where $\Delta E = E(\sigma') - E(\sigma)$. Notice that the intractable partition function $Z$ **cancels completely!**</span>
+<span id="cb5-325"><a href="#cb5-325" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-326"><a href="#cb5-326" aria-hidden="true" tabindex="-1"></a><span class="fu">#### The Metropolis Acceptance Criterion:</span></span>
+<span id="cb5-327"><a href="#cb5-327" aria-hidden="true" tabindex="-1"></a>Propose a trial move $\sigma \to \sigma'$ by selecting a single random spin $\sigma_i$ and flipping it ($\sigma_i \to -\sigma_i$).  </span>
+<span id="cb5-328"><a href="#cb5-328" aria-hidden="true" tabindex="-1"></a>Accept the flip with probability:</span>
+<span id="cb5-329"><a href="#cb5-329" aria-hidden="true" tabindex="-1"></a>$$\alpha(\sigma \to \sigma') = \min\left(1, e^{-\beta \Delta E}\right)$$</span>
+<span id="cb5-330"><a href="#cb5-330" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>If $\Delta E \le 0$ (the flip lowers or maintains energy), **accept unconditionally** (probability 1).</span>
+<span id="cb5-331"><a href="#cb5-331" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>If $\Delta E &gt; 0$ (the flip raises energy), generate a uniform random number $r \sim U(0, 1)$ and accept if:</span>
+<span id="cb5-332"><a href="#cb5-332" aria-hidden="true" tabindex="-1"></a>  $$r &lt; e^{-\beta \Delta E}$$</span>
+<span id="cb5-333"><a href="#cb5-333" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-334"><a href="#cb5-334" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-335"><a href="#cb5-335" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-336"><a href="#cb5-336" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.3 The 2D Ising Model and Onsager's Phase Transition</span></span>
+<span id="cb5-337"><a href="#cb5-337" aria-hidden="true" tabindex="-1"></a>The 2D ferromagnetic Ising model on a square periodic lattice of size $L \times L$ has energy:</span>
+<span id="cb5-338"><a href="#cb5-338" aria-hidden="true" tabindex="-1"></a>$$E(\sigma) = -J \sum_{\langle i, j \rangle} \sigma_i \sigma_j$$</span>
+<span id="cb5-339"><a href="#cb5-339" aria-hidden="true" tabindex="-1"></a>where $\langle i, j \rangle$ denotes nearest-neighbor pairs.</span>
+<span id="cb5-340"><a href="#cb5-340" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-341"><a href="#cb5-341" aria-hidden="true" tabindex="-1"></a>In 1944, **Lars Onsager** published an exact analytical solution for the infinite 2D Ising model, proving the existence of a continuous 2nd-order ferromagnetic phase transition at the critical temperature:</span>
+<span id="cb5-342"><a href="#cb5-342" aria-hidden="true" tabindex="-1"></a>$$\frac{k_B T_c}{J} = \frac{2}{\ln\left(1 + \sqrt{2}\right)} \approx 2.2691853$$</span>
+<span id="cb5-343"><a href="#cb5-343" aria-hidden="true" tabindex="-1"></a>Below $T_c$, spontaneous symmetry breaking occurs: spins align into macroscopic domains with non-zero spontaneous magnetization:</span>
+<span id="cb5-344"><a href="#cb5-344" aria-hidden="true" tabindex="-1"></a>$$M(T) = \left(1 - \sinh^{-4}(2\beta J)\right)^{1/8} \quad (T &lt; T_c)$$</span>
+<span id="cb5-345"><a href="#cb5-345" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-346"><a href="#cb5-346" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb5-347"><a href="#cb5-347" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-348"><a href="#cb5-348" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. Comprehensive Benchmarking Laboratory in Python</span></span>
+<span id="cb5-349"><a href="#cb5-349" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-350"><a href="#cb5-350" aria-hidden="true" tabindex="-1"></a>The following Python laboratory implements:</span>
+<span id="cb5-351"><a href="#cb5-351" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Kepler Two-Body Problem:** Exact numerical comparison of RK4 vs. 4th-Order Symplectic Yoshida Integrator, demonstrating energy boundedness.</span>
+<span id="cb5-352"><a href="#cb5-352" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Split-Operator FFT:** Quantum wavepacket tunneling through a potential barrier.</span>
+<span id="cb5-353"><a href="#cb5-353" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**2D Ising Model Metropolis MCMC:** Spontaneous magnetization curve near $T_c$.</span>
+<span id="cb5-354"><a href="#cb5-354" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-355"><a href="#cb5-355" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb5-356"><a href="#cb5-356" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb5-357"><a href="#cb5-357" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-358"><a href="#cb5-358" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== LAB 1: KEPLER ORBIT — RK4 VS. 4TH-ORDER SYMPLECTIC YOSHIDA ==="</span>)</span>
+<span id="cb5-359"><a href="#cb5-359" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-360"><a href="#cb5-360" aria-hidden="true" tabindex="-1"></a><span class="co"># Gravitational parameters (G*M = 1)</span></span>
+<span id="cb5-361"><a href="#cb5-361" aria-hidden="true" tabindex="-1"></a><span class="co"># Hamiltonian: H(q, p) = 0.5 * |p|^2 - 1 / |q|</span></span>
+<span id="cb5-362"><a href="#cb5-362" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> H_kepler(q, p):</span>
+<span id="cb5-363"><a href="#cb5-363" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="fl">0.5</span> <span class="op">*</span> np.dot(p, p) <span class="op">-</span> <span class="fl">1.0</span> <span class="op">/</span> np.linalg.norm(q)</span>
+<span id="cb5-364"><a href="#cb5-364" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-365"><a href="#cb5-365" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> force_kepler(q):</span>
+<span id="cb5-366"><a href="#cb5-366" aria-hidden="true" tabindex="-1"></a>    r <span class="op">=</span> np.linalg.norm(q)</span>
+<span id="cb5-367"><a href="#cb5-367" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">-</span>q <span class="op">/</span> (r<span class="op">**</span><span class="dv">3</span>)</span>
+<span id="cb5-368"><a href="#cb5-368" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-369"><a href="#cb5-369" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Classical 4th-Order Runge-Kutta (RK4) Step</span></span>
+<span id="cb5-370"><a href="#cb5-370" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> step_rk4(q, p, dt):</span>
+<span id="cb5-371"><a href="#cb5-371" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> deriv(q_curr, p_curr):</span>
+<span id="cb5-372"><a href="#cb5-372" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> p_curr, force_kepler(q_curr)</span>
+<span id="cb5-373"><a href="#cb5-373" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-374"><a href="#cb5-374" aria-hidden="true" tabindex="-1"></a>    k1_q, k1_p <span class="op">=</span> deriv(q, p)</span>
+<span id="cb5-375"><a href="#cb5-375" aria-hidden="true" tabindex="-1"></a>    k2_q, k2_p <span class="op">=</span> deriv(q <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span>dt<span class="op">*</span>k1_q, p <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span>dt<span class="op">*</span>k1_p)</span>
+<span id="cb5-376"><a href="#cb5-376" aria-hidden="true" tabindex="-1"></a>    k3_q, k3_p <span class="op">=</span> deriv(q <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span>dt<span class="op">*</span>k2_q, p <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span>dt<span class="op">*</span>k2_p)</span>
+<span id="cb5-377"><a href="#cb5-377" aria-hidden="true" tabindex="-1"></a>    k4_q, k4_p <span class="op">=</span> deriv(q <span class="op">+</span> dt<span class="op">*</span>k3_q, p <span class="op">+</span> dt<span class="op">*</span>k3_p)</span>
+<span id="cb5-378"><a href="#cb5-378" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-379"><a href="#cb5-379" aria-hidden="true" tabindex="-1"></a>    q_next <span class="op">=</span> q <span class="op">+</span> (dt <span class="op">/</span> <span class="fl">6.0</span>) <span class="op">*</span> (k1_q <span class="op">+</span> <span class="dv">2</span><span class="op">*</span>k2_q <span class="op">+</span> <span class="dv">2</span><span class="op">*</span>k3_q <span class="op">+</span> k4_q)</span>
+<span id="cb5-380"><a href="#cb5-380" aria-hidden="true" tabindex="-1"></a>    p_next <span class="op">=</span> p <span class="op">+</span> (dt <span class="op">/</span> <span class="fl">6.0</span>) <span class="op">*</span> (k1_p <span class="op">+</span> <span class="dv">2</span><span class="op">*</span>k2_p <span class="op">+</span> <span class="dv">2</span><span class="op">*</span>k3_p <span class="op">+</span> k4_p)</span>
+<span id="cb5-381"><a href="#cb5-381" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> q_next, p_next</span>
+<span id="cb5-382"><a href="#cb5-382" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-383"><a href="#cb5-383" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. 4th-Order Symplectic Yoshida Integrator</span></span>
+<span id="cb5-384"><a href="#cb5-384" aria-hidden="true" tabindex="-1"></a>w1 <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> (<span class="fl">2.0</span> <span class="op">-</span> <span class="fl">2.0</span><span class="op">**</span>(<span class="fl">1.0</span><span class="op">/</span><span class="fl">3.0</span>))</span>
+<span id="cb5-385"><a href="#cb5-385" aria-hidden="true" tabindex="-1"></a>w0 <span class="op">=</span> <span class="fl">1.0</span> <span class="op">-</span> <span class="fl">2.0</span> <span class="op">*</span> w1</span>
+<span id="cb5-386"><a href="#cb5-386" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-387"><a href="#cb5-387" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> step_velocity_verlet(q, p, tau):</span>
+<span id="cb5-388"><a href="#cb5-388" aria-hidden="true" tabindex="-1"></a>    p_half <span class="op">=</span> p <span class="op">+</span> <span class="fl">0.5</span> <span class="op">*</span> tau <span class="op">*</span> force_kepler(q)</span>
+<span id="cb5-389"><a href="#cb5-389" aria-hidden="true" tabindex="-1"></a>    q_next <span class="op">=</span> q <span class="op">+</span> tau <span class="op">*</span> p_half</span>
+<span id="cb5-390"><a href="#cb5-390" aria-hidden="true" tabindex="-1"></a>    p_next <span class="op">=</span> p_half <span class="op">+</span> <span class="fl">0.5</span> <span class="op">*</span> tau <span class="op">*</span> force_kepler(q_next)</span>
+<span id="cb5-391"><a href="#cb5-391" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> q_next, p_next</span>
+<span id="cb5-392"><a href="#cb5-392" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-393"><a href="#cb5-393" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> step_yoshida(q, p, dt):</span>
+<span id="cb5-394"><a href="#cb5-394" aria-hidden="true" tabindex="-1"></a>    q, p <span class="op">=</span> step_velocity_verlet(q, p, w1 <span class="op">*</span> dt)</span>
+<span id="cb5-395"><a href="#cb5-395" aria-hidden="true" tabindex="-1"></a>    q, p <span class="op">=</span> step_velocity_verlet(q, p, w0 <span class="op">*</span> dt)</span>
+<span id="cb5-396"><a href="#cb5-396" aria-hidden="true" tabindex="-1"></a>    q, p <span class="op">=</span> step_velocity_verlet(q, p, w1 <span class="op">*</span> dt)</span>
+<span id="cb5-397"><a href="#cb5-397" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> q, p</span>
+<span id="cb5-398"><a href="#cb5-398" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-399"><a href="#cb5-399" aria-hidden="true" tabindex="-1"></a><span class="co"># Initial conditions: Elliptical Kepler orbit with eccentricity e = 0.6</span></span>
+<span id="cb5-400"><a href="#cb5-400" aria-hidden="true" tabindex="-1"></a>q0 <span class="op">=</span> np.array([<span class="fl">1.0</span> <span class="op">-</span> <span class="fl">0.6</span>, <span class="fl">0.0</span>]) <span class="co"># Perihelion at r = 0.4</span></span>
+<span id="cb5-401"><a href="#cb5-401" aria-hidden="true" tabindex="-1"></a>v_y <span class="op">=</span> np.sqrt((<span class="fl">1.0</span> <span class="op">+</span> <span class="fl">0.6</span>) <span class="op">/</span> <span class="fl">0.4</span>) <span class="co"># Specific angular momentum</span></span>
+<span id="cb5-402"><a href="#cb5-402" aria-hidden="true" tabindex="-1"></a>p0 <span class="op">=</span> np.array([<span class="fl">0.0</span>, v_y])</span>
+<span id="cb5-403"><a href="#cb5-403" aria-hidden="true" tabindex="-1"></a>E0 <span class="op">=</span> H_kepler(q0, p0)</span>
+<span id="cb5-404"><a href="#cb5-404" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-405"><a href="#cb5-405" aria-hidden="true" tabindex="-1"></a>dt <span class="op">=</span> <span class="fl">0.02</span></span>
+<span id="cb5-406"><a href="#cb5-406" aria-hidden="true" tabindex="-1"></a>num_steps <span class="op">=</span> <span class="dv">50000</span> <span class="co"># ~150 complete orbits</span></span>
+<span id="cb5-407"><a href="#cb5-407" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-408"><a href="#cb5-408" aria-hidden="true" tabindex="-1"></a><span class="co"># Run RK4</span></span>
+<span id="cb5-409"><a href="#cb5-409" aria-hidden="true" tabindex="-1"></a>q_rk, p_rk <span class="op">=</span> np.copy(q0), np.copy(p0)</span>
+<span id="cb5-410"><a href="#cb5-410" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(num_steps):</span>
+<span id="cb5-411"><a href="#cb5-411" aria-hidden="true" tabindex="-1"></a>    q_rk, p_rk <span class="op">=</span> step_rk4(q_rk, p_rk, dt)</span>
+<span id="cb5-412"><a href="#cb5-412" aria-hidden="true" tabindex="-1"></a>E_rk_final <span class="op">=</span> H_kepler(q_rk, p_rk)</span>
+<span id="cb5-413"><a href="#cb5-413" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-414"><a href="#cb5-414" aria-hidden="true" tabindex="-1"></a><span class="co"># Run Yoshida Symplectic</span></span>
+<span id="cb5-415"><a href="#cb5-415" aria-hidden="true" tabindex="-1"></a>q_yo, p_yo <span class="op">=</span> np.copy(q0), np.copy(p0)</span>
+<span id="cb5-416"><a href="#cb5-416" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(num_steps):</span>
+<span id="cb5-417"><a href="#cb5-417" aria-hidden="true" tabindex="-1"></a>    q_yo, p_yo <span class="op">=</span> step_yoshida(q_yo, p_yo, dt)</span>
+<span id="cb5-418"><a href="#cb5-418" aria-hidden="true" tabindex="-1"></a>E_yo_final <span class="op">=</span> H_kepler(q_yo, p_yo)</span>
+<span id="cb5-419"><a href="#cb5-419" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-420"><a href="#cb5-420" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Initial Energy E0:           </span><span class="sc">{</span>E0<span class="sc">:.8f}</span><span class="ss">"</span>)</span>
+<span id="cb5-421"><a href="#cb5-421" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Final Energy RK4:            </span><span class="sc">{</span>E_rk_final<span class="sc">:.8f}</span><span class="ss"> | Absolute Drift: </span><span class="sc">{</span><span class="bu">abs</span>(E_rk_final <span class="op">-</span> E0)<span class="sc">:.4e}</span><span class="ss">"</span>)</span>
+<span id="cb5-422"><a href="#cb5-422" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Final Energy Yoshida (Symp): </span><span class="sc">{</span>E_yo_final<span class="sc">:.8f}</span><span class="ss"> | Absolute Drift: </span><span class="sc">{</span><span class="bu">abs</span>(E_yo_final <span class="op">-</span> E0)<span class="sc">:.4e}</span><span class="ss">"</span>)</span>
+<span id="cb5-423"><a href="#cb5-423" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Symplectic Integrator is </span><span class="sc">{</span><span class="bu">abs</span>(E_rk_final <span class="op">-</span> E0) <span class="op">/</span> <span class="bu">max</span>(<span class="bu">abs</span>(E_yo_final <span class="op">-</span> E0), <span class="fl">1e-16</span>)<span class="sc">:.1f}</span><span class="ss">x more energy-conserving!"</span>)</span>
+<span id="cb5-424"><a href="#cb5-424" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-425"><a href="#cb5-425" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-426"><a href="#cb5-426" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span></span>
+<span id="cb5-427"><a href="#cb5-427" aria-hidden="true" tabindex="-1"></a><span class="er">=== LAB 2: QUANTUM TUNNELING VIA SPLIT-OPERATOR FFT ===")</span></span>
+<span id="cb5-428"><a href="#cb5-428" aria-hidden="true" tabindex="-1"></a><span class="co"># Discretize 1D space: x in [-20, 20], N = 512 grid points</span></span>
+<span id="cb5-429"><a href="#cb5-429" aria-hidden="true" tabindex="-1"></a>Nx <span class="op">=</span> <span class="dv">512</span></span>
+<span id="cb5-430"><a href="#cb5-430" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.linspace(<span class="op">-</span><span class="fl">20.0</span>, <span class="fl">20.0</span>, Nx, endpoint<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb5-431"><a href="#cb5-431" aria-hidden="true" tabindex="-1"></a>dx <span class="op">=</span> x[<span class="dv">1</span>] <span class="op">-</span> x[<span class="dv">0</span>]</span>
+<span id="cb5-432"><a href="#cb5-432" aria-hidden="true" tabindex="-1"></a>dk <span class="op">=</span> <span class="fl">2.0</span> <span class="op">*</span> np.pi <span class="op">/</span> (Nx <span class="op">*</span> dx)</span>
+<span id="cb5-433"><a href="#cb5-433" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> np.fft.fftfreq(Nx, d<span class="op">=</span>dx) <span class="op">*</span> <span class="fl">2.0</span> <span class="op">*</span> np.pi <span class="co"># Momentum coordinates p = hbar * k</span></span>
+<span id="cb5-434"><a href="#cb5-434" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-435"><a href="#cb5-435" aria-hidden="true" tabindex="-1"></a><span class="co"># Potential barrier: V(x) = V0 for 0 &lt;= x &lt;= 2, else 0</span></span>
+<span id="cb5-436"><a href="#cb5-436" aria-hidden="true" tabindex="-1"></a>V0 <span class="op">=</span> <span class="fl">5.0</span></span>
+<span id="cb5-437"><a href="#cb5-437" aria-hidden="true" tabindex="-1"></a>V <span class="op">=</span> np.where((x <span class="op">&gt;=</span> <span class="fl">0.0</span>) <span class="op">&amp;</span> (x <span class="op">&lt;=</span> <span class="fl">2.0</span>), V0, <span class="fl">0.0</span>)</span>
+<span id="cb5-438"><a href="#cb5-438" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-439"><a href="#cb5-439" aria-hidden="true" tabindex="-1"></a><span class="co"># Initial Gaussian wavepacket centered at x = -8 with momentum k0 = 3.0</span></span>
+<span id="cb5-440"><a href="#cb5-440" aria-hidden="true" tabindex="-1"></a>x0, k0, sigma <span class="op">=</span> <span class="op">-</span><span class="fl">8.0</span>, <span class="fl">3.0</span>, <span class="fl">1.0</span></span>
+<span id="cb5-441"><a href="#cb5-441" aria-hidden="true" tabindex="-1"></a>psi <span class="op">=</span> np.exp(<span class="op">-</span><span class="fl">0.5</span> <span class="op">*</span> ((x <span class="op">-</span> x0)<span class="op">/</span>sigma)<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span> np.exp(<span class="ot">1j</span> <span class="op">*</span> k0 <span class="op">*</span> x)</span>
+<span id="cb5-442"><a href="#cb5-442" aria-hidden="true" tabindex="-1"></a>psi <span class="op">/=</span> np.sqrt(np.<span class="bu">sum</span>(np.<span class="bu">abs</span>(psi)<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span> dx) <span class="co"># Normalize</span></span>
+<span id="cb5-443"><a href="#cb5-443" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-444"><a href="#cb5-444" aria-hidden="true" tabindex="-1"></a>dt_q <span class="op">=</span> <span class="fl">0.01</span></span>
+<span id="cb5-445"><a href="#cb5-445" aria-hidden="true" tabindex="-1"></a>half_kick_phase <span class="op">=</span> np.exp(<span class="op">-</span><span class="ot">1j</span> <span class="op">*</span> <span class="fl">0.5</span> <span class="op">*</span> V <span class="op">*</span> dt_q)</span>
+<span id="cb5-446"><a href="#cb5-446" aria-hidden="true" tabindex="-1"></a>drift_phase <span class="op">=</span> np.exp(<span class="op">-</span><span class="ot">1j</span> <span class="op">*</span> <span class="fl">0.5</span> <span class="op">*</span> (k<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span> dt_q)</span>
+<span id="cb5-447"><a href="#cb5-447" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-448"><a href="#cb5-448" aria-hidden="true" tabindex="-1"></a><span class="co"># Evolve for 400 time steps</span></span>
+<span id="cb5-449"><a href="#cb5-449" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">400</span>):</span>
+<span id="cb5-450"><a href="#cb5-450" aria-hidden="true" tabindex="-1"></a>    psi <span class="op">=</span> half_kick_phase <span class="op">*</span> psi</span>
+<span id="cb5-451"><a href="#cb5-451" aria-hidden="true" tabindex="-1"></a>    psi_k <span class="op">=</span> np.fft.fft(psi)</span>
+<span id="cb5-452"><a href="#cb5-452" aria-hidden="true" tabindex="-1"></a>    psi_k <span class="op">=</span> drift_phase <span class="op">*</span> psi_k</span>
+<span id="cb5-453"><a href="#cb5-453" aria-hidden="true" tabindex="-1"></a>    psi <span class="op">=</span> np.fft.ifft(psi_k)</span>
+<span id="cb5-454"><a href="#cb5-454" aria-hidden="true" tabindex="-1"></a>    psi <span class="op">=</span> half_kick_phase <span class="op">*</span> psi</span>
+<span id="cb5-455"><a href="#cb5-455" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-456"><a href="#cb5-456" aria-hidden="true" tabindex="-1"></a>norm_final <span class="op">=</span> np.<span class="bu">sum</span>(np.<span class="bu">abs</span>(psi)<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span> dx</span>
+<span id="cb5-457"><a href="#cb5-457" aria-hidden="true" tabindex="-1"></a>tunneling_prob <span class="op">=</span> np.<span class="bu">sum</span>(np.<span class="bu">abs</span>(psi[x <span class="op">&gt;</span> <span class="fl">2.0</span>])<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span> dx</span>
+<span id="cb5-458"><a href="#cb5-458" aria-hidden="true" tabindex="-1"></a>reflection_prob <span class="op">=</span> np.<span class="bu">sum</span>(np.<span class="bu">abs</span>(psi[x <span class="op">&lt;</span> <span class="fl">0.0</span>])<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span> dx</span>
+<span id="cb5-459"><a href="#cb5-459" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-460"><a href="#cb5-460" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Norm after 400 steps:      </span><span class="sc">{</span>norm_final<span class="sc">:.8f}</span><span class="ss"> (Exact Unitarity = 1.00000000)"</span>)</span>
+<span id="cb5-461"><a href="#cb5-461" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Tunneling Probability T:   </span><span class="sc">{</span>tunneling_prob<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb5-462"><a href="#cb5-462" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Reflection Probability R:  </span><span class="sc">{</span>reflection_prob<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb5-463"><a href="#cb5-463" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"T + R Conservation Sum:    </span><span class="sc">{</span>tunneling_prob <span class="op">+</span> reflection_prob<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb5-464"><a href="#cb5-464" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-465"><a href="#cb5-465" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-466"><a href="#cb5-466" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span></span>
+<span id="cb5-467"><a href="#cb5-467" aria-hidden="true" tabindex="-1"></a><span class="er">=== LAB 3: 2D ISING MODEL METROPOLIS MCMC ===")</span></span>
+<span id="cb5-468"><a href="#cb5-468" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_ising_2d(L, temp, steps<span class="op">=</span><span class="dv">10000</span>):</span>
+<span id="cb5-469"><a href="#cb5-469" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initialize random spin lattice (+1 or -1)</span></span>
+<span id="cb5-470"><a href="#cb5-470" aria-hidden="true" tabindex="-1"></a>    spins <span class="op">=</span> np.random.choice([<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>], size<span class="op">=</span>(L, L))</span>
+<span id="cb5-471"><a href="#cb5-471" aria-hidden="true" tabindex="-1"></a>    beta <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> temp</span>
+<span id="cb5-472"><a href="#cb5-472" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-473"><a href="#cb5-473" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(steps):</span>
+<span id="cb5-474"><a href="#cb5-474" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Pick a random site (i, j)</span></span>
+<span id="cb5-475"><a href="#cb5-475" aria-hidden="true" tabindex="-1"></a>        i, j <span class="op">=</span> np.random.randint(<span class="dv">0</span>, L, size<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb5-476"><a href="#cb5-476" aria-hidden="true" tabindex="-1"></a>        s <span class="op">=</span> spins[i, j]</span>
+<span id="cb5-477"><a href="#cb5-477" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Nearest neighbors with periodic boundary conditions</span></span>
+<span id="cb5-478"><a href="#cb5-478" aria-hidden="true" tabindex="-1"></a>        neighbors <span class="op">=</span> (spins[(i<span class="op">+</span><span class="dv">1</span>)<span class="op">%</span>L, j] <span class="op">+</span> spins[(i<span class="op">-</span><span class="dv">1</span>)<span class="op">%</span>L, j] <span class="op">+</span> </span>
+<span id="cb5-479"><a href="#cb5-479" aria-hidden="true" tabindex="-1"></a>                     spins[i, (j<span class="op">+</span><span class="dv">1</span>)<span class="op">%</span>L] <span class="op">+</span> spins[i, (j<span class="op">-</span><span class="dv">1</span>)<span class="op">%</span>L])</span>
+<span id="cb5-480"><a href="#cb5-480" aria-hidden="true" tabindex="-1"></a>        dE <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> s <span class="op">*</span> neighbors</span>
+<span id="cb5-481"><a href="#cb5-481" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> dE <span class="op">&lt;=</span> <span class="dv">0</span> <span class="kw">or</span> np.random.rand() <span class="op">&lt;</span> np.exp(<span class="op">-</span>beta <span class="op">*</span> dE):</span>
+<span id="cb5-482"><a href="#cb5-482" aria-hidden="true" tabindex="-1"></a>            spins[i, j] <span class="op">=</span> <span class="op">-</span>s</span>
+<span id="cb5-483"><a href="#cb5-483" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb5-484"><a href="#cb5-484" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Measure final absolute magnetization per spin</span></span>
+<span id="cb5-485"><a href="#cb5-485" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">abs</span>(np.mean(spins))</span>
+<span id="cb5-486"><a href="#cb5-486" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-487"><a href="#cb5-487" aria-hidden="true" tabindex="-1"></a>L <span class="op">=</span> <span class="dv">16</span></span>
+<span id="cb5-488"><a href="#cb5-488" aria-hidden="true" tabindex="-1"></a>temps <span class="op">=</span> [<span class="fl">1.5</span>, <span class="fl">2.0</span>, <span class="fl">2.27</span>, <span class="fl">2.5</span>, <span class="fl">3.5</span>]</span>
+<span id="cb5-489"><a href="#cb5-489" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Lattice Size: 16x16 | Onsager Critical Temp Tc ≈ 2.269"</span>)</span>
+<span id="cb5-490"><a href="#cb5-490" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> T <span class="kw">in</span> temps:</span>
+<span id="cb5-491"><a href="#cb5-491" aria-hidden="true" tabindex="-1"></a>    m <span class="op">=</span> run_ising_2d(L, T, steps<span class="op">=</span><span class="dv">50000</span>)</span>
+<span id="cb5-492"><a href="#cb5-492" aria-hidden="true" tabindex="-1"></a>    phase <span class="op">=</span> <span class="st">"FERROMAGNETIC (Ordered)"</span> <span class="cf">if</span> T <span class="op">&lt;</span> <span class="fl">2.27</span> <span class="cf">else</span> <span class="st">"PARAMAGNETIC (Disordered)"</span></span>
+<span id="cb5-493"><a href="#cb5-493" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Temperature T = </span><span class="sc">{</span>T<span class="sc">:4.2f}</span><span class="ss"> | Magnetization |M| = </span><span class="sc">{</span>m<span class="sc">:.4f}</span><span class="ss"> | Phase: </span><span class="sc">{</span>phase<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-494"><a href="#cb5-494" aria-hidden="true" tabindex="-1"></a>```</span>
+<span id="cb5-495"><a href="#cb5-495" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-496"><a href="#cb5-496" aria-hidden="true" tabindex="-1"></a><span class="op">---</span></span>
+<span id="cb5-497"><a href="#cb5-497" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-498"><a href="#cb5-498" aria-hidden="true" tabindex="-1"></a><span class="co">## 8. Curated References &amp; Foundational Literature</span></span>
+<span id="cb5-499"><a href="#cb5-499" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-500"><a href="#cb5-500" aria-hidden="true" tabindex="-1"></a><span class="fl">1.</span> <span class="op">**</span>Hairer, Ernst, Lubich, Christian, <span class="op">&amp;</span> Wanner, Gerhard (<span class="dv">2006</span>)<span class="op">**</span>. <span class="op">*</span>Geometric Numerical Integration: Structure<span class="op">-</span>Preserving Algorithms <span class="cf">for</span> Ordinary Differential Equations<span class="op">*</span> (<span class="dv">2</span><span class="er">nd</span> ed.). Springer Series <span class="kw">in</span> Computational Mathematics, Springer<span class="op">-</span>Verlag.</span>
+<span id="cb5-501"><a href="#cb5-501" aria-hidden="true" tabindex="-1"></a><span class="fl">2.</span> <span class="op">**</span>Yoshida, Haruo (<span class="dv">1990</span>)<span class="op">**</span>. <span class="op">*</span><span class="st">"Construction of higher order symplectic integrators"</span><span class="op">*</span>. Physics Letters A, <span class="dv">150</span>(<span class="dv">5</span>–<span class="dv">7</span>): <span class="dv">262</span>–<span class="fl">268.</span></span>
+<span id="cb5-502"><a href="#cb5-502" aria-hidden="true" tabindex="-1"></a><span class="fl">3.</span> <span class="op">**</span>Verlet, Loup (<span class="dv">1967</span>)<span class="op">**</span>. <span class="op">*</span><span class="st">"Computer 'Experiments' on Classical Fluids. I. Thermodynamical Properties of Lennard-Jones Molecules"</span><span class="op">*</span>. Physical Review, <span class="dv">159</span>(<span class="dv">1</span>): <span class="dv">98</span>–<span class="fl">103.</span></span>
+<span id="cb5-503"><a href="#cb5-503" aria-hidden="true" tabindex="-1"></a><span class="fl">4.</span> <span class="op">**</span>Sanz<span class="op">-</span>Serna, J. M., <span class="op">&amp;</span> Calvo, M. P. (<span class="dv">1994</span>)<span class="op">**</span>. <span class="op">*</span>Numerical Hamiltonian Problems<span class="op">*</span>. Chapman <span class="op">&amp;</span> Hall.</span>
+<span id="cb5-504"><a href="#cb5-504" aria-hidden="true" tabindex="-1"></a><span class="fl">5.</span> <span class="op">**</span>Trefethen, Lloyd N. (<span class="dv">2000</span>)<span class="op">**</span>. <span class="op">*</span>Spectral Methods <span class="kw">in</span> MATLAB<span class="op">*</span>. Society <span class="cf">for</span> Industrial <span class="kw">and</span> Applied Mathematics (SIAM).</span>
+<span id="cb5-505"><a href="#cb5-505" aria-hidden="true" tabindex="-1"></a><span class="fl">6.</span> <span class="op">**</span>Fleck, J. A., Morris, J. R., <span class="op">&amp;</span> Feit, M. D. (<span class="dv">1976</span>)<span class="op">**</span>. <span class="op">*</span><span class="st">"Time-dependent propagation of high energy laser beams through the atmosphere"</span><span class="op">*</span>. Applied Physics, <span class="dv">10</span>(<span class="dv">2</span>): <span class="dv">129</span>–<span class="fl">160.</span> (First introduction of Split<span class="op">-</span>Operator FFT <span class="cf">for</span> wave equations).</span>
+<span id="cb5-506"><a href="#cb5-506" aria-hidden="true" tabindex="-1"></a><span class="fl">7.</span> <span class="op">**</span>Metropolis, Nicholas, Rosenbluth, Arianna W., Rosenbluth, Marshall N., Teller, Augusta H., <span class="op">&amp;</span> Teller, Edward (<span class="dv">1953</span>)<span class="op">**</span>. <span class="op">*</span><span class="st">"Equation of State Calculations by Fast Computing Machines"</span><span class="op">*</span>. The Journal of Chemical Physics, <span class="dv">21</span>(<span class="dv">6</span>): <span class="dv">1087</span>–<span class="fl">1092.</span></span>
+<span id="cb5-507"><a href="#cb5-507" aria-hidden="true" tabindex="-1"></a><span class="fl">8.</span> <span class="op">**</span>Onsager, Lars (<span class="dv">1944</span>)<span class="op">**</span>. <span class="op">*</span><span class="st">"Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition"</span><span class="op">*</span>. Physical Review, <span class="dv">65</span>(<span class="dv">3</span>–<span class="dv">4</span>): <span class="dv">117</span>–<span class="fl">149.</span></span>
+<span id="cb5-508"><a href="#cb5-508" aria-hidden="true" tabindex="-1"></a><span class="fl">9.</span> <span class="op">**</span>Newman, Mark (<span class="dv">2013</span>)<span class="op">**</span>. <span class="op">*</span>Computational Physics<span class="op">*</span>. CreateSpace.</span>
+<span id="cb5-509"><a href="#cb5-509" aria-hidden="true" tabindex="-1"></a><span class="fl">10.</span> <span class="op">**</span>Landau, David P., <span class="op">&amp;</span> Binder, Kurt (<span class="dv">2021</span>)<span class="op">**</span>. <span class="op">*</span>A Guide to Monte Carlo Simulations <span class="kw">in</span> Statistical Physics<span class="op">*</span> (<span class="dv">5</span><span class="er">th</span> ed.). Cambridge University Press.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2026 Igor Kan</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
