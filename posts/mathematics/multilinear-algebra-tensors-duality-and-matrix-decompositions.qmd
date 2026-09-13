@@ -263,3 +263,74 @@ This transformation law is the hallmark of tensor character: an array of numbers
    - Relates the Cauchy stress tensor $\sigma_{ij}$ to the infinitesimal strain tensor $\varepsilon_{kl}$ via generalized Hooke's Law:
      $$\sigma_{ij} = C_{ijkl} \varepsilon_{kl}$$
    - In 3D, while an unconstrained 4th-order tensor contains $3^4 = 81$ components, thermodynamic conservative symmetry ($\sigma_{ij} = \sigma_{ji}$, $\varepsilon_{kl} = \varepsilon_{lk}$, and $C_{ijkl} = C_{klij}$) reduces the independent elastic constants to 21.
+
+## 5. Tensor Operations: Products, Contractions, and Generalized Transpositions
+
+Tensor algebra consists of four primary structural operations: tensor products (rank augmentation), contraction (rank reduction), index permutation (transposition), and linear combination.
+
+### 5.1 The Tensor Product (Outer Product)
+
+The tensor product $\otimes$ combines two tensors of arbitrary ranks to create a new tensor whose rank is the sum of the input ranks.
+
+::: {.callout-note}
+### Definition: Tensor Product
+Let $A \in T^{p}_{r}(V)$ and $B \in T^{q}_{s}(V)$. The tensor product $A \otimes B \in T^{p+q}_{r+s}(V)$ is defined by component multiplication:
+$$(A \otimes B)^{i_1 \dots i_p \, j_1 \dots j_q}_{k_1 \dots k_r \, l_1 \dots l_s} \equiv A^{i_1 \dots i_p}_{k_1 \dots k_r} B^{j_1 \dots j_q}_{l_1 \dots l_s}$$
+:::
+
+Properties of $\otimes$:
+1. **Associative**: $(A \otimes B) \otimes C = A \otimes (B \otimes C)$.
+2. **Bilinear (Distributive)**: $A \otimes (B + C) = A \otimes B + A \otimes C$.
+3. **Non-Commutative**: In general, $A \otimes B \neq B \otimes A$.
+
+### 5.2 Tensor Contraction (Trace Operator)
+
+Contraction is the fundamental rank-reducing operation in tensor calculus. It pairs one upper (contravariant) index with one lower (covariant) index and sums over all basis elements according to the Einstein summation convention.
+
+::: {.callout-note}
+### Definition: Contraction Operator
+For a tensor $T \in T^r_s(V)$ with $r \ge 1$ and $s \ge 1$, contraction over the $a$-th contravariant index and $b$-th covariant index is a linear mapping $\mathcal{C}^a_b: T^r_s(V) \to T^{r-1}_{s-1}(V)$:
+$$(\mathcal{C}^a_b T)^{i_1 \dots \widehat{i_a} \dots i_r}_{j_1 \dots \widehat{j_b} \dots j_s} = \sum_{k=1}^n T^{i_1 \dots i_{a-1} \, k \, i_{a+1} \dots i_r}_{j_1 \dots j_{b-1} \, k \, j_{b+1} \dots j_s}$$
+where $\,\widehat{\cdot}\,$ indicates an omitted index.
+:::
+
+**Special Case**: When applied to a $(1, 1)$ tensor $T^i_j$, contraction yields the invariant matrix trace:
+$$\mathcal{C}(T) = T^i_i = \operatorname{Tr}(T) \in \mathbb{R}$$
+
+### 5.3 2D Tensor by Vector Operations
+
+A second-order tensor can interact with a vector in multiple geometrically distinct ways depending on the variance (upper vs. lower) of the indices:
+
+| Operation | Index Formulation | Matrix Equivalent | Geometric Meaning |
+| :--- | :--- | :---: | :--- |
+| **Linear Map on Vector** | $w^i = A^i_j v^j$ | $\mathbf{w} = A \mathbf{v}$ | Endomorphism: maps contravariant vector to contravariant vector |
+| **Bilinear Evaluation Slot** | $u_i = g_{ij} v^j$ | $\mathbf{u} = g \mathbf{v}$ | Metric lowering: maps vector $\mathbf{v} \in V$ to covector $\mathbf{u} \in V^*$ |
+| **Covector Pullback / Action** | $\theta_j = \omega_i A^i_j$ | $\boldsymbol{\theta} = \boldsymbol{\omega} A$ | Dual action: maps covector $\boldsymbol{\omega} \in V^*$ to covector $\boldsymbol{\theta} \in V^*$ |
+| **Dual Inversion / Raising** | $y^i = g^{ij} \omega_j$ | $\mathbf{y} = g^{-1} \boldsymbol{\omega}$ | Metric raising: maps covector $\boldsymbol{\omega} \in V^*$ to vector $\mathbf{y} \in V$ |
+
+### 5.4 2D Tensor by 2D Tensor Operations
+
+When combining two second-order tensors $A$ and $B$, three primary contraction regimes exist:
+
+#### 1. Single Contraction (Matrix Product)
+Summing over one shared index corresponds to operator composition:
+$$C^i_k = A^i_j B^j_k \iff C = A B$$
+
+#### 2. Double Contraction (Frobenius / Hilbert-Schmidt Inner Product)
+Summing over both indices simultaneously contracts the product into an invariant scalar:
+$$A : B = A_{ij} B^{ij} = \sum_{i,j=1}^n A_{ij} B^{ij}$$
+In Cartesian coordinates where metric raising/lowering is trivial ($g_{ij} = \delta_{ij}$):
+$$A : B = A_{ij} B_{ij} = \operatorname{Tr}(A B^T) = \operatorname{Tr}(A^T B)$$
+The induced norm $\|A\|_F = \sqrt{A : A} = \sqrt{\sum_{i,j} A_{ij}^2}$ is the **Frobenius norm**, extensively utilized in continuum mechanics and machine learning.
+
+#### 3. Zero Contraction (4th-Order Outer Product)
+Multiplying components without summing produces a fourth-order elasticity-type tensor:
+$$T_{ijkl} = A_{ij} B_{kl}$$
+
+### 5.5 Generalized Transposition via Permutations
+
+For an $N$-th order tensor $T \in T^0_N(V)$, transposition is generalized from matrix row-column swapping to arbitrary permutations $\sigma$ in the symmetric group $S_N$:
+$$(T^\sigma)_{i_1 i_2 \dots i_N} \equiv T_{i_{\sigma(1)} i_{\sigma(2)} \dots i_{\sigma(N)}}$$
+
+For a 2D tensor ($N=2$), $S_2 = \{\text{id}, (1\,2)\}$, giving:
+$$(T^{(1\,2)})_{ij} = T_{ji} = (T^T)_{ij}$$
