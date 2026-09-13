@@ -114,3 +114,124 @@ def gcd_subtractive(a: int, b: int) -> int:
 
 #### Worst-Case Analysis of Repeated Subtraction:
 Consider the pair $(a, b) = (N, 1)$. The subtractive algorithm requires $N - 1$ subtraction operations to reduce $N$ down to $1$. Thus, the time complexity of naive anthyphairesis is $O(\max(a, b))$, which is exponential in the input bit length $\Omega(2^k)$. This computational bottleneck directly motivated the transition to the division/remainder algorithm.
+
+---
+
+## 3. The Division Algorithm and Standard Remainder Method
+
+### 3.1 Theorem: The Division Algorithm for Integers
+Rather than subtracting b from a one step at a time, we subtract all multiples of b simultaneously.
+
+::: {.callout-important appearance="simple"}
+#### Theorem 1 (The Division Algorithm)
+Given any integers $a, b \in \mathbb{Z}$ with $b > 0$, there exist **unique** integers $q$ (quotient) and $r$ (remainder) such that:
+$$a = q \cdot b + r \quad \text{where} \quad 0 \leq r < b$$
+:::
+
+#### Proof of Existence and Uniqueness:
+1. **Existence**:
+   Consider the set $S = \{a - x b : x \in \mathbb{Z} \text{ and } a - x b \geq 0\}$.
+   - If $a \geq 0$, choose $x = 0$, so $a - 0 \cdot b = a \geq 0 \implies a \in S$.
+   - If $a < 0$, choose $x = a$. Then $a - a b = a(1 - b)$. Since $b \geq 1$, $1 - b \leq 0$, so $a(1 - b) \geq 0 \implies a(1 - b) \in S$.
+   Thus, $S$ is a non-empty subset of the non-negative integers $\mathbb{N}_0$. By the **Well-Ordering Principle** of $\mathbb{N}_0$, $S$ contains a unique minimal element, which we denote as $r = a - q b \geq 0$.
+   
+   We now show by contradiction that $r < b$. Suppose $r \geq b$. Then:
+   $$r - b = (a - q b) - b = a - (q + 1)b \geq 0$$
+   This element belongs to $S$. But since $b > 0$, $r - b < r$, contradicting the minimality of $r$ in $S$. Hence, $0 \leq r < b$.
+
+2. **Uniqueness**:
+   Suppose there exist two representations: $a = q_1 b + r_1 = q_2 b + r_2$ with $0 \leq r_1, r_2 < b$.
+   Subtracting gives:
+   $$(q_1 - q_2)b = r_2 - r_1$$
+   Taking absolute values:
+   $$|q_1 - q_2| b = |r_2 - r_1|$$
+   Since $0 \leq r_1, r_2 < b$, the difference satisfies $-b < r_2 - r_1 < b$, which implies:
+   $$|r_2 - r_1| < b$$
+   Therefore:
+   $$|q_1 - q_2| b < b \implies |q_1 - q_2| < 1$$
+   Since $q_1, q_2 \in \mathbb{Z}$, $|q_1 - q_2|$ must be an integer, so $q_1 - q_2 = 0 \implies q_1 = q_2$.
+   It immediately follows that $r_1 = r_2$. $\blacksquare$
+
+---
+
+### 3.2 The Remainder Invariance Theorem
+By applying Lemma 1 iteratively $q$ times:
+$$\gcd(a, b) = \gcd(b, a - b) = \gcd(b, a - 2b) = \cdots = \gcd(b, a - qb) = \gcd(b, r)$$
+
+::: {.callout-note appearance="simple"}
+#### Theorem 2 (Modulo Reduction Invariance)
+For integers $a, b \in \mathbb{Z}$ with $b \neq 0$:
+$$\gcd(a, b) = \gcd(b, a \bmod b)$$
+:::
+
+This establishes the classical recurrence of the Euclidean algorithm:
+$$\begin{aligned}
+r_0 &= a \\
+r_1 &= b \\
+r_0 &= q_1 r_1 + r_2, \quad 0 \leq r_2 < r_1 \\
+r_1 &= q_2 r_2 + r_3, \quad 0 \leq r_3 < r_2 \\
+&\;\;\vdots \\
+r_{k-2} &= q_{k-1} r_{k-1} + r_k, \quad 0 \leq r_k < r_{k-1} \\
+r_{k-1} &= q_k r_k + 0
+\end{aligned}$$
+
+Because the sequence of remainders is strictly decreasing:
+$$b = r_1 > r_2 > r_3 > \cdots \geq 0$$
+it must terminate at $0$ in a finite number of steps $k$. The last non-zero remainder $r_k$ is precisely $\gcd(a, b)$.
+
+```python
+def gcd_euclidean(a: int, b: int) -> int:
+    """Computes gcd(a, b) via standard Euclidean division remainder recurrence."""
+    a, b = abs(a), abs(b)
+    while b != 0:
+        a, b = b, a % b
+    return a
+```
+
+---
+
+### 3.3 Geometric Interpretation: Tiling Rectangles with Squares
+Geometrically, finding $\gcd(a, b)$ is isomorphic to the problem of completely tiling a rectangle of dimensions $a \times b$ using the largest possible congruent squares of side length $g$.
+1. If $a > b$, we place as many $b \times b$ squares as possible into the rectangle. The number of such squares is $q_1 = \lfloor a / b \rfloor$.
+2. The remaining uncovered region is a rectangle of dimensions $b \times r_1$, where $r_1 = a \bmod b$.
+3. We repeat the process on the remaining rectangle until the remaining region can be tiled with squares without remainder. The side length of the final square tile is $\gcd(a, b)$.
+
+---
+
+### 3.4 Lamé's Theorem: Logarithmic Time Complexity
+The running time of the Euclidean algorithm was analyzed in 1844 by Gabriel Lamé, marking one of the earliest results in computational complexity theory.
+
+::: {.callout-tip appearance="simple"}
+#### Theorem 3 (Lamé's Theorem, 1844)
+The number of division steps required by the Euclidean algorithm to compute $\gcd(a, b)$ with $a > b > 0$ is at most **5 times the number of decimal digits** of $b$.
+:::
+
+#### Proof:
+Let $k$ be the number of division steps, with remainder sequence $r_0 = a$, $r_1 = b$, and $r_k = \gcd(a, b) \geq 1$.
+The last division step is:
+$$r_{k-1} = q_k r_k$$
+Since $r_k$ is the last non-zero remainder and $r_{k-1} > r_k$, we must have $q_k \geq 2$.
+For all preceding steps $1 \leq i \leq k-1$, the quotient satisfies $q_i \geq 1$.
+Therefore:
+$$\begin{aligned}
+r_k &\geq 1 = F_2 \\
+r_{k-1} &= q_k r_k \geq 2 \cdot 1 = 2 = F_3 \\
+r_{k-2} &= q_{k-1} r_{k-1} + r_k \geq 1 \cdot r_{k-1} + r_k \geq F_3 + F_2 = F_4 \\
+&\;\;\vdots \\
+r_{k-i} &\geq F_{i+2} \\
+&\;\;\vdots \\
+b = r_1 &\geq F_{k+1}
+\end{aligned}$$
+
+Here $F_n$ is the $n$-th Fibonacci number ($F_1=1, F_2=1, F_3=2, F_4=3, F_5=5, \dots$).
+Using Binet's formula, the Fibonacci sequence grows as $F_n \approx \frac{\phi^n}{\sqrt{5}}$, where $\phi = \frac{1 + \sqrt{5}}{2} \approx 1.6180339887$ is the golden ratio.
+More precisely, $F_{k+1} > \phi^{k-1}$.
+Thus:
+$$b > \phi^{k-1}$$
+Taking the base-10 logarithm on both sides:
+$$\log_{10} b > (k - 1) \log_{10} \phi$$
+Since $\log_{10} \phi = \log_{10}(1.618...) \approx 0.2089876 > \frac{1}{5} = 0.2$, we have:
+$$\log_{10} b > \frac{k - 1}{5} \implies k - 1 < 5 \log_{10} b \implies k \leq 5 \log_{10} b$$
+
+Since $\lfloor \log_{10} b \rfloor + 1$ is the number of decimal digits $d$ of $b$, the number of steps $k \leq 5 d$.
+Consequently, the Euclidean algorithm requires $O(\log(\min(a, b)))$ steps, which is linear in the number of bits $\mathcal{O}(n)$, making it exponentially faster than naive anthyphairesis! $\blacksquare$
