@@ -476,3 +476,45 @@ $$A(x) = Q(x) B(x) + R(x) \quad \text{with} \quad \deg(R) < \deg(B)$$
 The Euclidean algorithm generates a **Polynomial Remainder Sequence (PRS)**:
 $$R_0(x) = A(x), \quad R_1(x) = B(x), \quad R_{i-1}(x) = Q_i(x) R_i(x) + R_{i+1}(x)$$
 The last non-zero polynomial $R_k(x)$, normalized to be monic (leading coefficient $1$), is $\gcd(A(x), B(x))$.
+
+---
+
+## 7. Continued Fractions and Lattice Basis Reduction
+
+### 7.1 Continued Fractions via Euclidean Quotients
+The sequence of integer quotients $q_1, q_2, \dots, q_k$ produced by the Euclidean algorithm on $(a, b)$ directly generates the **simple continued fraction expansion** of the rational number $a / b$:
+$$\frac{a}{b} = q_1 + \cfrac{1}{q_2 + \cfrac{1}{q_3 + \cfrac{1}{\ddots + \cfrac{1}{q_k}}}} = [q_1; q_2, q_3, \dots, q_k]$$
+
+Trunctating the expansion at step $m \leq k$ yields the **convergents** $p_m / q_m$:
+$$\begin{aligned}
+p_0 &= q_0, & q_0 &= 1 \\
+p_1 &= q_1 q_0 + 1, & q_1 &= q_1 \\
+p_m &= q_m p_{m-1} + p_{m-2}, & q_m &= q_m q_{m-1} + q_{m-2}
+\end{aligned}$$
+
+By **Dirichlet's Approximation Theorem**, the convergents produced by the Euclidean algorithm are the **best rational approximations** of $a/b$: no fraction with a denominator smaller than $q_m$ can lie closer to $a/b$.
+
+```python
+def continued_fraction(a: int, b: int):
+    """Extracts the continued fraction coefficients [q0; q1, q2, ...] from gcd(a, b)."""
+    coefficients = []
+    while b != 0:
+        q = a // b
+        coefficients.append(q)
+        a, b = b, a - q * b
+    return coefficients
+```
+
+---
+
+### 7.2 The 2D Euclidean Algorithm: Gauss-Lagrange Lattice Reduction
+In linear algebra and geometry of numbers, an integer lattice $\Lambda \subset \mathbb{R}^2$ is spanned by two linearly independent basis vectors $\mathbf{v}_1, \mathbf{v}_2$. Finding the shortest non-zero vector in $\Lambda$ is the **Shortest Vector Problem (SVP)**.
+
+The **Gauss-Lagrange algorithm** reduces a 2D lattice basis $(\mathbf{u}, \mathbf{v})$ by applying the Euclidean algorithm in vector space:
+1. Ensure $\|\mathbf{u}\| \leq \|\mathbf{v}\|$.
+2. Project $\mathbf{v}$ onto $\mathbf{u}$:
+   $$q = \left\lfloor \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|^2} + 0.5 \right\rfloor$$
+3. Replace $\mathbf{v} \leftarrow \mathbf{v} - q \mathbf{u}$.
+4. If $\|\mathbf{v}\| < \|\mathbf{u}\|$, swap $\mathbf{u}$ and $\mathbf{v}$ and repeat; otherwise stop.
+
+Just as the Euclidean algorithm reduces integers by subtracting multiples until the remainder is smaller than the divisor, the Gauss-Lagrange algorithm subtracts scalar multiples of basis vectors until the projection is minimized ($|\mu| \leq 1/2$), solving the 2D SVP exactly!
