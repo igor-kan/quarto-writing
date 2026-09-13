@@ -610,3 +610,93 @@ Beyond second-order quadratic forms, multilinear algebra encompasses polynomial 
 - **Quartic Form** ($d=4$): $\Phi(\mathbf{x}) = D_{ijkl} x^i x^j x^k x^l$ (kurtosis tensors, nonlinear elasticity, Ginzburg-Landau phase transition free energies).
 
 Testing the global positivity of a 4th-order polynomial form $D_{ijkl} x^i x^j x^k x^l > 0$ is an NP-hard problem, solved in modern optimization via **Sum of Squares (SOS)** semidefinite programming (SDP) relaxations.
+
+## 10. Computational Laboratory: Python Implementations and Numerical Verification
+
+Below is a complete, standalone computational suite demonstrating these multilinear algebraic principles using `numpy` and `scipy.linalg`.
+
+```python
+import numpy as np
+import scipy.linalg as la
+
+# 1. Duality Pairing vs Outer Product
+v = np.array([2.0, -3.0, 1.0])       # Contravariant column vector (3,)
+omega = np.array([1.0, 4.0, 5.0])    # Covariant row vector (3,)
+
+# Inner pairing (contraction): ω_i v^i -> scalar
+pairing = np.dot(omega, v)            # 1(2) + 4(-3) + 5(1) = 2 - 12 + 5 = -5
+print(f"Duality Pairing <ω, v>: {pairing}")
+
+# Outer product (tensor product): v ⊗ ω -> rank-1 matrix (3x3)
+outer_tensor = np.outer(v, omega)
+print("Rank-1 Outer Product T = v ⊗ ω:\n", outer_tensor)
+
+# 2. Symmetric and Antisymmetric Canonical Decomposition
+np.random.seed(42)
+T = np.random.randn(4, 4)
+S = 0.5 * (T + T.T)                  # Symmetric part T_{(ij)}
+A = 0.5 * (T - T.T)                  # Antisymmetric part T_{[ij]}
+
+# Verification of exact reconstruction
+assert np.allclose(T, S + A), "Reconstruction failed!"
+
+# Verification of Orthogonality Theorem: S_{ij} A^{ij} == 0
+double_contraction = np.sum(S * A)    # Sum over all i, j of S_ij * A_ij
+print(f"Symmetric : Antisymmetric Double Contraction: {double_contraction:.16e}")
+assert np.isclose(double_contraction, 0.0), "Orthogonality theorem violated!"
+
+# 3. Einstein Summation Contractions with np.einsum
+# Matrix-Vector contraction: w^i = M^i_j v^j
+M = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=float)
+w_einsum = np.einsum('ij,j->i', M, v)
+w_dot = M @ v
+assert np.allclose(w_einsum, w_dot)
+
+# 4th-order tensor outer product: T_{ijkl} = M_{ij} M_{kl}
+T4 = np.einsum('ij,kl->ijkl', M, M)
+print(f"4th-Order Tensor Shape: {T4.shape}")
+
+# 4. Matrix Decompositions: Polar, SVD, Cholesky
+# Polar Decomposition: M = R @ U
+R, U = la.polar(M)
+print("Polar Decomposition Rotation Matrix R (Orthogonal):\n", np.round(R, 3))
+print("Polar Decomposition Stretch Tensor U (Symmetric PSD):\n", np.round(U, 3))
+assert np.allclose(M, R @ U)
+
+# Cholesky Decomposition of Positive Definite Matrix: K = L @ L.T
+K = M.T @ M + 0.1 * np.eye(3)        # Guaranteed positive definite
+L = np.linalg.cholesky(K)
+assert np.allclose(K, L @ L.T)
+print("Cholesky Lower Triangular Factor L:\n", np.round(L, 3))
+
+# 5. Sylvester's Criterion and Quadratic Form Definiteness
+def check_sylvester_positive_definite(matrix):
+    n = matrix.shape[0]
+    minors = [np.linalg.det(matrix[:k, :k]) for k in range(1, n + 1)]
+    is_pd = all(m > 0 for m in minors)
+    return is_pd, minors
+
+is_pd, minors = check_sylvester_positive_definite(K)
+print(f"Matrix K Positive Definite via Sylvester? {is_pd} (Minors: {[round(m, 2) for m in minors]})")
+```
+
+---
+
+## 11. Comprehensive Summary Matrix
+
+| Concept | Mathematical Space | Index Notation | Classical Matrix Formulation | Key Invariant Property |
+| :--- | :--- | :---: | :---: | :--- |
+| **Vector** | $V$ | $v^i$ | $\mathbf{v} \in \mathbb{R}^{n \times 1}$ (Column) | Contravariant transformation with $P^{-1}$ |
+| **Covector** | $V^*$ | $\omega_i$ | $\boldsymbol{\omega} \in \mathbb{R}^{1 \times n}$ (Row) | Covariant transformation with $P$ |
+| **Duality Pairing** | $V^* \times V \to \mathbb{R}$ | $\omega_i v^i$ | $\boldsymbol{\omega} \mathbf{v}$ | Coordinate-invariant scalar |
+| **Outer Product** | $V \otimes V^*$ | $u^i \omega_j$ | $\mathbf{u} \boldsymbol{\omega}$ | Rank-1 operator $\operatorname{rank}(T) = 1$ |
+| **Transpose** | $W^* \to V^*$ | $(A^T)^j_i = A^i_j$ | $A^T$ | Dual map adjoint representation |
+| **Contraction** | $T^r_s \to T^{r-1}_{s-1}$ | $T^{\dots k \dots}_{\dots k \dots}$ | Trace $\operatorname{Tr}(A) = A^i_i$ | Invariant under similarity transform |
+| **Frobenius Product** | $T^0_2 \times T^0_2 \to \mathbb{R}$ | $A_{ij} B^{ij}$ | $\operatorname{Tr}(A B^T)$ | Induced tensor norm $\|A\|_F = \sqrt{A : A}$ |
+| **Symmetric / Anti Split** | $\operatorname{Sym}^2 \oplus \Lambda^2$ | $T_{(ij)} + T_{[ij]}$ | $\frac{1}{2}(A + A^T) + \frac{1}{2}(A - A^T)$ | Complete orthogonality $S_{ij} A^{ij} \equiv 0$ |
+| **Spectral Theorem** | Symmetric Endomorphism | $\sum \lambda_i q_{i,j} q_{i,k}$ | $Q \Lambda Q^T$ | Real spectrum, orthogonal eigenspaces |
+| **SVD** | Rectangular Map $\mathbb{R}^n \to \mathbb{R}^m$ | $\sum \sigma_i u_i^j v_{i,k}$ | $U \Sigma V^T$ | Eckart-Young optimal low-rank compression |
+| **HOSVD (Tucker)** | $N$-th Order Tensor | $\mathcal{G}_{j_1 \dots j_N} \prod U^{(n)}_{i_n j_n}$ | $\mathcal{G} \times_1 U^{(1)} \dots \times_N U^{(N)}$ | Multilinear rank reduction via unfolding |
+| **CP Decomposition** | $N$-th Order Tensor | $\sum \lambda_r a_{i_1, r}^{(1)} \dots a_{i_N, r}^{(N)}$ | Outer product sum | Minimal canonical tensor rank |
+| **Quadratic Form** | $V \to \mathbb{R}$ | $A_{ij} x^i x^j$ | $\mathbf{x}^T A \mathbf{x}$ | Governed solely by symmetric part $A_{(ij)}$ |
+| **Positive Definiteness** | $A \succ 0$ | $\lambda_{\min}(A) > 0$ | $\Delta_k > 0$ (Sylvester) | Strict convex energy bowl, $A = L L^T$ |
