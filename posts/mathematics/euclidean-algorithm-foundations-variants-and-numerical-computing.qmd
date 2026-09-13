@@ -235,3 +235,109 @@ $$\log_{10} b > \frac{k - 1}{5} \implies k - 1 < 5 \log_{10} b \implies k \leq 5
 
 Since $\lfloor \log_{10} b \rfloor + 1$ is the number of decimal digits $d$ of $b$, the number of steps $k \leq 5 d$.
 Consequently, the Euclidean algorithm requires $O(\log(\min(a, b)))$ steps, which is linear in the number of bits $\mathcal{O}(n)$, making it exponentially faster than naive anthyphairesis! $\blacksquare$
+
+---
+
+## 4. Bézout's Identity and the Extended Euclidean Algorithm (EEA)
+
+### 4.1 Theorem: Bézout's Identity
+The greatest common divisor is not merely an abstract bound; it can always be expressed as an integer linear combination of the two initial inputs.
+
+::: {.callout-important appearance="simple"}
+#### Theorem 4 (Bézout's Identity)
+For any integers $a, b \in \mathbb{Z}$ (not both zero), there exist integers $x, y \in \mathbb{Z}$ (the *Bézout coefficients*) such that:
+$$a \cdot x + b \cdot y = \gcd(a, b)$$
+Furthermore, $\gcd(a, b)$ is the **smallest positive integer** that can be written in the form $ax + by$.
+:::
+
+#### Ideal-Theoretic Proof:
+Consider the set of all integer linear combinations of $a$ and $b$:
+$$I = \{a x + b y : x, y \in \mathbb{Z}\}$$
+
+1. **Subgroup / Ideal Property**:
+   $I$ is non-empty since $a = a(1) + b(0) \in I$.
+   If $u, v \in I$, then $u = ax_1 + by_1$ and $v = ax_2 + by_2$, so $u - v = a(x_1 - x_2) + b(y_1 - y_2) \in I$.
+   Thus, $I$ forms an additive subgroup (and indeed a principal ideal) of the ring $\mathbb{Z}$.
+
+2. **Minimal Positive Element**:
+   Let $I^+ = \{k \in I : k > 0\}$. Since at least one of $a$ or $b$ is non-zero, $a^2 + b^2 > 0 \in I^+$, so $I^+$ is non-empty.
+   By the Well-Ordering Principle of $\mathbb{N}$, $I^+$ possesses a least element, say $d = ax_0 + by_0$.
+
+3. **$d$ Divides Every Element of $I$**:
+   Let $z \in I$ be arbitrary. By the division algorithm, there exist integers $q, r$ such that $z = q d + r$ with $0 \leq r < d$.
+   Then:
+   $$r = z - q d$$
+   Since both $z \in I$ and $d \in I$, and $I$ is an ideal, $r \in I$.
+   If $r > 0$, then $r \in I^+$, which contradicts the minimality of $d$ since $r < d$.
+   Therefore, $r = 0$, which proves that $d$ divides every element in $I$.
+
+4. **$d = \gcd(a, b)$**:
+   Since $a = a(1) + b(0) \in I$, $d \mid a$.
+   Since $b = a(0) + b(1) \in I$, $d \mid b$.
+   Thus $d$ is a common divisor of $a$ and $b$.
+   Conversely, if $c$ is any common divisor of $a$ and $b$, then by divisibility linearity (Section 2.1), $c \mid (ax_0 + by_0) = d$.
+   Because $d > 0$, $c \leq d$.
+   Therefore, $d = \gcd(a, b)$. $\blacksquare$
+
+---
+
+### 4.2 Matrix Formulation in $SL_2(\mathbb{Z})$
+Each step of the Euclidean algorithm can be formulated as an elementary matrix multiplication.
+At step $i$:
+$$\begin{pmatrix} r_{i-1} \\ r_i \end{pmatrix} = \begin{pmatrix} q_i & 1 \\ 1 & 0 \end{pmatrix} \begin{pmatrix} r_i \\ r_{i+1} \end{pmatrix}$$
+Inverting this transition matrix:
+$$\begin{pmatrix} r_i \\ r_{i+1} \end{pmatrix} = \begin{pmatrix} 0 & 1 \\ 1 & -q_i \end{pmatrix} \begin{pmatrix} r_{i-1} \\ r_i \end{pmatrix}$$
+
+By chaining these transformations from $r_0 = a$ and $r_1 = b$ down to $r_k = g$ and $r_{k+1} = 0$:
+$$\begin{pmatrix} a \\ b \end{pmatrix} = Q_1 Q_2 \cdots Q_k \begin{pmatrix} g \\ 0 \end{pmatrix} \quad \text{where} \quad Q_i = \begin{pmatrix} q_i & 1 \\ 1 & 0 \end{pmatrix}$$
+
+Taking the inverse matrix product $M = (Q_1 Q_2 \cdots Q_k)^{-1}$:
+$$\begin{pmatrix} x & y \\ x' & y' \end{pmatrix} \begin{pmatrix} a \\ b \end{pmatrix} = \begin{pmatrix} g \\ 0 \end{pmatrix}$$
+The first row yields precisely Bézout's identity:
+$$a x + b y = g = \gcd(a, b)$$
+
+Since $\det(Q_i) = -1$, the composite transition matrix has determinant $\det(M) = (-1)^k = \pm 1$, confirming that $M \in GL_2(\mathbb{Z})$.
+
+---
+
+### 4.3 Python Implementation of Extended GCD
+```python
+from typing import Tuple
+
+def extended_gcd(a: int, b: int) -> Tuple[int, int, int]:
+    """
+    Extended Euclidean Algorithm.
+    Returns (g, x, y) such that a*x + b*y = g = gcd(a, b).
+    """
+    old_r, r = a, b
+    old_s, s = 1, 0
+    old_t, t = 0, 1
+    
+    while r != 0:
+        quotient = old_r // r
+        old_r, r = r, old_r - quotient * r
+        old_s, s = s, old_s - quotient * s
+        old_t, t = t, old_t - quotient * t
+        
+    return old_r, old_s, old_t
+```
+
+---
+
+### 4.4 Application: Modular Multiplicative Inverse
+In modern public-key cryptography (e.g., RSA, Diffie-Hellman, and elliptic curves), computing the modular inverse is essential.
+The equation:
+$$a \cdot x \equiv 1 \pmod m$$
+has a solution if and only if $\gcd(a, m) = 1$.
+Using the Extended Euclidean Algorithm on $(a, m)$:
+$$a x + m y = 1 \implies a x = 1 - m y \implies a x \equiv 1 \pmod m$$
+Thus, $x \pmod m$ is the unique modular inverse $a^{-1} \pmod m$.
+
+```python
+def mod_inverse(a: int, m: int) -> int:
+    """Computes the modular inverse of a modulo m: a * x = 1 (mod m)."""
+    g, x, _ = extended_gcd(a, m)
+    if g != 1:
+        raise ValueError(f"{a} has no modular inverse modulo {m} (gcd={g})")
+    return (x % m + m) % m
+```
