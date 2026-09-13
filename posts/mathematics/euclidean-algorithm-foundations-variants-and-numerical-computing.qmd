@@ -341,3 +341,76 @@ def mod_inverse(a: int, m: int) -> int:
         raise ValueError(f"{a} has no modular inverse modulo {m} (gcd={g})")
     return (x % m + m) % m
 ```
+
+---
+
+## 5. Stein's Binary GCD Algorithm (Hardware Bitwise Optimization)
+
+### 5.1 Motivation: The High Cost of Hardware Division
+In microprocessor architecture, arithmetic logic units (ALUs) can execute bitwise shifts (`>> 1`), bitwise tests (`& 1`), and additions/subtractions in a single clock cycle. By contrast, integer division (`idiv`) and modulus operations typically require $10$ to $40$ clock cycles and complex microcode state machines.
+
+In 1967, Josef Stein introduced the **Binary GCD algorithm**, which computes the greatest common divisor using **only additions, subtractions, and bit shifts**, completely eliminating division and modulo operations.
+
+---
+
+### 5.2 Algorithmic Rules and 2-adic Invariance
+Let $u, v \in \mathbb{Z}^+$. The algorithm relies on four elementary identities:
+
+1. **Both Even**: If $u$ and $v$ are both even:
+   $$\gcd(u, v) = 2 \cdot \gcd(u/2, v/2)$$
+   *Proof*: 2 is a common factor of both $u$ and $v$.
+
+2. **One Even, One Odd**: If $u$ is even and $v$ is odd:
+   $$\gcd(u, v) = \gcd(u/2, v)$$
+   *Proof*: Since $v$ is odd, 2 cannot divide $\gcd(u, v)$. Hence the factor of 2 in $u$ is coprime to $v$.
+
+3. **Both Odd**: If both $u$ and $v$ are odd:
+   Assuming without loss of generality $u \geq v$:
+   $$\gcd(u, v) = \gcd(u - v, v) = \gcd((u - v)/2, v)$$
+   *Proof*: By Lemma 1, $\gcd(u, v) = \gcd(u - v, v)$. Because the difference of two odd numbers is always even ($u - v \equiv 1 - 1 \equiv 0 \pmod 2$), $(u - v)/2$ is an integer, and by Rule 2, the resulting factor of 2 can be immediately removed without altering the GCD.
+
+4. **Termination**: When $u = v$, $\gcd(u, v) = u$.
+
+---
+
+### 5.3 Implementation in Python with Low-Level Bitwise Primitives
+```python
+def gcd_binary(u: int, v: int) -> int:
+    """
+    Stein's Binary GCD Algorithm.
+    Operates strictly via bit-shifts, bitwise checks, and subtractions.
+    """
+    u, v = abs(u), abs(v)
+    if u == 0: return v
+    if v == 0: return u
+    
+    # 1. Find common power of 2 using trailing zeros
+    shift = 0
+    while ((u | v) & 1) == 0:
+        u >>= 1
+        v >>= 1
+        shift += 1
+        
+    # 2. Eliminate all remaining factors of 2 from u
+    while (u & 1) == 0:
+        u >>= 1
+        
+    # 3. Main loop: from here on, u is always odd
+    while v != 0:
+        # Remove trailing zeros from v (making v odd)
+        while (v & 1) == 0:
+            v >>= 1
+            
+        # Ensure u <= v
+        if u > v:
+            u, v = v, u
+            
+        # Subtract: v is odd, u is odd -> (v - u) is even
+        v -= u
+        
+    # 4. Restore the common power of 2
+    return u << shift
+```
+
+#### Complexity Analysis:
+Each iteration of the main loop either reduces the value by a subtraction (yielding an even number) or shifts away at least one binary zero bit. Because the sum of the bit-lengths of $u$ and $v$ strictly decreases by at least 1 per iteration, the binary GCD completes in at most $O(\log_2 u + \log_2 v)$ single-cycle shift/subtract steps.
