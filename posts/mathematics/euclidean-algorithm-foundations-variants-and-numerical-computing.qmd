@@ -1,0 +1,116 @@
+---
+title: "The Euclidean Algorithm: Algebraic Foundations, Anthyphairesis, and Modern Numerical Computing"
+author: "Igor Kan"
+date: "2026-09-13"
+categories: [Mathematics, Number Theory, Computer Science, Numerical Computing, Algorithms]
+description: "A comprehensive treatise on the Euclidean algorithm: from geometric anthyphairesis and subtractive difference lemmas to remainder recurrence, Bézout's identity, Stein's binary bitwise GCD, Euclidean domains, and high-precision Half-GCD algorithms."
+format:
+  html:
+    toc: true
+    toc-depth: 4
+    code-fold: show
+    code-tools: true
+    math: true
+---
+
+## 1. Introduction and Architectural Overview
+
+The Euclidean algorithm is one of the oldest numerical and algebraic algorithms in recorded history, dating back to Euclid's *Elements* (c. 300 BCE, Book VII, Propositions 1–2, and Book X, Propositions 2–3). Beyond its classical role in establishing the greatest common divisor ($\gcd$) of two integers, the Euclidean principle constitutes a foundational pillar across modern algebra, cryptography, lattice basis reduction, and numerical computing.
+
+In computational number theory and computer science, the algorithm is not merely a single recipe, but an entire family of algorithmic paradigms:
+1. **Anthyphairesis (Repeated Subtraction)**: The original constructive geometric method of reciprocal subtraction of lengths.
+2. **Euclidean Division (Standard Remainder Method)**: The classical division-step variant replacing repeated subtraction with modulus arithmetic.
+3. **Extended Euclidean Algorithm (EEA)**: The linear-algebraic and ring-theoretic extension yielding Bézout coefficients and modular inverses.
+4. **Binary GCD (Stein's Algorithm)**: Hardware-optimized bitwise reduction eliminating costly division operations via shift and parity checks.
+5. **Generalized Euclidean Domains**: Extension to polynomial rings $F[x]$ and Gaussian integers $\mathbb{Z}[i]$.
+6. **Accelerated & High-Precision Computing**: Knuth-Schönhage Half-GCD running in quasi-linear $O(M(n) \log n)$ time for thousand-digit cryptography, alongside approximate GCDs for noisy numerical systems.
+
+---
+
+## 2. Divisibility Axioms and Foundational Lemmas
+
+### 2.1 The Divisibility Relation
+Let $a, b \in \mathbb{Z}$ with $b 
+eq 0$. We say that $b$ **divides** $a$ (written $b \mid a$) if and only if there exists some integer $k \in \mathbb{Z}$ such that:
+$$a = k \cdot b$$
+
+If $b \mid a$, we refer to $b$ as a **divisor** or **factor** of $a$, and $a$ as a **multiple** of $b$.
+
+#### Elementary Properties of Divisibility:
+1. **Reflexivity**: For every $a \in \mathbb{Z}$, $a \mid a$.
+2. **Transitivity**: If $a \mid b$ and $b \mid c$, then $a \mid c$.
+3. **Linearity**: If $d \mid a$ and $d \mid b$, then for any arbitrary integers $x, y \in \mathbb{Z}$:
+   $$d \mid (ax + by)$$
+   *Proof*: Since $d \mid a$, $a = k_1 d$. Since $d \mid b$, $b = k_2 d$. Then $ax + by = (k_1 d)x + (k_2 d)y = d(k_1 x + k_2 y)$. Because $k_1 x + k_2 y \in \mathbb{Z}$, $d$ divides $ax + by$. $lacksquare$
+
+---
+
+### 2.2 The Greatest Common Divisor ($\gcd$)
+For two integers $a, b \in \mathbb{Z}$, not both zero, the **greatest common divisor** $\gcd(a, b)$ is the unique positive integer $g \in \mathbb{Z}^+$ satisfying:
+1. **Common Divisor**: $g \mid a$ and $g \mid b$.
+2. **Maximal Divisor**: If $d \in \mathbb{Z}$ satisfies $d \mid a$ and $d \mid b$, then $d \leq g$ (or equivalently in ring theory, $d \mid g$).
+
+By convention:
+$$\gcd(a, 0) = |a| \quad 	ext{for } a 
+eq 0, \quad 	ext{and} \quad \gcd(0, 0) 	ext{ is undefined (or taken as 0 in lattice theory)}.$$
+
+---
+
+### 2.3 Lemma 1: The Fundamental Subtractive Difference Invariance
+The bedrock of Euclid's initial insight is that the common divisors of two positive magnitudes remain invariant when the smaller magnitude is subtracted from the larger.
+
+::: {.callout-note appearance="simple"}
+#### Lemma 1 (Subtractive GCD Invariance)
+Let $a, b \in \mathbb{Z}^+$ such that $a > b$. Then:
+$$\gcd(a, b) = \gcd(b, a - b)$$
+:::
+
+#### Proof:
+Let $D(x, y) = \{d \in \mathbb{Z}^+ : d \mid x 	ext{ and } d \mid y\}$ denote the set of all positive common divisors of $x$ and $y$. We will establish the set equality:
+$$D(a, b) = D(b, a - b)$$
+
+1. **Forward Inclusion ($D(a, b) \subseteq D(b, a - b)$)**:
+   Let $d \in D(a, b)$. By definition, $d \mid a$ and $d \mid b$.
+   There exist $k_1, k_2 \in \mathbb{Z}$ such that $a = k_1 d$ and $b = k_2 d$.
+   Subtracting the two equations:
+   $$a - b = k_1 d - k_2 d = d(k_1 - k_2)$$
+   Since $k_1 - k_2 \in \mathbb{Z}$, $d \mid (a - b)$.
+   Because $d \mid b$ and $d \mid (a - b)$, it follows that $d \in D(b, a - b)$.
+   Therefore, $D(a, b) \subseteq D(b, a - b)$.
+
+2. **Reverse Inclusion ($D(b, a - b) \subseteq D(a, b)$)**:
+   Let $c \in D(b, a - b)$. By definition, $c \mid b$ and $c \mid (a - b)$.
+   There exist $m_1, m_2 \in \mathbb{Z}$ such that $b = m_1 c$ and $a - b = m_2 c$.
+   Adding $b$ to both sides:
+   $$a = (a - b) + b = m_2 c + m_1 c = c(m_1 + m_2)$$
+   Since $m_1 + m_2 \in \mathbb{Z}$, $c \mid a$.
+   Because $c \mid a$ and $c \mid b$, it follows that $c \in D(a, b)$.
+   Therefore, $D(b, a - b) \subseteq D(a, b)$.
+
+Since $D(a, b) = D(b, a - b)$, their maximum elements must coincide:
+$$\max D(a, b) = \max D(b, a - b) \implies \gcd(a, b) = \gcd(b, a - b) \quad lacksquare$$
+
+---
+
+### 2.4 Constructive Anthyphairesis (Subtractive Algorithm)
+Euclid formulated this subtraction-based procedure as *anthyphairesis* (literally "reciprocal subtraction"):
+
+```python
+def gcd_subtractive(a: int, b: int) -> int:
+    """Computes gcd(a, b) via pure repeated subtraction (anthyphairesis)."""
+    a, b = abs(a), abs(b)
+    if a == 0: return b
+    if b == 0: return a
+    
+    steps = 0
+    while a != b:
+        steps += 1
+        if a > b:
+            a -= b
+        else:
+            b -= a
+    return a
+```
+
+#### Worst-Case Analysis of Repeated Subtraction:
+Consider the pair $(a, b) = (N, 1)$. The subtractive algorithm requires $N - 1$ subtraction operations to reduce $N$ down to $1$. Thus, the time complexity of naive anthyphairesis is $O(\max(a, b))$, which is exponential in the input bit length $\Omega(2^k)$. This computational bottleneck directly motivated the transition to the division/remainder algorithm.
