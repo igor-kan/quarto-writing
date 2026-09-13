@@ -72,15 +72,26 @@ The curvature (second derivative) and slope (first derivative) of $f(x)$ dictate
 
 ### 2.3 What Happens When Left and Right Sum Limits Disagree?
 
-In smooth calculus, $\lim_{n \to \infty} L_n = \lim_{n \to \infty} R_n$. But what does it imply if they **fail to coincide**?
+In elementary calculus, student intuition takes for granted that $\lim_{n \to \infty} L_n = \lim_{n \to \infty} R_n = \int_a^b f(x) \, dx$. But what does it mathematically signify if these limits **fail to coincide** or if different tagging schemes diverge?
 
-For any bounded monotonic function on a uniform grid, the discrepancy satisfies:
-$$|R_n - L_n| = \left| \sum_{i=1}^n (f(x_i) - f(x_{i-1})) \frac{b-a}{n} \right| = \frac{b-a}{n} |f(b) - f(a)| \xrightarrow{n \to \infty} 0$$
+#### A. The Monotonic Case and Telescoping Error
+For any bounded, monotonically increasing function $f$ on $[a, b]$ partitioned into $n$ uniform subintervals of width $\Delta x = \frac{b-a}{n}$:
+$$R_n - L_n = \sum_{i=1}^n f(x_i) \Delta x - \sum_{i=1}^n f(x_{i-1}) \Delta x = \Delta x \sum_{i=1}^n \left( f(x_i) - f(x_{i-1}) \right)$$
 
-If $\lim L_n \ne \lim R_n$, the function **violates Riemann integrability**. This occurs when the function exhibits severe, non-removable oscillation across a set of **positive Lebesgue measure**.
-* **Canonical Counterexample (Dirichlet Function)**:
-  $$\mathbf{1}_\mathbb{Q}(x) = \begin{cases} 1, & x \in \mathbb{Q} \\ 0, & x \notin \mathbb{Q} \end{cases}$$
-  Using rational tags yields $\sum 1 \cdot \Delta x = 1$, while using irrational tags yields $\sum 0 \cdot \Delta x = 0$. The lower Darboux integral is $0$ and the upper Darboux integral is $1$. The function cannot be integrated under the Riemann-Stewart formulation!
+The sum telescopes completely:
+$$R_n - L_n = \frac{b - a}{n} \left[ f(b) - f(a) \right]$$
+
+Because $f(b) - f(a)$ is finite, $\lim_{n \to \infty} (R_n - L_n) = 0$ unconditionally. Hence, **every bounded monotonic function is automatically Riemann integrable**, even if it has countably infinitely many jump discontinuities!
+
+#### B. Discontinuities and Lebesgue's Criterion
+If $\lim_{n \to \infty} L_n \ne \lim_{n \to \infty} R_n$, the function **violates Riemann integrability**. Henri Lebesgue proved the definitive criterion:
+> **Lebesgue's Criterion for Riemann Integrability**: A bounded function $f: [a, b] \to \mathbb{R}$ is Riemann integrable if and only if its set of discontinuities $D \subset [a, b]$ has **Lebesgue measure zero** ($\mu(D) = 0$).
+
+1. **Isolated Jump Discontinuities**: If $f$ has a finite (or countable) number of step jumps (e.g. Heaviside step $\Theta(x)$), the set of jump points has measure zero ($\mu(D) = 0$). Although on any single coarse subinterval containing a jump, the left and right sample values differ by the jump height $\Delta y$, the subinterval width shrinks as $\mathcal{O}(1/n)$. The total contribution of all jump intervals to the difference $|R_n - L_n|$ scales as $\sum (\text{jump}_k) \cdot \frac{b-a}{n} \to 0$. Thus, **piecewise continuous functions remain Riemann integrable**.
+2. **Dense Non-Removable Discontinuities (The Dirichlet Function)**:
+   $$\mathbf{1}_\mathbb{Q}(x) = \begin{cases} 1, & x \in \mathbb{Q} \\ 0, & x \notin \mathbb{Q} \end{cases}$$
+   Between any two real numbers, there exist both infinitely many rationals and infinitely many irrationals. If tags are chosen at rational sample points ($x_i^* \in \mathbb{Q}$), the Riemann sum is $\sum_{i=1}^n 1 \cdot \Delta x = 1$. If tags are chosen at irrational sample points ($x_i^* \notin \mathbb{Q}$), the Riemann sum is $\sum_{i=1}^n 0 \cdot \Delta x = 0$. The limit does not exist, and the lower and upper Darboux integrals remain locked at $L(f) = 0$ and $U(f) = 1$.
+3. **Physical and Numerical Implication**: In numerical computing and physical sensors, when left and right approximations disagree significantly, it implies the presence of a **shock wave** (in compressible gas dynamics), a **phase change boundary** (in thermodynamics), or an **undersampled high-frequency transient** violating the Nyquist-Shannon sampling theorem.
 
 ### 2.4 Worked Example: High-Degree Monomial Riemann Limit (Stewart Ch 5, Problem 78)
 
@@ -189,6 +200,93 @@ Concentration (cells/mL)
 | **Automotive Safety** | Vehicle deceleration velocity ($v(t)$) | Braking time ($t_b$) | **Total Stopping Distance** ($\text{m}$) | $\int_0^{t_b} v(t) dt$ accounting for tire friction $\mu(v)$ and reaction delay. |
 | **Cardiology** | Dye concentration ($c(t)$) | Recirculation time ($t$) | **Cardiac Output** ($CO = A / \int c dt$) | Blood volume pumped by the left ventricle per minute. |
 | **Military Operations** | Hostile troop density ($\text{troops/km}^2$) | Siege duration ($t$) | **Troop-Months / Warrior-Days** | Quantitative attrition and logistical degradation in siege warfare. |
+
+---
+
+### 5.3 The Center of Mass: Discrete vs. Continuous Integrals and Momentum Dynamics
+
+In physics, the transition from discrete summations to definite integrals is perfectly embodied by the **Center of Mass (CM)** and linear momentum conservation.
+
+#### A. The Discrete System
+For an ensemble of $N$ discrete point particles with masses $m_i$ located at position vectors $\mathbf{r}_i$:
+$$\mathbf{r}_{\text{CM}} = \frac{\sum_{i=1}^N m_i \mathbf{r}_i}{\sum_{i=1}^N m_i} = \frac{1}{M_{\text{total}}} \sum_{i=1}^N m_i \mathbf{r}_i$$
+
+Differentiating with respect to time yields the velocity of the center of mass:
+$$\mathbf{v}_{\text{CM}} = \frac{d\mathbf{r}_{\text{CM}}}{dt} = \frac{\sum_{i=1}^N m_i \mathbf{v}_i}{M_{\text{total}}} = \frac{\mathbf{P}_{\text{total}}}{M_{\text{total}}}$$
+
+By Newton's third law, all internal action-reaction force pairs cancel ($\sum \mathbf{F}_{\text{internal}} = 0$), meaning the center of mass moves as if the entire system mass were concentrated at $\mathbf{r}_{\text{CM}}$ driven solely by net external forces:
+$$\frac{d\mathbf{P}_{\text{total}}}{dt} = M_{\text{total}} \frac{d\mathbf{v}_{\text{CM}}}{dt} = \sum \mathbf{F}_{\text{external}}$$
+
+Integrating both sides over time yields the **Impulse-Momentum Theorem**:
+$$\Delta \mathbf{P}_{\text{total}} = \int_{t_1}^{t_2} \mathbf{F}_{\text{net,ext}}(t) \, dt$$
+
+#### B. The Continuous Limit
+For a macroscopic rigid body with continuous mass density $\rho(\mathbf{r})$, we partition the body into $n$ volume elements $\Delta V_i$ of mass $\Delta m_i = \rho(\mathbf{r}_i^*) \Delta V_i$. Taking the Riemann limit as $\Delta V_i \to 0$ ($n \to \infty$):
+$$\mathbf{r}_{\text{CM}} = \lim_{n \to \infty} \frac{\sum_{i=1}^n \mathbf{r}_i^* \rho(\mathbf{r}_i^*) \Delta V_i}{\sum_{i=1}^n \rho(\mathbf{r}_i^*) \Delta V_i} = \frac{\iiint_V \mathbf{r} \, \rho(\mathbf{r}) \, dV}{\iiint_V \rho(\mathbf{r}) \, dV} = \frac{1}{M} \iiint_V \mathbf{r} \, dm$$
+
+For a planar plate of uniform density $\rho$ bounded by $y = f(x)$, $y = 0$, $a \le x \le b$:
+$$\bar{x} = \frac{1}{A} \int_a^b x f(x) \, dx, \quad \bar{y} = \frac{1}{A} \int_a^b \frac{1}{2} [f(x)]^2 \, dx$$
+
+---
+
+### 5.4 The Epistemology of Limits: Convergence and Asymptotic Definitions in Philosophy, Law, Linguistics, and Historiography
+
+Calculus is often perceived as an exclusively STEM discipline. Yet the mathematical concept of a **limit of successive approximations** ($\lim_{n \to \infty} S_n = \mathcal{L}$) provides the formal epistemology for understanding emergent phenomena, continuous ideals, and threshold transitions across the humanities and social sciences.
+
+```
+   Discrete Approximations                    Continuous Limiting Construct
+   +---------------------------------------+  lim Delta x -> 0  +--------------------------------+
+   | Philosophy: Discrete grains of sand   | =================> | "Heap" (Fuzzy Logic Continuum) |
+   | Law: Jury deliberations on negligence | =================> | "Reasonable Person" Standard   |
+   | Linguistics: Generational vowel drift | =================> | Phonemic Shift (Grimm's Law)   |
+   | History: Daily micro-events (Annales) | =================> | Longue Durée Structural Trend  |
+   +---------------------------------------+                    +--------------------------------+
+```
+
+#### 1. Philosophy and Logic: The Sorites Paradox and Degree-Theoretic Semantics
+The ancient Megarian philosopher Eubulides of Miletus formulated the **Sorites Paradox (Paradox of the Heap)**:
+1. $1,000,000$ grains of sand form a heap.
+2. Removing a single grain from a heap does not turn it into a non-heap.
+3. By induction, $1$ grain of sand must form a heap (a manifest absurdity).
+
+Classical bivalent logic ($\{0, 1\}$) fails because natural language predicates ("bald", "tall", "heap", "rich") lack crisp boundaries. Modern philosophical logic resolves the Sorites paradox by treating truth values as a **continuous Riemann spectrum** $[0, 1]$. The predicate's truth value $\mu_{\text{Heap}}(n)$ is defined as the limit of an infinitesimal approximation:
+$$\mu_{\text{Heap}}(n) = \int_0^n w(x) \, dx$$
+where $w(x)$ is a kernel density representing human linguistic consensus. The concept of a "heap" is not an arbitrary discrete cutoff, but the continuous limit of accumulated microscopic grains!
+
+#### 2. Moral Philosophy: Bentham's Felicific Calculus and Continuous Utility
+In *An Introduction to the Principles of Morals and Legislation* (1789), Jeremy Bentham proposed that moral decisions can be quantified via the **Felicific Calculus**:
+$$\text{Total Utility} = \sum (\text{Pleasure}) - \sum (\text{Pain})$$
+Bentham explicitly parameterized pleasure along seven dimensions: *Intensity* ($I$), *Duration* ($D$), *Certainty* ($C$), *Propinquity* ($P$), *Fecundity* ($F$), *Purity* ($U$), and *Extent* ($E$). 
+
+In modern mathematical ethics, Bentham's discrete sum is formalized as a definite integral of instantaneous hedonic intensity over time:
+$$U_{\text{total}} = \int_0^T I(t) \cdot e^{-\delta t} \, dt$$
+where $e^{-\delta t}$ represents the continuous discount rate (propinquity). John Stuart Mill further refined this by introducing qualitative weights, mirroring Lebesgue integration where pleasures are partitioned by quality (intensity range) rather than temporal duration.
+
+#### 3. Jurisprudence: The "Reasonable Person" as an Asymptotic Limit
+In tort law and common law jurisprudence, the standard of care in negligence is defined by the actions of the **"Reasonable Person"** (*bonus paterfamilias*). Legal scholars have long debated: does this person exist? Is it the mathematical median of citizens?
+
+In legal philosophy, the Reasonable Person is defined as the **asymptotic limit of deliberative rationality**:
+$$\text{Standard of Care} = \lim_{\text{bias} \to 0, \, \text{recklessness} \to 0} \mathbb{E}[\text{Action} \mid \text{Information}]$$
+No single living human behaves rationally in every instant. The legal standard is an idealized limiting surface—a normative asymptote towards which real-world human behavior is compared, identical to how an idealized friction-free mathematical surface serves as the limiting reference frame in Newtonian mechanics.
+
+#### 4. Historical Linguistics: Continuous Phonetic Drift vs. Discrete Phonemic Shifts
+How do languages evolve? In historical phonology (e.g. Grimm's Law, the Great Vowel Shift), a language transitions from Old English to Middle English to Early Modern English. 
+
+Linguists model speech sounds as coordinates in a continuous acoustic space defined by vowel formant frequencies ($F_1, F_2$ in Hertz). Each generation of speakers produces acoustic tokens with microscopic variance $\Delta F$. Across centuries, these infinitesimal phonetic shifts accumulate via a continuous drift integral:
+$$F_{\text{vowel}}(t) = F_{\text{vowel}}(0) + \int_0^t v_{\text{drift}}(\tau) \, d\tau$$
+
+When the continuous integral crosses a perceptual acoustic threshold (the boundary of a phonemic perceptual magnet), the language community experiences a **discrete bifurcation**: a sound that was formerly an allophonic variation crystallizes into an entirely distinct phoneme. The discrete phonemic inventory of human language is the topological limit of continuous phonetic accumulation!
+
+#### 5. Historiography: Braudel's *Longue Durée* as an Integral of Micro-Events
+Fernand Braudel and the French *Annales* School revolutionized historical methodology by decomposing historical time into three tiers:
+1. *Le temps individuel* (l'histoire événementielle): Fast, high-frequency, surface fluctuations—daily politics, battles, treaties, and political speeches ($f_{\text{high}}(t)$).
+2. *Le temps social* (conjunctural cycles): Medium-term economic, demographic, and trade cycles (10–50 years).
+3. *Le temps géographique* (la longue durée): Deep, slow, centuries-long civilizational structures, agrarian trade routes, and environmental geography ($S(t)$).
+
+Braudel argued that chroniclers who focus exclusively on discrete headlines confuse superficial turbulence with true historical movement. Mathematically:
+$$\text{Civilizational Reality } S(T) = \int_0^T \left[ f_{\text{structural}}(t) + \xi_{\text{noise}}(t) \right] dt = \int_0^T f_{\text{structural}}(t) \, dt + \underbrace{\int_0^T \xi_{\text{noise}}(t) \, dt}_{\to 0 \text{ as } T \to \infty}$$
+
+By the Mean Value Theorem and the Law of Large Numbers, the high-frequency event noise $\xi(t)$ averages to zero over centuries, revealing the smooth, profound current of the *longue durée*. Macro-history is the definite integral of human existence.
 | **Hydraulic Engineering** | Fluid pressure $P(y) = \rho g y$ | Dam elevation ($y$) | **Total Hydrostatic Force** ($F = \int P w dy$) | Total lateral shearing force exerted on a concrete reservoir dam. |
 
 ---
