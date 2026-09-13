@@ -523,3 +523,90 @@ For very high dimensions $N \gg 1$, both CP and Tucker encounter limitations (Tu
 $$\mathcal{T}_{i_1 i_2 \dots i_N} = \sum_{\alpha_1, \alpha_2, \dots, \alpha_{N-1}} G_{1, \alpha_1}^{(1)}(i_1) \, G_{\alpha_1, \alpha_2}^{(2)}(i_2) \dots G_{\alpha_{N-1}, 1}^{(N)}(i_N)$$
 
 This contracts index complexity from exponential $O(I^N)$ to linear in dimension $O(N \cdot I \cdot D^2)$ where $D$ is the maximum virtual bond dimension $\alpha_k \le D$.
+
+## 9. Bilinear, Quadratic, and Higher-Order Forms: Definiteness and Applications
+
+### 9.1 Bilinear and Quadratic Forms
+
+::: {.callout-note}
+### Definition: Bilinear Form and Quadratic Form
+A **bilinear form** on a vector space $V$ is a $(0, 2)$-tensor $B: V \times V \to \mathbb{R}$ that is linear in each slot:
+$$B(\mathbf{u}, \mathbf{v}) = B_{ij} u^i v^j = \mathbf{u}^T B \mathbf{v}$$
+
+The associated **quadratic form** $Q: V \to \mathbb{R}$ is the evaluation of the bilinear form on identical vector inputs:
+$$Q(\mathbf{x}) \equiv B(\mathbf{x}, \mathbf{x}) = B_{ij} x^i x^j = \mathbf{x}^T B \mathbf{x} = \sum_{i=1}^n \sum_{j=1}^n B_{ij} x_i x_j$$
+:::
+
+Because $x^i x^j$ is intrinsically symmetric under index transposition ($x^i x^j = x^j x^i$), the skew-symmetric component of $B$ contracts to zero ($B_{[ij]} x^i x^j = 0$). Hence, **any quadratic form can be represented uniquely by a symmetric matrix**:
+$$A_{ij} = B_{(ij)} = \frac{1}{2}\left(B_{ij} + B_{ji}\right) \implies Q(\mathbf{x}) = \mathbf{x}^T A \mathbf{x}, \quad A = A^T$$
+
+### 9.2 Definiteness Classification
+
+The qualitative behavior of a quadratic form $Q(\mathbf{x}) = \mathbf{x}^T A \mathbf{x}$ across the entire domain $\mathbb{R}^n$ defines the **definiteness** of the matrix $A$:
+
+| Classification | Notation | Defining Condition for all $\mathbf{x} \neq \mathbf{0}$ | Eigenvalue Characterization | Geometric Iso-Surface $\{\mathbf{x} \mid Q(\mathbf{x}) = 1\}$ |
+| :--- | :---: | :---: | :---: | :--- |
+| **Positive Definite** | $A \succ 0$ | $\mathbf{x}^T A \mathbf{x} > 0$ | $\lambda_i > 0$ for all $i$ | Compact Hyper-Ellipsoid |
+| **Positive Semidefinite** | $A \succeq 0$ | $\mathbf{x}^T A \mathbf{x} \ge 0$ | $\lambda_i \ge 0$ for all $i$ | Cylindrical / Degenerate Ellipsoid |
+| **Negative Definite** | $A \prec 0$ | $\mathbf{x}^T A \mathbf{x} < 0$ | $\lambda_i < 0$ for all $i$ | Empty Set (no real solution) |
+| **Negative Semidefinite** | $A \preceq 0$ | $\mathbf{x}^T A \mathbf{x} \le 0$ | $\lambda_i \le 0$ for all $i$ | Degenerate Empty Set |
+| **Indefinite** | $A$ | Takes both $>0$ and $<0$ values | Has both $\lambda_i > 0$ and $\lambda_j < 0$ | Hyperboloid (one or two sheets, saddle geometry) |
+
+```
+   Positive Definite (A ≻ 0)                 Indefinite (Saddle)
+   All eigenvalues λᵢ > 0                    λ₁ > 0, λ₂ < 0
+
+          z ↑                                       z ↑
+            │  ╭───╮  Paraboloid Bowl               │     ╭─╮   Hyperbolic Saddle
+            │ ╭     ╮                               │    ╱   ╲
+            │ ╰─────╯                               │   ╰─────╯
+            └─────────> x, y                        └─────────> x, y
+```
+
+### 9.3 Diagnostic Tests for Positive Definiteness
+
+To verify whether a real symmetric matrix $A \in \mathbb{R}^{n \times n}$ is positive definite ($A \succ 0$), four equivalent characterizations are used:
+
+1. **Eigenvalue Spectrum**:
+   All $n$ eigenvalues are strictly positive: $\lambda_{\min}(A) > 0$.
+2. **Sylvester's Criterion**:
+   All $n$ **leading principal minors** $\Delta_k = \det(A_{1:k, 1:k})$ are strictly positive:
+   $$\Delta_1 = A_{11} > 0, \quad \Delta_2 = \det \begin{pmatrix} A_{11} & A_{12} \\ A_{21} & A_{22} \end{pmatrix} > 0, \quad \dots, \quad \Delta_n = \det(A) > 0$$
+3. **Cholesky Factorization**:
+   The matrix factors into $A = L L^T$ with strictly positive real diagonal entries $L_{ii} > 0$.
+4. **Gramian Representation**:
+   $A$ can be written as $A = X^T X$ for some matrix $X \in \mathbb{R}^{m \times n}$ with linearly independent columns ($\operatorname{rank}(X) = n$).
+
+::: {.callout-warning}
+### Sylvester's Criterion for Semidefiniteness Caution
+While positive definiteness ($A \succ 0$) requires only leading principal minors to be strictly positive ($\Delta_k > 0$), positive semidefiniteness ($A \succeq 0$) requires **ALL** $2^n - 1$ principal minors (not just leading ones) to be non-negative.
+:::
+
+### 9.4 Physical, Geometric, and Statistical Manifestations
+
+The definiteness of 2-tensors governs stability and geometry across the mathematical sciences:
+
+1. **Analytical Mechanics (Kinetic Energy Metric)**:
+   The kinetic energy of a generalized mechanical system is:
+   $$T = \frac{1}{2} M_{ij}(q) \dot{q}^i \dot{q}^j$$
+   Physical conservation requires $T > 0$ whenever velocity $\mathbf{\dot{q}} \neq \mathbf{0}$. Hence, the generalized mass/inertia matrix $M_{ij}(q)$ must be **strictly positive definite** everywhere on the configuration manifold.
+2. **Optimization and Machine Learning (Hessian Curvature)**:
+   The second-order Taylor expansion of a cost function $\mathcal{L}(\boldsymbol{\theta})$ around a critical point $\nabla \mathcal{L} = \mathbf{0}$ is governed by the Hessian tensor $H_{ij} = \frac{\partial^2 \mathcal{L}}{\partial \theta^i \partial \theta^j}$:
+   $$\Delta \mathcal{L} \approx \frac{1}{2} H_{ij} \Delta \theta^i \Delta \theta^j$$
+   - $H \succ 0 \implies$ strict local minimum (basin of stability).
+   - $H \prec 0 \implies$ strict local maximum.
+   - $H$ indefinite $\implies$ saddle point (escape trajectories exist along negative eigenvectors).
+3. **Statistics and Covariance Tensors**:
+   Given random vector $\mathbf{X} \in \mathbb{R}^n$, the covariance matrix $\Sigma = \mathbb{E}[(\mathbf{X} - \boldsymbol{\mu})(\mathbf{X} - \boldsymbol{\mu})^T]$ defines variance along direction $\mathbf{u}$:
+   $$\operatorname{Var}(\mathbf{u}^T \mathbf{X}) = \mathbf{u}^T \Sigma \mathbf{u} \ge 0$$
+   $\Sigma$ is always positive semidefinite ($\Sigma \succeq 0$), and strictly positive definite ($\Sigma \succ 0$) if and only if no component is an exact linear combination of others.
+4. **General Relativity (Indefinite Spacetime Metric)**:
+   The Minkowski metric $\eta_{\mu\nu} = \operatorname{diag}(-1, 1, 1, 1)$ is intentionally **indefinite**, distinguishing timelike intervals ($ds^2 < 0$), spacelike intervals ($ds^2 > 0$), and null light rays ($ds^2 = 0$).
+
+### 9.5 Higher-Order Forms: Cubic, Quartic, and Beyond
+
+Beyond second-order quadratic forms, multilinear algebra encompasses polynomial forms of arbitrary degree $d$:
+- **Cubic Form** ($d=3$): $C(\mathbf{x}) = C_{ijk} x^i x^j x^k$ (associated with skewness tensors and third-order elastic constants).
+- **Quartic Form** ($d=4$): $\Phi(\mathbf{x}) = D_{ijkl} x^i x^j x^k x^l$ (kurtosis tensors, nonlinear elasticity, Ginzburg-Landau phase transition free energies).
+
+Testing the global positivity of a 4th-order polynomial form $D_{ijkl} x^i x^j x^k x^l > 0$ is an NP-hard problem, solved in modern optimization via **Sum of Squares (SOS)** semidefinite programming (SDP) relaxations.
