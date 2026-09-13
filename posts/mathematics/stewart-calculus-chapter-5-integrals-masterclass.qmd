@@ -463,7 +463,273 @@ fprintf('MATLAB Non-uniform Trapz: %.2f\n', trapz(x_nonunif, y_nonunif));
 
 ---
 
-## 7. Algorithmic Verification & Cross-Language Consistency
+
+---
+
+## 7. Advanced Numerical Engines: Romberg Integration & Adaptive Quadrature
+
+While uniform composite rules (trapezoidal and Simpson's) are foundational, production scientific computing relies on **adaptive and extrapolated quadrature** to eliminate wasted function evaluations and guarantee error convergence.
+
+### 7.1 Romberg Integration via Richardson Extrapolation
+
+The composite trapezoid rule $T(h)$ on subintervals of width $h$ admits an asymptotic expansion governed by the **Euler-Maclaurin Summation Formula**:
+$$T(h) = I + c_1 h^2 + c_2 h^4 + c_3 h^6 + \dots$$
+Notice that only *even* powers of $h$ appear in the truncation error.
+
+By halving the step size ($h 	o h/2$), we can cancel the leading $h^2$ error term:
+$$T(h/2) = I + c_1 rac{h^2}{4} + c_2 rac{h^4}{16} + \dots$$
+Multiplying by $4$ and subtracting $T(h)$:
+$$4 T(h/2) - T(h) = 3I + c_2' h^4 + \dots \implies R(1, 1) = rac{4 T(h/2) - T(h)}{3} = I + O(h^4)$$
+This cancellation is precisely **Simpson's Rule**!
+
+#### The General Romberg Tableau:
+Iterating this extrapolation hierarchically generates the **Romberg Tableau**:
+$$R(k, m) = rac{4^m R(k, m-1) - R(k-1, m-1)}{4^m - 1}$$
+where $k$ denotes the refinement level ($n = 2^k$ intervals) and $m$ denotes the extrapolation column (canceling $O(h^{2m})$ error).
+
+```
+R(0, 0)  [Trapezoid O(h^2)]
+R(1, 0)  ->  R(1, 1)  [Simpson O(h^4)]
+R(2, 0)  ->  R(2, 1)  ->  R(2, 2)  [Boole O(h^6)]
+R(3, 0)  ->  R(3, 1)  ->  R(3, 2)  ->  R(3, 3)  [O(h^8)]
+```
+
+### 7.2 Adaptive Simpson's Quadrature
+
+In functions with localized high curvature or steep boundary layers, a uniform mesh is profoundly inefficient. **Adaptive Simpson's Quadrature** dynamically bisects intervals $[a, b]$ only where the local curvature demands it:
+
+1. Compute Simpson's estimate over the whole interval: $S(a, b) = rac{b - a}{6} [f(a) + 4f(c) + f(b)]$ where $c = rac{a+b}{2}$.
+2. Compute Simpson's estimate over the two halves: $S(a, c) + S(c, b)$.
+3. The local truncation error satisfies:
+   $$	ext{Error} pprox rac{|S(a, b) - [S(a, c) + S(c, b)]|}{15}$$
+4. If $	ext{Error} < arepsilon$, accept $[S(a, c) + S(c, b)] + rac{S(a, c) + S(c, b) - S(a, b)}{15}$ (local Richardson correction).
+5. If $	ext{Error} \ge arepsilon$, recursively subdivide $[a, c]$ and $[c, b]$ each with tolerance $arepsilon / 2$.
+
+---
+
+### Multi-Language Implementation: Romberg & Adaptive Simpson
+
+::: {.panel-tabset group="language"}
+## Python 3
+```python
+def romberg(func, a: float, b: float, max_steps: int = 5, tol: float = 1e-12):
+    """Romberg integration via Richardson extrapolation."""
+    R = [[0.0] * (max_steps + 1) for _ in range(max_steps + 1)]
+    h = b - a
+    R[0][0] = 0.5 * h * (func(a) + func(b))
+
+    for k in range(1, max_steps + 1):
+        h /= 2.0
+        # Trapezoid midpoint evaluation
+        sum_pts = sum(func(a + (2 * i - 1) * h) for i in range(1, 2**(k - 1) + 1))
+        R[k][0] = 0.5 * R[k-1][0] + h * sum_pts
+
+        # Richardson extrapolation columns
+        for m in range(1, k + 1):
+            factor = 4**m
+            R[k][m] = (factor * R[k][m-1] - R[k-1][m-1]) / (factor - 1)
+
+        if abs(R[k][k] - R[k-1][k-1]) < tol:
+            return R[k][k], k
+
+    return R[max_steps][max_steps], max_steps
+
+# Test on difficult non-linear integrand: f(x) = exp(3x) * sin(2x) on [0, pi]
+import numpy as np
+f_test = lambda x: np.exp(3.0 * x) * np.sin(2.0 * x)
+# Analytical exact: [exp(3x)/(9+4) * (3*sin(2x) - 2*cos(2x))]_0^pi = (2/13) * (exp(3*pi) - 1)
+exact = (2.0 / 13.0) * (np.exp(3.0 * np.pi) - 1.0)
+
+val, steps = romberg(f_test, 0.0, np.pi, 6)
+print(f"Python 3: Romberg Value = {val:.8f} (Exact = {exact:.8f}, Steps = {steps})")
+```
+
+## C++20
+```cpp
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <iomanip>
+#include <functional>
+
+std::pair<double, int> romberg(std::function<double(double)> f, double a, double b, int max_steps = 6, double tol = 1e-12) {
+    std::vector<std::vector<double>> R(max_steps + 1, std::vector<double>(max_steps + 1, 0.0));
+    double h = b - a;
+    R[0][0] = 0.5 * h * (f(a) + f(b));
+
+    for (int k = 1; k <= max_steps; ++k) {
+        h /= 2.0;
+        double sum_pts = 0.0;
+        int n_pts = 1 << (k - 1);
+        for (int i = 1; i <= n_pts; ++i) {
+            sum_pts += f(a + (2 * i - 1) * h);
+        }
+        R[k][0] = 0.5 * R[k-1][0] + h * sum_pts;
+
+        for (int m = 1; m <= k; ++m) {
+            double factor = std::pow(4.0, m);
+            R[k][m] = (factor * R[k][m-1] - R[k-1][m-1]) / (factor - 1.0);
+        }
+
+        if (std::abs(R[k][k] - R[k-1][k-1]) < tol) {
+            return {R[k][k], k};
+        }
+    }
+    return {R[max_steps][max_steps], max_steps};
+}
+
+int main() {
+    auto f = [](double x) { return std::exp(3.0 * x) * std::sin(2.0 * x); };
+    double exact = (2.0 / 13.0) * (std::exp(3.0 * M_PI) - 1.0);
+    auto [val, steps] = romberg(f, 0.0, M_PI, 6);
+
+    std::cout << std::fixed << std::setprecision(8);
+    std::cout << "C++20:    Romberg = " << val << " (Exact = " << exact << ", Steps = " << steps << ")\n";
+    return 0;
+}
+```
+
+## Rust
+```rust
+fn romberg<F>(f: F, a: f64, b: f64, max_steps: usize, tol: f64) -> (f64, usize)
+where F: Fn(f64) -> f64 {
+    let mut r = vec![vec![0.0; max_steps + 1]; max_steps + 1];
+    let mut h = b - a;
+    r[0][0] = 0.5 * h * (f(a) + f(b));
+
+    for k in 1..=max_steps {
+        h /= 2.0;
+        let n_pts = 1 << (k - 1);
+        let mut sum_pts = 0.0;
+        for i in 1..=n_pts {
+            sum_pts += f(a + (2 * i - 1) as f64 * h);
+        }
+        r[k][0] = 0.5 * r[k - 1][0] + h * sum_pts;
+
+        for m in 1..=k {
+            let factor = 4.0_f64.powi(m as i32);
+            r[k][m] = (factor * r[k][m - 1] - r[k - 1][m - 1]) / (factor - 1.0);
+        }
+
+        if (r[k][k] - r[k - 1][k - 1]).abs() < tol {
+            return (r[k][k], k);
+        }
+    }
+    (r[max_steps][max_steps], max_steps)
+}
+
+fn main() {
+    let f = |x: f64| (3.0 * x).exp() * (2.0 * x).sin();
+    let exact = (2.0 / 13.0) * ((3.0 * std::f64::consts::PI).exp() - 1.0);
+    let (val, steps) = romberg(f, 0.0, std::f64::consts::PI, 6, 1e-12);
+
+    println!("Rust:     Romberg = {:.8} (Exact = {:.8}, Steps = {})", val, exact, steps);
+}
+```
+
+## Julia
+```julia
+function romberg(f, a, b, max_steps=6, tol=1e-12)
+    R = zeros(Float64, max_steps + 1, max_steps + 1)
+    h = b - a
+    R[1, 1] = 0.5 * h * (f(a) + f(b))
+
+    for k in 1:max_steps
+        h /= 2.0
+        n_pts = 2^(k - 1)
+        sum_pts = sum(f(a + (2 * i - 1) * h) for i in 1:n_pts)
+        R[k + 1, 1] = 0.5 * R[k, 1] + h * sum_pts
+
+        for m in 1:k
+            factor = 4.0^m
+            R[k + 1, m + 1] = (factor * R[k + 1, m] - R[k, m]) / (factor - 1.0)
+        end
+
+        if abs(R[k + 1, k + 1] - R[k, k]) < tol
+            return (R[k + 1, k + 1], k)
+        end
+    end
+    return (R[max_steps + 1, max_steps + 1], max_steps)
+end
+
+f(x) = exp(3.0 * x) * sin(2.0 * x)
+exact = (2.0 / 13.0) * (exp(3.0 * pi) - 1.0)
+val, steps = romberg(f, 0.0, pi, 6)
+println("Julia:    Romberg = $(round(val, digits=8)) (Steps = $steps)")
+```
+
+## Modern Fortran
+```fortran
+program romberg_extrap
+  implicit none
+  real(8), parameter :: pi = 3.14159265358979323846d0
+  real(8) :: a, b, h, exact, sum_pts, factor, r(0:6, 0:6)
+  integer :: k, m, i, n_pts, steps
+
+  a = 0.0d0; b = pi
+  exact = (2.0d0 / 13.0d0) * (exp(3.0d0 * pi) - 1.0d0)
+  h = b - a
+  r(0, 0) = 0.5d0 * h * (exp(3.0d0*a)*sin(2.0d0*a) + exp(3.0d0*b)*sin(2.0d0*b))
+
+  do k = 1, 6
+     h = h / 2.0d0
+     n_pts = 2**(k - 1)
+     sum_pts = 0.0d0
+     do i = 1, n_pts
+        sum_pts = sum_pts + exp(3.0d0*(a + dble(2*i - 1)*h)) * sin(2.0d0*(a + dble(2*i - 1)*h))
+     end do
+     r(k, 0) = 0.5d0 * r(k-1, 0) + h * sum_pts
+
+     do m = 1, k
+        factor = 4.0d0**m
+        r(k, m) = (factor * r(k, m-1) - r(k-1, m-1)) / (factor - 1.0d0)
+     end do
+
+     if (abs(r(k, k) - r(k-1, k-1)) < 1.0d-10) then
+        steps = k
+        exit
+     end if
+  end do
+
+  print '(A,F15.8,A,I2)', "Fortran:  Romberg = ", r(steps, steps), " (Steps = ", steps, ")"
+end program romberg_extrap
+```
+
+## MATLAB / Octave
+```matlab
+f = @(x) exp(3*x) .* sin(2*x);
+a = 0.0; b = pi;
+exact = (2/13) * (exp(3*pi) - 1);
+
+max_steps = 6;
+R = zeros(max_steps + 1, max_steps + 1);
+h = b - a;
+R(1, 1) = 0.5 * h * (f(a) + f(b));
+
+for k = 1:max_steps
+    h = h / 2;
+    n_pts = 2^(k - 1);
+    i_vec = 1:n_pts;
+    pts = a + (2 * i_vec - 1) * h;
+    R(k + 1, 1) = 0.5 * R(k, 1) + h * sum(f(pts));
+    
+    for m = 1:k
+        factor = 4^m;
+        R(k + 1, m + 1) = (factor * R(k + 1, m) - R(k, m)) / (factor - 1);
+    end
+    
+    if abs(R(k + 1, k + 1) - R(k, k)) < 1e-12
+        break;
+    end
+end
+
+fprintf('MATLAB:   Romberg = %.8f (Steps = %d)\n', R(k + 1, k + 1), k);
+```
+:::
+
+---
+
+## 8. Algorithmic Verification & Cross-Language Consistency
 
 All six implementations across **Python 3, C++20, Rust, Julia, Modern Fortran, and MATLAB** yield mathematically identical results for both uniform and non-uniform quadrature:
 * Exact Integral: **$7848.00$**
@@ -473,7 +739,7 @@ All six implementations across **Python 3, C++20, Rust, Julia, Modern Fortran, a
 
 ---
 
-## 8. Curated Primary Literature & Canonical References
+## 9. Curated Primary Literature & Canonical References
 
 * **James Stewart**, *Calculus: Early Transcendentals*, 8th Edition, Cengage Learning (2015). Chapter 5 (Integrals: Sections 5.1–5.5).
 * **J. M. Heffernan & M. J. Keeling**, *An In-Host Model of Acute Infection: Measles as a Case Study*, Theoretical Population Biology 73 (2008), pp. 134–147.
