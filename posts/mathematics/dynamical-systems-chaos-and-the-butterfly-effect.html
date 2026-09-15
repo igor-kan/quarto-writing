@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Igor Kan">
+<meta name="dcterms.date" content="2026-09-14">
+<meta name="description" content="A comprehensive treatment of dynamical systems and chaos. It defines discrete maps and continuous flows, fixed points, periodic orbits, and stability via linearization; develops the logistic map from stable fixed points through period-doubling to chaos and the Feigenbaum universality; defines sensitive dependence on initial conditions and the Lyapunov exponent and relates them to stretching-and-folding and mixing; explains the butterfly effect through the Lorenz equations and the three-body problem; describes attractors from fixed points and limit cycles to strange attractors and their fractal dimension; surveys routes to chaos including period-doubling, intermittency, and quasiperiodicity; connects chaos to ergodic theory, unpredictability horizons, and applications, and relates iteration to the Collatz problem and Newton’s method, with an executable Python laboratory producing bifurcation diagrams, Lyapunov exponents, sensitivity experiments, and the Lorenz attractor.">
+
+<title>Dynamical Systems and Chaos: Iteration, Initial Conditions, and the Butterfly Effect – My Writings</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-a515e054079012129989d5397ee3c9c1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">My Writings</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../literature/index.html"> 
+<span class="menu-text">Literature</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../chapters/index.html"> 
+<span class="menu-text">Chapters</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../tutorials/index.html"> 
+<span class="menu-text">Tutorials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#what-is-a-dynamical-system" id="toc-what-is-a-dynamical-system" class="nav-link active" data-scroll-target="#what-is-a-dynamical-system"><span class="header-section-number">1</span> What Is a Dynamical System?</a>
+  <ul>
+  <li><a href="#fixed-points-periodic-orbits-stability" id="toc-fixed-points-periodic-orbits-stability" class="nav-link" data-scroll-target="#fixed-points-periodic-orbits-stability"><span class="header-section-number">1.1</span> Fixed Points, Periodic Orbits, Stability</a></li>
+  </ul></li>
+  <li><a href="#the-logistic-map" id="toc-the-logistic-map" class="nav-link" data-scroll-target="#the-logistic-map"><span class="header-section-number">2</span> The Logistic Map</a>
+  <ul>
+  <li><a href="#fixed-points-and-stability" id="toc-fixed-points-and-stability" class="nav-link" data-scroll-target="#fixed-points-and-stability"><span class="header-section-number">2.1</span> Fixed Points and Stability</a></li>
+  <li><a href="#period-doubling-and-feigenbaum-universality" id="toc-period-doubling-and-feigenbaum-universality" class="nav-link" data-scroll-target="#period-doubling-and-feigenbaum-universality"><span class="header-section-number">2.2</span> Period-Doubling and Feigenbaum Universality</a></li>
+  </ul></li>
+  <li><a href="#chaos-sensitive-dependence" id="toc-chaos-sensitive-dependence" class="nav-link" data-scroll-target="#chaos-sensitive-dependence"><span class="header-section-number">3</span> Chaos: Sensitive Dependence</a>
+  <ul>
+  <li><a href="#stretching-and-folding" id="toc-stretching-and-folding" class="nav-link" data-scroll-target="#stretching-and-folding"><span class="header-section-number">3.1</span> Stretching and Folding</a></li>
+  </ul></li>
+  <li><a href="#the-butterfly-effect-and-the-lorenz-system" id="toc-the-butterfly-effect-and-the-lorenz-system" class="nav-link" data-scroll-target="#the-butterfly-effect-and-the-lorenz-system"><span class="header-section-number">4</span> The Butterfly Effect and the Lorenz System</a></li>
+  <li><a href="#attractors-and-routes-to-chaos" id="toc-attractors-and-routes-to-chaos" class="nav-link" data-scroll-target="#attractors-and-routes-to-chaos"><span class="header-section-number">5</span> Attractors and Routes to Chaos</a></li>
+  <li><a href="#why-it-matters" id="toc-why-it-matters" class="nav-link" data-scroll-target="#why-it-matters"><span class="header-section-number">6</span> Why It Matters</a></li>
+  <li><a href="#laboratory-seeing-chaos" id="toc-laboratory-seeing-chaos" class="nav-link" data-scroll-target="#laboratory-seeing-chaos"><span class="header-section-number">7</span> Laboratory: Seeing Chaos</a>
+  <ul>
+  <li><a href="#the-logistic-map-fixed-points-to-chaos" id="toc-the-logistic-map-fixed-points-to-chaos" class="nav-link" data-scroll-target="#the-logistic-map-fixed-points-to-chaos"><span class="header-section-number">7.1</span> The Logistic Map: Fixed Points to Chaos</a></li>
+  <li><a href="#lyapunov-exponent" id="toc-lyapunov-exponent" class="nav-link" data-scroll-target="#lyapunov-exponent"><span class="header-section-number">7.2</span> Lyapunov Exponent</a></li>
+  <li><a href="#sensitivity-to-initial-conditions-butterfly-effect" id="toc-sensitivity-to-initial-conditions-butterfly-effect" class="nav-link" data-scroll-target="#sensitivity-to-initial-conditions-butterfly-effect"><span class="header-section-number">7.3</span> Sensitivity to Initial Conditions (Butterfly Effect)</a></li>
+  <li><a href="#the-lorenz-attractor" id="toc-the-lorenz-attractor" class="nav-link" data-scroll-target="#the-lorenz-attractor"><span class="header-section-number">7.4</span> The Lorenz Attractor</a></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary"><span class="header-section-number">8</span> Summary</a></li>
+  <li><a href="#curated-references-and-further-reading" id="toc-curated-references-and-further-reading" class="nav-link" data-scroll-target="#curated-references-and-further-reading"><span class="header-section-number">9</span> Curated References and Further Reading</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title">Dynamical Systems and Chaos: Iteration, Initial Conditions, and the Butterfly Effect</h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
+<p class="subtitle lead">Fixed points, stability, and the logistic map; period-doubling and the Feigenbaum constant; sensitive dependence and Lyapunov exponents; strange attractors and the Lorenz system; the butterfly effect, predictability horizons, and why deterministic does not mean predictable</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Mathematics</div>
+    <div class="quarto-category">Dynamical Systems</div>
+    <div class="quarto-category">Chaos Theory</div>
+    <div class="quarto-category">Nonlinear Systems</div>
+    <div class="quarto-category">Physics</div>
+    <div class="quarto-category">Computation</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    A comprehensive treatment of dynamical systems and chaos. It defines discrete maps and continuous flows, fixed points, periodic orbits, and stability via linearization; develops the logistic map from stable fixed points through period-doubling to chaos and the Feigenbaum universality; defines sensitive dependence on initial conditions and the Lyapunov exponent and relates them to stretching-and-folding and mixing; explains the butterfly effect through the Lorenz equations and the three-body problem; describes attractors from fixed points and limit cycles to strange attractors and their fractal dimension; surveys routes to chaos including period-doubling, intermittency, and quasiperiodicity; connects chaos to ergodic theory, unpredictability horizons, and applications, and relates iteration to the Collatz problem and Newton’s method, with an executable Python laboratory producing bifurcation diagrams, Lyapunov exponents, sensitivity experiments, and the Lorenz attractor.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Igor Kan </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 14, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><em>“The flapping of a butterfly’s wings in Brazil could set off a tornado in Texas.”</em> — attributed to Edward Lorenz</p>
+<p>A <strong>dynamical system</strong> is a rule for how a state evolves. When the rule is nonlinear, tiny differences in the initial condition can grow exponentially, so long-term prediction becomes impossible even though the system is fully deterministic. This is <strong>chaos</strong>, and it is everywhere: weather, ecosystems, fluids, circuits, orbits, populations.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Companion Treatises in this Series
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li><a href="../../posts/mathematics/collatz-conjecture-3x-plus-1-orbits-and-similar-iterations.html">The 3x+1 Problem: Collatz Orbits and Similar Iterations</a></li>
+<li><a href="../../posts/mathematics/iterative-methods-and-computing-constants-pi-and-eulers-constant.html">Iterative Methods and Computing the Constants</a></li>
+<li><a href="../../posts/mathematics/analysis-17-phase-space-systems-sturm-liouville.html">Phase Space, Systems, and Sturm–Liouville</a></li>
+<li><a href="../../posts/mathematics/analysis-09-dynamical-systems-picard-lindelof-lie.html">Dynamical Systems, Picard–Lindelöf, and Lie Theory</a></li>
+<li><a href="../../posts/mathematics/analysis-14-multivariable-derivatives-submanifolds.html">Functions of Several Variables and Submanifolds</a></li>
+</ul>
+</div>
+</div>
+</div>
+<hr>
+<section id="what-is-a-dynamical-system" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="what-is-a-dynamical-system"><span class="header-section-number">1</span> What Is a Dynamical System?</h2>
+<p>A <strong>dynamical system</strong> consists of a <strong>state space</strong> <span class="math inline">\(M\)</span> and an <strong>evolution rule</strong>:</p>
+<ul>
+<li><strong>Discrete-time (map):</strong> <span class="math inline">\(x_{n+1}=f(x_n)\)</span>, <span class="math inline">\(f:M\to M\)</span>. This is iteration.</li>
+<li><strong>Continuous-time (flow):</strong> <span class="math inline">\(\dot x=F(x)\)</span>, a differential equation; the solution is a curve <span class="math inline">\(\varphi_t(x_0)\)</span>.</li>
+</ul>
+<p>The system is <strong>deterministic</strong>: the future is uniquely fixed by the present state. Determinism, however, does <strong>not</strong> imply predictability — that is the central lesson of chaos.</p>
+<section id="fixed-points-periodic-orbits-stability" class="level3" data-number="1.1">
+<h3 data-number="1.1" class="anchored" data-anchor-id="fixed-points-periodic-orbits-stability"><span class="header-section-number">1.1</span> Fixed Points, Periodic Orbits, Stability</h3>
+<p>A <strong>fixed point</strong> <span class="math inline">\(x^\*\)</span> satisfies <span class="math inline">\(f(x^\*)=x^\*\)</span> (discrete) or <span class="math inline">\(F(x^\*)=0\)</span> (continuous). Its <strong>stability</strong> is decided by linearization:</p>
+<ul>
+<li>Discrete: the eigenvalue(s) of <span class="math inline">\(Df(x^\*)\)</span>; stable if all <span class="math inline">\(|\lambda|&lt;1\)</span>; the <strong>multiplier</strong>.</li>
+<li>Continuous: the eigenvalues of <span class="math inline">\(DF(x^\*)\)</span>; stable if all have negative real part.</li>
+</ul>
+<p>A <strong>periodic orbit</strong> has <span class="math inline">\(f^p(x)=x\)</span> for some <span class="math inline">\(p&gt;0\)</span>; its stability is decided by the derivative of the <span class="math inline">\(p\)</span>-th iterate, the <strong>multiplier</strong> <span class="math inline">\(\prod_{i=0}^{p-1}f'(x_i)\)</span>.</p>
+<p><strong>Bifurcations</strong> are qualitative changes as a parameter varies: saddle-node, transcritical, pitchfork, Hopf, and period-doubling.</p>
+<hr>
+</section>
+</section>
+<section id="the-logistic-map" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="the-logistic-map"><span class="header-section-number">2</span> The Logistic Map</h2>
+<p>The textbook discrete system is the <strong>logistic map</strong></p>
+<p><span class="math display">\[
+x_{n+1}=r\,x_n(1-x_n),\qquad x\in[0,1],\ r\in[0,4],
+\]</span></p>
+<p>a model of population with growth rate <span class="math inline">\(r\)</span> and crowding.</p>
+<section id="fixed-points-and-stability" class="level3" data-number="2.1">
+<h3 data-number="2.1" class="anchored" data-anchor-id="fixed-points-and-stability"><span class="header-section-number">2.1</span> Fixed Points and Stability</h3>
+<p>Nonzero fixed point: <span class="math inline">\(x^\*=1-1/r\)</span> (for <span class="math inline">\(r&gt;1\)</span>). The multiplier is <span class="math inline">\(f'(x^\*)=2-r\)</span>, so:</p>
+<ul>
+<li><span class="math inline">\(0&lt;r&lt;1\)</span>: <span class="math inline">\(x^\*=0\)</span> stable; population dies out.</li>
+<li><span class="math inline">\(1&lt;r&lt;3\)</span>: <span class="math inline">\(x^\*=1-1/r\)</span> stable.</li>
+<li><span class="math inline">\(r=3\)</span>: <strong>period-doubling</strong> — the fixed point loses stability and a stable 2-cycle appears.</li>
+<li><span class="math inline">\(r=3.449\ldots\)</span>: the 2-cycle doubles to a 4-cycle.</li>
+<li>Cascades continue at <span class="math inline">\(r=3.544, 3.564, \dots\)</span> accumulating at <span class="math inline">\(r_\infty\approx3.5699\)</span>.</li>
+</ul>
+</section>
+<section id="period-doubling-and-feigenbaum-universality" class="level3" data-number="2.2">
+<h3 data-number="2.2" class="anchored" data-anchor-id="period-doubling-and-feigenbaum-universality"><span class="header-section-number">2.2</span> Period-Doubling and Feigenbaum Universality</h3>
+<p>The bifurcation points <span class="math inline">\(r_n\)</span> converge geometrically with ratio</p>
+<p><span class="math display">\[
+\delta=\lim_{n\to\infty}\frac{r_{n}-r_{n-1}}{r_{n+1}-r_n}\approx4.6692,
+\]</span></p>
+<p>the <strong>Feigenbaum constant</strong>. Astonishingly, <span class="math inline">\(\delta\)</span> (and the scaling <span class="math inline">\(\alpha\approx2.5029\)</span>) is <strong>universal</strong>: the same constants appear in any smooth unimodal map undergoing period-doubling — a deep statement about the geometry of bifurcations, not about the logistic map specifically.</p>
+<p>Beyond <span class="math inline">\(r_\infty\)</span>, the dynamics is chaotic for most <span class="math inline">\(r\)</span>, punctuated by <strong>periodic windows</strong> (e.g.&nbsp;a stable 3-cycle near <span class="math inline">\(r\approx3.83\)</span>).</p>
+<hr>
+</section>
+</section>
+<section id="chaos-sensitive-dependence" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="chaos-sensitive-dependence"><span class="header-section-number">3</span> Chaos: Sensitive Dependence</h2>
+<p>A map is <strong>chaotic</strong> (on an invariant set) if it has:</p>
+<ol type="1">
+<li><strong>Sensitive dependence on initial conditions</strong> — nearby states separate exponentially.</li>
+<li><strong>Topological transitivity / mixing</strong> — the orbit wanders densely through the set.</li>
+<li><strong>Dense periodic orbits.</strong></li>
+</ol>
+<p>The first is quantified by the <strong>Lyapunov exponent</strong> <span class="math display">\[
+\lambda=\lim_{n\to\infty}\frac1n\sum_{i=0}^{n-1}\ln|f'(x_i)|.
+\]</span> <span class="math inline">\(\lambda&gt;0\)</span> means exponential divergence: an initial error <span class="math inline">\(\epsilon\)</span> grows like <span class="math inline">\(\epsilon e^{\lambda n}\)</span>. Positive Lyapunov exponent is the formal signature of chaos; a <strong>predictability horizon</strong> follows: to predict <span class="math inline">\(T\)</span> steps, the initial uncertainty must be below <span class="math inline">\(\sim e^{-\lambda T}\)</span>.</p>
+<section id="stretching-and-folding" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="stretching-and-folding"><span class="header-section-number">3.1</span> Stretching and Folding</h3>
+<p>Chaos requires two competing actions: <strong>stretching</strong> (which amplifies differences) and <strong>folding</strong> (which keeps the state bounded). The logistic map’s parabola does both. This is why chaotic attractors are <strong>fractal</strong> — infinitely layered sets of non-integer dimension.</p>
+<hr>
+</section>
+</section>
+<section id="the-butterfly-effect-and-the-lorenz-system" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="the-butterfly-effect-and-the-lorenz-system"><span class="header-section-number">4</span> The Butterfly Effect and the Lorenz System</h2>
+<p><strong>Edward Lorenz (1963)</strong> studied a truncated model of atmospheric convection:</p>
+<p><span class="math display">\[
+\dot x=\sigma(y-x),\qquad
+\dot y=x(\rho-z)-y,\qquad
+\dot z=xy-\beta z,
+\]</span></p>
+<p>with classical parameters <span class="math inline">\(\sigma=10\)</span>, <span class="math inline">\(\rho=28\)</span>, <span class="math inline">\(\beta=8/3\)</span>. The flow has a <strong>strange attractor</strong> — the “butterfly.” Two trajectories from almost identical initial conditions separate exponentially, so weather forecasts lose skill beyond roughly two weeks. Lorenz’s observation — that rounding a printed initial value from six digits to three changed a long-term forecast — became the <strong>butterfly effect</strong>.</p>
+<p>The same phenomenon appears in the <strong>three-body problem</strong> (Poincaré, 1890): no general closed-form solution, and arbitrarily small changes produce qualitatively different orbits. <strong>Deterministic chaos is the norm in nonlinear systems, not the exception.</strong></p>
+<hr>
+</section>
+<section id="attractors-and-routes-to-chaos" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="attractors-and-routes-to-chaos"><span class="header-section-number">5</span> Attractors and Routes to Chaos</h2>
+<p>An <strong>attractor</strong> is a set toward which nearby trajectories converge:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Attractor</th>
+<th>Dimension</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Fixed point</td>
+<td>0</td>
+<td>damped pendulum at rest</td>
+</tr>
+<tr class="even">
+<td>Limit cycle</td>
+<td>1</td>
+<td>Van der Pol oscillator, heartbeat</td>
+</tr>
+<tr class="odd">
+<td>Torus</td>
+<td>integer</td>
+<td>quasiperiodic motion</td>
+</tr>
+<tr class="even">
+<td><strong>Strange attractor</strong></td>
+<td><strong>fractal</strong></td>
+<td>Lorenz, Rössler, logistic map</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Routes to chaos</strong> (all observed in experiment):</p>
+<ul>
+<li><strong>Period-doubling (Feigenbaum):</strong> the logistic route; universal.</li>
+<li><strong>Intermittency (Pomeau–Manneville):</strong> long regular phases interrupted by chaotic bursts.</li>
+<li><strong>Quasiperiodicity (Ruelle–Takens–Newhouse):</strong> two/three incommensurate frequencies destabilize into a strange attractor.</li>
+</ul>
+<p>Chaos links to <strong>ergodic theory</strong> (invariant measures, mixing, Birkhoff’s ergodic theorem), <strong>fractal geometry</strong> (Hausdorff dimension, the Mandelbrot and Julia sets of <span class="math inline">\(z\mapsto z^2+c\)</span>), and <strong>information theory</strong> (positive entropy = information generation).</p>
+<hr>
+</section>
+<section id="why-it-matters" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="why-it-matters"><span class="header-section-number">6</span> Why It Matters</h2>
+<ul>
+<li><strong>Weather and climate:</strong> prediction horizons; ensemble forecasting.</li>
+<li><strong>Ecology and epidemiology:</strong> population cycles, tipping points.</li>
+<li><strong>Engineering:</strong> turbulence, laser dynamics, secure communication via chaos synchronization.</li>
+<li><strong>Physics:</strong> the KAM theorem and near-integrable systems; chaos in the solar system.</li>
+<li><strong>Computation:</strong> Newton’s method is itself a dynamical system — its fractal <strong>basins of attraction</strong> explain why some initial guesses fail. The <a href="../../posts/mathematics/collatz-conjecture-3x-plus-1-orbits-and-similar-iterations.html">Collatz map</a> is another deterministic iteration whose global behavior resists proof.</li>
+</ul>
+<p>The synthesis: <strong>nonlinearity plus iteration generates complexity; determinism and predictability are different properties.</strong></p>
+<hr>
+</section>
+<section id="laboratory-seeing-chaos" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="laboratory-seeing-chaos"><span class="header-section-number">7</span> Laboratory: Seeing Chaos</h2>
+<section id="the-logistic-map-fixed-points-to-chaos" class="level3" data-number="7.1">
+<h3 data-number="7.1" class="anchored" data-anchor-id="the-logistic-map-fixed-points-to-chaos"><span class="header-section-number">7.1</span> The Logistic Map: Fixed Points to Chaos</h3>
+<div id="cell-fig-logistic" class="cell" data-execution_count="1">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> logistic_orbit(r, x0, n, discard<span class="op">=</span><span class="dv">0</span>):</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    xs <span class="op">=</span> []</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> x0</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n <span class="op">+</span> discard):</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> r <span class="op">*</span> x <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> x)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> i <span class="op">&gt;=</span> discard:</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>            xs.append(x)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array(xs)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">5</span>))</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r, col <span class="kw">in</span> [(<span class="fl">2.8</span>, <span class="st">"#2980b9"</span>), (<span class="fl">3.2</span>, <span class="st">"#27ae60"</span>), (<span class="fl">3.5</span>, <span class="st">"#e67e22"</span>), (<span class="fl">3.9</span>, <span class="st">"#e74c3c"</span>)]:</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">0</span>].plot(logistic_orbit(r, <span class="fl">0.4</span>, <span class="dv">60</span>), <span class="st">"o-"</span>, ms<span class="op">=</span><span class="dv">3</span>, color<span class="op">=</span>col, label<span class="op">=</span><span class="ss">f"r=</span><span class="sc">{</span>r<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Logistic map trajectories"</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">"n"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].set_ylabel(<span class="vs">r"</span><span class="dv">$</span><span class="vs">x_n</span><span class="dv">$</span><span class="vs">"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].legend()<span class="op">;</span> axes[<span class="dv">0</span>].grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>rs <span class="op">=</span> np.linspace(<span class="fl">2.5</span>, <span class="fl">4.0</span>, <span class="dv">1200</span>)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> rs:</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    xs <span class="op">=</span> logistic_orbit(r, <span class="fl">0.4</span>, <span class="dv">300</span>, discard<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">1</span>].plot([r] <span class="op">*</span> <span class="bu">len</span>(xs), xs, <span class="st">","</span>, color<span class="op">=</span><span class="st">"#2980b9"</span>, alpha<span class="op">=</span><span class="fl">0.25</span>)</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"Bifurcation diagram"</span>)</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xlabel(<span class="st">"r"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].set_ylabel(<span class="vs">r"attracting </span><span class="dv">$</span><span class="vs">x</span><span class="dv">$</span><span class="vs">"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>r_inf <span class="op">=</span> <span class="fl">3.5699456</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== LOGISTIC MAP BIFURCATIONS ==="</span>)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  fixed point stable : 1 &lt; r &lt; 3"</span>)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  2-cycle starts     : r = 3"</span>)</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  cascade accumulates: r_inf = </span><span class="sc">{</span>r_inf<span class="sc">}</span><span class="ss"> (Feigenbaum)"</span>)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  first three doubling points: 3, 3.449, 3.544"</span>)</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Feigenbaum delta   = 4.669201609...  (universal)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-logistic" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-logistic-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="dynamical-systems-chaos-and-the-butterfly-effect_files/figure-html/fig-logistic-output-1.png" width="1334" height="470" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-logistic-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: The logistic map x_{n+1}=r x_n(1−x_n). Left: trajectories for increasing r, showing convergence to a fixed point (r=2.8), a 2-cycle (r=3.2), a 4-cycle (r=3.5), and chaos (r=3.9). Right: the bifurcation diagram — for each r the map’s attracting set is plotted, revealing the period-doubling cascade to chaos, the Feigenbaum accumulation point, and periodic windows embedded in the chaotic region.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== LOGISTIC MAP BIFURCATIONS ===
+  fixed point stable : 1 &lt; r &lt; 3
+  2-cycle starts     : r = 3
+  cascade accumulates: r_inf = 3.5699456 (Feigenbaum)
+  first three doubling points: 3, 3.449, 3.544
+  Feigenbaum delta   = 4.669201609...  (universal)</code></pre>
+</div>
+</div>
+</section>
+<section id="lyapunov-exponent" class="level3" data-number="7.2">
+<h3 data-number="7.2" class="anchored" data-anchor-id="lyapunov-exponent"><span class="header-section-number">7.2</span> Lyapunov Exponent</h3>
+<div id="cell-fig-lyapunov" class="cell" data-execution_count="2">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> lyapunov(r, n<span class="op">=</span><span class="dv">2000</span>, discard<span class="op">=</span><span class="dv">500</span>):</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> <span class="fl">0.4</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n <span class="op">+</span> discard):</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> r <span class="op">*</span> x <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> x)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> <span class="bu">abs</span>(r <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> <span class="dv">2</span> <span class="op">*</span> x))</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> i <span class="op">&gt;=</span> discard <span class="kw">and</span> d <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>            s <span class="op">+=</span> np.log(d)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> s <span class="op">/</span> n</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>rs <span class="op">=</span> np.linspace(<span class="fl">2.5</span>, <span class="fl">4.0</span>, <span class="dv">800</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>lam <span class="op">=</span> np.array([lyapunov(r) <span class="cf">for</span> r <span class="kw">in</span> rs])</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="fl">4.6</span>))</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>ax.plot(rs, lam, color<span class="op">=</span><span class="st">"#333"</span>, lw<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>ax.fill_between(rs, <span class="dv">0</span>, lam, where<span class="op">=</span>lam <span class="op">&gt;</span> <span class="dv">0</span>, color<span class="op">=</span><span class="st">"#e74c3c"</span>, alpha<span class="op">=</span><span class="fl">0.6</span>, label<span class="op">=</span><span class="st">"chaotic (λ&gt;0)"</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>ax.fill_between(rs, <span class="dv">0</span>, lam, where<span class="op">=</span>lam <span class="op">&lt;=</span> <span class="dv">0</span>, color<span class="op">=</span><span class="st">"#2980b9"</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="st">"periodic (λ&lt;0)"</span>)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>ax.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"k"</span>, lw<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Lyapunov exponent of the logistic map"</span>)</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"r"</span>)<span class="op">;</span> ax.set_ylabel(<span class="vs">r"</span><span class="dv">$</span><span class="er">\</span><span class="vs">lambda</span><span class="dv">$</span><span class="vs">"</span>)<span class="op">;</span> ax.legend()<span class="op">;</span> ax.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== LYAPUNOV EXPONENT ==="</span>)</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> [<span class="fl">2.8</span>, <span class="fl">3.2</span>, <span class="fl">3.5</span>, <span class="fl">3.83</span>, <span class="fl">3.9</span>, <span class="fl">4.0</span>]:</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  r=</span><span class="sc">{</span>r<span class="sc">:&lt;5}</span><span class="ss">: lambda = </span><span class="sc">{</span>lyapunov(r)<span class="sc">:+.4f}</span><span class="ss">  (</span><span class="sc">{</span><span class="st">'chaotic'</span> <span class="cf">if</span> lyapunov(r)<span class="op">&gt;</span><span class="dv">0</span> <span class="cf">else</span> <span class="st">'periodic'</span><span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  r=3.83 is a periodic window (stable 3-cycle) inside the chaotic range."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-lyapunov" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lyapunov-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="dynamical-systems-chaos-and-the-butterfly-effect_files/figure-html/fig-lyapunov-output-1.png" width="1141" height="432" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lyapunov-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: The Lyapunov exponent of the logistic map versus r. Where λ &gt; 0 (red) the dynamics is chaotic and nearby trajectories diverge exponentially; where λ &lt; 0 (blue) it converges to a periodic orbit. The sharp downward spikes are the periodic windows inside the chaotic region. Positive Lyapunov exponent is the quantitative definition of sensitive dependence.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== LYAPUNOV EXPONENT ===
+  r=2.8  : lambda = -0.2231  (periodic)
+  r=3.2  : lambda = -0.9163  (periodic)
+  r=3.5  : lambda = -0.8725  (periodic)
+  r=3.83 : lambda = -0.3705  (periodic)
+  r=3.9  : lambda = +0.5024  (chaotic)
+  r=4.0  : lambda = +0.6934  (chaotic)
+  r=3.83 is a periodic window (stable 3-cycle) inside the chaotic range.</code></pre>
+</div>
+</div>
+</section>
+<section id="sensitivity-to-initial-conditions-butterfly-effect" class="level3" data-number="7.3">
+<h3 data-number="7.3" class="anchored" data-anchor-id="sensitivity-to-initial-conditions-butterfly-effect"><span class="header-section-number">7.3</span> Sensitivity to Initial Conditions (Butterfly Effect)</h3>
+<div id="cell-fig-sensitivity" class="cell" data-execution_count="3">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> <span class="fl">3.9</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>x0, x1 <span class="op">=</span> <span class="fl">0.4</span>, <span class="fl">0.4</span> <span class="op">+</span> <span class="fl">1e-6</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">50</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>traj0, traj1 <span class="op">=</span> logistic_orbit(r, x0, n), logistic_orbit(r, x1, n)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>sep <span class="op">=</span> np.<span class="bu">abs</span>(traj0 <span class="op">-</span> traj1)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">4.8</span>))</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>ax.plot(traj0, <span class="st">"o-"</span>, ms<span class="op">=</span><span class="dv">3</span>, color<span class="op">=</span><span class="st">"#2980b9"</span>, label<span class="op">=</span><span class="vs">r"</span><span class="dv">$</span><span class="vs">x_0=0</span><span class="dv">.</span><span class="vs">4</span><span class="dv">$</span><span class="vs">"</span>)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>ax.plot(traj1, <span class="st">"s-"</span>, ms<span class="op">=</span><span class="dv">3</span>, color<span class="op">=</span><span class="st">"#e67e22"</span>, label<span class="op">=</span><span class="vs">r"</span><span class="dv">$</span><span class="vs">x_0=0</span><span class="dv">.</span><span class="vs">4</span><span class="op">+</span><span class="vs">10</span><span class="dv">^</span><span class="vs">{-6}</span><span class="dv">$</span><span class="vs">"</span>)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Butterfly effect: initial separation 10⁻⁶, r=3.9"</span>)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"step"</span>)<span class="op">;</span> ax.set_ylabel(<span class="vs">r"</span><span class="dv">$</span><span class="vs">x_n</span><span class="dv">$</span><span class="vs">"</span>)<span class="op">;</span> ax.legend()<span class="op">;</span> ax.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== DIVERGENCE ==="</span>)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> [<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">15</span>, <span class="dv">20</span>, <span class="dv">25</span>, <span class="dv">30</span>]:</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  step </span><span class="sc">{</span>k<span class="sc">:&gt;2}</span><span class="ss">: separation = </span><span class="sc">{</span>sep[k]<span class="sc">:.3e}</span><span class="ss">"</span>)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Lyapunov estimate from growth: </span><span class="sc">{</span>np<span class="sc">.</span>polyfit(<span class="bu">range</span>(<span class="dv">1</span>,<span class="dv">15</span>), np.log(sep[<span class="dv">1</span>:<span class="dv">15</span>]), <span class="dv">1</span>)[<span class="dv">0</span>]<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  (separation saturates once it reaches the size of the attractor.)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-sensitivity" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-sensitivity-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="dynamical-systems-chaos-and-the-butterfly-effect_files/figure-html/fig-sensitivity-output-1.png" width="950" height="451" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-sensitivity-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Sensitive dependence in the logistic map at r=3.9. Two trajectories starting 10^-6 apart track each other closely for about twenty steps, then diverge completely — the hallmark of chaos. The separation grows exponentially at the Lyapunov rate until it saturates. This is why long-term prediction is impossible even though the rule is exact.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== DIVERGENCE ===
+  step  0: separation = 7.800e-07
+  step  5: separation = 1.191e-05
+  step 10: separation = 3.976e-04
+  step 15: separation = 5.953e-03
+  step 20: separation = 1.670e-01
+  step 25: separation = 7.640e-01
+  step 30: separation = 2.213e-01
+  Lyapunov estimate from growth: 0.504
+  (separation saturates once it reaches the size of the attractor.)</code></pre>
+</div>
+</div>
+</section>
+<section id="the-lorenz-attractor" class="level3" data-number="7.4">
+<h3 data-number="7.4" class="anchored" data-anchor-id="the-lorenz-attractor"><span class="header-section-number">7.4</span> The Lorenz Attractor</h3>
+<div id="cell-fig-lorenz" class="cell" data-execution_count="4">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.integrate <span class="im">import</span> solve_ivp</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>sigma, rho, beta <span class="op">=</span> <span class="fl">10.0</span>, <span class="fl">28.0</span>, <span class="fl">8.0</span> <span class="op">/</span> <span class="fl">3.0</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> lorenz(t, s):</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    x, y, z <span class="op">=</span> s</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [sigma <span class="op">*</span> (y <span class="op">-</span> x), x <span class="op">*</span> (rho <span class="op">-</span> z) <span class="op">-</span> y, x <span class="op">*</span> y <span class="op">-</span> beta <span class="op">*</span> z]</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">40</span>, <span class="dv">20000</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>sol <span class="op">=</span> solve_ivp(lorenz, [<span class="dv">0</span>, <span class="dv">40</span>], [<span class="fl">1.0</span>, <span class="fl">1.0</span>, <span class="fl">1.0</span>], t_eval<span class="op">=</span>t, rtol<span class="op">=</span><span class="fl">1e-9</span>, atol<span class="op">=</span><span class="fl">1e-9</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>sol2 <span class="op">=</span> solve_ivp(lorenz, [<span class="dv">0</span>, <span class="dv">40</span>], [<span class="fl">1.0</span> <span class="op">+</span> <span class="fl">1e-8</span>, <span class="fl">1.0</span>, <span class="fl">1.0</span>], t_eval<span class="op">=</span>t, rtol<span class="op">=</span><span class="fl">1e-9</span>, atol<span class="op">=</span><span class="fl">1e-9</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>dist <span class="op">=</span> np.linalg.norm(sol.y <span class="op">-</span> sol2.y, axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="fl">5.5</span>))</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>, projection<span class="op">=</span><span class="st">"3d"</span>)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>ax1.plot(sol.y[<span class="dv">0</span>], sol.y[<span class="dv">1</span>], sol.y[<span class="dv">2</span>], lw<span class="op">=</span><span class="fl">0.5</span>, color<span class="op">=</span><span class="st">"#2980b9"</span>)</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>ax1.set_title(<span class="st">"Lorenz strange attractor"</span>)<span class="op">;</span> ax1.set_xlabel(<span class="st">"x"</span>)<span class="op">;</span> ax1.set_ylabel(<span class="st">"y"</span>)<span class="op">;</span> ax1.set_zlabel(<span class="st">"z"</span>)</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>ax2.semilogy(t, dist, color<span class="op">=</span><span class="st">"#e74c3c"</span>)</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>ax2.set_title(<span class="vs">r"Separation of two orbits </span><span class="kw">(</span><span class="dv">$\D</span><span class="vs">elta x_0=10</span><span class="dv">^</span><span class="vs">{-8}</span><span class="dv">$</span><span class="kw">)</span><span class="vs">"</span>)</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>ax2.set_xlabel(<span class="st">"time"</span>)<span class="op">;</span> ax2.set_ylabel(<span class="st">"separation"</span>)<span class="op">;</span> ax2.grid(alpha<span class="op">=</span><span class="fl">0.3</span>, which<span class="op">=</span><span class="st">"both"</span>)</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== LORENZ SEPARATION ==="</span>)</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> [<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">15</span>, <span class="dv">20</span>, <span class="dv">25</span>, <span class="dv">30</span>]:</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  t=</span><span class="sc">{</span>k<span class="sc">:&gt;2}</span><span class="ss">: separation = </span><span class="sc">{</span>dist[np.argmin(<span class="bu">abs</span>(t <span class="op">-</span> k))]<span class="sc">:.3e}</span><span class="ss">"</span>)</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Exponential divergence from a 1e-8 error -&gt; finite predictability horizon."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-lorenz" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lorenz-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="dynamical-systems-chaos-and-the-butterfly-effect_files/figure-html/fig-lorenz-output-1.png" width="1165" height="517" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lorenz-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: The Lorenz system. Left: the butterfly-shaped strange attractor traced by a single trajectory; the flow is bounded but never repeats, and its fractal geometry is visible. Right: two trajectories from initial conditions differing by 10^-8 separate exponentially, until they occupy different lobes of the attractor — Lorenz’s original demonstration that deterministic weather is inherently unpredictable in the long run.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== LORENZ SEPARATION ===
+  t= 0: separation = 1.000e-08
+  t= 5: separation = 1.245e-08
+  t=10: separation = 1.755e-08
+  t=15: separation = 2.374e-07
+  t=20: separation = 9.258e-06
+  t=25: separation = 1.845e-03
+  t=30: separation = 1.435e-01
+  Exponential divergence from a 1e-8 error -&gt; finite predictability horizon.</code></pre>
+</div>
+</div>
+<p>The laboratory makes chaos visible and quantitative: a single parameter sweeps the system from order to chaos (bifurcation diagram); the Lyapunov exponent separates the two regimes; infinitesimal differences explode (butterfly effect); and the Lorenz system shows a bounded, non-repeating, fractal attractor.</p>
+<hr>
+</section>
+</section>
+<section id="summary" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="summary"><span class="header-section-number">8</span> Summary</h2>
+<p><span class="math display">\[
+\begin{aligned}
+&amp;\textbf{Dynamical system: } &amp;&amp; \text{state space + evolution } x_{n+1}=f(x_n) \text{ or } \dot x=F(x). \\[3pt]
+&amp;\textbf{Fixed points: } &amp;&amp; \text{stability via } |f'(x^*)|&lt;1 \text{ or } \operatorname{Re}\lambda&lt;0. \\[3pt]
+&amp;\textbf{Logistic map: } &amp;&amp; \text{fixed point} \to \text{period-doubling} \to \text{chaos};\\ &amp;&amp;&amp; r_\infty=3.5699,\ \text{Feigenbaum } \delta=4.6692 \text{ (universal).} \\[3pt]
+&amp;\textbf{Chaos: } &amp;&amp; \text{sensitive dependence, mixing, dense periodic orbits; } \lambda&gt;0. \\[3pt]
+&amp;\textbf{Butterfly effect: } &amp;&amp; \text{Lorenz; exponential error growth; predictability horizon.} \\[3pt]
+&amp;\textbf{Attractors: } &amp;&amp; \text{fixed point, limit cycle, torus, strange (fractal) attractor.} \\[3pt]
+&amp;\textbf{Routes: } &amp;&amp; \text{period-doubling, intermittency, quasiperiodicity.} \\[3pt]
+&amp;\textbf{Lesson: } &amp;&amp; \text{deterministic} \ne \text{predictable.}
+\end{aligned}
+\]</span></p>
+<p>Chaos is not a failure of mathematics but a feature of nonlinearity. The same iteration that makes the <a href="../../posts/mathematics/collatz-conjecture-3x-plus-1-orbits-and-similar-iterations.html">Collatz conjecture</a> intractable makes weather unpredictable and gives fractals their infinite complexity — and it is why <a href="../../posts/mathematics/iterative-methods-and-computing-constants-pi-and-eulers-constant.html">iterative numerical methods</a> must be analyzed, not just run.</p>
+<hr>
+</section>
+<section id="curated-references-and-further-reading" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="curated-references-and-further-reading"><span class="header-section-number">9</span> Curated References and Further Reading</h2>
+<ol type="1">
+<li><strong>Strogatz, Steven (2015).</strong> <em>Nonlinear Dynamics and Chaos</em>, 2nd ed.&nbsp;Westview Press.</li>
+<li><strong>Lorenz, Edward (1963).</strong> <em>Deterministic Nonperiodic Flow.</em> Journal of the Atmospheric Sciences.</li>
+<li><strong>Feigenbaum, Mitchell (1978).</strong> <em>Quantitative Universality for a Class of Nonlinear Transformations.</em> Journal of Statistical Physics.</li>
+<li><strong>Ott, Edward (2002).</strong> <em>Chaos in Dynamical Systems</em>, 2nd ed.&nbsp;Cambridge University Press.</li>
+<li><strong>Guckenheimer, J. &amp; Holmes, P. (1983).</strong> <em>Nonlinear Oscillations, Dynamical Systems, and Bifurcations of Vector Fields.</em> Springer.</li>
+<li><strong>Poincaré, Henri (1890).</strong> <em>Sur le problème des trois corps et les équations de la dynamique.</em> Acta Mathematica.</li>
+<li><strong>Mandelbrot, Benoît (1982).</strong> <em>The Fractal Geometry of Nature.</em> W. H. Freeman.</li>
+<li><strong>Alligood, K., Sauer, T. &amp; Yorke, J. (1996).</strong> <em>Chaos: An Introduction to Dynamical Systems.</em> Springer.</li>
+</ol>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const cellDetails = window.document.querySelectorAll(".cell details.code-fold");
+        for (let i=0; i<cellDetails.length; i++) {
+          const details = cellDetails[i];
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell div.sourceCode.cell-code");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/igor-kan\.github\.io\/quarto-writing\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Dynamical Systems and Chaos: Iteration, Initial Conditions, and the Butterfly Effect"</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "Fixed points, stability, and the logistic map; period-doubling and the Feigenbaum constant; sensitive dependence and Lyapunov exponents; strange attractors and the Lorenz system; the butterfly effect, predictability horizons, and why deterministic does not mean predictable"</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "Igor Kan"</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> "2026-09-14"</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="an">categories:</span><span class="co"> [Mathematics, Dynamical Systems, Chaos Theory, Nonlinear Systems, Physics, Computation]</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="an">description:</span><span class="co"> "A comprehensive treatment of dynamical systems and chaos. It defines discrete maps and continuous flows, fixed points, periodic orbits, and stability via linearization; develops the logistic map from stable fixed points through period-doubling to chaos and the Feigenbaum universality; defines sensitive dependence on initial conditions and the Lyapunov exponent and relates them to stretching-and-folding and mixing; explains the butterfly effect through the Lorenz equations and the three-body problem; describes attractors from fixed points and limit cycles to strange attractors and their fractal dimension; surveys routes to chaos including period-doubling, intermittency, and quasiperiodicity; connects chaos to ergodic theory, unpredictability horizons, and applications, and relates iteration to the Collatz problem and Newton's method, with an executable Python laboratory producing bifurcation diagrams, Lyapunov exponents, sensitivity experiments, and the Lorenz attractor."</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="co">    html-math-method: mathjax</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: show</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-depth: 4</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="co">    number-sections: true</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="an">jupyter:</span><span class="co"> python3</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="an">toc:</span><span class="co"> true</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="an">toc-depth:</span><span class="co"> 4</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="an">number-sections:</span><span class="co"> true</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>::: {.callout-note appearance="simple"}</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>*"The flapping of a butterfly's wings in Brazil could set off a tornado in Texas."* — attributed to Edward Lorenz</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>A **dynamical system** is a rule for how a state evolves. When the rule is nonlinear, tiny differences in the initial condition can grow exponentially, so long-term prediction becomes impossible even though the system is fully deterministic. This is **chaos**, and it is everywhere: weather, ecosystems, fluids, circuits, orbits, populations.</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip collapse="true"}</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a><span class="fu">### Companion Treatises in this Series</span></span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">The 3x+1 Problem: Collatz Orbits and Similar Iterations</span><span class="co">](collatz-conjecture-3x-plus-1-orbits-and-similar-iterations.qmd)</span></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Iterative Methods and Computing the Constants</span><span class="co">](iterative-methods-and-computing-constants-pi-and-eulers-constant.qmd)</span></span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Phase Space, Systems, and Sturm–Liouville</span><span class="co">](analysis-17-phase-space-systems-sturm-liouville.qmd)</span></span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Dynamical Systems, Picard–Lindelöf, and Lie Theory</span><span class="co">](analysis-09-dynamical-systems-picard-lindelof-lie.qmd)</span></span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Functions of Several Variables and Submanifolds</span><span class="co">](analysis-14-multivariable-derivatives-submanifolds.qmd)</span></span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a><span class="fu">## What Is a Dynamical System?</span></span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a>A **dynamical system** consists of a **state space** $M$ and an **evolution rule**:</span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Discrete-time (map):** $x_{n+1}=f(x_n)$, $f:M\to M$. This is iteration.</span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Continuous-time (flow):** $\dot x=F(x)$, a differential equation; the solution is a curve $\varphi_t(x_0)$.</span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a>The system is **deterministic**: the future is uniquely fixed by the present state. Determinism, however, does **not** imply predictability — that is the central lesson of chaos.</span>
+<span id="cb9-47"><a href="#cb9-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-48"><a href="#cb9-48" aria-hidden="true" tabindex="-1"></a><span class="fu">### Fixed Points, Periodic Orbits, Stability</span></span>
+<span id="cb9-49"><a href="#cb9-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-50"><a href="#cb9-50" aria-hidden="true" tabindex="-1"></a>A **fixed point** $x^\*$ satisfies $f(x^\*)=x^\*$ (discrete) or $F(x^\*)=0$ (continuous). Its **stability** is decided by linearization:</span>
+<span id="cb9-51"><a href="#cb9-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-52"><a href="#cb9-52" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Discrete: the eigenvalue(s) of $Df(x^<span class="sc">\*</span>)$; stable if all $|\lambda|&lt;1$; the **multiplier**.</span>
+<span id="cb9-53"><a href="#cb9-53" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Continuous: the eigenvalues of $DF(x^<span class="sc">\*</span>)$; stable if all have negative real part.</span>
+<span id="cb9-54"><a href="#cb9-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-55"><a href="#cb9-55" aria-hidden="true" tabindex="-1"></a>A **periodic orbit** has $f^p(x)=x$ for some $p&gt;0$; its stability is decided by the derivative of the $p$-th iterate, the **multiplier** $\prod_{i=0}^{p-1}f'(x_i)$.</span>
+<span id="cb9-56"><a href="#cb9-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-57"><a href="#cb9-57" aria-hidden="true" tabindex="-1"></a>**Bifurcations** are qualitative changes as a parameter varies: saddle-node, transcritical, pitchfork, Hopf, and period-doubling.</span>
+<span id="cb9-58"><a href="#cb9-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-59"><a href="#cb9-59" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-60"><a href="#cb9-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-61"><a href="#cb9-61" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Logistic Map</span></span>
+<span id="cb9-62"><a href="#cb9-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-63"><a href="#cb9-63" aria-hidden="true" tabindex="-1"></a>The textbook discrete system is the **logistic map**</span>
+<span id="cb9-64"><a href="#cb9-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-65"><a href="#cb9-65" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-66"><a href="#cb9-66" aria-hidden="true" tabindex="-1"></a>x_{n+1}=r\,x_n(1-x_n),\qquad x\in<span class="co">[</span><span class="ot">0,1</span><span class="co">]</span>,\ r\in<span class="co">[</span><span class="ot">0,4</span><span class="co">]</span>,</span>
+<span id="cb9-67"><a href="#cb9-67" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-68"><a href="#cb9-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-69"><a href="#cb9-69" aria-hidden="true" tabindex="-1"></a>a model of population with growth rate $r$ and crowding.</span>
+<span id="cb9-70"><a href="#cb9-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-71"><a href="#cb9-71" aria-hidden="true" tabindex="-1"></a><span class="fu">### Fixed Points and Stability</span></span>
+<span id="cb9-72"><a href="#cb9-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-73"><a href="#cb9-73" aria-hidden="true" tabindex="-1"></a>Nonzero fixed point: $x^<span class="sc">\*</span>=1-1/r$ (for $r&gt;1$). The multiplier is $f'(x^<span class="sc">\*</span>)=2-r$, so:</span>
+<span id="cb9-74"><a href="#cb9-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-75"><a href="#cb9-75" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>$0&lt;r&lt;1$: $x^<span class="sc">\*</span>=0$ stable; population dies out.</span>
+<span id="cb9-76"><a href="#cb9-76" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>$1&lt;r&lt;3$: $x^<span class="sc">\*</span>=1-1/r$ stable.</span>
+<span id="cb9-77"><a href="#cb9-77" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>$r=3$: **period-doubling** — the fixed point loses stability and a stable 2-cycle appears.</span>
+<span id="cb9-78"><a href="#cb9-78" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>$r=3.449\ldots$: the 2-cycle doubles to a 4-cycle.</span>
+<span id="cb9-79"><a href="#cb9-79" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Cascades continue at $r=3.544, 3.564, \dots$ accumulating at $r_\infty\approx3.5699$.</span>
+<span id="cb9-80"><a href="#cb9-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-81"><a href="#cb9-81" aria-hidden="true" tabindex="-1"></a><span class="fu">### Period-Doubling and Feigenbaum Universality</span></span>
+<span id="cb9-82"><a href="#cb9-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-83"><a href="#cb9-83" aria-hidden="true" tabindex="-1"></a>The bifurcation points $r_n$ converge geometrically with ratio</span>
+<span id="cb9-84"><a href="#cb9-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-85"><a href="#cb9-85" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-86"><a href="#cb9-86" aria-hidden="true" tabindex="-1"></a>\delta=\lim_{n\to\infty}\frac{r_{n}-r_{n-1}}{r_{n+1}-r_n}\approx4.6692,</span>
+<span id="cb9-87"><a href="#cb9-87" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-88"><a href="#cb9-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-89"><a href="#cb9-89" aria-hidden="true" tabindex="-1"></a>the **Feigenbaum constant**. Astonishingly, $\delta$ (and the scaling $\alpha\approx2.5029$) is **universal**: the same constants appear in any smooth unimodal map undergoing period-doubling — a deep statement about the geometry of bifurcations, not about the logistic map specifically.</span>
+<span id="cb9-90"><a href="#cb9-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-91"><a href="#cb9-91" aria-hidden="true" tabindex="-1"></a>Beyond $r_\infty$, the dynamics is chaotic for most $r$, punctuated by **periodic windows** (e.g. a stable 3-cycle near $r\approx3.83$).</span>
+<span id="cb9-92"><a href="#cb9-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-93"><a href="#cb9-93" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-94"><a href="#cb9-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-95"><a href="#cb9-95" aria-hidden="true" tabindex="-1"></a><span class="fu">## Chaos: Sensitive Dependence</span></span>
+<span id="cb9-96"><a href="#cb9-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-97"><a href="#cb9-97" aria-hidden="true" tabindex="-1"></a>A map is **chaotic** (on an invariant set) if it has:</span>
+<span id="cb9-98"><a href="#cb9-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-99"><a href="#cb9-99" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Sensitive dependence on initial conditions** — nearby states separate exponentially.</span>
+<span id="cb9-100"><a href="#cb9-100" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Topological transitivity / mixing** — the orbit wanders densely through the set.</span>
+<span id="cb9-101"><a href="#cb9-101" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Dense periodic orbits.**</span>
+<span id="cb9-102"><a href="#cb9-102" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-103"><a href="#cb9-103" aria-hidden="true" tabindex="-1"></a>The first is quantified by the **Lyapunov exponent**</span>
+<span id="cb9-104"><a href="#cb9-104" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-105"><a href="#cb9-105" aria-hidden="true" tabindex="-1"></a>\lambda=\lim_{n\to\infty}\frac1n\sum_{i=0}^{n-1}\ln|f'(x_i)|.</span>
+<span id="cb9-106"><a href="#cb9-106" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-107"><a href="#cb9-107" aria-hidden="true" tabindex="-1"></a>$\lambda&gt;0$ means exponential divergence: an initial error $\epsilon$ grows like $\epsilon e^{\lambda n}$. Positive Lyapunov exponent is the formal signature of chaos; a **predictability horizon** follows: to predict $T$ steps, the initial uncertainty must be below $\sim e^{-\lambda T}$.</span>
+<span id="cb9-108"><a href="#cb9-108" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-109"><a href="#cb9-109" aria-hidden="true" tabindex="-1"></a><span class="fu">### Stretching and Folding</span></span>
+<span id="cb9-110"><a href="#cb9-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-111"><a href="#cb9-111" aria-hidden="true" tabindex="-1"></a>Chaos requires two competing actions: **stretching** (which amplifies differences) and **folding** (which keeps the state bounded). The logistic map's parabola does both. This is why chaotic attractors are **fractal** — infinitely layered sets of non-integer dimension.</span>
+<span id="cb9-112"><a href="#cb9-112" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-113"><a href="#cb9-113" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-114"><a href="#cb9-114" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-115"><a href="#cb9-115" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Butterfly Effect and the Lorenz System</span></span>
+<span id="cb9-116"><a href="#cb9-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-117"><a href="#cb9-117" aria-hidden="true" tabindex="-1"></a>**Edward Lorenz (1963)** studied a truncated model of atmospheric convection:</span>
+<span id="cb9-118"><a href="#cb9-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-119"><a href="#cb9-119" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-120"><a href="#cb9-120" aria-hidden="true" tabindex="-1"></a>\dot x=\sigma(y-x),\qquad</span>
+<span id="cb9-121"><a href="#cb9-121" aria-hidden="true" tabindex="-1"></a>\dot y=x(\rho-z)-y,\qquad</span>
+<span id="cb9-122"><a href="#cb9-122" aria-hidden="true" tabindex="-1"></a>\dot z=xy-\beta z,</span>
+<span id="cb9-123"><a href="#cb9-123" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-124"><a href="#cb9-124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-125"><a href="#cb9-125" aria-hidden="true" tabindex="-1"></a>with classical parameters $\sigma=10$, $\rho=28$, $\beta=8/3$. The flow has a **strange attractor** — the "butterfly." Two trajectories from almost identical initial conditions separate exponentially, so weather forecasts lose skill beyond roughly two weeks. Lorenz's observation — that rounding a printed initial value from six digits to three changed a long-term forecast — became the **butterfly effect**.</span>
+<span id="cb9-126"><a href="#cb9-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-127"><a href="#cb9-127" aria-hidden="true" tabindex="-1"></a>The same phenomenon appears in the **three-body problem** (Poincaré, 1890): no general closed-form solution, and arbitrarily small changes produce qualitatively different orbits. **Deterministic chaos is the norm in nonlinear systems, not the exception.**</span>
+<span id="cb9-128"><a href="#cb9-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-129"><a href="#cb9-129" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-130"><a href="#cb9-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-131"><a href="#cb9-131" aria-hidden="true" tabindex="-1"></a><span class="fu">## Attractors and Routes to Chaos</span></span>
+<span id="cb9-132"><a href="#cb9-132" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-133"><a href="#cb9-133" aria-hidden="true" tabindex="-1"></a>An **attractor** is a set toward which nearby trajectories converge:</span>
+<span id="cb9-134"><a href="#cb9-134" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-135"><a href="#cb9-135" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Attractor <span class="pp">|</span> Dimension <span class="pp">|</span> Example <span class="pp">|</span></span>
+<span id="cb9-136"><a href="#cb9-136" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|</span></span>
+<span id="cb9-137"><a href="#cb9-137" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Fixed point <span class="pp">|</span> 0 <span class="pp">|</span> damped pendulum at rest <span class="pp">|</span></span>
+<span id="cb9-138"><a href="#cb9-138" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Limit cycle <span class="pp">|</span> 1 <span class="pp">|</span> Van der Pol oscillator, heartbeat <span class="pp">|</span></span>
+<span id="cb9-139"><a href="#cb9-139" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Torus <span class="pp">|</span> integer <span class="pp">|</span> quasiperiodic motion <span class="pp">|</span></span>
+<span id="cb9-140"><a href="#cb9-140" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Strange attractor** | **fractal** <span class="pp">|</span> Lorenz, Rössler, logistic map <span class="pp">|</span></span>
+<span id="cb9-141"><a href="#cb9-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-142"><a href="#cb9-142" aria-hidden="true" tabindex="-1"></a>**Routes to chaos** (all observed in experiment):</span>
+<span id="cb9-143"><a href="#cb9-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-144"><a href="#cb9-144" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Period-doubling (Feigenbaum):** the logistic route; universal.</span>
+<span id="cb9-145"><a href="#cb9-145" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Intermittency (Pomeau–Manneville):** long regular phases interrupted by chaotic bursts.</span>
+<span id="cb9-146"><a href="#cb9-146" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Quasiperiodicity (Ruelle–Takens–Newhouse):** two/three incommensurate frequencies destabilize into a strange attractor.</span>
+<span id="cb9-147"><a href="#cb9-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-148"><a href="#cb9-148" aria-hidden="true" tabindex="-1"></a>Chaos links to **ergodic theory** (invariant measures, mixing, Birkhoff's ergodic theorem), **fractal geometry** (Hausdorff dimension, the Mandelbrot and Julia sets of $z\mapsto z^2+c$), and **information theory** (positive entropy = information generation).</span>
+<span id="cb9-149"><a href="#cb9-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-150"><a href="#cb9-150" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-151"><a href="#cb9-151" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-152"><a href="#cb9-152" aria-hidden="true" tabindex="-1"></a><span class="fu">## Why It Matters</span></span>
+<span id="cb9-153"><a href="#cb9-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-154"><a href="#cb9-154" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Weather and climate:** prediction horizons; ensemble forecasting.</span>
+<span id="cb9-155"><a href="#cb9-155" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Ecology and epidemiology:** population cycles, tipping points.</span>
+<span id="cb9-156"><a href="#cb9-156" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Engineering:** turbulence, laser dynamics, secure communication via chaos synchronization.</span>
+<span id="cb9-157"><a href="#cb9-157" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Physics:** the KAM theorem and near-integrable systems; chaos in the solar system.</span>
+<span id="cb9-158"><a href="#cb9-158" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Computation:** Newton's method is itself a dynamical system — its fractal **basins of attraction** explain why some initial guesses fail. The <span class="co">[</span><span class="ot">Collatz map</span><span class="co">](collatz-conjecture-3x-plus-1-orbits-and-similar-iterations.qmd)</span> is another deterministic iteration whose global behavior resists proof.</span>
+<span id="cb9-159"><a href="#cb9-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-160"><a href="#cb9-160" aria-hidden="true" tabindex="-1"></a>The synthesis: **nonlinearity plus iteration generates complexity; determinism and predictability are different properties.**</span>
+<span id="cb9-161"><a href="#cb9-161" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-162"><a href="#cb9-162" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-163"><a href="#cb9-163" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-164"><a href="#cb9-164" aria-hidden="true" tabindex="-1"></a><span class="fu">## Laboratory: Seeing Chaos</span></span>
+<span id="cb9-165"><a href="#cb9-165" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-166"><a href="#cb9-166" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Logistic Map: Fixed Points to Chaos</span></span>
+<span id="cb9-167"><a href="#cb9-167" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-170"><a href="#cb9-170" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb9-171"><a href="#cb9-171" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-logistic</span></span>
+<span id="cb9-172"><a href="#cb9-172" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "The logistic map x_{n+1}=r x_n(1−x_n). Left: trajectories for increasing r, showing convergence to a fixed point (r=2.8), a 2-cycle (r=3.2), a 4-cycle (r=3.5), and chaos (r=3.9). Right: the bifurcation diagram — for each r the map's attracting set is plotted, revealing the period-doubling cascade to chaos, the Feigenbaum accumulation point, and periodic windows embedded in the chaotic region."</span></span>
+<span id="cb9-173"><a href="#cb9-173" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-174"><a href="#cb9-174" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb9-175"><a href="#cb9-175" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb9-176"><a href="#cb9-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-177"><a href="#cb9-177" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> logistic_orbit(r, x0, n, discard<span class="op">=</span><span class="dv">0</span>):</span>
+<span id="cb9-178"><a href="#cb9-178" aria-hidden="true" tabindex="-1"></a>    xs <span class="op">=</span> []</span>
+<span id="cb9-179"><a href="#cb9-179" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> x0</span>
+<span id="cb9-180"><a href="#cb9-180" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n <span class="op">+</span> discard):</span>
+<span id="cb9-181"><a href="#cb9-181" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> r <span class="op">*</span> x <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> x)</span>
+<span id="cb9-182"><a href="#cb9-182" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> i <span class="op">&gt;=</span> discard:</span>
+<span id="cb9-183"><a href="#cb9-183" aria-hidden="true" tabindex="-1"></a>            xs.append(x)</span>
+<span id="cb9-184"><a href="#cb9-184" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array(xs)</span>
+<span id="cb9-185"><a href="#cb9-185" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-186"><a href="#cb9-186" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">5</span>))</span>
+<span id="cb9-187"><a href="#cb9-187" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r, col <span class="kw">in</span> [(<span class="fl">2.8</span>, <span class="st">"#2980b9"</span>), (<span class="fl">3.2</span>, <span class="st">"#27ae60"</span>), (<span class="fl">3.5</span>, <span class="st">"#e67e22"</span>), (<span class="fl">3.9</span>, <span class="st">"#e74c3c"</span>)]:</span>
+<span id="cb9-188"><a href="#cb9-188" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">0</span>].plot(logistic_orbit(r, <span class="fl">0.4</span>, <span class="dv">60</span>), <span class="st">"o-"</span>, ms<span class="op">=</span><span class="dv">3</span>, color<span class="op">=</span>col, label<span class="op">=</span><span class="ss">f"r=</span><span class="sc">{</span>r<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-189"><a href="#cb9-189" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Logistic map trajectories"</span>)</span>
+<span id="cb9-190"><a href="#cb9-190" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">"n"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].set_ylabel(<span class="vs">r"</span><span class="dv">$</span><span class="vs">x_n</span><span class="dv">$</span><span class="vs">"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].legend()<span class="op">;</span> axes[<span class="dv">0</span>].grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb9-191"><a href="#cb9-191" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-192"><a href="#cb9-192" aria-hidden="true" tabindex="-1"></a>rs <span class="op">=</span> np.linspace(<span class="fl">2.5</span>, <span class="fl">4.0</span>, <span class="dv">1200</span>)</span>
+<span id="cb9-193"><a href="#cb9-193" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> rs:</span>
+<span id="cb9-194"><a href="#cb9-194" aria-hidden="true" tabindex="-1"></a>    xs <span class="op">=</span> logistic_orbit(r, <span class="fl">0.4</span>, <span class="dv">300</span>, discard<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb9-195"><a href="#cb9-195" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">1</span>].plot([r] <span class="op">*</span> <span class="bu">len</span>(xs), xs, <span class="st">","</span>, color<span class="op">=</span><span class="st">"#2980b9"</span>, alpha<span class="op">=</span><span class="fl">0.25</span>)</span>
+<span id="cb9-196"><a href="#cb9-196" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"Bifurcation diagram"</span>)</span>
+<span id="cb9-197"><a href="#cb9-197" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xlabel(<span class="st">"r"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].set_ylabel(<span class="vs">r"attracting </span><span class="dv">$</span><span class="vs">x</span><span class="dv">$</span><span class="vs">"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb9-198"><a href="#cb9-198" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb9-199"><a href="#cb9-199" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-200"><a href="#cb9-200" aria-hidden="true" tabindex="-1"></a>r_inf <span class="op">=</span> <span class="fl">3.5699456</span></span>
+<span id="cb9-201"><a href="#cb9-201" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== LOGISTIC MAP BIFURCATIONS ==="</span>)</span>
+<span id="cb9-202"><a href="#cb9-202" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  fixed point stable : 1 &lt; r &lt; 3"</span>)</span>
+<span id="cb9-203"><a href="#cb9-203" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  2-cycle starts     : r = 3"</span>)</span>
+<span id="cb9-204"><a href="#cb9-204" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  cascade accumulates: r_inf = </span><span class="sc">{</span>r_inf<span class="sc">}</span><span class="ss"> (Feigenbaum)"</span>)</span>
+<span id="cb9-205"><a href="#cb9-205" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  first three doubling points: 3, 3.449, 3.544"</span>)</span>
+<span id="cb9-206"><a href="#cb9-206" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Feigenbaum delta   = 4.669201609...  (universal)"</span>)</span>
+<span id="cb9-207"><a href="#cb9-207" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb9-208"><a href="#cb9-208" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-209"><a href="#cb9-209" aria-hidden="true" tabindex="-1"></a><span class="fu">### Lyapunov Exponent</span></span>
+<span id="cb9-210"><a href="#cb9-210" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-213"><a href="#cb9-213" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb9-214"><a href="#cb9-214" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-lyapunov</span></span>
+<span id="cb9-215"><a href="#cb9-215" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "The Lyapunov exponent of the logistic map versus r. Where λ &gt; 0 (red) the dynamics is chaotic and nearby trajectories diverge exponentially; where λ &lt; 0 (blue) it converges to a periodic orbit. The sharp downward spikes are the periodic windows inside the chaotic region. Positive Lyapunov exponent is the quantitative definition of sensitive dependence."</span></span>
+<span id="cb9-216"><a href="#cb9-216" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-217"><a href="#cb9-217" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb9-218"><a href="#cb9-218" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb9-219"><a href="#cb9-219" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-220"><a href="#cb9-220" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> lyapunov(r, n<span class="op">=</span><span class="dv">2000</span>, discard<span class="op">=</span><span class="dv">500</span>):</span>
+<span id="cb9-221"><a href="#cb9-221" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> <span class="fl">0.4</span></span>
+<span id="cb9-222"><a href="#cb9-222" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb9-223"><a href="#cb9-223" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n <span class="op">+</span> discard):</span>
+<span id="cb9-224"><a href="#cb9-224" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> r <span class="op">*</span> x <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> x)</span>
+<span id="cb9-225"><a href="#cb9-225" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> <span class="bu">abs</span>(r <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> <span class="dv">2</span> <span class="op">*</span> x))</span>
+<span id="cb9-226"><a href="#cb9-226" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> i <span class="op">&gt;=</span> discard <span class="kw">and</span> d <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb9-227"><a href="#cb9-227" aria-hidden="true" tabindex="-1"></a>            s <span class="op">+=</span> np.log(d)</span>
+<span id="cb9-228"><a href="#cb9-228" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> s <span class="op">/</span> n</span>
+<span id="cb9-229"><a href="#cb9-229" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-230"><a href="#cb9-230" aria-hidden="true" tabindex="-1"></a>rs <span class="op">=</span> np.linspace(<span class="fl">2.5</span>, <span class="fl">4.0</span>, <span class="dv">800</span>)</span>
+<span id="cb9-231"><a href="#cb9-231" aria-hidden="true" tabindex="-1"></a>lam <span class="op">=</span> np.array([lyapunov(r) <span class="cf">for</span> r <span class="kw">in</span> rs])</span>
+<span id="cb9-232"><a href="#cb9-232" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="fl">4.6</span>))</span>
+<span id="cb9-233"><a href="#cb9-233" aria-hidden="true" tabindex="-1"></a>ax.plot(rs, lam, color<span class="op">=</span><span class="st">"#333"</span>, lw<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb9-234"><a href="#cb9-234" aria-hidden="true" tabindex="-1"></a>ax.fill_between(rs, <span class="dv">0</span>, lam, where<span class="op">=</span>lam <span class="op">&gt;</span> <span class="dv">0</span>, color<span class="op">=</span><span class="st">"#e74c3c"</span>, alpha<span class="op">=</span><span class="fl">0.6</span>, label<span class="op">=</span><span class="st">"chaotic (λ&gt;0)"</span>)</span>
+<span id="cb9-235"><a href="#cb9-235" aria-hidden="true" tabindex="-1"></a>ax.fill_between(rs, <span class="dv">0</span>, lam, where<span class="op">=</span>lam <span class="op">&lt;=</span> <span class="dv">0</span>, color<span class="op">=</span><span class="st">"#2980b9"</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="st">"periodic (λ&lt;0)"</span>)</span>
+<span id="cb9-236"><a href="#cb9-236" aria-hidden="true" tabindex="-1"></a>ax.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"k"</span>, lw<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb9-237"><a href="#cb9-237" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Lyapunov exponent of the logistic map"</span>)</span>
+<span id="cb9-238"><a href="#cb9-238" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"r"</span>)<span class="op">;</span> ax.set_ylabel(<span class="vs">r"</span><span class="dv">$</span><span class="er">\</span><span class="vs">lambda</span><span class="dv">$</span><span class="vs">"</span>)<span class="op">;</span> ax.legend()<span class="op">;</span> ax.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb9-239"><a href="#cb9-239" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb9-240"><a href="#cb9-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-241"><a href="#cb9-241" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== LYAPUNOV EXPONENT ==="</span>)</span>
+<span id="cb9-242"><a href="#cb9-242" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> [<span class="fl">2.8</span>, <span class="fl">3.2</span>, <span class="fl">3.5</span>, <span class="fl">3.83</span>, <span class="fl">3.9</span>, <span class="fl">4.0</span>]:</span>
+<span id="cb9-243"><a href="#cb9-243" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  r=</span><span class="sc">{</span>r<span class="sc">:&lt;5}</span><span class="ss">: lambda = </span><span class="sc">{</span>lyapunov(r)<span class="sc">:+.4f}</span><span class="ss">  (</span><span class="sc">{</span><span class="st">'chaotic'</span> <span class="cf">if</span> lyapunov(r)<span class="op">&gt;</span><span class="dv">0</span> <span class="cf">else</span> <span class="st">'periodic'</span><span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb9-244"><a href="#cb9-244" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  r=3.83 is a periodic window (stable 3-cycle) inside the chaotic range."</span>)</span>
+<span id="cb9-245"><a href="#cb9-245" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb9-246"><a href="#cb9-246" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-247"><a href="#cb9-247" aria-hidden="true" tabindex="-1"></a><span class="fu">### Sensitivity to Initial Conditions (Butterfly Effect)</span></span>
+<span id="cb9-248"><a href="#cb9-248" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-251"><a href="#cb9-251" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb9-252"><a href="#cb9-252" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-sensitivity</span></span>
+<span id="cb9-253"><a href="#cb9-253" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Sensitive dependence in the logistic map at r=3.9. Two trajectories starting 10^-6 apart track each other closely for about twenty steps, then diverge completely — the hallmark of chaos. The separation grows exponentially at the Lyapunov rate until it saturates. This is why long-term prediction is impossible even though the rule is exact."</span></span>
+<span id="cb9-254"><a href="#cb9-254" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-255"><a href="#cb9-255" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb9-256"><a href="#cb9-256" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb9-257"><a href="#cb9-257" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-258"><a href="#cb9-258" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> <span class="fl">3.9</span></span>
+<span id="cb9-259"><a href="#cb9-259" aria-hidden="true" tabindex="-1"></a>x0, x1 <span class="op">=</span> <span class="fl">0.4</span>, <span class="fl">0.4</span> <span class="op">+</span> <span class="fl">1e-6</span></span>
+<span id="cb9-260"><a href="#cb9-260" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">50</span></span>
+<span id="cb9-261"><a href="#cb9-261" aria-hidden="true" tabindex="-1"></a>traj0, traj1 <span class="op">=</span> logistic_orbit(r, x0, n), logistic_orbit(r, x1, n)</span>
+<span id="cb9-262"><a href="#cb9-262" aria-hidden="true" tabindex="-1"></a>sep <span class="op">=</span> np.<span class="bu">abs</span>(traj0 <span class="op">-</span> traj1)</span>
+<span id="cb9-263"><a href="#cb9-263" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-264"><a href="#cb9-264" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">4.8</span>))</span>
+<span id="cb9-265"><a href="#cb9-265" aria-hidden="true" tabindex="-1"></a>ax.plot(traj0, <span class="st">"o-"</span>, ms<span class="op">=</span><span class="dv">3</span>, color<span class="op">=</span><span class="st">"#2980b9"</span>, label<span class="op">=</span><span class="vs">r"</span><span class="dv">$</span><span class="vs">x_0=0</span><span class="dv">.</span><span class="vs">4</span><span class="dv">$</span><span class="vs">"</span>)</span>
+<span id="cb9-266"><a href="#cb9-266" aria-hidden="true" tabindex="-1"></a>ax.plot(traj1, <span class="st">"s-"</span>, ms<span class="op">=</span><span class="dv">3</span>, color<span class="op">=</span><span class="st">"#e67e22"</span>, label<span class="op">=</span><span class="vs">r"</span><span class="dv">$</span><span class="vs">x_0=0</span><span class="dv">.</span><span class="vs">4</span><span class="op">+</span><span class="vs">10</span><span class="dv">^</span><span class="vs">{-6}</span><span class="dv">$</span><span class="vs">"</span>)</span>
+<span id="cb9-267"><a href="#cb9-267" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Butterfly effect: initial separation 10⁻⁶, r=3.9"</span>)</span>
+<span id="cb9-268"><a href="#cb9-268" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"step"</span>)<span class="op">;</span> ax.set_ylabel(<span class="vs">r"</span><span class="dv">$</span><span class="vs">x_n</span><span class="dv">$</span><span class="vs">"</span>)<span class="op">;</span> ax.legend()<span class="op">;</span> ax.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb9-269"><a href="#cb9-269" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb9-270"><a href="#cb9-270" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-271"><a href="#cb9-271" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== DIVERGENCE ==="</span>)</span>
+<span id="cb9-272"><a href="#cb9-272" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> [<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">15</span>, <span class="dv">20</span>, <span class="dv">25</span>, <span class="dv">30</span>]:</span>
+<span id="cb9-273"><a href="#cb9-273" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  step </span><span class="sc">{</span>k<span class="sc">:&gt;2}</span><span class="ss">: separation = </span><span class="sc">{</span>sep[k]<span class="sc">:.3e}</span><span class="ss">"</span>)</span>
+<span id="cb9-274"><a href="#cb9-274" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Lyapunov estimate from growth: </span><span class="sc">{</span>np<span class="sc">.</span>polyfit(<span class="bu">range</span>(<span class="dv">1</span>,<span class="dv">15</span>), np.log(sep[<span class="dv">1</span>:<span class="dv">15</span>]), <span class="dv">1</span>)[<span class="dv">0</span>]<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb9-275"><a href="#cb9-275" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  (separation saturates once it reaches the size of the attractor.)"</span>)</span>
+<span id="cb9-276"><a href="#cb9-276" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb9-277"><a href="#cb9-277" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-278"><a href="#cb9-278" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Lorenz Attractor</span></span>
+<span id="cb9-279"><a href="#cb9-279" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-282"><a href="#cb9-282" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb9-283"><a href="#cb9-283" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-lorenz</span></span>
+<span id="cb9-284"><a href="#cb9-284" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "The Lorenz system. Left: the butterfly-shaped strange attractor traced by a single trajectory; the flow is bounded but never repeats, and its fractal geometry is visible. Right: two trajectories from initial conditions differing by 10^-8 separate exponentially, until they occupy different lobes of the attractor — Lorenz's original demonstration that deterministic weather is inherently unpredictable in the long run."</span></span>
+<span id="cb9-285"><a href="#cb9-285" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-286"><a href="#cb9-286" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb9-287"><a href="#cb9-287" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb9-288"><a href="#cb9-288" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.integrate <span class="im">import</span> solve_ivp</span>
+<span id="cb9-289"><a href="#cb9-289" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-290"><a href="#cb9-290" aria-hidden="true" tabindex="-1"></a>sigma, rho, beta <span class="op">=</span> <span class="fl">10.0</span>, <span class="fl">28.0</span>, <span class="fl">8.0</span> <span class="op">/</span> <span class="fl">3.0</span></span>
+<span id="cb9-291"><a href="#cb9-291" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-292"><a href="#cb9-292" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> lorenz(t, s):</span>
+<span id="cb9-293"><a href="#cb9-293" aria-hidden="true" tabindex="-1"></a>    x, y, z <span class="op">=</span> s</span>
+<span id="cb9-294"><a href="#cb9-294" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [sigma <span class="op">*</span> (y <span class="op">-</span> x), x <span class="op">*</span> (rho <span class="op">-</span> z) <span class="op">-</span> y, x <span class="op">*</span> y <span class="op">-</span> beta <span class="op">*</span> z]</span>
+<span id="cb9-295"><a href="#cb9-295" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-296"><a href="#cb9-296" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">40</span>, <span class="dv">20000</span>)</span>
+<span id="cb9-297"><a href="#cb9-297" aria-hidden="true" tabindex="-1"></a>sol <span class="op">=</span> solve_ivp(lorenz, [<span class="dv">0</span>, <span class="dv">40</span>], [<span class="fl">1.0</span>, <span class="fl">1.0</span>, <span class="fl">1.0</span>], t_eval<span class="op">=</span>t, rtol<span class="op">=</span><span class="fl">1e-9</span>, atol<span class="op">=</span><span class="fl">1e-9</span>)</span>
+<span id="cb9-298"><a href="#cb9-298" aria-hidden="true" tabindex="-1"></a>sol2 <span class="op">=</span> solve_ivp(lorenz, [<span class="dv">0</span>, <span class="dv">40</span>], [<span class="fl">1.0</span> <span class="op">+</span> <span class="fl">1e-8</span>, <span class="fl">1.0</span>, <span class="fl">1.0</span>], t_eval<span class="op">=</span>t, rtol<span class="op">=</span><span class="fl">1e-9</span>, atol<span class="op">=</span><span class="fl">1e-9</span>)</span>
+<span id="cb9-299"><a href="#cb9-299" aria-hidden="true" tabindex="-1"></a>dist <span class="op">=</span> np.linalg.norm(sol.y <span class="op">-</span> sol2.y, axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb9-300"><a href="#cb9-300" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-301"><a href="#cb9-301" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="fl">5.5</span>))</span>
+<span id="cb9-302"><a href="#cb9-302" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>, projection<span class="op">=</span><span class="st">"3d"</span>)</span>
+<span id="cb9-303"><a href="#cb9-303" aria-hidden="true" tabindex="-1"></a>ax1.plot(sol.y[<span class="dv">0</span>], sol.y[<span class="dv">1</span>], sol.y[<span class="dv">2</span>], lw<span class="op">=</span><span class="fl">0.5</span>, color<span class="op">=</span><span class="st">"#2980b9"</span>)</span>
+<span id="cb9-304"><a href="#cb9-304" aria-hidden="true" tabindex="-1"></a>ax1.set_title(<span class="st">"Lorenz strange attractor"</span>)<span class="op">;</span> ax1.set_xlabel(<span class="st">"x"</span>)<span class="op">;</span> ax1.set_ylabel(<span class="st">"y"</span>)<span class="op">;</span> ax1.set_zlabel(<span class="st">"z"</span>)</span>
+<span id="cb9-305"><a href="#cb9-305" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-306"><a href="#cb9-306" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb9-307"><a href="#cb9-307" aria-hidden="true" tabindex="-1"></a>ax2.semilogy(t, dist, color<span class="op">=</span><span class="st">"#e74c3c"</span>)</span>
+<span id="cb9-308"><a href="#cb9-308" aria-hidden="true" tabindex="-1"></a>ax2.set_title(<span class="vs">r"Separation of two orbits </span><span class="kw">(</span><span class="dv">$\D</span><span class="vs">elta x_0=10</span><span class="dv">^</span><span class="vs">{-8}</span><span class="dv">$</span><span class="kw">)</span><span class="vs">"</span>)</span>
+<span id="cb9-309"><a href="#cb9-309" aria-hidden="true" tabindex="-1"></a>ax2.set_xlabel(<span class="st">"time"</span>)<span class="op">;</span> ax2.set_ylabel(<span class="st">"separation"</span>)<span class="op">;</span> ax2.grid(alpha<span class="op">=</span><span class="fl">0.3</span>, which<span class="op">=</span><span class="st">"both"</span>)</span>
+<span id="cb9-310"><a href="#cb9-310" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb9-311"><a href="#cb9-311" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-312"><a href="#cb9-312" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== LORENZ SEPARATION ==="</span>)</span>
+<span id="cb9-313"><a href="#cb9-313" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> [<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">15</span>, <span class="dv">20</span>, <span class="dv">25</span>, <span class="dv">30</span>]:</span>
+<span id="cb9-314"><a href="#cb9-314" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  t=</span><span class="sc">{</span>k<span class="sc">:&gt;2}</span><span class="ss">: separation = </span><span class="sc">{</span>dist[np.argmin(<span class="bu">abs</span>(t <span class="op">-</span> k))]<span class="sc">:.3e}</span><span class="ss">"</span>)</span>
+<span id="cb9-315"><a href="#cb9-315" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Exponential divergence from a 1e-8 error -&gt; finite predictability horizon."</span>)</span>
+<span id="cb9-316"><a href="#cb9-316" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb9-317"><a href="#cb9-317" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-318"><a href="#cb9-318" aria-hidden="true" tabindex="-1"></a>The laboratory makes chaos visible and quantitative: a single parameter sweeps the system from order to chaos (bifurcation diagram); the Lyapunov exponent separates the two regimes; infinitesimal differences explode (butterfly effect); and the Lorenz system shows a bounded, non-repeating, fractal attractor.</span>
+<span id="cb9-319"><a href="#cb9-319" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-320"><a href="#cb9-320" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-321"><a href="#cb9-321" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-322"><a href="#cb9-322" aria-hidden="true" tabindex="-1"></a><span class="fu">## Summary</span></span>
+<span id="cb9-323"><a href="#cb9-323" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-324"><a href="#cb9-324" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-325"><a href="#cb9-325" aria-hidden="true" tabindex="-1"></a>\begin{aligned}</span>
+<span id="cb9-326"><a href="#cb9-326" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Dynamical system: } &amp;&amp; \text{state space + evolution } x_{n+1}=f(x_n) \text{ or } \dot x=F(x). <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb9-327"><a href="#cb9-327" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Fixed points: } &amp;&amp; \text{stability via } |f'(x^*)|&lt;1 \text{ or } \operatorname{Re}\lambda&lt;0. <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb9-328"><a href="#cb9-328" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Logistic map: } &amp;&amp; \text{fixed point} \to \text{period-doubling} \to \text{chaos};<span class="sc">\\</span> &amp;&amp;&amp; r_\infty=3.5699,\ \text{Feigenbaum } \delta=4.6692 \text{ (universal).} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb9-329"><a href="#cb9-329" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Chaos: } &amp;&amp; \text{sensitive dependence, mixing, dense periodic orbits; } \lambda&gt;0. <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb9-330"><a href="#cb9-330" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Butterfly effect: } &amp;&amp; \text{Lorenz; exponential error growth; predictability horizon.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb9-331"><a href="#cb9-331" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Attractors: } &amp;&amp; \text{fixed point, limit cycle, torus, strange (fractal) attractor.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb9-332"><a href="#cb9-332" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Routes: } &amp;&amp; \text{period-doubling, intermittency, quasiperiodicity.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb9-333"><a href="#cb9-333" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Lesson: } &amp;&amp; \text{deterministic} \ne \text{predictable.}</span>
+<span id="cb9-334"><a href="#cb9-334" aria-hidden="true" tabindex="-1"></a>\end{aligned}</span>
+<span id="cb9-335"><a href="#cb9-335" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-336"><a href="#cb9-336" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-337"><a href="#cb9-337" aria-hidden="true" tabindex="-1"></a>Chaos is not a failure of mathematics but a feature of nonlinearity. The same iteration that makes the <span class="co">[</span><span class="ot">Collatz conjecture</span><span class="co">](collatz-conjecture-3x-plus-1-orbits-and-similar-iterations.qmd)</span> intractable makes weather unpredictable and gives fractals their infinite complexity — and it is why <span class="co">[</span><span class="ot">iterative numerical methods</span><span class="co">](iterative-methods-and-computing-constants-pi-and-eulers-constant.qmd)</span> must be analyzed, not just run.</span>
+<span id="cb9-338"><a href="#cb9-338" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-339"><a href="#cb9-339" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-340"><a href="#cb9-340" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-341"><a href="#cb9-341" aria-hidden="true" tabindex="-1"></a><span class="fu">## Curated References and Further Reading</span></span>
+<span id="cb9-342"><a href="#cb9-342" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-343"><a href="#cb9-343" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Strogatz, Steven (2015).** *Nonlinear Dynamics and Chaos*, 2nd ed. Westview Press.</span>
+<span id="cb9-344"><a href="#cb9-344" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Lorenz, Edward (1963).** *Deterministic Nonperiodic Flow.* Journal of the Atmospheric Sciences.</span>
+<span id="cb9-345"><a href="#cb9-345" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Feigenbaum, Mitchell (1978).** *Quantitative Universality for a Class of Nonlinear Transformations.* Journal of Statistical Physics.</span>
+<span id="cb9-346"><a href="#cb9-346" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Ott, Edward (2002).** *Chaos in Dynamical Systems*, 2nd ed. Cambridge University Press.</span>
+<span id="cb9-347"><a href="#cb9-347" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>**Guckenheimer, J. &amp; Holmes, P. (1983).** *Nonlinear Oscillations, Dynamical Systems, and Bifurcations of Vector Fields.* Springer.</span>
+<span id="cb9-348"><a href="#cb9-348" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>**Poincaré, Henri (1890).** *Sur le problème des trois corps et les équations de la dynamique.* Acta Mathematica.</span>
+<span id="cb9-349"><a href="#cb9-349" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>**Mandelbrot, Benoît (1982).** *The Fractal Geometry of Nature.* W. H. Freeman.</span>
+<span id="cb9-350"><a href="#cb9-350" aria-hidden="true" tabindex="-1"></a><span class="ss">8. </span>**Alligood, K., Sauer, T. &amp; Yorke, J. (1996).** *Chaos: An Introduction to Dynamical Systems.* Springer.</span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2026 Igor Kan</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
