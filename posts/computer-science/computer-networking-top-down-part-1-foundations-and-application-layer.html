@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Igor Kan">
+<meta name="dcterms.date" content="2026-09-14">
+<meta name="description" content="A first-principles, top-down introduction to computer networking following Kurose and Ross. Starting at the application layer and descending, it covers what the Internet is, the network edge and core, packet versus circuit switching, store-and-forward and queueing, the four components of nodal delay, traffic intensity, throughput and the bottleneck link, protocol layering and encapsulation, and network security threats; then the application layer in depth: application architectures, sockets, HTTP/1.1 with persistent connections and pipelining, cookies, web caching and conditional GET, HTTP/2 and HTTP/3 over QUIC, electronic mail (SMTP, POP3, IMAP), DNS hierarchy and resource records, peer-to-peer file distribution and BitTorrent, content delivery networks and video streaming, and socket programming, with an executable Python laboratory modeling end-to-end delay and HTTP page-load timing.">
+
+<title>Computer Networking: A Top-Down Approach, Part 1 — Foundations and the Application Layer – My Writings</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-a515e054079012129989d5397ee3c9c1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">My Writings</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../literature/index.html"> 
+<span class="menu-text">Literature</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../chapters/index.html"> 
+<span class="menu-text">Chapters</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../tutorials/index.html"> 
+<span class="menu-text">Tutorials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#what-is-the-internet-and-what-is-a-protocol" id="toc-what-is-the-internet-and-what-is-a-protocol" class="nav-link active" data-scroll-target="#what-is-the-internet-and-what-is-a-protocol"><span class="header-section-number">1</span> What Is the Internet, and What Is a Protocol?</a></li>
+  <li><a href="#the-network-edge" id="toc-the-network-edge" class="nav-link" data-scroll-target="#the-network-edge"><span class="header-section-number">2</span> The Network Edge</a>
+  <ul>
+  <li><a href="#access-networks" id="toc-access-networks" class="nav-link" data-scroll-target="#access-networks"><span class="header-section-number">2.1</span> Access Networks</a></li>
+  <li><a href="#physical-media" id="toc-physical-media" class="nav-link" data-scroll-target="#physical-media"><span class="header-section-number">2.2</span> Physical Media</a></li>
+  </ul></li>
+  <li><a href="#the-network-core" id="toc-the-network-core" class="nav-link" data-scroll-target="#the-network-core"><span class="header-section-number">3</span> The Network Core</a>
+  <ul>
+  <li><a href="#packet-switching-vs-circuit-switching" id="toc-packet-switching-vs-circuit-switching" class="nav-link" data-scroll-target="#packet-switching-vs-circuit-switching"><span class="header-section-number">3.1</span> Packet Switching vs Circuit Switching</a></li>
+  <li><a href="#store-and-forward-and-queueing" id="toc-store-and-forward-and-queueing" class="nav-link" data-scroll-target="#store-and-forward-and-queueing"><span class="header-section-number">3.2</span> Store-and-Forward and Queueing</a></li>
+  <li><a href="#the-network-structure-a-network-of-networks" id="toc-the-network-structure-a-network-of-networks" class="nav-link" data-scroll-target="#the-network-structure-a-network-of-networks"><span class="header-section-number">3.3</span> The Network Structure: A Network of Networks</a></li>
+  </ul></li>
+  <li><a href="#performance-delay-loss-and-throughput" id="toc-performance-delay-loss-and-throughput" class="nav-link" data-scroll-target="#performance-delay-loss-and-throughput"><span class="header-section-number">4</span> Performance: Delay, Loss, and Throughput</a>
+  <ul>
+  <li><a href="#traffic-intensity-and-loss" id="toc-traffic-intensity-and-loss" class="nav-link" data-scroll-target="#traffic-intensity-and-loss"><span class="header-section-number">4.1</span> Traffic Intensity and Loss</a></li>
+  <li><a href="#throughput" id="toc-throughput" class="nav-link" data-scroll-target="#throughput"><span class="header-section-number">4.2</span> Throughput</a></li>
+  </ul></li>
+  <li><a href="#protocol-layers-and-the-internet-stack" id="toc-protocol-layers-and-the-internet-stack" class="nav-link" data-scroll-target="#protocol-layers-and-the-internet-stack"><span class="header-section-number">5</span> Protocol Layers and the Internet Stack</a>
+  <ul>
+  <li><a href="#networks-under-attack" id="toc-networks-under-attack" class="nav-link" data-scroll-target="#networks-under-attack"><span class="header-section-number">5.1</span> Networks Under Attack</a></li>
+  </ul></li>
+  <li><a href="#the-application-layer" id="toc-the-application-layer" class="nav-link" data-scroll-target="#the-application-layer"><span class="header-section-number">6</span> The Application Layer</a>
+  <ul>
+  <li><a href="#application-architectures" id="toc-application-architectures" class="nav-link" data-scroll-target="#application-architectures"><span class="header-section-number">6.1</span> Application Architectures</a></li>
+  <li><a href="#processes-sockets-and-addressing" id="toc-processes-sockets-and-addressing" class="nav-link" data-scroll-target="#processes-sockets-and-addressing"><span class="header-section-number">6.2</span> Processes, Sockets, and Addressing</a></li>
+  </ul></li>
+  <li><a href="#the-web-and-http" id="toc-the-web-and-http" class="nav-link" data-scroll-target="#the-web-and-http"><span class="header-section-number">7</span> The Web and HTTP</a>
+  <ul>
+  <li><a href="#http-basics" id="toc-http-basics" class="nav-link" data-scroll-target="#http-basics"><span class="header-section-number">7.1</span> HTTP Basics</a></li>
+  <li><a href="#persistent-vs-non-persistent-connections" id="toc-persistent-vs-non-persistent-connections" class="nav-link" data-scroll-target="#persistent-vs-non-persistent-connections"><span class="header-section-number">7.2</span> Persistent vs Non-Persistent Connections</a></li>
+  <li><a href="#cookies" id="toc-cookies" class="nav-link" data-scroll-target="#cookies"><span class="header-section-number">7.3</span> Cookies</a></li>
+  <li><a href="#web-caching-and-conditional-get" id="toc-web-caching-and-conditional-get" class="nav-link" data-scroll-target="#web-caching-and-conditional-get"><span class="header-section-number">7.4</span> Web Caching and Conditional GET</a></li>
+  <li><a href="#http2-and-http3" id="toc-http2-and-http3" class="nav-link" data-scroll-target="#http2-and-http3"><span class="header-section-number">7.5</span> HTTP/2 and HTTP/3</a></li>
+  </ul></li>
+  <li><a href="#electronic-mail-and-dns" id="toc-electronic-mail-and-dns" class="nav-link" data-scroll-target="#electronic-mail-and-dns"><span class="header-section-number">8</span> Electronic Mail and DNS</a>
+  <ul>
+  <li><a href="#email-smtp-pop3-imap" id="toc-email-smtp-pop3-imap" class="nav-link" data-scroll-target="#email-smtp-pop3-imap"><span class="header-section-number">8.1</span> Email: SMTP, POP3, IMAP</a></li>
+  <li><a href="#dns-the-internets-directory" id="toc-dns-the-internets-directory" class="nav-link" data-scroll-target="#dns-the-internets-directory"><span class="header-section-number">8.2</span> DNS: The Internet’s Directory</a></li>
+  </ul></li>
+  <li><a href="#p2p-cdns-and-video-streaming" id="toc-p2p-cdns-and-video-streaming" class="nav-link" data-scroll-target="#p2p-cdns-and-video-streaming"><span class="header-section-number">9</span> P2P, CDNs, and Video Streaming</a>
+  <ul>
+  <li><a href="#peer-to-peer-distribution" id="toc-peer-to-peer-distribution" class="nav-link" data-scroll-target="#peer-to-peer-distribution"><span class="header-section-number">9.1</span> Peer-to-Peer Distribution</a></li>
+  <li><a href="#content-delivery-networks" id="toc-content-delivery-networks" class="nav-link" data-scroll-target="#content-delivery-networks"><span class="header-section-number">9.2</span> Content Delivery Networks</a></li>
+  <li><a href="#video-streaming" id="toc-video-streaming" class="nav-link" data-scroll-target="#video-streaming"><span class="header-section-number">9.3</span> Video Streaming</a></li>
+  </ul></li>
+  <li><a href="#socket-programming" id="toc-socket-programming" class="nav-link" data-scroll-target="#socket-programming"><span class="header-section-number">10</span> Socket Programming</a></li>
+  <li><a href="#laboratory-end-to-end-delay-and-http-page-load-timing" id="toc-laboratory-end-to-end-delay-and-http-page-load-timing" class="nav-link" data-scroll-target="#laboratory-end-to-end-delay-and-http-page-load-timing"><span class="header-section-number">11</span> Laboratory: End-to-End Delay and HTTP Page-Load Timing</a>
+  <ul>
+  <li><a href="#nodal-delay-and-the-bottleneck-throughput" id="toc-nodal-delay-and-the-bottleneck-throughput" class="nav-link" data-scroll-target="#nodal-delay-and-the-bottleneck-throughput"><span class="header-section-number">11.1</span> Nodal Delay and the Bottleneck Throughput</a></li>
+  <li><a href="#http-page-load-timing-non-persistent-vs-persistent-vs-pipelined" id="toc-http-page-load-timing-non-persistent-vs-persistent-vs-pipelined" class="nav-link" data-scroll-target="#http-page-load-timing-non-persistent-vs-persistent-vs-pipelined"><span class="header-section-number">11.2</span> HTTP Page-Load Timing: Non-Persistent vs Persistent vs Pipelined</a></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary"><span class="header-section-number">12</span> Summary</a></li>
+  <li><a href="#curated-references-and-further-reading" id="toc-curated-references-and-further-reading" class="nav-link" data-scroll-target="#curated-references-and-further-reading"><span class="header-section-number">13</span> Curated References and Further Reading</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title">Computer Networking: A Top-Down Approach, Part 1 — Foundations and the Application Layer</h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
+<p class="subtitle lead">The Internet’s edge and core, packet switching, the four sources of delay, protocol layering, and then the application layer from HTTP/2/3 and cookies to DNS, email, P2P, CDNs, and sockets — following Kurose &amp; Ross, Chapters 1–2</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Computer Science</div>
+    <div class="quarto-category">Networking</div>
+    <div class="quarto-category">Internet</div>
+    <div class="quarto-category">Protocols</div>
+    <div class="quarto-category">Application Layer</div>
+    <div class="quarto-category">HTTP</div>
+    <div class="quarto-category">DNS</div>
+    <div class="quarto-category">TCP/IP</div>
+    <div class="quarto-category">Distributed Systems</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    A first-principles, top-down introduction to computer networking following Kurose and Ross. Starting at the application layer and descending, it covers what the Internet is, the network edge and core, packet versus circuit switching, store-and-forward and queueing, the four components of nodal delay, traffic intensity, throughput and the bottleneck link, protocol layering and encapsulation, and network security threats; then the application layer in depth: application architectures, sockets, HTTP/1.1 with persistent connections and pipelining, cookies, web caching and conditional GET, HTTP/2 and HTTP/3 over QUIC, electronic mail (SMTP, POP3, IMAP), DNS hierarchy and resource records, peer-to-peer file distribution and BitTorrent, content delivery networks and video streaming, and socket programming, with an executable Python laboratory modeling end-to-end delay and HTTP page-load timing.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Igor Kan </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 14, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><em>The top-down approach starts where you already stand — with the applications you use every day — and descends through the layers that make them work. It is the reverse of the traditional bottom-up curriculum, and it is far more motivating: every abstraction is introduced because a real application needs it.</em></p>
+<p>This is <strong>Part 1</strong> of a three-part series following Kurose &amp; Ross, <em>Computer Networking: A Top-Down Approach</em>. Here we cover <strong>Chapter 1 (Computer Networks and the Internet)</strong> and <strong>Chapter 2 (The Application Layer)</strong>. <a href="../../posts/computer-science/computer-networking-top-down-part-2-transport-layer.html">Part 2</a> takes the <strong>Transport Layer</strong>, and <a href="../../posts/computer-science/computer-networking-top-down-part-3-network-layer-data-and-control-plane.html">Part 3</a> the <strong>Network Layer’s data and control planes</strong>.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>The Series
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Part 1 — Foundations and the Application Layer</strong> (this article)</li>
+<li><a href="../../posts/computer-science/computer-networking-top-down-part-2-transport-layer.html">Part 2 — The Transport Layer</a></li>
+<li><a href="../../posts/computer-science/computer-networking-top-down-part-3-network-layer-data-and-control-plane.html">Part 3 — The Network Layer: Data Plane and Control Plane</a></li>
+</ul>
+<section id="companion-reading" class="level3" data-number="0.1">
+<h3 data-number="0.1" class="anchored" data-anchor-id="companion-reading"><span class="header-section-number">0.1</span> Companion Reading</h3>
+<ul>
+<li><a href="../../posts/computer-science/bottom-up-computer-engineering-roadmap.html">Bottom-Up Computer Engineering Roadmap</a></li>
+<li><a href="../../posts/computer-science/wireless-networks-cellular-wifi-evolution.html">Wireless Networks: Cellular and Wi-Fi Evolution</a></li>
+<li><a href="../../posts/computer-science/understanding-cybersecurity-vulnerabilities.html">Understanding Cybersecurity Vulnerabilities</a></li>
+<li><a href="../../posts/computer-science/command-line-essentials.html">The Complete Linux and Shell Handbook</a></li>
+</ul>
+</section>
+</div>
+</div>
+</div>
+<hr>
+<section id="what-is-the-internet-and-what-is-a-protocol" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="what-is-the-internet-and-what-is-a-protocol"><span class="header-section-number">1</span> What Is the Internet, and What Is a Protocol?</h2>
+<p>The Internet can be described two ways, and both matter.</p>
+<p><strong>Nuts-and-bolts view.</strong> The Internet is a global network of billions of connected computing devices (“hosts” or “end systems”) — laptops, phones, servers, IoT sensors — linked by <strong>communication links</strong> (fiber, copper, radio, satellite) and <strong>packet switches</strong> (routers and switches). Hosts and switches are <em>end points</em> and <em>intermediate nodes</em>; links have a <strong>transmission rate</strong> measured in bits per second. Packets traverse a <em>route</em> through the network. End systems connect via <strong>Internet Service Providers (ISPs)</strong>, which themselves interconnect.</p>
+<p><strong>Service view.</strong> The Internet is an infrastructure that provides <strong>services to distributed applications</strong>: the Web, email, streaming, messaging, video calls, and the API we call “the Internet.” Applications run on end systems, not on the routers in the core. This separation is the single most important architectural fact about the Internet: <strong>the core moves packets; the edge runs applications.</strong></p>
+<p>A <strong>protocol</strong> defines the format and order of messages exchanged between communicating entities, and the actions taken on transmission and receipt. Human protocol (“Hi” → “Hi” → “What time is it?” → time) and computer protocol are the same idea with stricter rules. Protocols are what make heterogeneous hardware interoperate; they are implemented in software on hosts and routers, and they are standardized so that no single vendor controls the network.</p>
+<hr>
+</section>
+<section id="the-network-edge" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="the-network-edge"><span class="header-section-number">2</span> The Network Edge</h2>
+<p>The edge is where applications live. End systems are called <em>hosts</em> because they host (run) application programs.</p>
+<section id="access-networks" class="level3" data-number="2.1">
+<h3 data-number="2.1" class="anchored" data-anchor-id="access-networks"><span class="header-section-number">2.1</span> Access Networks</h3>
+<p>Access networks connect end systems to the first router (the “edge router”):</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Access technology</th>
+<th>Typical downstream</th>
+<th>Medium</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>DSL</strong></td>
+<td>10–100 Mbps</td>
+<td>existing phone twisted pair</td>
+<td>dedicated line to DSLAM, FDM over voice band</td>
+</tr>
+<tr class="even">
+<td><strong>Cable (DOCSIS)</strong></td>
+<td>100–1000 Mbps</td>
+<td>coax (HFC)</td>
+<td><strong>shared</strong> among neighbors; FDM channels</td>
+</tr>
+<tr class="odd">
+<td><strong>FTTH (PON)</strong></td>
+<td>100 Mbps – 1 Gbps+</td>
+<td>fiber</td>
+<td>passive optical splitters to the OLT</td>
+</tr>
+<tr class="even">
+<td><strong>5G / LTE</strong></td>
+<td>50–300 Mbps</td>
+<td>licensed radio</td>
+<td>shared air interface, base station</td>
+</tr>
+<tr class="odd">
+<td><strong>Wi-Fi (802.11)</strong></td>
+<td>100 Mbps – 1 Gbps</td>
+<td>unlicensed radio</td>
+<td>shared, short range, to a wireless AP</td>
+</tr>
+<tr class="even">
+<td><strong>Enterprise / datacenter</strong></td>
+<td>1–100 Gbps</td>
+<td>fiber/copper</td>
+<td>switched Ethernet</td>
+</tr>
+</tbody>
+</table>
+<p>Two properties recur: shared versus dedicated media, and symmetry versus asymmetry (download usually exceeds upload). Shared media introduce <strong>contention</strong>: aggregate access capacity is divided among active users.</p>
+</section>
+<section id="physical-media" class="level3" data-number="2.2">
+<h3 data-number="2.2" class="anchored" data-anchor-id="physical-media"><span class="header-section-number">2.2</span> Physical Media</h3>
+<p>Bits travel as electromagnetic waves or optical pulses:</p>
+<ul>
+<li><strong>Twisted pair</strong> — cheap, ubiquitous; increasingly high rates over short runs.</li>
+<li><strong>Coaxial cable</strong> — better shielding, higher rates, used in cable access.</li>
+<li><strong>Optical fiber</strong> — very high rates, low attenuation, immune to EMI; backbone and FTTH.</li>
+<li><strong>Radio</strong> — terrestrial (Wi-Fi, cellular), satellite (geostationary vs low-Earth-orbit), and free-space optics.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="the-network-core" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="the-network-core"><span class="header-section-number">3</span> The Network Core</h2>
+<p>The core is a mesh of packet switches and links connecting the edge.</p>
+<section id="packet-switching-vs-circuit-switching" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="packet-switching-vs-circuit-switching"><span class="header-section-number">3.1</span> Packet Switching vs Circuit Switching</h3>
+<p><strong>Circuit switching</strong> reserves a dedicated path for the duration of a call. Classic telephone networks did this; if the circuit allocates a fixed rate, idle capacity is wasted.</p>
+<p><strong>Packet switching</strong> breaks messages into <strong>packets</strong> that share links on demand, each packet using the full link rate while being transmitted. Packets queue at switches and may wait; capacity is multiplexed statistically, which is why it is <strong>statistically efficient</strong> but subject to congestion.</p>
+<p>A worked comparison from the book: two users each transmitting 1 Mbps, active 10% of the time, over a 2 Mbps link. With <strong>circuit switching</strong>, each user must receive a reserved 1 Mbps, so at most two users fit. With <strong>packet switching</strong> and the same 2 Mbps, many more users can share, and the probability that more than two are simultaneously active is small — so statistical multiplexing admits far more users at low blocking probability, at the cost of occasional queueing. The gain is the trade of a <em>hard guarantee</em> for a <em>high-probability</em> one.</p>
+</section>
+<section id="store-and-forward-and-queueing" class="level3" data-number="3.2">
+<h3 data-number="3.2" class="anchored" data-anchor-id="store-and-forward-and-queueing"><span class="header-section-number">3.2</span> Store-and-Forward and Queueing</h3>
+<p>A <strong>store-and-forward</strong> switch must receive the entire packet before forwarding it — it stores the bits, checks the header, looks up the destination, then transmits. For a packet of <span class="math inline">\(L\)</span> bits over a link of rate <span class="math inline">\(R\)</span>, the <strong>transmission delay</strong> is <span class="math inline">\(L/R\)</span>. Across <span class="math inline">\(N\)</span> links between source and destination, the end-to-end store-and-forward transmission delay is:</p>
+<p><span class="math display">\[
+d_{\text{trans, e2e}} = N \cdot \frac{L}{R}
+\]</span></p>
+<p>(assuming no propagation or processing delay). Switches maintain <strong>output queues</strong> for each outgoing link; if arrival rate exceeds output link rate, queues grow, and eventually packets are <strong>dropped</strong> (lost).</p>
+</section>
+<section id="the-network-structure-a-network-of-networks" class="level3" data-number="3.3">
+<h3 data-number="3.3" class="anchored" data-anchor-id="the-network-structure-a-network-of-networks"><span class="header-section-number">3.3</span> The Network Structure: A Network of Networks</h3>
+<p>No single ISP spans the globe; the Internet is a hierarchy of ISPs: <strong>access ISPs</strong> → <strong>regional ISPs</strong> → <strong>tier-1 ISPs</strong> (backbone), plus <strong>content-provider networks</strong> (Google, Netflix, Cloudflare) and <strong>Internet Exchange Points (IXPs)</strong> where networks peer and exchange traffic without paying transit fees. This hierarchy is economic and negotiated as much as technical.</p>
+<hr>
+</section>
+</section>
+<section id="performance-delay-loss-and-throughput" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="performance-delay-loss-and-throughput"><span class="header-section-number">4</span> Performance: Delay, Loss, and Throughput</h2>
+<p>The four <strong>nodal delays</strong> at a router are the heart of network performance:</p>
+<p><span class="math display">\[
+d_{\text{nodal}} = d_{\text{proc}} + d_{\text{queue}} + d_{\text{trans}} + d_{\text{prop}}
+\]</span></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Symbol</th>
+<th>Formula / cause</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Processing</td>
+<td><span class="math inline">\(d_{\text{proc}}\)</span></td>
+<td>header inspection, routing lookup, error check</td>
+</tr>
+<tr class="even">
+<td>Queueing</td>
+<td><span class="math inline">\(d_{\text{queue}}\)</span></td>
+<td>waiting for the output link</td>
+</tr>
+<tr class="odd">
+<td>Transmission</td>
+<td><span class="math inline">\(d_{\text{trans}} = L/R\)</span></td>
+<td>pushing all <span class="math inline">\(L\)</span> bits onto the link</td>
+</tr>
+<tr class="even">
+<td>Propagation</td>
+<td><span class="math inline">\(d_{\text{prop}} = d/s\)</span></td>
+<td>travel of one bit through the medium</td>
+</tr>
+</tbody>
+</table>
+<p>Here <span class="math inline">\(L\)</span> is packet length (bits), <span class="math inline">\(R\)</span> link rate (bps), <span class="math inline">\(d\)</span> physical distance, and <span class="math inline">\(s\)</span> propagation speed (<span class="math inline">\(\approx 2\)</span>–<span class="math inline">\(3\times10^8\)</span> m/s). Note the distinction: <strong>transmission delay</strong> depends on packet size and link rate; <strong>propagation delay</strong> depends on distance and medium.</p>
+<section id="traffic-intensity-and-loss" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="traffic-intensity-and-loss"><span class="header-section-number">4.1</span> Traffic Intensity and Loss</h3>
+<p>Let <span class="math inline">\(a\)</span> be the average packet arrival rate (packets/s) and <span class="math inline">\(L\)</span> the packet length; the <strong>traffic intensity</strong> is:</p>
+<p><span class="math display">\[
+\rho = \frac{La}{R}
+\]</span></p>
+<ul>
+<li><span class="math inline">\(\rho \approx 0\)</span>: little queueing.</li>
+<li><span class="math inline">\(\rho \to 1\)</span>: queueing delay grows rapidly and without bound.</li>
+<li><span class="math inline">\(\rho &gt; 1\)</span>: arrival work exceeds link capacity; the queue grows indefinitely and packets are dropped.</li>
+</ul>
+<p>Real queues are finite, so packets are lost when the buffer overflows. Lost packets may be retransmitted by higher layers (transport), or dropped permanently (some real-time traffic).</p>
+</section>
+<section id="throughput" class="level3" data-number="4.2">
+<h3 data-number="4.2" class="anchored" data-anchor-id="throughput"><span class="header-section-number">4.2</span> Throughput</h3>
+<p><strong>Throughput</strong> is the rate at which bits are delivered. For a path with links of rates <span class="math inline">\(R_1,\dots,R_N\)</span>, the <strong>bottleneck link</strong> is the minimum, and end-to-end throughput is:</p>
+<p><span class="math display">\[
+\text{throughput} = \min\{R_1, R_2, \dots, R_N\}
+\]</span></p>
+<p>This is why adding bandwidth in the middle rarely helps if the access link is the bottleneck — a fact that shapes everything from CDN placement to home-router shopping.</p>
+<hr>
+</section>
+</section>
+<section id="protocol-layers-and-the-internet-stack" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="protocol-layers-and-the-internet-stack"><span class="header-section-number">5</span> Protocol Layers and the Internet Stack</h2>
+<p>Layering decomposes the complexity of the network into manageable pieces, each with a defined service interface.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Layer</th>
+<th>Function</th>
+<th>Example protocols</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Application</strong></td>
+<td>network applications</td>
+<td>HTTP, SMTP, DNS, QUIC</td>
+</tr>
+<tr class="even">
+<td><strong>Transport</strong></td>
+<td>process-to-process data transfer</td>
+<td>TCP, UDP</td>
+</tr>
+<tr class="odd">
+<td><strong>Network</strong></td>
+<td>routing and forwarding of datagrams</td>
+<td>IP, ICMP, routing protocols</td>
+</tr>
+<tr class="even">
+<td><strong>Link</strong></td>
+<td>data transfer on a single link</td>
+<td>Ethernet, Wi-Fi, PPP</td>
+</tr>
+<tr class="odd">
+<td><strong>Physical</strong></td>
+<td>bits on the wire</td>
+<td>modulation, coding</td>
+</tr>
+</tbody>
+</table>
+<p>The OSI reference model additionally inserts <strong>Presentation</strong> and <strong>Session</strong> between application and transport; the Internet stack collapses those into the application layer. Each layer provides services to the layer above and uses the layer below. When a message is sent, each layer <strong>encapsulates</strong> the data: the application data becomes a transport <strong>segment</strong> (with transport header), then a network <strong>datagram</strong> (with IP header), then a link <strong>frame</strong> (with link header/trailer), and finally bits on the medium. At the receiver, headers are stripped in reverse — <strong>decapsulation</strong>.</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TD
+    A["Application message&lt;br/&gt;(HTTP request)"] --&gt; B["Transport segment&lt;br/&gt;(+ TCP/UDP header)"]
+    B --&gt; C["Network datagram&lt;br/&gt;(+ IP header)"]
+    C --&gt; D["Link frame&lt;br/&gt;(+ Ethernet header/trailer)"]
+    D --&gt; E["Physical bits on the medium"]
+    E --&gt; F["Link frame&lt;br/&gt;strip link header"]
+    F --&gt; G["Network datagram&lt;br/&gt;strip IP header"]
+    G --&gt; H["Transport segment&lt;br/&gt;strip TCP/UDP header"]
+    H --&gt; I["Application message"]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>Layering has costs (duplicated functionality, header overhead) but enormous benefits: independent evolution, modular design, and interoperability across vendors.</p>
+<section id="networks-under-attack" class="level3" data-number="5.1">
+<h3 data-number="5.1" class="anchored" data-anchor-id="networks-under-attack"><span class="header-section-number">5.1</span> Networks Under Attack</h3>
+<p>Security is a first-class networking concern, not an afterthought:</p>
+<ul>
+<li><strong>Malware</strong> — viruses, worms, botnets that recruit compromised hosts.</li>
+<li><strong>Denial of Service (DoS/DDoS)</strong> — flood a target (vulnerability, bandwidth, or connection-flooding attacks), often from a <strong>botnet</strong> or via <strong>reflection</strong>.</li>
+<li><strong>Packet sniffing</strong> — passive capture on shared/broadcast media (Wi-Fi) or compromised links.</li>
+<li><strong>IP spoofing</strong> — forging source addresses to hide origin or reflect traffic.</li>
+<li><strong>Man-in-the-middle</strong> — interception and modification of traffic.</li>
+</ul>
+<p>The defenses — encryption (TLS), authentication, ingress filtering, rate limiting, and CDN absorption — live across layers, which is precisely why security cannot be localized to one layer.</p>
+<hr>
+</section>
+</section>
+<section id="the-application-layer" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="the-application-layer"><span class="header-section-number">6</span> The Application Layer</h2>
+<p>We now begin the descent proper. The application layer is where <strong>network applications</strong> run and where the top-down approach starts.</p>
+<section id="application-architectures" class="level3" data-number="6.1">
+<h3 data-number="6.1" class="anchored" data-anchor-id="application-architectures"><span class="header-section-number">6.1</span> Application Architectures</h3>
+<ul>
+<li><strong>Client–server.</strong> An always-on server with a fixed IP answers requests from many clients. Scalability requires datacenters and load balancing.</li>
+<li><strong>Peer-to-peer (P2P).</strong> Arbitrary end systems communicate directly, with minimal reliance on dedicated servers. Self-scaling, but harder to manage and secure.</li>
+<li><strong>Hybrid.</strong> Many systems mix the two: a central server for discovery and P2P for bulk transfer (BitTorrent’s tracker, early Napster).</li>
+</ul>
+</section>
+<section id="processes-sockets-and-addressing" class="level3" data-number="6.2">
+<h3 data-number="6.2" class="anchored" data-anchor-id="processes-sockets-and-addressing"><span class="header-section-number">6.2</span> Processes, Sockets, and Addressing</h3>
+<p>An application consists of <strong>processes</strong> running on hosts. A process sends/receives messages through a <strong>socket</strong> — the API boundary between application and transport. To direct a message, the sender must specify the destination <strong>IP address</strong> (host) and <strong>port number</strong> (which process on that host). A representative Web server listens on port 80 (HTTP) or 443 (HTTPS), while clients use ephemeral ports.</p>
+<p>The <strong>application developer chooses the transport protocol</strong> by selecting a socket type:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Requirement</th>
+<th>TCP</th>
+<th>UDP</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Connection</td>
+<td>connection-oriented</td>
+<td>connectionless</td>
+</tr>
+<tr class="even">
+<td>Reliability</td>
+<td>reliable, ordered byte stream</td>
+<td>unreliable, unordered datagrams</td>
+</tr>
+<tr class="odd">
+<td>Flow/congestion control</td>
+<td>yes</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td>Overhead</td>
+<td>higher</td>
+<td>lower</td>
+</tr>
+<tr class="odd">
+<td>Typical uses</td>
+<td>Web, email, file transfer</td>
+<td>DNS, streaming, games, VoIP</td>
+</tr>
+</tbody>
+</table>
+<p>Application-layer protocols define the <strong>message syntax</strong>, <strong>semantics</strong>, and <strong>rules</strong> for when and how to send — the same definition as any protocol, now at the top of the stack.</p>
+<hr>
+</section>
+</section>
+<section id="the-web-and-http" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="the-web-and-http"><span class="header-section-number">7</span> The Web and HTTP</h2>
+<section id="http-basics" class="level3" data-number="7.1">
+<h3 data-number="7.1" class="anchored" data-anchor-id="http-basics"><span class="header-section-number">7.1</span> HTTP Basics</h3>
+<p>The <strong>HyperText Transfer Protocol (HTTP)</strong> is a request–response protocol. A client (browser) sends a request; a server responds. Two message types exist: <strong>request</strong> and <strong>response</strong>, both human-readable in HTTP/1.1.</p>
+<pre><code>GET /index.html HTTP/1.1
+Host: www.example.com
+Connection: close
+User-Agent: Mozilla/5.0
+Accept-Language: en-US</code></pre>
+<pre><code>HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 6821
+
+&lt;html&gt;...</code></pre>
+<p>Common methods: <code>GET</code>, <code>POST</code>, <code>HEAD</code>, <code>PUT</code>, <code>DELETE</code>. Common status codes: <code>200 OK</code>, <code>301 Moved Permanently</code>, <code>304 Not Modified</code>, <code>400 Bad Request</code>, <code>404 Not Found</code>, <code>500 Internal Server Error</code>. HTTP is <strong>stateless</strong>: the server retains no per-client memory — which is why cookies exist.</p>
+</section>
+<section id="persistent-vs-non-persistent-connections" class="level3" data-number="7.2">
+<h3 data-number="7.2" class="anchored" data-anchor-id="persistent-vs-non-persistent-connections"><span class="header-section-number">7.2</span> Persistent vs Non-Persistent Connections</h3>
+<ul>
+<li><strong>Non-persistent (HTTP/1.0 default):</strong> one TCP connection per object. Each object costs a TCP handshake (1 RTT) plus a request/response (1 RTT) ≈ 2 RTT, plus transmission.</li>
+<li><strong>Persistent (HTTP/1.1 default):</strong> the connection stays open across objects, amortizing the handshake.</li>
+<li><strong>Pipelining:</strong> send multiple requests without waiting for responses (limited in practice by head-of-line blocking).</li>
+</ul>
+</section>
+<section id="cookies" class="level3" data-number="7.3">
+<h3 data-number="7.3" class="anchored" data-anchor-id="cookies"><span class="header-section-number">7.3</span> Cookies</h3>
+<p>Because HTTP is stateless, sites use <strong>cookies</strong> for user state (sessions, carts, personalization). A server sets <code>Set-Cookie: id=1234</code>; the browser stores it and sends <code>Cookie: id=1234</code> on later requests. Cookies enable authentication and shopping carts, but also <strong>tracking</strong> across sites — a central privacy tension.</p>
+</section>
+<section id="web-caching-and-conditional-get" class="level3" data-number="7.4">
+<h3 data-number="7.4" class="anchored" data-anchor-id="web-caching-and-conditional-get"><span class="header-section-number">7.4</span> Web Caching and Conditional GET</h3>
+<p>A <strong>proxy cache</strong> stores responses and serves them to later clients, reducing latency and backbone traffic. Caches validate freshness with <strong>conditional GET</strong> using <code>If-Modified-Since</code>; if unchanged, the server replies <code>304 Not Modified</code> with no body.</p>
+</section>
+<section id="http2-and-http3" class="level3" data-number="7.5">
+<h3 data-number="7.5" class="anchored" data-anchor-id="http2-and-http3"><span class="header-section-number">7.5</span> HTTP/2 and HTTP/3</h3>
+<ul>
+<li><strong>HTTP/2</strong> multiplexes many streams over one TCP connection, adds header compression (HPACK) and server push, and reduces head-of-line blocking at the application layer — though TCP-level head-of-line blocking remains.</li>
+<li><strong>HTTP/3</strong> runs over <strong>QUIC</strong> (a transport built on UDP), giving per-stream reliability and connection migration, eliminating TCP head-of-line blocking and reducing handshake latency. See Part 2 for QUIC’s transport design.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="electronic-mail-and-dns" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="electronic-mail-and-dns"><span class="header-section-number">8</span> Electronic Mail and DNS</h2>
+<section id="email-smtp-pop3-imap" class="level3" data-number="8.1">
+<h3 data-number="8.1" class="anchored" data-anchor-id="email-smtp-pop3-imap"><span class="header-section-number">8.1</span> Email: SMTP, POP3, IMAP</h3>
+<p>Email uses several protocols: <strong>SMTP</strong> pushes messages from sender to recipient’s mail server (and between servers). The recipient retrieves mail with <strong>POP3</strong> (download-and-delete style) or <strong>IMAP</strong> (server-side folders, synchronization across devices). SMTP is a “push” protocol with ASCII commands (<code>HELO</code>, <code>MAIL FROM</code>, <code>RCPT TO</code>, <code>DATA</code>, <code>QUIT</code>), while retrieval protocols are “pull.”</p>
+</section>
+<section id="dns-the-internets-directory" class="level3" data-number="8.2">
+<h3 data-number="8.2" class="anchored" data-anchor-id="dns-the-internets-directory"><span class="header-section-number">8.2</span> DNS: The Internet’s Directory</h3>
+<p>The <strong>Domain Name System (DNS)</strong> maps human names to IP addresses. It is a <strong>distributed, hierarchical database</strong> implemented in a global network of servers:</p>
+<ul>
+<li><strong>Root servers</strong> (a–m) point to top-level domains.</li>
+<li><strong>TLD servers</strong> (<code>.com</code>, <code>.org</code>, <code>.uk</code>) point to authoritative servers.</li>
+<li><strong>Authoritative servers</strong> hold a domain’s records.</li>
+<li><strong>Local/caching resolvers</strong> (your ISP’s or <code>8.8.8.8</code>/<code>1.1.1.1</code>) do the recursion.</li>
+</ul>
+<p>Common <strong>resource records</strong>: <code>A</code> (IPv4), <code>AAAA</code> (IPv6), <code>CNAME</code> (alias), <code>MX</code> (mail), <code>NS</code> (name server), <code>TXT</code>. Resolution is <strong>iterative</strong> (“Ask the root, then ask the TLD, then ask authoritative”) or <strong>recursive</strong> (the resolver does it all). <strong>Caching</strong> with a <strong>TTL</strong> makes DNS efficient. DNS uses <strong>UDP on port 53</strong> for queries because it is fast and stateless.</p>
+<p>DNS is also a security target: <strong>cache poisoning</strong>, <strong>DDoS amplification</strong>, and <strong>DNS spoofing</strong> motivate DNSSEC and encrypted DNS (DoH/DoT).</p>
+<hr>
+</section>
+</section>
+<section id="p2p-cdns-and-video-streaming" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="p2p-cdns-and-video-streaming"><span class="header-section-number">9</span> P2P, CDNs, and Video Streaming</h2>
+<section id="peer-to-peer-distribution" class="level3" data-number="9.1">
+<h3 data-number="9.1" class="anchored" data-anchor-id="peer-to-peer-distribution"><span class="header-section-number">9.1</span> Peer-to-Peer Distribution</h3>
+<p>In P2P, peers exchange content directly. The classic result (Kurose’s analysis) is that <strong>client–server distribution time grows linearly with the number of peers</strong>, while <strong>P2P distribution time stays bounded</strong> because each peer contributes upload capacity. This is why BitTorrent scales with popularity: <strong>tit-for-tat</strong> incentives and <strong>rarest-first</strong> piece selection yield fast, resilient distribution.</p>
+</section>
+<section id="content-delivery-networks" class="level3" data-number="9.2">
+<h3 data-number="9.2" class="anchored" data-anchor-id="content-delivery-networks"><span class="header-section-number">9.2</span> Content Delivery Networks</h3>
+<p><strong>CDNs</strong> (Akamai, Cloudflare, Netflix’s Open Connect) place copies of content at many edge sites near users, reducing latency and backbone load. Netflix additionally uses adaptive streaming over HTTP with the <strong>DASH</strong> format and its own CDN.</p>
+</section>
+<section id="video-streaming" class="level3" data-number="9.3">
+<h3 data-number="9.3" class="anchored" data-anchor-id="video-streaming"><span class="header-section-number">9.3</span> Video Streaming</h3>
+<p>Streaming is <strong>application-layer</strong> but latency-sensitive: DASH stores video as chunks at multiple bitrates; the client measures throughput and picks the next chunk’s rate — an adaptive control loop that trades quality against rebuffering.</p>
+<hr>
+</section>
+</section>
+<section id="socket-programming" class="level2" data-number="10">
+<h2 data-number="10" class="anchored" data-anchor-id="socket-programming"><span class="header-section-number">10</span> Socket Programming</h2>
+<p>A socket is the programming interface to the transport layer. The canonical flows:</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">sequenceDiagram
+    participant C as Client
+    participant S as Server
+    S-&gt;&gt;S: socket(); bind(); listen()
+    C-&gt;&gt;S: socket(); connect()
+    S-&gt;&gt;S: accept() -&gt; new socket
+    C-&gt;&gt;S: send request bytes
+    S-&gt;&gt;C: send response bytes
+    Note over C,S: TCP: connection-oriented, byte stream
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>With <strong>UDP</strong>, there is no handshake: the client simply <code>sendto()</code>s a datagram and the server <code>recvfrom()</code>s it. With <strong>TCP</strong>, <code>connect()</code>/<code>accept()</code> establish the connection, after which <code>send()</code>/<code>recv()</code> stream bytes. The application sees no packets — only a reliable (TCP) or best-effort (UDP) channel.</p>
+<hr>
+</section>
+<section id="laboratory-end-to-end-delay-and-http-page-load-timing" class="level2" data-number="11">
+<h2 data-number="11" class="anchored" data-anchor-id="laboratory-end-to-end-delay-and-http-page-load-timing"><span class="header-section-number">11</span> Laboratory: End-to-End Delay and HTTP Page-Load Timing</h2>
+<section id="nodal-delay-and-the-bottleneck-throughput" class="level3" data-number="11.1">
+<h3 data-number="11.1" class="anchored" data-anchor-id="nodal-delay-and-the-bottleneck-throughput"><span class="header-section-number">11.1</span> Nodal Delay and the Bottleneck Throughput</h3>
+<p>The first experiment computes the four delay components for a representative packet and shows the throughput bottleneck along a path.</p>
+<div id="b8605ddc" class="cell" data-execution_count="1">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># --- 1. Nodal delay components for one packet ---</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>L <span class="op">=</span> <span class="dv">1500</span> <span class="op">*</span> <span class="dv">8</span>          <span class="co"># 1500-byte packet in bits</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>R <span class="op">=</span> <span class="fl">100e6</span>             <span class="co"># 100 Mbps link</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> <span class="fl">4000e3</span>            <span class="co"># 4000 km distance</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> <span class="fl">2.0e8</span>             <span class="co"># 2e8 m/s propagation speed</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>d_trans <span class="op">=</span> L <span class="op">/</span> R</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>d_prop  <span class="op">=</span> d <span class="op">/</span> s</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== NODAL DELAY (1500 B packet, 100 Mbps, 4000 km fiber) ==="</span>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  transmission L/R : </span><span class="sc">{</span>d_trans<span class="op">*</span><span class="fl">1e3</span><span class="sc">:8.4f}</span><span class="ss"> ms"</span>)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  propagation d/s  : </span><span class="sc">{</span>d_prop<span class="op">*</span><span class="fl">1e3</span><span class="sc">:8.4f}</span><span class="ss"> ms"</span>)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  transmission + propagation = </span><span class="sc">{</span>(d_trans<span class="op">+</span>d_prop)<span class="op">*</span><span class="fl">1e3</span><span class="sc">:.4f}</span><span class="ss"> ms"</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># --- 2. Traffic intensity and queueing blow-up (M/M/1 queueing delay) ---</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== TRAFFIC INTENSITY AND M/M/1 QUEUEING DELAY ==="</span>)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>Lpkt <span class="op">=</span> <span class="dv">1500</span> <span class="op">*</span> <span class="dv">8</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>Rlink <span class="op">=</span> <span class="fl">1e6</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> rho <span class="kw">in</span> [<span class="fl">0.2</span>, <span class="fl">0.5</span>, <span class="fl">0.8</span>, <span class="fl">0.9</span>, <span class="fl">0.95</span>, <span class="fl">0.99</span>]:</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> rho <span class="op">*</span> Rlink <span class="op">/</span> Lpkt                <span class="co"># arrival rate consistent with rho</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># mean queueing delay for M/M/1: dq = (rho/R) / (1 - rho) * L ... using service time</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    service <span class="op">=</span> Lpkt <span class="op">/</span> Rlink</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    dq <span class="op">=</span> rho <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> rho) <span class="op">*</span> service</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  rho=</span><span class="sc">{</span>rho<span class="sc">:4.2f}</span><span class="ss"> -&gt; arrival </span><span class="sc">{</span>a<span class="sc">:7.0f}</span><span class="ss"> pkt/s, queueing delay </span><span class="sc">{</span>dq<span class="op">*</span><span class="fl">1e3</span><span class="sc">:9.3f}</span><span class="ss"> ms"</span>)</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co"># --- 3. Bottleneck throughput along a path ---</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== BOTTLENECK THROUGHPUT ==="</span>)</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>path <span class="op">=</span> {<span class="st">"home Wi-Fi"</span>: <span class="fl">300e6</span>, <span class="st">"access ISP"</span>: <span class="fl">100e6</span>, <span class="st">"regional"</span>: <span class="fl">10e9</span>, <span class="st">"backbone"</span>: <span class="fl">100e9</span>, <span class="st">"server"</span>: <span class="fl">1e9</span>}</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  links:"</span>, <span class="st">", "</span>.join(<span class="ss">f"</span><span class="sc">{</span>k<span class="sc">}</span><span class="ss">=</span><span class="sc">{</span>v<span class="op">/</span><span class="fl">1e6</span><span class="sc">:.0f}</span><span class="ss">Mbps"</span> <span class="cf">for</span> k, v <span class="kw">in</span> path.items()))</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>bottleneck <span class="op">=</span> <span class="bu">min</span>(path, key<span class="op">=</span>path.get)</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  bottleneck = </span><span class="sc">{</span>bottleneck<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>path[bottleneck]<span class="op">/</span><span class="fl">1e6</span><span class="sc">:.0f}</span><span class="ss"> Mbps)"</span>)</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  end-to-end throughput = </span><span class="sc">{</span>path[bottleneck]<span class="op">/</span><span class="fl">1e6</span><span class="sc">:.0f}</span><span class="ss"> Mbps (not the sum, the min)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== NODAL DELAY (1500 B packet, 100 Mbps, 4000 km fiber) ===
+  transmission L/R :   0.1200 ms
+  propagation d/s  :  20.0000 ms
+  transmission + propagation = 20.1200 ms
+
+=== TRAFFIC INTENSITY AND M/M/1 QUEUEING DELAY ===
+  rho=0.20 -&gt; arrival      17 pkt/s, queueing delay     3.000 ms
+  rho=0.50 -&gt; arrival      42 pkt/s, queueing delay    12.000 ms
+  rho=0.80 -&gt; arrival      67 pkt/s, queueing delay    48.000 ms
+  rho=0.90 -&gt; arrival      75 pkt/s, queueing delay   108.000 ms
+  rho=0.95 -&gt; arrival      79 pkt/s, queueing delay   228.000 ms
+  rho=0.99 -&gt; arrival      82 pkt/s, queueing delay  1188.000 ms
+
+=== BOTTLENECK THROUGHPUT ===
+  links: home Wi-Fi=300Mbps, access ISP=100Mbps, regional=10000Mbps, backbone=100000Mbps, server=1000Mbps
+  bottleneck = access ISP (100 Mbps)
+  end-to-end throughput = 100 Mbps (not the sum, the min)</code></pre>
+</div>
+</div>
+</section>
+<section id="http-page-load-timing-non-persistent-vs-persistent-vs-pipelined" class="level3" data-number="11.2">
+<h3 data-number="11.2" class="anchored" data-anchor-id="http-page-load-timing-non-persistent-vs-persistent-vs-pipelined"><span class="header-section-number">11.2</span> HTTP Page-Load Timing: Non-Persistent vs Persistent vs Pipelined</h3>
+<p>The second experiment quantifies how HTTP’s connection strategy changes page-load latency as the number of embedded objects grows.</p>
+<div id="cell-fig-http-timing" class="cell" data-execution_count="2">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> np.arange(<span class="dv">1</span>, <span class="dv">31</span>)          <span class="co"># number of embedded objects</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Base HTML page: 1 object. Then N embedded objects.</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Non-persistent: each object = 1 RTT handshake + 1 RTT request/response = 2 RTT</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>non_persistent <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> (<span class="dv">1</span> <span class="op">+</span> N)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Persistent: 2 RTT for base (handshake + request/response), then 1 RTT per object</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>persistent <span class="op">=</span> <span class="dv">2</span> <span class="op">+</span> N</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Pipelined persistent: 2 RTT for base, then ~1 RTT for all pipelined objects (+1)</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>pipelined <span class="op">=</span> <span class="dv">2</span> <span class="op">+</span> <span class="dv">2</span> <span class="op">*</span> np.ones_like(N)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>))</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>ax.plot(N, non_persistent, <span class="st">'o-'</span>, color<span class="op">=</span><span class="st">"#e74c3c"</span>, label<span class="op">=</span><span class="st">"non-persistent (2 RTT/object)"</span>)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>ax.plot(N, persistent, <span class="st">'s-'</span>, color<span class="op">=</span><span class="st">"#e67e22"</span>, label<span class="op">=</span><span class="st">"persistent (1 RTT/object)"</span>)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>ax.plot(N, pipelined, <span class="st">'^-'</span>, color<span class="op">=</span><span class="st">"#27ae60"</span>, label<span class="op">=</span><span class="st">"pipelined persistent (≈constant)"</span>)</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"HTTP page-load time vs number of embedded objects"</span>)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"number of embedded objects"</span>)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"page-load time (RTTs)"</span>)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>ax.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)<span class="op">;</span> ax.legend()</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== PAGE LOAD TIME (RTTs) ==="</span>)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n <span class="kw">in</span> [<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">30</span>]:</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    i <span class="op">=</span> n <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  objects=</span><span class="sc">{</span>n<span class="sc">:3d}</span><span class="ss">: non-persistent=</span><span class="sc">{</span>non_persistent[i]<span class="sc">:3.0f}</span><span class="ss">  "</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>          <span class="ss">f"persistent=</span><span class="sc">{</span>persistent[i]<span class="sc">:3.0f}</span><span class="ss">  pipelined=</span><span class="sc">{</span>pipelined[i]<span class="sc">:2.0f}</span><span class="ss">"</span>)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== WORST-CASE NON-PERSISTENT DELAY FOR A 1 Gbps, 50 ms RTT LINK ==="</span>)</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>rtt <span class="op">=</span> <span class="fl">50e-3</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">20</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>objects <span class="op">=</span> <span class="dv">1</span> <span class="op">+</span> n</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> objects <span class="op">*</span> rtt</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>objects<span class="sc">}</span><span class="ss"> objects x 2 RTT x </span><span class="sc">{</span>rtt<span class="op">*</span><span class="fl">1e3</span><span class="sc">:.0f}</span><span class="ss"> ms = </span><span class="sc">{</span>t<span class="op">*</span><span class="fl">1e3</span><span class="sc">:.0f}</span><span class="ss"> ms just in RTTs"</span>)</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  (real browsers open parallel connections, cutting this substantially)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-http-timing" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-http-timing-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="computer-networking-top-down-part-1-foundations-and-application-layer_files/figure-html/fig-http-timing-output-1.png" width="950" height="470" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-http-timing-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: HTTP page-load time in round-trip times (RTTs) as a function of the number of embedded objects, under three connection strategies. Non-persistent connections pay two RTTs per object (one TCP handshake plus one request/response). Persistent connections pay the handshake once and one RTT per object. Pipelined persistent connections fetch all objects in roughly two RTTs after the handshake, decoupling load time from object count.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== PAGE LOAD TIME (RTTs) ===
+  objects=  1: non-persistent=  4  persistent=  3  pipelined= 4
+  objects=  5: non-persistent= 12  persistent=  7  pipelined= 4
+  objects= 10: non-persistent= 22  persistent= 12  pipelined= 4
+  objects= 20: non-persistent= 42  persistent= 22  pipelined= 4
+  objects= 30: non-persistent= 62  persistent= 32  pipelined= 4
+
+=== WORST-CASE NON-PERSISTENT DELAY FOR A 1 Gbps, 50 ms RTT LINK ===
+  21 objects x 2 RTT x 50 ms = 2100 ms just in RTTs
+  (real browsers open parallel connections, cutting this substantially)</code></pre>
+</div>
+</div>
+<p>The lab shows the core lesson of the application layer: <strong>protocol design choices at the application layer dominate user-perceived latency.</strong> HTTP/1.1’s persistent connections and HTTP/2/3’s multiplexing are not micro-optimizations; they change the slope of the curve.</p>
+<hr>
+</section>
+</section>
+<section id="summary" class="level2" data-number="12">
+<h2 data-number="12" class="anchored" data-anchor-id="summary"><span class="header-section-number">12</span> Summary</h2>
+<p><span class="math display">\[
+\begin{aligned}
+&amp;\textbf{Internet: } &amp;&amp; \text{edge runs applications, core moves packets; protocols define format and actions.} \\[3pt]
+&amp;\textbf{Core: } &amp;&amp; \text{packet switching multiplexes statistically; store-and-forward adds } N\cdot L/R. \\[3pt]
+&amp;\textbf{Delay: } &amp;&amp; d_{\text{nodal}} = d_{\text{proc}} + d_{\text{queue}} + d_{\text{trans}} + d_{\text{prop}};\quad \rho = La/R. \\[3pt]
+&amp;\textbf{Throughput: } &amp;&amp; \min(R_1,\dots,R_N) \text{ — the bottleneck link rules.} \\[3pt]
+&amp;\textbf{Layering: } &amp;&amp; \text{application, transport, network, link, physical; encapsulation all the way down.} \\[3pt]
+&amp;\textbf{Applications: } &amp;&amp; \text{HTTP (persistent, caching, cookies), DNS, SMTP/IMAP, P2P, CDNs, sockets.}
+\end{aligned}
+\]</span></p>
+<p>The application layer is where the user meets the network, and its protocols — HTTP, DNS, SMTP, and their peers — are the highest layer of the top-down story. Having seen <em>what</em> applications need (reliability, ordering, throughput, low latency), we descend in <a href="../../posts/computer-science/computer-networking-top-down-part-2-transport-layer.html">Part 2</a> to the <strong>transport layer</strong>, which is where those needs are actually met.</p>
+<hr>
+</section>
+<section id="curated-references-and-further-reading" class="level2" data-number="13">
+<h2 data-number="13" class="anchored" data-anchor-id="curated-references-and-further-reading"><span class="header-section-number">13</span> Curated References and Further Reading</h2>
+<ol type="1">
+<li><strong>Kurose, J. &amp; Ross, K. (2021).</strong> <em>Computer Networking: A Top-Down Approach</em>, 8th ed.&nbsp;Pearson. (Primary source: Chapters 1–2.)</li>
+<li><strong>Berners-Lee, T., Fielding, R. &amp; Frystyk, H. (1996).</strong> <em>Hypertext Transfer Protocol — HTTP/1.0.</em> RFC 1945.</li>
+<li><strong>Fielding, R. et al.&nbsp;(1999/2014).</strong> <em>HTTP/1.1.</em> RFC 2616 / RFC 7230–7235.</li>
+<li><strong>Belshe, M. et al.&nbsp;(2015).</strong> <em>Hypertext Transfer Protocol Version 2 (HTTP/2).</em> RFC 7540.</li>
+<li><strong>Mockapetris, P. (1987).</strong> <em>Domain Names — Concepts and Facilities.</em> RFC 1034.</li>
+<li><strong>Mockapetris, P. (2026/1987).</strong> <em>Domain Names — Implementation and Specification.</em> RFC 1035.</li>
+<li><strong>Bishop, M. (2021).</strong> <em>Computer Security: Art and Science</em>, 2nd ed.&nbsp;Addison-Wesley. (Network threat models.)</li>
+<li><strong>Cohen, B. (2003).</strong> <em>Incentives Build Robustness in BitTorrent.</em> Workshop on Economics of Peer-to-Peer Systems.</li>
+<li><strong>rfc-editor.org and IANA registries.</strong> Authoritative protocol specifications and port assignments.</li>
+</ol>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const cellDetails = window.document.querySelectorAll(".cell details.code-fold");
+        for (let i=0; i<cellDetails.length; i++) {
+          const details = cellDetails[i];
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell div.sourceCode.cell-code");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/igor-kan\.github\.io\/quarto-writing\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Computer Networking: A Top-Down Approach, Part 1 — Foundations and the Application Layer"</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "The Internet's edge and core, packet switching, the four sources of delay, protocol layering, and then the application layer from HTTP/2/3 and cookies to DNS, email, P2P, CDNs, and sockets — following Kurose &amp; Ross, Chapters 1–2"</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "Igor Kan"</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> "2026-09-14"</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="an">categories:</span><span class="co"> [Computer Science, Networking, Internet, Protocols, Application Layer, HTTP, DNS, TCP/IP, Distributed Systems]</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="an">description:</span><span class="co"> "A first-principles, top-down introduction to computer networking following Kurose and Ross. Starting at the application layer and descending, it covers what the Internet is, the network edge and core, packet versus circuit switching, store-and-forward and queueing, the four components of nodal delay, traffic intensity, throughput and the bottleneck link, protocol layering and encapsulation, and network security threats; then the application layer in depth: application architectures, sockets, HTTP/1.1 with persistent connections and pipelining, cookies, web caching and conditional GET, HTTP/2 and HTTP/3 over QUIC, electronic mail (SMTP, POP3, IMAP), DNS hierarchy and resource records, peer-to-peer file distribution and BitTorrent, content delivery networks and video streaming, and socket programming, with an executable Python laboratory modeling end-to-end delay and HTTP page-load timing."</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">    html-math-method: mathjax</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: show</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-depth: 4</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="co">    number-sections: true</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="an">jupyter:</span><span class="co"> python3</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="an">toc:</span><span class="co"> true</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="an">toc-depth:</span><span class="co"> 4</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="an">number-sections:</span><span class="co"> true</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>::: {.callout-note appearance="simple"}</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>*The top-down approach starts where you already stand — with the applications you use every day — and descends through the layers that make them work. It is the reverse of the traditional bottom-up curriculum, and it is far more motivating: every abstraction is introduced because a real application needs it.*</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>This is **Part 1** of a three-part series following Kurose &amp; Ross, *Computer Networking: A Top-Down Approach*. Here we cover **Chapter 1 (Computer Networks and the Internet)** and **Chapter 2 (The Application Layer)**. [Part 2](computer-networking-top-down-part-2-transport-layer.qmd) takes the **Transport Layer**, and [Part 3](computer-networking-top-down-part-3-network-layer-data-and-control-plane.qmd) the **Network Layer's data and control planes**.</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip collapse="true"}</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Series</span></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Part 1 — Foundations and the Application Layer** (this article)</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Part 2 — The Transport Layer</span><span class="co">](computer-networking-top-down-part-2-transport-layer.qmd)</span></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Part 3 — The Network Layer: Data Plane and Control Plane</span><span class="co">](computer-networking-top-down-part-3-network-layer-data-and-control-plane.qmd)</span></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a><span class="fu">### Companion Reading</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Bottom-Up Computer Engineering Roadmap</span><span class="co">](bottom-up-computer-engineering-roadmap.qmd)</span></span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Wireless Networks: Cellular and Wi-Fi Evolution</span><span class="co">](wireless-networks-cellular-wifi-evolution.qmd)</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Understanding Cybersecurity Vulnerabilities</span><span class="co">](understanding-cybersecurity-vulnerabilities.qmd)</span></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">The Complete Linux and Shell Handbook</span><span class="co">](../computer-science/command-line-essentials.qmd)</span></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a><span class="fu">## What Is the Internet, and What Is a Protocol?</span></span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>The Internet can be described two ways, and both matter.</span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a>**Nuts-and-bolts view.** The Internet is a global network of billions of connected computing devices ("hosts" or "end systems") — laptops, phones, servers, IoT sensors — linked by **communication links** (fiber, copper, radio, satellite) and **packet switches** (routers and switches). Hosts and switches are *end points* and *intermediate nodes*; links have a **transmission rate** measured in bits per second. Packets traverse a *route* through the network. End systems connect via **Internet Service Providers (ISPs)**, which themselves interconnect.</span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>**Service view.** The Internet is an infrastructure that provides **services to distributed applications**: the Web, email, streaming, messaging, video calls, and the API we call "the Internet." Applications run on end systems, not on the routers in the core. This separation is the single most important architectural fact about the Internet: **the core moves packets; the edge runs applications.**</span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a>A **protocol** defines the format and order of messages exchanged between communicating entities, and the actions taken on transmission and receipt. Human protocol ("Hi" → "Hi" → "What time is it?" → time) and computer protocol are the same idea with stricter rules. Protocols are what make heterogeneous hardware interoperate; they are implemented in software on hosts and routers, and they are standardized so that no single vendor controls the network.</span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Network Edge</span></span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a>The edge is where applications live. End systems are called *hosts* because they host (run) application programs.</span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a><span class="fu">### Access Networks</span></span>
+<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a>Access networks connect end systems to the first router (the "edge router"):</span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Access technology <span class="pp">|</span> Typical downstream <span class="pp">|</span> Medium <span class="pp">|</span> Notes <span class="pp">|</span></span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|---|</span></span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **DSL** <span class="pp">|</span> 10–100 Mbps <span class="pp">|</span> existing phone twisted pair <span class="pp">|</span> dedicated line to DSLAM, FDM over voice band <span class="pp">|</span></span>
+<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Cable (DOCSIS)** | 100–1000 Mbps | coax (HFC) | **shared** among neighbors; FDM channels <span class="pp">|</span></span>
+<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **FTTH (PON)** <span class="pp">|</span> 100 Mbps – 1 Gbps+ <span class="pp">|</span> fiber <span class="pp">|</span> passive optical splitters to the OLT <span class="pp">|</span></span>
+<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **5G / LTE** <span class="pp">|</span> 50–300 Mbps <span class="pp">|</span> licensed radio <span class="pp">|</span> shared air interface, base station <span class="pp">|</span></span>
+<span id="cb7-69"><a href="#cb7-69" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Wi-Fi (802.11)** <span class="pp">|</span> 100 Mbps – 1 Gbps <span class="pp">|</span> unlicensed radio <span class="pp">|</span> shared, short range, to a wireless AP <span class="pp">|</span></span>
+<span id="cb7-70"><a href="#cb7-70" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Enterprise / datacenter** <span class="pp">|</span> 1–100 Gbps <span class="pp">|</span> fiber/copper <span class="pp">|</span> switched Ethernet <span class="pp">|</span></span>
+<span id="cb7-71"><a href="#cb7-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-72"><a href="#cb7-72" aria-hidden="true" tabindex="-1"></a>Two properties recur: shared versus dedicated media, and symmetry versus asymmetry (download usually exceeds upload). Shared media introduce **contention**: aggregate access capacity is divided among active users.</span>
+<span id="cb7-73"><a href="#cb7-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-74"><a href="#cb7-74" aria-hidden="true" tabindex="-1"></a><span class="fu">### Physical Media</span></span>
+<span id="cb7-75"><a href="#cb7-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-76"><a href="#cb7-76" aria-hidden="true" tabindex="-1"></a>Bits travel as electromagnetic waves or optical pulses:</span>
+<span id="cb7-77"><a href="#cb7-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-78"><a href="#cb7-78" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Twisted pair** — cheap, ubiquitous; increasingly high rates over short runs.</span>
+<span id="cb7-79"><a href="#cb7-79" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Coaxial cable** — better shielding, higher rates, used in cable access.</span>
+<span id="cb7-80"><a href="#cb7-80" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Optical fiber** — very high rates, low attenuation, immune to EMI; backbone and FTTH.</span>
+<span id="cb7-81"><a href="#cb7-81" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Radio** — terrestrial (Wi-Fi, cellular), satellite (geostationary vs low-Earth-orbit), and free-space optics.</span>
+<span id="cb7-82"><a href="#cb7-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-83"><a href="#cb7-83" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-84"><a href="#cb7-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-85"><a href="#cb7-85" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Network Core</span></span>
+<span id="cb7-86"><a href="#cb7-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-87"><a href="#cb7-87" aria-hidden="true" tabindex="-1"></a>The core is a mesh of packet switches and links connecting the edge.</span>
+<span id="cb7-88"><a href="#cb7-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-89"><a href="#cb7-89" aria-hidden="true" tabindex="-1"></a><span class="fu">### Packet Switching vs Circuit Switching</span></span>
+<span id="cb7-90"><a href="#cb7-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-91"><a href="#cb7-91" aria-hidden="true" tabindex="-1"></a>**Circuit switching** reserves a dedicated path for the duration of a call. Classic telephone networks did this; if the circuit allocates a fixed rate, idle capacity is wasted.</span>
+<span id="cb7-92"><a href="#cb7-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-93"><a href="#cb7-93" aria-hidden="true" tabindex="-1"></a>**Packet switching** breaks messages into **packets** that share links on demand, each packet using the full link rate while being transmitted. Packets queue at switches and may wait; capacity is multiplexed statistically, which is why it is **statistically efficient** but subject to congestion.</span>
+<span id="cb7-94"><a href="#cb7-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-95"><a href="#cb7-95" aria-hidden="true" tabindex="-1"></a>A worked comparison from the book: two users each transmitting 1 Mbps, active 10% of the time, over a 2 Mbps link. With **circuit switching**, each user must receive a reserved 1 Mbps, so at most two users fit. With **packet switching** and the same 2 Mbps, many more users can share, and the probability that more than two are simultaneously active is small — so statistical multiplexing admits far more users at low blocking probability, at the cost of occasional queueing. The gain is the trade of a *hard guarantee* for a *high-probability* one.</span>
+<span id="cb7-96"><a href="#cb7-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-97"><a href="#cb7-97" aria-hidden="true" tabindex="-1"></a><span class="fu">### Store-and-Forward and Queueing</span></span>
+<span id="cb7-98"><a href="#cb7-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-99"><a href="#cb7-99" aria-hidden="true" tabindex="-1"></a>A **store-and-forward** switch must receive the entire packet before forwarding it — it stores the bits, checks the header, looks up the destination, then transmits. For a packet of $L$ bits over a link of rate $R$, the **transmission delay** is $L/R$. Across $N$ links between source and destination, the end-to-end store-and-forward transmission delay is:</span>
+<span id="cb7-100"><a href="#cb7-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-101"><a href="#cb7-101" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-102"><a href="#cb7-102" aria-hidden="true" tabindex="-1"></a>d_{\text{trans, e2e}} = N \cdot \frac{L}{R}</span>
+<span id="cb7-103"><a href="#cb7-103" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-104"><a href="#cb7-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-105"><a href="#cb7-105" aria-hidden="true" tabindex="-1"></a>(assuming no propagation or processing delay). Switches maintain **output queues** for each outgoing link; if arrival rate exceeds output link rate, queues grow, and eventually packets are **dropped** (lost).</span>
+<span id="cb7-106"><a href="#cb7-106" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-107"><a href="#cb7-107" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Network Structure: A Network of Networks</span></span>
+<span id="cb7-108"><a href="#cb7-108" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-109"><a href="#cb7-109" aria-hidden="true" tabindex="-1"></a>No single ISP spans the globe; the Internet is a hierarchy of ISPs: **access ISPs** → **regional ISPs** → **tier-1 ISPs** (backbone), plus **content-provider networks** (Google, Netflix, Cloudflare) and **Internet Exchange Points (IXPs)** where networks peer and exchange traffic without paying transit fees. This hierarchy is economic and negotiated as much as technical.</span>
+<span id="cb7-110"><a href="#cb7-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-111"><a href="#cb7-111" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-112"><a href="#cb7-112" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-113"><a href="#cb7-113" aria-hidden="true" tabindex="-1"></a><span class="fu">## Performance: Delay, Loss, and Throughput</span></span>
+<span id="cb7-114"><a href="#cb7-114" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-115"><a href="#cb7-115" aria-hidden="true" tabindex="-1"></a>The four **nodal delays** at a router are the heart of network performance:</span>
+<span id="cb7-116"><a href="#cb7-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-117"><a href="#cb7-117" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-118"><a href="#cb7-118" aria-hidden="true" tabindex="-1"></a>d_{\text{nodal}} = d_{\text{proc}} + d_{\text{queue}} + d_{\text{trans}} + d_{\text{prop}}</span>
+<span id="cb7-119"><a href="#cb7-119" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-120"><a href="#cb7-120" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-121"><a href="#cb7-121" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Component <span class="pp">|</span> Symbol <span class="pp">|</span> Formula / cause <span class="pp">|</span></span>
+<span id="cb7-122"><a href="#cb7-122" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|</span></span>
+<span id="cb7-123"><a href="#cb7-123" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Processing <span class="pp">|</span> $d_{\text{proc}}$ <span class="pp">|</span> header inspection, routing lookup, error check <span class="pp">|</span></span>
+<span id="cb7-124"><a href="#cb7-124" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Queueing <span class="pp">|</span> $d_{\text{queue}}$ <span class="pp">|</span> waiting for the output link <span class="pp">|</span></span>
+<span id="cb7-125"><a href="#cb7-125" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Transmission <span class="pp">|</span> $d_{\text{trans}} = L/R$ <span class="pp">|</span> pushing all $L$ bits onto the link <span class="pp">|</span></span>
+<span id="cb7-126"><a href="#cb7-126" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Propagation <span class="pp">|</span> $d_{\text{prop}} = d/s$ <span class="pp">|</span> travel of one bit through the medium <span class="pp">|</span></span>
+<span id="cb7-127"><a href="#cb7-127" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-128"><a href="#cb7-128" aria-hidden="true" tabindex="-1"></a>Here $L$ is packet length (bits), $R$ link rate (bps), $d$ physical distance, and $s$ propagation speed ($\approx 2$–$3\times10^8$ m/s). Note the distinction: **transmission delay** depends on packet size and link rate; **propagation delay** depends on distance and medium.</span>
+<span id="cb7-129"><a href="#cb7-129" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-130"><a href="#cb7-130" aria-hidden="true" tabindex="-1"></a><span class="fu">### Traffic Intensity and Loss</span></span>
+<span id="cb7-131"><a href="#cb7-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-132"><a href="#cb7-132" aria-hidden="true" tabindex="-1"></a>Let $a$ be the average packet arrival rate (packets/s) and $L$ the packet length; the **traffic intensity** is:</span>
+<span id="cb7-133"><a href="#cb7-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-134"><a href="#cb7-134" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-135"><a href="#cb7-135" aria-hidden="true" tabindex="-1"></a>\rho = \frac{La}{R}</span>
+<span id="cb7-136"><a href="#cb7-136" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-137"><a href="#cb7-137" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-138"><a href="#cb7-138" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>$\rho \approx 0$: little queueing.</span>
+<span id="cb7-139"><a href="#cb7-139" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>$\rho \to 1$: queueing delay grows rapidly and without bound.</span>
+<span id="cb7-140"><a href="#cb7-140" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>$\rho &gt; 1$: arrival work exceeds link capacity; the queue grows indefinitely and packets are dropped.</span>
+<span id="cb7-141"><a href="#cb7-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-142"><a href="#cb7-142" aria-hidden="true" tabindex="-1"></a>Real queues are finite, so packets are lost when the buffer overflows. Lost packets may be retransmitted by higher layers (transport), or dropped permanently (some real-time traffic).</span>
+<span id="cb7-143"><a href="#cb7-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-144"><a href="#cb7-144" aria-hidden="true" tabindex="-1"></a><span class="fu">### Throughput</span></span>
+<span id="cb7-145"><a href="#cb7-145" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-146"><a href="#cb7-146" aria-hidden="true" tabindex="-1"></a>**Throughput** is the rate at which bits are delivered. For a path with links of rates $R_1,\dots,R_N$, the **bottleneck link** is the minimum, and end-to-end throughput is:</span>
+<span id="cb7-147"><a href="#cb7-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-148"><a href="#cb7-148" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-149"><a href="#cb7-149" aria-hidden="true" tabindex="-1"></a>\text{throughput} = \min<span class="sc">\{</span>R_1, R_2, \dots, R_N<span class="sc">\}</span></span>
+<span id="cb7-150"><a href="#cb7-150" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-151"><a href="#cb7-151" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-152"><a href="#cb7-152" aria-hidden="true" tabindex="-1"></a>This is why adding bandwidth in the middle rarely helps if the access link is the bottleneck — a fact that shapes everything from CDN placement to home-router shopping.</span>
+<span id="cb7-153"><a href="#cb7-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-154"><a href="#cb7-154" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-155"><a href="#cb7-155" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-156"><a href="#cb7-156" aria-hidden="true" tabindex="-1"></a><span class="fu">## Protocol Layers and the Internet Stack</span></span>
+<span id="cb7-157"><a href="#cb7-157" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-158"><a href="#cb7-158" aria-hidden="true" tabindex="-1"></a>Layering decomposes the complexity of the network into manageable pieces, each with a defined service interface.</span>
+<span id="cb7-159"><a href="#cb7-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-160"><a href="#cb7-160" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Layer <span class="pp">|</span> Function <span class="pp">|</span> Example protocols <span class="pp">|</span></span>
+<span id="cb7-161"><a href="#cb7-161" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|</span></span>
+<span id="cb7-162"><a href="#cb7-162" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Application** <span class="pp">|</span> network applications <span class="pp">|</span> HTTP, SMTP, DNS, QUIC <span class="pp">|</span></span>
+<span id="cb7-163"><a href="#cb7-163" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Transport** <span class="pp">|</span> process-to-process data transfer <span class="pp">|</span> TCP, UDP <span class="pp">|</span></span>
+<span id="cb7-164"><a href="#cb7-164" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Network** <span class="pp">|</span> routing and forwarding of datagrams <span class="pp">|</span> IP, ICMP, routing protocols <span class="pp">|</span></span>
+<span id="cb7-165"><a href="#cb7-165" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Link** <span class="pp">|</span> data transfer on a single link <span class="pp">|</span> Ethernet, Wi-Fi, PPP <span class="pp">|</span></span>
+<span id="cb7-166"><a href="#cb7-166" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Physical** <span class="pp">|</span> bits on the wire <span class="pp">|</span> modulation, coding <span class="pp">|</span></span>
+<span id="cb7-167"><a href="#cb7-167" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-168"><a href="#cb7-168" aria-hidden="true" tabindex="-1"></a>The OSI reference model additionally inserts **Presentation** and **Session** between application and transport; the Internet stack collapses those into the application layer. Each layer provides services to the layer above and uses the layer below. When a message is sent, each layer **encapsulates** the data: the application data becomes a transport **segment** (with transport header), then a network **datagram** (with IP header), then a link **frame** (with link header/trailer), and finally bits on the medium. At the receiver, headers are stripped in reverse — **decapsulation**.</span>
+<span id="cb7-169"><a href="#cb7-169" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-172"><a href="#cb7-172" aria-hidden="true" tabindex="-1"></a><span class="in">```{mermaid}</span></span>
+<span id="cb7-173"><a href="#cb7-173" aria-hidden="true" tabindex="-1"></a>flowchart TD</span>
+<span id="cb7-174"><a href="#cb7-174" aria-hidden="true" tabindex="-1"></a>    A[<span class="ot">"</span><span class="st">Application message&lt;br/&gt;(HTTP request)</span><span class="ot">"</span>] --&gt; B[<span class="ot">"</span><span class="st">Transport segment&lt;br/&gt;(+ TCP/UDP header)</span><span class="ot">"</span>]</span>
+<span id="cb7-175"><a href="#cb7-175" aria-hidden="true" tabindex="-1"></a>    B --&gt; C[<span class="ot">"</span><span class="st">Network datagram&lt;br/&gt;(+ IP header)</span><span class="ot">"</span>]</span>
+<span id="cb7-176"><a href="#cb7-176" aria-hidden="true" tabindex="-1"></a>    C --&gt; D[<span class="ot">"</span><span class="st">Link frame&lt;br/&gt;(+ Ethernet header/trailer)</span><span class="ot">"</span>]</span>
+<span id="cb7-177"><a href="#cb7-177" aria-hidden="true" tabindex="-1"></a>    D --&gt; E[<span class="ot">"</span><span class="st">Physical bits on the medium</span><span class="ot">"</span>]</span>
+<span id="cb7-178"><a href="#cb7-178" aria-hidden="true" tabindex="-1"></a>    E --&gt; F[<span class="ot">"</span><span class="st">Link frame&lt;br/&gt;strip link header</span><span class="ot">"</span>]</span>
+<span id="cb7-179"><a href="#cb7-179" aria-hidden="true" tabindex="-1"></a>    F --&gt; G[<span class="ot">"</span><span class="st">Network datagram&lt;br/&gt;strip IP header</span><span class="ot">"</span>]</span>
+<span id="cb7-180"><a href="#cb7-180" aria-hidden="true" tabindex="-1"></a>    G --&gt; H[<span class="ot">"</span><span class="st">Transport segment&lt;br/&gt;strip TCP/UDP header</span><span class="ot">"</span>]</span>
+<span id="cb7-181"><a href="#cb7-181" aria-hidden="true" tabindex="-1"></a>    H --&gt; I[<span class="ot">"</span><span class="st">Application message</span><span class="ot">"</span>]</span>
+<span id="cb7-182"><a href="#cb7-182" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-183"><a href="#cb7-183" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-184"><a href="#cb7-184" aria-hidden="true" tabindex="-1"></a>Layering has costs (duplicated functionality, header overhead) but enormous benefits: independent evolution, modular design, and interoperability across vendors.</span>
+<span id="cb7-185"><a href="#cb7-185" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-186"><a href="#cb7-186" aria-hidden="true" tabindex="-1"></a><span class="fu">### Networks Under Attack</span></span>
+<span id="cb7-187"><a href="#cb7-187" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-188"><a href="#cb7-188" aria-hidden="true" tabindex="-1"></a>Security is a first-class networking concern, not an afterthought:</span>
+<span id="cb7-189"><a href="#cb7-189" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-190"><a href="#cb7-190" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Malware** — viruses, worms, botnets that recruit compromised hosts.</span>
+<span id="cb7-191"><a href="#cb7-191" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Denial of Service (DoS/DDoS)** — flood a target (vulnerability, bandwidth, or connection-flooding attacks), often from a **botnet** or via **reflection**.</span>
+<span id="cb7-192"><a href="#cb7-192" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Packet sniffing** — passive capture on shared/broadcast media (Wi-Fi) or compromised links.</span>
+<span id="cb7-193"><a href="#cb7-193" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**IP spoofing** — forging source addresses to hide origin or reflect traffic.</span>
+<span id="cb7-194"><a href="#cb7-194" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Man-in-the-middle** — interception and modification of traffic.</span>
+<span id="cb7-195"><a href="#cb7-195" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-196"><a href="#cb7-196" aria-hidden="true" tabindex="-1"></a>The defenses — encryption (TLS), authentication, ingress filtering, rate limiting, and CDN absorption — live across layers, which is precisely why security cannot be localized to one layer.</span>
+<span id="cb7-197"><a href="#cb7-197" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-198"><a href="#cb7-198" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-199"><a href="#cb7-199" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-200"><a href="#cb7-200" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Application Layer</span></span>
+<span id="cb7-201"><a href="#cb7-201" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-202"><a href="#cb7-202" aria-hidden="true" tabindex="-1"></a>We now begin the descent proper. The application layer is where **network applications** run and where the top-down approach starts.</span>
+<span id="cb7-203"><a href="#cb7-203" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-204"><a href="#cb7-204" aria-hidden="true" tabindex="-1"></a><span class="fu">### Application Architectures</span></span>
+<span id="cb7-205"><a href="#cb7-205" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-206"><a href="#cb7-206" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Client–server.** An always-on server with a fixed IP answers requests from many clients. Scalability requires datacenters and load balancing.</span>
+<span id="cb7-207"><a href="#cb7-207" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Peer-to-peer (P2P).** Arbitrary end systems communicate directly, with minimal reliance on dedicated servers. Self-scaling, but harder to manage and secure.</span>
+<span id="cb7-208"><a href="#cb7-208" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Hybrid.** Many systems mix the two: a central server for discovery and P2P for bulk transfer (BitTorrent's tracker, early Napster).</span>
+<span id="cb7-209"><a href="#cb7-209" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-210"><a href="#cb7-210" aria-hidden="true" tabindex="-1"></a><span class="fu">### Processes, Sockets, and Addressing</span></span>
+<span id="cb7-211"><a href="#cb7-211" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-212"><a href="#cb7-212" aria-hidden="true" tabindex="-1"></a>An application consists of **processes** running on hosts. A process sends/receives messages through a **socket** — the API boundary between application and transport. To direct a message, the sender must specify the destination **IP address** (host) and **port number** (which process on that host). A representative Web server listens on port 80 (HTTP) or 443 (HTTPS), while clients use ephemeral ports.</span>
+<span id="cb7-213"><a href="#cb7-213" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-214"><a href="#cb7-214" aria-hidden="true" tabindex="-1"></a>The **application developer chooses the transport protocol** by selecting a socket type:</span>
+<span id="cb7-215"><a href="#cb7-215" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-216"><a href="#cb7-216" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Requirement <span class="pp">|</span> TCP <span class="pp">|</span> UDP <span class="pp">|</span></span>
+<span id="cb7-217"><a href="#cb7-217" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|</span></span>
+<span id="cb7-218"><a href="#cb7-218" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Connection <span class="pp">|</span> connection-oriented <span class="pp">|</span> connectionless <span class="pp">|</span></span>
+<span id="cb7-219"><a href="#cb7-219" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Reliability <span class="pp">|</span> reliable, ordered byte stream <span class="pp">|</span> unreliable, unordered datagrams <span class="pp">|</span></span>
+<span id="cb7-220"><a href="#cb7-220" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Flow/congestion control <span class="pp">|</span> yes <span class="pp">|</span> no <span class="pp">|</span></span>
+<span id="cb7-221"><a href="#cb7-221" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Overhead <span class="pp">|</span> higher <span class="pp">|</span> lower <span class="pp">|</span></span>
+<span id="cb7-222"><a href="#cb7-222" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Typical uses <span class="pp">|</span> Web, email, file transfer <span class="pp">|</span> DNS, streaming, games, VoIP <span class="pp">|</span></span>
+<span id="cb7-223"><a href="#cb7-223" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-224"><a href="#cb7-224" aria-hidden="true" tabindex="-1"></a>Application-layer protocols define the **message syntax**, **semantics**, and **rules** for when and how to send — the same definition as any protocol, now at the top of the stack.</span>
+<span id="cb7-225"><a href="#cb7-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-226"><a href="#cb7-226" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-227"><a href="#cb7-227" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-228"><a href="#cb7-228" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Web and HTTP</span></span>
+<span id="cb7-229"><a href="#cb7-229" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-230"><a href="#cb7-230" aria-hidden="true" tabindex="-1"></a><span class="fu">### HTTP Basics</span></span>
+<span id="cb7-231"><a href="#cb7-231" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-232"><a href="#cb7-232" aria-hidden="true" tabindex="-1"></a>The **HyperText Transfer Protocol (HTTP)** is a request–response protocol. A client (browser) sends a request; a server responds. Two message types exist: **request** and **response**, both human-readable in HTTP/1.1.</span>
+<span id="cb7-233"><a href="#cb7-233" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-234"><a href="#cb7-234" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-235"><a href="#cb7-235" aria-hidden="true" tabindex="-1"></a><span class="in">GET /index.html HTTP/1.1</span></span>
+<span id="cb7-236"><a href="#cb7-236" aria-hidden="true" tabindex="-1"></a><span class="in">Host: www.example.com</span></span>
+<span id="cb7-237"><a href="#cb7-237" aria-hidden="true" tabindex="-1"></a><span class="in">Connection: close</span></span>
+<span id="cb7-238"><a href="#cb7-238" aria-hidden="true" tabindex="-1"></a><span class="in">User-Agent: Mozilla/5.0</span></span>
+<span id="cb7-239"><a href="#cb7-239" aria-hidden="true" tabindex="-1"></a><span class="in">Accept-Language: en-US</span></span>
+<span id="cb7-240"><a href="#cb7-240" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-241"><a href="#cb7-241" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-242"><a href="#cb7-242" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-243"><a href="#cb7-243" aria-hidden="true" tabindex="-1"></a><span class="in">HTTP/1.1 200 OK</span></span>
+<span id="cb7-244"><a href="#cb7-244" aria-hidden="true" tabindex="-1"></a><span class="in">Connection: close</span></span>
+<span id="cb7-245"><a href="#cb7-245" aria-hidden="true" tabindex="-1"></a><span class="in">Content-Type: text/html</span></span>
+<span id="cb7-246"><a href="#cb7-246" aria-hidden="true" tabindex="-1"></a><span class="in">Content-Length: 6821</span></span>
+<span id="cb7-247"><a href="#cb7-247" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-248"><a href="#cb7-248" aria-hidden="true" tabindex="-1"></a><span class="in">&lt;html&gt;...</span></span>
+<span id="cb7-249"><a href="#cb7-249" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-250"><a href="#cb7-250" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-251"><a href="#cb7-251" aria-hidden="true" tabindex="-1"></a>Common methods: <span class="in">`GET`</span>, <span class="in">`POST`</span>, <span class="in">`HEAD`</span>, <span class="in">`PUT`</span>, <span class="in">`DELETE`</span>. Common status codes: <span class="in">`200 OK`</span>, <span class="in">`301 Moved Permanently`</span>, <span class="in">`304 Not Modified`</span>, <span class="in">`400 Bad Request`</span>, <span class="in">`404 Not Found`</span>, <span class="in">`500 Internal Server Error`</span>. HTTP is **stateless**: the server retains no per-client memory — which is why cookies exist.</span>
+<span id="cb7-252"><a href="#cb7-252" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-253"><a href="#cb7-253" aria-hidden="true" tabindex="-1"></a><span class="fu">### Persistent vs Non-Persistent Connections</span></span>
+<span id="cb7-254"><a href="#cb7-254" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-255"><a href="#cb7-255" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Non-persistent (HTTP/1.0 default):** one TCP connection per object. Each object costs a TCP handshake (1 RTT) plus a request/response (1 RTT) ≈ 2 RTT, plus transmission.</span>
+<span id="cb7-256"><a href="#cb7-256" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Persistent (HTTP/1.1 default):** the connection stays open across objects, amortizing the handshake.</span>
+<span id="cb7-257"><a href="#cb7-257" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Pipelining:** send multiple requests without waiting for responses (limited in practice by head-of-line blocking).</span>
+<span id="cb7-258"><a href="#cb7-258" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-259"><a href="#cb7-259" aria-hidden="true" tabindex="-1"></a><span class="fu">### Cookies</span></span>
+<span id="cb7-260"><a href="#cb7-260" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-261"><a href="#cb7-261" aria-hidden="true" tabindex="-1"></a>Because HTTP is stateless, sites use **cookies** for user state (sessions, carts, personalization). A server sets `Set-Cookie: id=1234`; the browser stores it and sends `Cookie: id=1234` on later requests. Cookies enable authentication and shopping carts, but also **tracking** across sites — a central privacy tension.</span>
+<span id="cb7-262"><a href="#cb7-262" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-263"><a href="#cb7-263" aria-hidden="true" tabindex="-1"></a><span class="fu">### Web Caching and Conditional GET</span></span>
+<span id="cb7-264"><a href="#cb7-264" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-265"><a href="#cb7-265" aria-hidden="true" tabindex="-1"></a>A **proxy cache** stores responses and serves them to later clients, reducing latency and backbone traffic. Caches validate freshness with **conditional GET** using <span class="in">`If-Modified-Since`</span>; if unchanged, the server replies <span class="in">`304 Not Modified`</span> with no body.</span>
+<span id="cb7-266"><a href="#cb7-266" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-267"><a href="#cb7-267" aria-hidden="true" tabindex="-1"></a><span class="fu">### HTTP/2 and HTTP/3</span></span>
+<span id="cb7-268"><a href="#cb7-268" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-269"><a href="#cb7-269" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**HTTP/2** multiplexes many streams over one TCP connection, adds header compression (HPACK) and server push, and reduces head-of-line blocking at the application layer — though TCP-level head-of-line blocking remains.</span>
+<span id="cb7-270"><a href="#cb7-270" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**HTTP/3** runs over **QUIC** (a transport built on UDP), giving per-stream reliability and connection migration, eliminating TCP head-of-line blocking and reducing handshake latency. See Part 2 for QUIC's transport design.</span>
+<span id="cb7-271"><a href="#cb7-271" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-272"><a href="#cb7-272" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-273"><a href="#cb7-273" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-274"><a href="#cb7-274" aria-hidden="true" tabindex="-1"></a><span class="fu">## Electronic Mail and DNS</span></span>
+<span id="cb7-275"><a href="#cb7-275" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-276"><a href="#cb7-276" aria-hidden="true" tabindex="-1"></a><span class="fu">### Email: SMTP, POP3, IMAP</span></span>
+<span id="cb7-277"><a href="#cb7-277" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-278"><a href="#cb7-278" aria-hidden="true" tabindex="-1"></a>Email uses several protocols: **SMTP** pushes messages from sender to recipient's mail server (and between servers). The recipient retrieves mail with **POP3** (download-and-delete style) or **IMAP** (server-side folders, synchronization across devices). SMTP is a "push" protocol with ASCII commands (<span class="in">`HELO`</span>, <span class="in">`MAIL FROM`</span>, <span class="in">`RCPT TO`</span>, <span class="in">`DATA`</span>, <span class="in">`QUIT`</span>), while retrieval protocols are "pull."</span>
+<span id="cb7-279"><a href="#cb7-279" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-280"><a href="#cb7-280" aria-hidden="true" tabindex="-1"></a><span class="fu">### DNS: The Internet's Directory</span></span>
+<span id="cb7-281"><a href="#cb7-281" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-282"><a href="#cb7-282" aria-hidden="true" tabindex="-1"></a>The **Domain Name System (DNS)** maps human names to IP addresses. It is a **distributed, hierarchical database** implemented in a global network of servers:</span>
+<span id="cb7-283"><a href="#cb7-283" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-284"><a href="#cb7-284" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Root servers** (a–m) point to top-level domains.</span>
+<span id="cb7-285"><a href="#cb7-285" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**TLD servers** (<span class="in">`.com`</span>, <span class="in">`.org`</span>, <span class="in">`.uk`</span>) point to authoritative servers.</span>
+<span id="cb7-286"><a href="#cb7-286" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Authoritative servers** hold a domain's records.</span>
+<span id="cb7-287"><a href="#cb7-287" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Local/caching resolvers** (your ISP's or <span class="in">`8.8.8.8`</span>/<span class="in">`1.1.1.1`</span>) do the recursion.</span>
+<span id="cb7-288"><a href="#cb7-288" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-289"><a href="#cb7-289" aria-hidden="true" tabindex="-1"></a>Common **resource records**: `A` (IPv4), `AAAA` (IPv6), `CNAME` (alias), `MX` (mail), `NS` (name server), `TXT`. Resolution is **iterative** ("Ask the root, then ask the TLD, then ask authoritative") or **recursive** (the resolver does it all). **Caching** with a **TTL** makes DNS efficient. DNS uses **UDP on port 53** for queries because it is fast and stateless.</span>
+<span id="cb7-290"><a href="#cb7-290" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-291"><a href="#cb7-291" aria-hidden="true" tabindex="-1"></a>DNS is also a security target: **cache poisoning**, **DDoS amplification**, and **DNS spoofing** motivate DNSSEC and encrypted DNS (DoH/DoT).</span>
+<span id="cb7-292"><a href="#cb7-292" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-293"><a href="#cb7-293" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-294"><a href="#cb7-294" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-295"><a href="#cb7-295" aria-hidden="true" tabindex="-1"></a><span class="fu">## P2P, CDNs, and Video Streaming</span></span>
+<span id="cb7-296"><a href="#cb7-296" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-297"><a href="#cb7-297" aria-hidden="true" tabindex="-1"></a><span class="fu">### Peer-to-Peer Distribution</span></span>
+<span id="cb7-298"><a href="#cb7-298" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-299"><a href="#cb7-299" aria-hidden="true" tabindex="-1"></a>In P2P, peers exchange content directly. The classic result (Kurose's analysis) is that **client–server distribution time grows linearly with the number of peers**, while **P2P distribution time stays bounded** because each peer contributes upload capacity. This is why BitTorrent scales with popularity: **tit-for-tat** incentives and **rarest-first** piece selection yield fast, resilient distribution.</span>
+<span id="cb7-300"><a href="#cb7-300" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-301"><a href="#cb7-301" aria-hidden="true" tabindex="-1"></a><span class="fu">### Content Delivery Networks</span></span>
+<span id="cb7-302"><a href="#cb7-302" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-303"><a href="#cb7-303" aria-hidden="true" tabindex="-1"></a>**CDNs** (Akamai, Cloudflare, Netflix's Open Connect) place copies of content at many edge sites near users, reducing latency and backbone load. Netflix additionally uses adaptive streaming over HTTP with the **DASH** format and its own CDN.</span>
+<span id="cb7-304"><a href="#cb7-304" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-305"><a href="#cb7-305" aria-hidden="true" tabindex="-1"></a><span class="fu">### Video Streaming</span></span>
+<span id="cb7-306"><a href="#cb7-306" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-307"><a href="#cb7-307" aria-hidden="true" tabindex="-1"></a>Streaming is **application-layer** but latency-sensitive: DASH stores video as chunks at multiple bitrates; the client measures throughput and picks the next chunk's rate — an adaptive control loop that trades quality against rebuffering.</span>
+<span id="cb7-308"><a href="#cb7-308" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-309"><a href="#cb7-309" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-310"><a href="#cb7-310" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-311"><a href="#cb7-311" aria-hidden="true" tabindex="-1"></a><span class="fu">## Socket Programming</span></span>
+<span id="cb7-312"><a href="#cb7-312" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-313"><a href="#cb7-313" aria-hidden="true" tabindex="-1"></a>A socket is the programming interface to the transport layer. The canonical flows:</span>
+<span id="cb7-314"><a href="#cb7-314" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-317"><a href="#cb7-317" aria-hidden="true" tabindex="-1"></a><span class="in">```{mermaid}</span></span>
+<span id="cb7-318"><a href="#cb7-318" aria-hidden="true" tabindex="-1"></a>sequenceDiagram</span>
+<span id="cb7-319"><a href="#cb7-319" aria-hidden="true" tabindex="-1"></a>    participant C as Client</span>
+<span id="cb7-320"><a href="#cb7-320" aria-hidden="true" tabindex="-1"></a>    participant S as Server</span>
+<span id="cb7-321"><a href="#cb7-321" aria-hidden="true" tabindex="-1"></a>    S-&gt;&gt;S: <span class="fu">socket</span>(); <span class="fu">bind</span>(); <span class="fu">listen</span>()</span>
+<span id="cb7-322"><a href="#cb7-322" aria-hidden="true" tabindex="-1"></a>    C-&gt;&gt;S: <span class="fu">socket</span>(); <span class="fu">connect</span>()</span>
+<span id="cb7-323"><a href="#cb7-323" aria-hidden="true" tabindex="-1"></a>    S-&gt;&gt;S: <span class="fu">accept</span>() -&gt; new <span class="fu">socket</span></span>
+<span id="cb7-324"><a href="#cb7-324" aria-hidden="true" tabindex="-1"></a>    C-&gt;&gt;S: <span class="fu">send</span> request <span class="kw">bytes</span></span>
+<span id="cb7-325"><a href="#cb7-325" aria-hidden="true" tabindex="-1"></a>    S-&gt;&gt;C: <span class="fu">send</span> response <span class="kw">bytes</span></span>
+<span id="cb7-326"><a href="#cb7-326" aria-hidden="true" tabindex="-1"></a>    Note over C,S: TCP: connection-oriented, byte stream</span>
+<span id="cb7-327"><a href="#cb7-327" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-328"><a href="#cb7-328" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-329"><a href="#cb7-329" aria-hidden="true" tabindex="-1"></a>With **UDP**, there is no handshake: the client simply `sendto()`s a datagram and the server `recvfrom()`s it. With **TCP**, <span class="in">`connect()`</span>/<span class="in">`accept()`</span> establish the connection, after which <span class="in">`send()`</span>/<span class="in">`recv()`</span> stream bytes. The application sees no packets — only a reliable (TCP) or best-effort (UDP) channel.</span>
+<span id="cb7-330"><a href="#cb7-330" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-331"><a href="#cb7-331" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-332"><a href="#cb7-332" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-333"><a href="#cb7-333" aria-hidden="true" tabindex="-1"></a><span class="fu">## Laboratory: End-to-End Delay and HTTP Page-Load Timing</span></span>
+<span id="cb7-334"><a href="#cb7-334" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-335"><a href="#cb7-335" aria-hidden="true" tabindex="-1"></a><span class="fu">### Nodal Delay and the Bottleneck Throughput</span></span>
+<span id="cb7-336"><a href="#cb7-336" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-337"><a href="#cb7-337" aria-hidden="true" tabindex="-1"></a>The first experiment computes the four delay components for a representative packet and shows the throughput bottleneck along a path.</span>
+<span id="cb7-338"><a href="#cb7-338" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-341"><a href="#cb7-341" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb7-342"><a href="#cb7-342" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb7-343"><a href="#cb7-343" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-344"><a href="#cb7-344" aria-hidden="true" tabindex="-1"></a><span class="co"># --- 1. Nodal delay components for one packet ---</span></span>
+<span id="cb7-345"><a href="#cb7-345" aria-hidden="true" tabindex="-1"></a>L <span class="op">=</span> <span class="dv">1500</span> <span class="op">*</span> <span class="dv">8</span>          <span class="co"># 1500-byte packet in bits</span></span>
+<span id="cb7-346"><a href="#cb7-346" aria-hidden="true" tabindex="-1"></a>R <span class="op">=</span> <span class="fl">100e6</span>             <span class="co"># 100 Mbps link</span></span>
+<span id="cb7-347"><a href="#cb7-347" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> <span class="fl">4000e3</span>            <span class="co"># 4000 km distance</span></span>
+<span id="cb7-348"><a href="#cb7-348" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> <span class="fl">2.0e8</span>             <span class="co"># 2e8 m/s propagation speed</span></span>
+<span id="cb7-349"><a href="#cb7-349" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-350"><a href="#cb7-350" aria-hidden="true" tabindex="-1"></a>d_trans <span class="op">=</span> L <span class="op">/</span> R</span>
+<span id="cb7-351"><a href="#cb7-351" aria-hidden="true" tabindex="-1"></a>d_prop  <span class="op">=</span> d <span class="op">/</span> s</span>
+<span id="cb7-352"><a href="#cb7-352" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== NODAL DELAY (1500 B packet, 100 Mbps, 4000 km fiber) ==="</span>)</span>
+<span id="cb7-353"><a href="#cb7-353" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  transmission L/R : </span><span class="sc">{</span>d_trans<span class="op">*</span><span class="fl">1e3</span><span class="sc">:8.4f}</span><span class="ss"> ms"</span>)</span>
+<span id="cb7-354"><a href="#cb7-354" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  propagation d/s  : </span><span class="sc">{</span>d_prop<span class="op">*</span><span class="fl">1e3</span><span class="sc">:8.4f}</span><span class="ss"> ms"</span>)</span>
+<span id="cb7-355"><a href="#cb7-355" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  transmission + propagation = </span><span class="sc">{</span>(d_trans<span class="op">+</span>d_prop)<span class="op">*</span><span class="fl">1e3</span><span class="sc">:.4f}</span><span class="ss"> ms"</span>)</span>
+<span id="cb7-356"><a href="#cb7-356" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-357"><a href="#cb7-357" aria-hidden="true" tabindex="-1"></a><span class="co"># --- 2. Traffic intensity and queueing blow-up (M/M/1 queueing delay) ---</span></span>
+<span id="cb7-358"><a href="#cb7-358" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== TRAFFIC INTENSITY AND M/M/1 QUEUEING DELAY ==="</span>)</span>
+<span id="cb7-359"><a href="#cb7-359" aria-hidden="true" tabindex="-1"></a>Lpkt <span class="op">=</span> <span class="dv">1500</span> <span class="op">*</span> <span class="dv">8</span></span>
+<span id="cb7-360"><a href="#cb7-360" aria-hidden="true" tabindex="-1"></a>Rlink <span class="op">=</span> <span class="fl">1e6</span></span>
+<span id="cb7-361"><a href="#cb7-361" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> rho <span class="kw">in</span> [<span class="fl">0.2</span>, <span class="fl">0.5</span>, <span class="fl">0.8</span>, <span class="fl">0.9</span>, <span class="fl">0.95</span>, <span class="fl">0.99</span>]:</span>
+<span id="cb7-362"><a href="#cb7-362" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> rho <span class="op">*</span> Rlink <span class="op">/</span> Lpkt                <span class="co"># arrival rate consistent with rho</span></span>
+<span id="cb7-363"><a href="#cb7-363" aria-hidden="true" tabindex="-1"></a>    <span class="co"># mean queueing delay for M/M/1: dq = (rho/R) / (1 - rho) * L ... using service time</span></span>
+<span id="cb7-364"><a href="#cb7-364" aria-hidden="true" tabindex="-1"></a>    service <span class="op">=</span> Lpkt <span class="op">/</span> Rlink</span>
+<span id="cb7-365"><a href="#cb7-365" aria-hidden="true" tabindex="-1"></a>    dq <span class="op">=</span> rho <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> rho) <span class="op">*</span> service</span>
+<span id="cb7-366"><a href="#cb7-366" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  rho=</span><span class="sc">{</span>rho<span class="sc">:4.2f}</span><span class="ss"> -&gt; arrival </span><span class="sc">{</span>a<span class="sc">:7.0f}</span><span class="ss"> pkt/s, queueing delay </span><span class="sc">{</span>dq<span class="op">*</span><span class="fl">1e3</span><span class="sc">:9.3f}</span><span class="ss"> ms"</span>)</span>
+<span id="cb7-367"><a href="#cb7-367" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-368"><a href="#cb7-368" aria-hidden="true" tabindex="-1"></a><span class="co"># --- 3. Bottleneck throughput along a path ---</span></span>
+<span id="cb7-369"><a href="#cb7-369" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== BOTTLENECK THROUGHPUT ==="</span>)</span>
+<span id="cb7-370"><a href="#cb7-370" aria-hidden="true" tabindex="-1"></a>path <span class="op">=</span> {<span class="st">"home Wi-Fi"</span>: <span class="fl">300e6</span>, <span class="st">"access ISP"</span>: <span class="fl">100e6</span>, <span class="st">"regional"</span>: <span class="fl">10e9</span>, <span class="st">"backbone"</span>: <span class="fl">100e9</span>, <span class="st">"server"</span>: <span class="fl">1e9</span>}</span>
+<span id="cb7-371"><a href="#cb7-371" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  links:"</span>, <span class="st">", "</span>.join(<span class="ss">f"</span><span class="sc">{</span>k<span class="sc">}</span><span class="ss">=</span><span class="sc">{</span>v<span class="op">/</span><span class="fl">1e6</span><span class="sc">:.0f}</span><span class="ss">Mbps"</span> <span class="cf">for</span> k, v <span class="kw">in</span> path.items()))</span>
+<span id="cb7-372"><a href="#cb7-372" aria-hidden="true" tabindex="-1"></a>bottleneck <span class="op">=</span> <span class="bu">min</span>(path, key<span class="op">=</span>path.get)</span>
+<span id="cb7-373"><a href="#cb7-373" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  bottleneck = </span><span class="sc">{</span>bottleneck<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>path[bottleneck]<span class="op">/</span><span class="fl">1e6</span><span class="sc">:.0f}</span><span class="ss"> Mbps)"</span>)</span>
+<span id="cb7-374"><a href="#cb7-374" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  end-to-end throughput = </span><span class="sc">{</span>path[bottleneck]<span class="op">/</span><span class="fl">1e6</span><span class="sc">:.0f}</span><span class="ss"> Mbps (not the sum, the min)"</span>)</span>
+<span id="cb7-375"><a href="#cb7-375" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-376"><a href="#cb7-376" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-377"><a href="#cb7-377" aria-hidden="true" tabindex="-1"></a><span class="fu">### HTTP Page-Load Timing: Non-Persistent vs Persistent vs Pipelined</span></span>
+<span id="cb7-378"><a href="#cb7-378" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-379"><a href="#cb7-379" aria-hidden="true" tabindex="-1"></a>The second experiment quantifies how HTTP's connection strategy changes page-load latency as the number of embedded objects grows.</span>
+<span id="cb7-380"><a href="#cb7-380" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-383"><a href="#cb7-383" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb7-384"><a href="#cb7-384" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-http-timing</span></span>
+<span id="cb7-385"><a href="#cb7-385" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "HTTP page-load time in round-trip times (RTTs) as a function of the number of embedded objects, under three connection strategies. Non-persistent connections pay two RTTs per object (one TCP handshake plus one request/response). Persistent connections pay the handshake once and one RTT per object. Pipelined persistent connections fetch all objects in roughly two RTTs after the handshake, decoupling load time from object count."</span></span>
+<span id="cb7-386"><a href="#cb7-386" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-387"><a href="#cb7-387" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb7-388"><a href="#cb7-388" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb7-389"><a href="#cb7-389" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-390"><a href="#cb7-390" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> np.arange(<span class="dv">1</span>, <span class="dv">31</span>)          <span class="co"># number of embedded objects</span></span>
+<span id="cb7-391"><a href="#cb7-391" aria-hidden="true" tabindex="-1"></a><span class="co"># Base HTML page: 1 object. Then N embedded objects.</span></span>
+<span id="cb7-392"><a href="#cb7-392" aria-hidden="true" tabindex="-1"></a><span class="co"># Non-persistent: each object = 1 RTT handshake + 1 RTT request/response = 2 RTT</span></span>
+<span id="cb7-393"><a href="#cb7-393" aria-hidden="true" tabindex="-1"></a>non_persistent <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> (<span class="dv">1</span> <span class="op">+</span> N)</span>
+<span id="cb7-394"><a href="#cb7-394" aria-hidden="true" tabindex="-1"></a><span class="co"># Persistent: 2 RTT for base (handshake + request/response), then 1 RTT per object</span></span>
+<span id="cb7-395"><a href="#cb7-395" aria-hidden="true" tabindex="-1"></a>persistent <span class="op">=</span> <span class="dv">2</span> <span class="op">+</span> N</span>
+<span id="cb7-396"><a href="#cb7-396" aria-hidden="true" tabindex="-1"></a><span class="co"># Pipelined persistent: 2 RTT for base, then ~1 RTT for all pipelined objects (+1)</span></span>
+<span id="cb7-397"><a href="#cb7-397" aria-hidden="true" tabindex="-1"></a>pipelined <span class="op">=</span> <span class="dv">2</span> <span class="op">+</span> <span class="dv">2</span> <span class="op">*</span> np.ones_like(N)</span>
+<span id="cb7-398"><a href="#cb7-398" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-399"><a href="#cb7-399" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>))</span>
+<span id="cb7-400"><a href="#cb7-400" aria-hidden="true" tabindex="-1"></a>ax.plot(N, non_persistent, <span class="st">'o-'</span>, color<span class="op">=</span><span class="st">"#e74c3c"</span>, label<span class="op">=</span><span class="st">"non-persistent (2 RTT/object)"</span>)</span>
+<span id="cb7-401"><a href="#cb7-401" aria-hidden="true" tabindex="-1"></a>ax.plot(N, persistent, <span class="st">'s-'</span>, color<span class="op">=</span><span class="st">"#e67e22"</span>, label<span class="op">=</span><span class="st">"persistent (1 RTT/object)"</span>)</span>
+<span id="cb7-402"><a href="#cb7-402" aria-hidden="true" tabindex="-1"></a>ax.plot(N, pipelined, <span class="st">'^-'</span>, color<span class="op">=</span><span class="st">"#27ae60"</span>, label<span class="op">=</span><span class="st">"pipelined persistent (≈constant)"</span>)</span>
+<span id="cb7-403"><a href="#cb7-403" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"HTTP page-load time vs number of embedded objects"</span>)</span>
+<span id="cb7-404"><a href="#cb7-404" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"number of embedded objects"</span>)</span>
+<span id="cb7-405"><a href="#cb7-405" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"page-load time (RTTs)"</span>)</span>
+<span id="cb7-406"><a href="#cb7-406" aria-hidden="true" tabindex="-1"></a>ax.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)<span class="op">;</span> ax.legend()</span>
+<span id="cb7-407"><a href="#cb7-407" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb7-408"><a href="#cb7-408" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb7-409"><a href="#cb7-409" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-410"><a href="#cb7-410" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== PAGE LOAD TIME (RTTs) ==="</span>)</span>
+<span id="cb7-411"><a href="#cb7-411" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n <span class="kw">in</span> [<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">30</span>]:</span>
+<span id="cb7-412"><a href="#cb7-412" aria-hidden="true" tabindex="-1"></a>    i <span class="op">=</span> n <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb7-413"><a href="#cb7-413" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  objects=</span><span class="sc">{</span>n<span class="sc">:3d}</span><span class="ss">: non-persistent=</span><span class="sc">{</span>non_persistent[i]<span class="sc">:3.0f}</span><span class="ss">  "</span></span>
+<span id="cb7-414"><a href="#cb7-414" aria-hidden="true" tabindex="-1"></a>          <span class="ss">f"persistent=</span><span class="sc">{</span>persistent[i]<span class="sc">:3.0f}</span><span class="ss">  pipelined=</span><span class="sc">{</span>pipelined[i]<span class="sc">:2.0f}</span><span class="ss">"</span>)</span>
+<span id="cb7-415"><a href="#cb7-415" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-416"><a href="#cb7-416" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== WORST-CASE NON-PERSISTENT DELAY FOR A 1 Gbps, 50 ms RTT LINK ==="</span>)</span>
+<span id="cb7-417"><a href="#cb7-417" aria-hidden="true" tabindex="-1"></a>rtt <span class="op">=</span> <span class="fl">50e-3</span></span>
+<span id="cb7-418"><a href="#cb7-418" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">20</span></span>
+<span id="cb7-419"><a href="#cb7-419" aria-hidden="true" tabindex="-1"></a>objects <span class="op">=</span> <span class="dv">1</span> <span class="op">+</span> n</span>
+<span id="cb7-420"><a href="#cb7-420" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> objects <span class="op">*</span> rtt</span>
+<span id="cb7-421"><a href="#cb7-421" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>objects<span class="sc">}</span><span class="ss"> objects x 2 RTT x </span><span class="sc">{</span>rtt<span class="op">*</span><span class="fl">1e3</span><span class="sc">:.0f}</span><span class="ss"> ms = </span><span class="sc">{</span>t<span class="op">*</span><span class="fl">1e3</span><span class="sc">:.0f}</span><span class="ss"> ms just in RTTs"</span>)</span>
+<span id="cb7-422"><a href="#cb7-422" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  (real browsers open parallel connections, cutting this substantially)"</span>)</span>
+<span id="cb7-423"><a href="#cb7-423" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-424"><a href="#cb7-424" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-425"><a href="#cb7-425" aria-hidden="true" tabindex="-1"></a>The lab shows the core lesson of the application layer: **protocol design choices at the application layer dominate user-perceived latency.** HTTP/1.1's persistent connections and HTTP/2/3's multiplexing are not micro-optimizations; they change the slope of the curve.</span>
+<span id="cb7-426"><a href="#cb7-426" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-427"><a href="#cb7-427" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-428"><a href="#cb7-428" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-429"><a href="#cb7-429" aria-hidden="true" tabindex="-1"></a><span class="fu">## Summary</span></span>
+<span id="cb7-430"><a href="#cb7-430" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-431"><a href="#cb7-431" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-432"><a href="#cb7-432" aria-hidden="true" tabindex="-1"></a>\begin{aligned}</span>
+<span id="cb7-433"><a href="#cb7-433" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Internet: } &amp;&amp; \text{edge runs applications, core moves packets; protocols define format and actions.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-434"><a href="#cb7-434" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Core: } &amp;&amp; \text{packet switching multiplexes statistically; store-and-forward adds } N\cdot L/R. <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-435"><a href="#cb7-435" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Delay: } &amp;&amp; d_{\text{nodal}} = d_{\text{proc}} + d_{\text{queue}} + d_{\text{trans}} + d_{\text{prop}};\quad \rho = La/R. <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-436"><a href="#cb7-436" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Throughput: } &amp;&amp; \min(R_1,\dots,R_N) \text{ — the bottleneck link rules.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-437"><a href="#cb7-437" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Layering: } &amp;&amp; \text{application, transport, network, link, physical; encapsulation all the way down.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-438"><a href="#cb7-438" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Applications: } &amp;&amp; \text{HTTP (persistent, caching, cookies), DNS, SMTP/IMAP, P2P, CDNs, sockets.}</span>
+<span id="cb7-439"><a href="#cb7-439" aria-hidden="true" tabindex="-1"></a>\end{aligned}</span>
+<span id="cb7-440"><a href="#cb7-440" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-441"><a href="#cb7-441" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-442"><a href="#cb7-442" aria-hidden="true" tabindex="-1"></a>The application layer is where the user meets the network, and its protocols — HTTP, DNS, SMTP, and their peers — are the highest layer of the top-down story. Having seen *what* applications need (reliability, ordering, throughput, low latency), we descend in [Part 2](computer-networking-top-down-part-2-transport-layer.qmd) to the **transport layer**, which is where those needs are actually met.</span>
+<span id="cb7-443"><a href="#cb7-443" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-444"><a href="#cb7-444" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-445"><a href="#cb7-445" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-446"><a href="#cb7-446" aria-hidden="true" tabindex="-1"></a><span class="fu">## Curated References and Further Reading</span></span>
+<span id="cb7-447"><a href="#cb7-447" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-448"><a href="#cb7-448" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Kurose, J. &amp; Ross, K. (2021).** *Computer Networking: A Top-Down Approach*, 8th ed. Pearson. (Primary source: Chapters 1–2.)</span>
+<span id="cb7-449"><a href="#cb7-449" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Berners-Lee, T., Fielding, R. &amp; Frystyk, H. (1996).** *Hypertext Transfer Protocol — HTTP/1.0.* RFC 1945.</span>
+<span id="cb7-450"><a href="#cb7-450" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Fielding, R. et al. (1999/2014).** *HTTP/1.1.* RFC 2616 / RFC 7230–7235.</span>
+<span id="cb7-451"><a href="#cb7-451" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Belshe, M. et al. (2015).** *Hypertext Transfer Protocol Version 2 (HTTP/2).* RFC 7540.</span>
+<span id="cb7-452"><a href="#cb7-452" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>**Mockapetris, P. (1987).** *Domain Names — Concepts and Facilities.* RFC 1034.</span>
+<span id="cb7-453"><a href="#cb7-453" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>**Mockapetris, P. (2026/1987).** *Domain Names — Implementation and Specification.* RFC 1035.</span>
+<span id="cb7-454"><a href="#cb7-454" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>**Bishop, M. (2021).** *Computer Security: Art and Science*, 2nd ed. Addison-Wesley. (Network threat models.)</span>
+<span id="cb7-455"><a href="#cb7-455" aria-hidden="true" tabindex="-1"></a><span class="ss">8. </span>**Cohen, B. (2003).** *Incentives Build Robustness in BitTorrent.* Workshop on Economics of Peer-to-Peer Systems.</span>
+<span id="cb7-456"><a href="#cb7-456" aria-hidden="true" tabindex="-1"></a><span class="ss">9. </span>**rfc-editor.org and IANA registries.** Authoritative protocol specifications and port assignments.</span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2026 Igor Kan</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

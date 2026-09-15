@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Igor Kan">
+<meta name="dcterms.date" content="2026-09-14">
+<meta name="description" content="A first-principles treatment of the transport layer following Kurose and Ross. It covers multiplexing and demultiplexing, the UDP segment and checksum, and then builds reliable data transfer from scratch: rdt 1.0 through 3.0 with ACKs, sequence numbers, timers, and pipelining; Go-Back-N and Selective Repeat; the full TCP segment structure; connection management with the three-way handshake and teardown; sequence and acknowledgment numbers; adaptive retransmission timers (Jacobson/Karels RTT estimation, Karn’s algorithm) and fast retransmit; sliding-window flow control; the causes and costs of congestion; TCP Tahoe, Reno, slow start, congestion avoidance, fast recovery, and AIMD fairness; the Mathis throughput model; modern congestion control with CUBIC, BBR, and ECN; and QUIC, with an executable Python laboratory that simulates TCP Reno’s congestion window, computes transfer efficiency, and plots throughput against loss.">
+
+<title>Computer Networking: A Top-Down Approach, Part 2 — The Transport Layer – My Writings</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-a515e054079012129989d5397ee3c9c1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">My Writings</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../literature/index.html"> 
+<span class="menu-text">Literature</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../chapters/index.html"> 
+<span class="menu-text">Chapters</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../tutorials/index.html"> 
+<span class="menu-text">Tutorials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-transport-layers-job" id="toc-the-transport-layers-job" class="nav-link active" data-scroll-target="#the-transport-layers-job"><span class="header-section-number">1</span> The Transport Layer’s Job</a></li>
+  <li><a href="#multiplexing-and-demultiplexing" id="toc-multiplexing-and-demultiplexing" class="nav-link" data-scroll-target="#multiplexing-and-demultiplexing"><span class="header-section-number">2</span> Multiplexing and Demultiplexing</a></li>
+  <li><a href="#udp" id="toc-udp" class="nav-link" data-scroll-target="#udp"><span class="header-section-number">3</span> UDP</a></li>
+  <li><a href="#principles-of-reliable-data-transfer" id="toc-principles-of-reliable-data-transfer" class="nav-link" data-scroll-target="#principles-of-reliable-data-transfer"><span class="header-section-number">4</span> Principles of Reliable Data Transfer</a>
+  <ul>
+  <li><a href="#rdt-1.0-perfectly-reliable-channel" id="toc-rdt-1.0-perfectly-reliable-channel" class="nav-link" data-scroll-target="#rdt-1.0-perfectly-reliable-channel"><span class="header-section-number">4.1</span> rdt 1.0: Perfectly Reliable Channel</a></li>
+  <li><a href="#rdt-2.0-channels-with-bit-errors" id="toc-rdt-2.0-channels-with-bit-errors" class="nav-link" data-scroll-target="#rdt-2.0-channels-with-bit-errors"><span class="header-section-number">4.2</span> rdt 2.0: Channels with Bit Errors</a></li>
+  <li><a href="#rdt-2.1-sequence-numbers-to-the-rescue" id="toc-rdt-2.1-sequence-numbers-to-the-rescue" class="nav-link" data-scroll-target="#rdt-2.1-sequence-numbers-to-the-rescue"><span class="header-section-number">4.3</span> rdt 2.1: Sequence Numbers to the Rescue</a></li>
+  <li><a href="#rdt-2.2-nak-free" id="toc-rdt-2.2-nak-free" class="nav-link" data-scroll-target="#rdt-2.2-nak-free"><span class="header-section-number">4.4</span> rdt 2.2: NAK-Free</a></li>
+  <li><a href="#rdt-3.0-channels-with-errors-and-loss" id="toc-rdt-3.0-channels-with-errors-and-loss" class="nav-link" data-scroll-target="#rdt-3.0-channels-with-errors-and-loss"><span class="header-section-number">4.5</span> rdt 3.0: Channels with Errors and Loss</a></li>
+  </ul></li>
+  <li><a href="#pipelining-go-back-n-and-selective-repeat" id="toc-pipelining-go-back-n-and-selective-repeat" class="nav-link" data-scroll-target="#pipelining-go-back-n-and-selective-repeat"><span class="header-section-number">5</span> Pipelining: Go-Back-N and Selective Repeat</a>
+  <ul>
+  <li><a href="#go-back-n-gbn" id="toc-go-back-n-gbn" class="nav-link" data-scroll-target="#go-back-n-gbn"><span class="header-section-number">5.1</span> Go-Back-N (GBN)</a></li>
+  <li><a href="#selective-repeat-sr" id="toc-selective-repeat-sr" class="nav-link" data-scroll-target="#selective-repeat-sr"><span class="header-section-number">5.2</span> Selective Repeat (SR)</a></li>
+  </ul></li>
+  <li><a href="#tcp" id="toc-tcp" class="nav-link" data-scroll-target="#tcp"><span class="header-section-number">6</span> TCP</a>
+  <ul>
+  <li><a href="#the-tcp-segment" id="toc-the-tcp-segment" class="nav-link" data-scroll-target="#the-tcp-segment"><span class="header-section-number">6.1</span> The TCP Segment</a></li>
+  <li><a href="#connection-management-the-three-way-handshake" id="toc-connection-management-the-three-way-handshake" class="nav-link" data-scroll-target="#connection-management-the-three-way-handshake"><span class="header-section-number">6.2</span> Connection Management: The Three-Way Handshake</a></li>
+  <li><a href="#rtt-estimation-and-timeouts" id="toc-rtt-estimation-and-timeouts" class="nav-link" data-scroll-target="#rtt-estimation-and-timeouts"><span class="header-section-number">6.3</span> RTT Estimation and Timeouts</a></li>
+  <li><a href="#fast-retransmit" id="toc-fast-retransmit" class="nav-link" data-scroll-target="#fast-retransmit"><span class="header-section-number">6.4</span> Fast Retransmit</a></li>
+  </ul></li>
+  <li><a href="#flow-control" id="toc-flow-control" class="nav-link" data-scroll-target="#flow-control"><span class="header-section-number">7</span> Flow Control</a></li>
+  <li><a href="#congestion-control" id="toc-congestion-control" class="nav-link" data-scroll-target="#congestion-control"><span class="header-section-number">8</span> Congestion Control</a>
+  <ul>
+  <li><a href="#tcp-tahoe-and-reno" id="toc-tcp-tahoe-and-reno" class="nav-link" data-scroll-target="#tcp-tahoe-and-reno"><span class="header-section-number">8.1</span> TCP Tahoe and Reno</a></li>
+  <li><a href="#aimd-and-fairness" id="toc-aimd-and-fairness" class="nav-link" data-scroll-target="#aimd-and-fairness"><span class="header-section-number">8.2</span> AIMD and Fairness</a></li>
+  <li><a href="#the-mathis-throughput-model" id="toc-the-mathis-throughput-model" class="nav-link" data-scroll-target="#the-mathis-throughput-model"><span class="header-section-number">8.3</span> The Mathis Throughput Model</a></li>
+  <li><a href="#the-modern-era-cubic-bbr-and-ecn" id="toc-the-modern-era-cubic-bbr-and-ecn" class="nav-link" data-scroll-target="#the-modern-era-cubic-bbr-and-ecn"><span class="header-section-number">8.4</span> The Modern Era: CUBIC, BBR, and ECN</a></li>
+  </ul></li>
+  <li><a href="#laboratory-reliable-transfer-and-congestion-control" id="toc-laboratory-reliable-transfer-and-congestion-control" class="nav-link" data-scroll-target="#laboratory-reliable-transfer-and-congestion-control"><span class="header-section-number">9</span> Laboratory: Reliable Transfer and Congestion Control</a>
+  <ul>
+  <li><a href="#stop-and-wait-vs-pipelining" id="toc-stop-and-wait-vs-pipelining" class="nav-link" data-scroll-target="#stop-and-wait-vs-pipelining"><span class="header-section-number">9.1</span> Stop-and-Wait vs Pipelining</a></li>
+  <li><a href="#tcp-reno-sawtooth-and-the-mathis-model" id="toc-tcp-reno-sawtooth-and-the-mathis-model" class="nav-link" data-scroll-target="#tcp-reno-sawtooth-and-the-mathis-model"><span class="header-section-number">9.2</span> TCP Reno Sawtooth and the Mathis Model</a></li>
+  <li><a href="#pipelining-efficiency-gbn-vs-sr" id="toc-pipelining-efficiency-gbn-vs-sr" class="nav-link" data-scroll-target="#pipelining-efficiency-gbn-vs-sr"><span class="header-section-number">9.3</span> Pipelining Efficiency: GBN vs SR</a></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary"><span class="header-section-number">10</span> Summary</a></li>
+  <li><a href="#curated-references-and-further-reading" id="toc-curated-references-and-further-reading" class="nav-link" data-scroll-target="#curated-references-and-further-reading"><span class="header-section-number">11</span> Curated References and Further Reading</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title">Computer Networking: A Top-Down Approach, Part 2 — The Transport Layer</h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
+<p class="subtitle lead">Multiplexing, UDP, the principles of reliable data transfer, pipelining with Go-Back-N and Selective Repeat, TCP connection management and RTT estimation, flow control, and congestion control from Tahoe and Reno through CUBIC and BBR to QUIC — following Kurose &amp; Ross, Chapter 3</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Computer Science</div>
+    <div class="quarto-category">Networking</div>
+    <div class="quarto-category">Transport Layer</div>
+    <div class="quarto-category">TCP</div>
+    <div class="quarto-category">UDP</div>
+    <div class="quarto-category">Congestion Control</div>
+    <div class="quarto-category">Protocols</div>
+    <div class="quarto-category">Distributed Systems</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    A first-principles treatment of the transport layer following Kurose and Ross. It covers multiplexing and demultiplexing, the UDP segment and checksum, and then builds reliable data transfer from scratch: rdt 1.0 through 3.0 with ACKs, sequence numbers, timers, and pipelining; Go-Back-N and Selective Repeat; the full TCP segment structure; connection management with the three-way handshake and teardown; sequence and acknowledgment numbers; adaptive retransmission timers (Jacobson/Karels RTT estimation, Karn’s algorithm) and fast retransmit; sliding-window flow control; the causes and costs of congestion; TCP Tahoe, Reno, slow start, congestion avoidance, fast recovery, and AIMD fairness; the Mathis throughput model; modern congestion control with CUBIC, BBR, and ECN; and QUIC, with an executable Python laboratory that simulates TCP Reno’s congestion window, computes transfer efficiency, and plots throughput against loss.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Igor Kan </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 14, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><em>The network layer delivers datagrams host-to-host. The transport layer delivers them <strong>process-to-process</strong> — and, in TCP’s case, turns an unreliable, reordering, best-effort channel into a reliable, ordered byte stream.</em></p>
+<p>This is <strong>Part 2</strong> of a three-part series following Kurose &amp; Ross, <em>Computer Networking: A Top-Down Approach</em>. Having seen in <a href="../../posts/computer-science/computer-networking-top-down-part-1-foundations-and-application-layer.html">Part 1</a> what applications demand, we now descend to the layer that satisfies those demands: <strong>Chapter 3, The Transport Layer</strong>.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>The Series
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li><a href="../../posts/computer-science/computer-networking-top-down-part-1-foundations-and-application-layer.html">Part 1 — Foundations and the Application Layer</a></li>
+<li><strong>Part 2 — The Transport Layer</strong> (this article)</li>
+<li><a href="../../posts/computer-science/computer-networking-top-down-part-3-network-layer-data-and-control-plane.html">Part 3 — The Network Layer: Data Plane and Control Plane</a></li>
+</ul>
+</div>
+</div>
+</div>
+<hr>
+<section id="the-transport-layers-job" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="the-transport-layers-job"><span class="header-section-number">1</span> The Transport Layer’s Job</h2>
+<p>The network layer provides <strong>logical communication between hosts</strong>. The transport layer extends that to <strong>logical communication between processes</strong>, and adds the services applications actually need: reliability, ordering, flow control, and congestion control.</p>
+<p>Two protocols dominate:</p>
+<ul>
+<li><strong>UDP</strong> — connectionless, unreliable, minimal. It offers little beyond multiplexing, demultiplexing, and an optional checksum: the “null” transport.</li>
+<li><strong>TCP</strong> — connection-oriented, reliable, ordered byte stream with flow and congestion control.</li>
+</ul>
+<p>The transport layer lives <strong>only in end systems</strong>; routers in the core act on network-layer datagrams and do not implement transport. This is the key architectural boundary: <strong>intelligence at the edge, simplicity in the core.</strong></p>
+<hr>
+</section>
+<section id="multiplexing-and-demultiplexing" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="multiplexing-and-demultiplexing"><span class="header-section-number">2</span> Multiplexing and Demultiplexing</h2>
+<p>A single host runs many processes; the transport layer must direct incoming segments to the right one. It does so with <strong>port numbers</strong>.</p>
+<ul>
+<li><strong>Multiplexing</strong> (sender): gather data from multiple sockets, add transport headers, pass segments down.</li>
+<li><strong>Demultiplexing</strong> (receiver): use header fields to deliver each segment to the correct socket.</li>
+</ul>
+<p>A <strong>UDP socket</strong> is identified by a 2-tuple: <code>(destination IP, destination port)</code>. Two datagrams with the same destination port but different source addresses go to the same socket.</p>
+<p>A <strong>TCP socket</strong> is identified by a 4-tuple: <code>(source IP, source port, destination IP, destination port)</code>. This is why a server can distinguish multiple simultaneous clients on port 443 — each connection has a distinct 4-tuple.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Transport</th>
+<th>Demux key</th>
+<th>Socket model</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>UDP</td>
+<td><code>(dest IP, dest port)</code></td>
+<td>one socket may receive from many sources</td>
+</tr>
+<tr class="even">
+<td>TCP</td>
+<td><code>(src IP, src port, dest IP, dest port)</code></td>
+<td>one socket per connection</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="udp" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="udp"><span class="header-section-number">3</span> UDP</h2>
+<p>UDP is a thin veneer over IP. Its segment has four 2-byte fields — source port, destination port, length, checksum — an 8-byte header, followed by payload.</p>
+<ul>
+<li><strong>Connectionless:</strong> no handshake, no connection state.</li>
+<li><strong>No reliability, ordering, or congestion control:</strong> datagrams may be lost, duplicated, or reordered.</li>
+<li><strong>Checksum:</strong> end-to-end detection of bit errors in the segment (including a pseudo-header with IP addresses), but no correction or retransmission.</li>
+</ul>
+<p>Why use UDP at all?</p>
+<ul>
+<li><strong>Fine-grained control:</strong> the application decides what to send and when, without TCP’s congestion throttling (important for real-time media that prefers loss to delay).</li>
+<li><strong>No connection setup:</strong> no handshake RTT — critical for DNS and for protocols like QUIC that build reliability themselves.</li>
+<li><strong>No connection state:</strong> a server can support far more active clients.</li>
+<li><strong>Small header:</strong> 8 bytes versus TCP’s minimum 20.</li>
+</ul>
+<p>DNS, DHCP, RIP, VoIP, online games, and QUIC all use UDP.</p>
+<hr>
+</section>
+<section id="principles-of-reliable-data-transfer" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="principles-of-reliable-data-transfer"><span class="header-section-number">4</span> Principles of Reliable Data Transfer</h2>
+<p>Reliability is built from a small toolkit: <strong>checksums</strong> (detect errors), <strong>acknowledgments (ACK) and negative acknowledgments (NAK)</strong> (report outcomes), <strong>sequence numbers</strong> (identify and order), <strong>timers</strong> (recover from loss), and <strong>windows</strong> (enable pipelining). We build it up incrementally, as the textbook does.</p>
+<section id="rdt-1.0-perfectly-reliable-channel" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="rdt-1.0-perfectly-reliable-channel"><span class="header-section-number">4.1</span> rdt 1.0: Perfectly Reliable Channel</h3>
+<p>Assume no bit errors and no loss. The sender sends, the receiver receives. Trivial.</p>
+</section>
+<section id="rdt-2.0-channels-with-bit-errors" class="level3" data-number="4.2">
+<h3 data-number="4.2" class="anchored" data-anchor-id="rdt-2.0-channels-with-bit-errors"><span class="header-section-number">4.2</span> rdt 2.0: Channels with Bit Errors</h3>
+<p>Bits can flip. The receiver returns <strong>ACK</strong> or <strong>NAK</strong>. This introduces a fatal flaw: the ACK/NAK itself can be corrupted. The sender cannot know whether to retransmit.</p>
+</section>
+<section id="rdt-2.1-sequence-numbers-to-the-rescue" class="level3" data-number="4.3">
+<h3 data-number="4.3" class="anchored" data-anchor-id="rdt-2.1-sequence-numbers-to-the-rescue"><span class="header-section-number">4.3</span> rdt 2.1: Sequence Numbers to the Rescue</h3>
+<p>Add a 1-bit <strong>sequence number</strong> to each packet. The sender alternates 0 and 1; the receiver tracks the expected number and can detect duplicates. A corrupted ACK/NAK is treated as a NAK (retransmit), and duplicate packets are ignored via the sequence number.</p>
+</section>
+<section id="rdt-2.2-nak-free" class="level3" data-number="4.4">
+<h3 data-number="4.4" class="anchored" data-anchor-id="rdt-2.2-nak-free"><span class="header-section-number">4.4</span> rdt 2.2: NAK-Free</h3>
+<p>Drop NAKs entirely: the receiver ACKs the last correctly received packet. A duplicate ACK tells the sender the current packet was lost or corrupted — same information, one fewer message type.</p>
+</section>
+<section id="rdt-3.0-channels-with-errors-and-loss" class="level3" data-number="4.5">
+<h3 data-number="4.5" class="anchored" data-anchor-id="rdt-3.0-channels-with-errors-and-loss"><span class="header-section-number">4.5</span> rdt 3.0: Channels with Errors and Loss</h3>
+<p>Losses are detected with a <strong>countdown timer</strong>. If no ACK arrives before timeout, retransmit. This is <strong>stop-and-wait</strong>, and it is correct — but catastrophically slow, because the sender idles while the ACK travels back.</p>
+<p>The utilization of stop-and-wait is:</p>
+<p><span class="math display">\[
+U_{\text{stop-and-wait}} = \frac{L/R}{RTT + L/R}
+\]</span></p>
+<p>For a 1 Gbps link, 30 ms RTT, and a 1000-byte packet, <span class="math inline">\(U \approx 0.00027\)</span> — <strong>0.027% utilization.</strong> The network sits idle 99.97% of the time. This is the motivation for pipelining.</p>
+<hr>
+</section>
+</section>
+<section id="pipelining-go-back-n-and-selective-repeat" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="pipelining-go-back-n-and-selective-repeat"><span class="header-section-number">5</span> Pipelining: Go-Back-N and Selective Repeat</h2>
+<p>Pipelining allows multiple in-flight, unacknowledged packets. It requires <strong>sequence-number ranges</strong> and <strong>buffering</strong> at the sender (and possibly receiver).</p>
+<section id="go-back-n-gbn" class="level3" data-number="5.1">
+<h3 data-number="5.1" class="anchored" data-anchor-id="go-back-n-gbn"><span class="header-section-number">5.1</span> Go-Back-N (GBN)</h3>
+<ul>
+<li>The sender maintains a <strong>window of size <span class="math inline">\(N\)</span></strong> of consecutive unacknowledged packets.</li>
+<li>The receiver is <strong>cumulative</strong>: it ACKs the highest in-order packet; out-of-order packets are discarded.</li>
+<li>On timeout, the sender retransmits <strong>all</strong> packets from the lost one onward — hence “go back N.”</li>
+</ul>
+<p>Cumulative ACKs can be lost safely: a later ACK implies earlier ones. But a single loss wastes bandwidth by resending correctly received packets.</p>
+</section>
+<section id="selective-repeat-sr" class="level3" data-number="5.2">
+<h3 data-number="5.2" class="anchored" data-anchor-id="selective-repeat-sr"><span class="header-section-number">5.2</span> Selective Repeat (SR)</h3>
+<ul>
+<li>The receiver <strong>buffers</strong> out-of-order packets and ACKs each one individually.</li>
+<li>The sender retransmits <strong>only</strong> the lost packet, using per-packet timers.</li>
+<li>Window size must satisfy <span class="math inline">\(N \le 2^{k-1}\)</span> for a <span class="math inline">\(k\)</span>-bit sequence number, to avoid ambiguity between new and retransmitted packets.</li>
+</ul>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>Go-Back-N</th>
+<th>Selective Repeat</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Receiver buffering</td>
+<td>none (discards OOO)</td>
+<td>buffers out-of-order</td>
+</tr>
+<tr class="even">
+<td>ACK style</td>
+<td>cumulative</td>
+<td>individual</td>
+</tr>
+<tr class="odd">
+<td>Retransmission</td>
+<td>from loss onward</td>
+<td>only lost packets</td>
+</tr>
+<tr class="even">
+<td>Timers</td>
+<td>one (oldest)</td>
+<td>one per outstanding packet</td>
+</tr>
+<tr class="odd">
+<td>Efficiency under loss</td>
+<td>lower</td>
+<td>higher</td>
+</tr>
+<tr class="even">
+<td>Complexity</td>
+<td>lower</td>
+<td>higher</td>
+</tr>
+</tbody>
+</table>
+<p>Pipelining raises utilization to approximately:</p>
+<p><span class="math display">\[
+U_{\text{pipelined}} = \frac{N \cdot L/R}{RTT + L/R}
+\]</span></p>
+<p>enabling full-link utilization once <span class="math inline">\(N \ge RTT \cdot R / L\)</span>.</p>
+<hr>
+</section>
+</section>
+<section id="tcp" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="tcp"><span class="header-section-number">6</span> TCP</h2>
+<p>TCP is a <strong>connection-oriented, reliable, in-order byte-stream</strong> protocol with flow and congestion control.</p>
+<section id="the-tcp-segment" class="level3" data-number="6.1">
+<h3 data-number="6.1" class="anchored" data-anchor-id="the-tcp-segment"><span class="header-section-number">6.1</span> The TCP Segment</h3>
+<p>Key fields:</p>
+<ul>
+<li><strong>Source/destination ports</strong> (16 bits each).</li>
+<li><strong>Sequence number</strong> — byte-stream number of the first data byte in the segment.</li>
+<li><strong>Acknowledgment number</strong> — the next byte the receiver expects (cumulative).</li>
+<li><strong>Header length, flags</strong> (<code>SYN</code>, <code>ACK</code>, <code>FIN</code>, <code>RST</code>, <code>PSH</code>, <code>URG</code>), <strong>receive window</strong> (<code>rwnd</code>).</li>
+<li><strong>Checksum</strong>, <strong>urgent pointer</strong>, and <strong>options</strong> (MSS, window scaling, SACK, timestamps).</li>
+</ul>
+<p>TCP numbers <strong>bytes, not packets</strong> — the essential difference from the rdt abstractions, and the reason ACKs are cumulative over a byte stream.</p>
+</section>
+<section id="connection-management-the-three-way-handshake" class="level3" data-number="6.2">
+<h3 data-number="6.2" class="anchored" data-anchor-id="connection-management-the-three-way-handshake"><span class="header-section-number">6.2</span> Connection Management: The Three-Way Handshake</h3>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">sequenceDiagram
+    participant C as Client
+    participant S as Server
+    Note over C,S: Connection establishment (three-way handshake)
+    C-&gt;&gt;S: SYN, seq=x
+    S-&gt;&gt;C: SYN-ACK, seq=y, ack=x+1
+    C-&gt;&gt;S: ACK, ack=y+1
+    Note over C,S: Data transfer (full duplex, byte stream)
+    C-&gt;&gt;S: data (seq=x+1)
+    S-&gt;&gt;C: ACK + data
+    Note over C,S: Connection teardown
+    C-&gt;&gt;S: FIN
+    S-&gt;&gt;C: ACK
+    S-&gt;&gt;C: FIN
+    C-&gt;&gt;S: ACK
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>The initial sequence numbers are chosen randomly to prevent old duplicate connections from being mistaken for new ones. The <strong>MSS</strong> (maximum segment size) is negotiated so segments fit the path MTU without IP fragmentation.</p>
+</section>
+<section id="rtt-estimation-and-timeouts" class="level3" data-number="6.3">
+<h3 data-number="6.3" class="anchored" data-anchor-id="rtt-estimation-and-timeouts"><span class="header-section-number">6.3</span> RTT Estimation and Timeouts</h3>
+<p>The retransmission timeout must adapt to the path. TCP uses an <strong>exponentially weighted moving average</strong>:</p>
+<p><span class="math display">\[
+\text{EstimatedRTT} = (1-\alpha)\,\text{EstimatedRTT} + \alpha\,\text{SampleRTT}, \quad \alpha = 1/8
+\]</span></p>
+<p><span class="math display">\[
+\text{DevRTT} = (1-\beta)\,\text{DevRTT} + \beta\,|\text{SampleRTT} - \text{EstimatedRTT}|, \quad \beta = 1/4
+\]</span></p>
+<p><span class="math display">\[
+\text{TimeoutInterval} = \text{EstimatedRTT} + 4\cdot\text{DevRTT}
+\]</span></p>
+<p>This is the <strong>Jacobson/Karels</strong> algorithm. <strong>Karn’s algorithm</strong> resolves the retransmission ambiguity: do not use RTT samples from retransmitted segments, and double the timeout on each retransmission (exponential backoff).</p>
+</section>
+<section id="fast-retransmit" class="level3" data-number="6.4">
+<h3 data-number="6.4" class="anchored" data-anchor-id="fast-retransmit"><span class="header-section-number">6.4</span> Fast Retransmit</h3>
+<p>Waiting for a timeout is slow. <strong>Triple duplicate ACKs</strong> (four ACKs for the same byte) signal a lost segment; the sender retransmits immediately without waiting for the timer. This is the foundation of Reno’s fast recovery.</p>
+<hr>
+</section>
+</section>
+<section id="flow-control" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="flow-control"><span class="header-section-number">7</span> Flow Control</h2>
+<p>TCP prevents a fast sender from overflowing a slow receiver using a <strong>sliding window</strong> governed by the receiver-advertised <strong>receive window</strong> (<code>rwnd</code>): the sender never has more unacknowledged data than <code>rwnd</code> (and the congestion window). The receiver’s buffer size and the application’s read rate determine <code>rwnd</code>; a zero window pauses the sender.</p>
+<p>Flow control protects the <strong>receiver</strong>; congestion control protects the <strong>network</strong>. They are distinct problems solved by distinct mechanisms.</p>
+<hr>
+</section>
+<section id="congestion-control" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="congestion-control"><span class="header-section-number">8</span> Congestion Control</h2>
+<p>Congestion occurs when the offered load exceeds network capacity. Its <strong>costs</strong> are queueing delay, packet loss, and wasted upstream transmission of packets later dropped.</p>
+<section id="tcp-tahoe-and-reno" class="level3" data-number="8.1">
+<h3 data-number="8.1" class="anchored" data-anchor-id="tcp-tahoe-and-reno"><span class="header-section-number">8.1</span> TCP Tahoe and Reno</h3>
+<p>The congestion window (<code>cwnd</code>) limits in-flight data. Two classic algorithms:</p>
+<ul>
+<li><strong>Slow start:</strong> <code>cwnd</code> begins at 1 MSS and <strong>doubles each RTT</strong> until <code>ssthresh</code> or loss.</li>
+<li><strong>Congestion avoidance:</strong> after <code>ssthresh</code>, <code>cwnd</code> grows by ~1 MSS per RTT (<strong>additive increase</strong>).</li>
+</ul>
+<p>On loss:</p>
+<ul>
+<li><strong>Tahoe:</strong> set <code>ssthresh = cwnd/2</code>, <code>cwnd = 1</code>, slow start again.</li>
+<li><strong>Reno:</strong> same on timeout, but on triple duplicate ACKs, <strong>fast recovery</strong> — set <code>ssthresh = cwnd/2</code>, <code>cwnd = ssthresh + 3</code>, and continue additive increase without dropping to 1.</li>
+</ul>
+</section>
+<section id="aimd-and-fairness" class="level3" data-number="8.2">
+<h3 data-number="8.2" class="anchored" data-anchor-id="aimd-and-fairness"><span class="header-section-number">8.2</span> AIMD and Fairness</h3>
+<p>Reno’s behavior is <strong>Additive Increase, Multiplicative Decrease (AIMD)</strong>: add one MSS per RTT on success, halve on loss. This creates the characteristic <strong>sawtooth</strong> and drives multiple competing flows toward <strong>fairness</strong>: flows that gain more share are penalized proportionally, so rates converge near equal.</p>
+</section>
+<section id="the-mathis-throughput-model" class="level3" data-number="8.3">
+<h3 data-number="8.3" class="anchored" data-anchor-id="the-mathis-throughput-model"><span class="header-section-number">8.3</span> The Mathis Throughput Model</h3>
+<p>For a TCP flow with MSS <span class="math inline">\(M\)</span>, round-trip time <span class="math inline">\(RTT\)</span>, and loss probability <span class="math inline">\(p\)</span>, a well-known approximation is:</p>
+<p><span class="math display">\[
+\text{BW} \approx \frac{M}{RTT} \cdot \frac{C}{\sqrt{p}}, \quad C \approx 1.22
+\]</span></p>
+<p>Throughput falls only as <span class="math inline">\(1/\sqrt{p}\)</span> — which is why TCP survives on lossy links, and why long fat networks (high RTT) need larger windows.</p>
+</section>
+<section id="the-modern-era-cubic-bbr-and-ecn" class="level3" data-number="8.4">
+<h3 data-number="8.4" class="anchored" data-anchor-id="the-modern-era-cubic-bbr-and-ecn"><span class="header-section-number">8.4</span> The Modern Era: CUBIC, BBR, and ECN</h3>
+<ul>
+<li><strong>CUBIC (Linux default):</strong> grows <code>cwnd</code> as a cubic function of time since the last loss, making recovery faster on high-bandwidth, high-RTT paths.</li>
+<li><strong>BBR (Google):</strong> models the bottleneck bandwidth and minimum RTT rather than reacting to loss, improving throughput on lossy paths and reducing bufferbloat.</li>
+<li><strong>ECN (Explicit Congestion Notification):</strong> routers mark packets instead of dropping them, letting TCP react before loss.</li>
+<li><strong>QUIC:</strong> a UDP-based transport with its own reliability, congestion control, stream multiplexing, and 0-RTT/1-RTT handshakes, avoiding TCP head-of-line blocking and enabling faster connection setup.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="laboratory-reliable-transfer-and-congestion-control" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="laboratory-reliable-transfer-and-congestion-control"><span class="header-section-number">9</span> Laboratory: Reliable Transfer and Congestion Control</h2>
+<section id="stop-and-wait-vs-pipelining" class="level3" data-number="9.1">
+<h3 data-number="9.1" class="anchored" data-anchor-id="stop-and-wait-vs-pipelining"><span class="header-section-number">9.1</span> Stop-and-Wait vs Pipelining</h3>
+<p>First, quantify why pipelining matters by computing link utilization.</p>
+<div id="62fb345d" class="cell" data-execution_count="1">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>MSS <span class="op">=</span> <span class="dv">1000</span> <span class="op">*</span> <span class="dv">8</span>            <span class="co"># 1000-byte segments in bits</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>R <span class="op">=</span> <span class="fl">1e9</span>                   <span class="co"># 1 Gbps</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>RTTs <span class="op">=</span> [<span class="fl">1e-3</span>, <span class="fl">10e-3</span>, <span class="fl">30e-3</span>, <span class="fl">100e-3</span>]</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== LINK UTILIZATION: STOP-AND-WAIT VS PIPELINED ==="</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'RTT(ms)'</span><span class="sc">:&gt;8}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'stop&amp;wait'</span><span class="sc">:&gt;12}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'N=10'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'N=100'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'N=1000'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'req N'</span><span class="sc">:&gt;8}</span><span class="ss">"</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> rtt <span class="kw">in</span> RTTs:</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    base <span class="op">=</span> MSS <span class="op">/</span> R</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    u_sw <span class="op">=</span> base <span class="op">/</span> (rtt <span class="op">+</span> base)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    row <span class="op">=</span> []</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> N <span class="kw">in</span> [<span class="dv">10</span>, <span class="dv">100</span>, <span class="dv">1000</span>]:</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        u <span class="op">=</span> <span class="bu">min</span>(<span class="fl">1.0</span>, (N <span class="op">*</span> base) <span class="op">/</span> (rtt <span class="op">+</span> base))</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        row.append(u)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    reqN <span class="op">=</span> <span class="bu">int</span>(np.ceil((rtt <span class="op">+</span> base) <span class="op">/</span> base)) <span class="cf">if</span> (rtt <span class="op">+</span> base) <span class="op">&gt;</span> base <span class="cf">else</span> <span class="dv">1</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>rtt<span class="op">*</span><span class="fl">1e3</span><span class="sc">:8.1f}</span><span class="ss"> </span><span class="sc">{</span>u_sw<span class="op">*</span><span class="dv">100</span><span class="sc">:11.3f}</span><span class="ss">% </span><span class="sc">{</span>row[<span class="dv">0</span>]<span class="op">*</span><span class="dv">100</span><span class="sc">:9.1f}</span><span class="ss">% </span><span class="sc">{</span>row[<span class="dv">1</span>]<span class="op">*</span><span class="dv">100</span><span class="sc">:9.1f}</span><span class="ss">% </span><span class="sc">{</span>row[<span class="dv">2</span>]<span class="op">*</span><span class="dv">100</span><span class="sc">:9.1f}</span><span class="ss">% </span><span class="sc">{</span>reqN<span class="sc">:8d}</span><span class="ss">"</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">  'req N' = window (in segments) needed to fill the pipe"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== LINK UTILIZATION: STOP-AND-WAIT VS PIPELINED ===
+ RTT(ms)    stop&amp;wait       N=10      N=100     N=1000    req N
+     1.0       0.794%       7.9%      79.4%     100.0%      126
+    10.0       0.080%       0.8%       8.0%      79.9%     1251
+    30.0       0.027%       0.3%       2.7%      26.7%     3751
+   100.0       0.008%       0.1%       0.8%       8.0%    12501
+
+  'req N' = window (in segments) needed to fill the pipe</code></pre>
+</div>
+</div>
+</section>
+<section id="tcp-reno-sawtooth-and-the-mathis-model" class="level3" data-number="9.2">
+<h3 data-number="9.2" class="anchored" data-anchor-id="tcp-reno-sawtooth-and-the-mathis-model"><span class="header-section-number">9.2</span> TCP Reno Sawtooth and the Mathis Model</h3>
+<p>The second experiment simulates Reno’s congestion window over time and compares measured throughput with the <span class="math inline">\(1/\sqrt{p}\)</span> model.</p>
+<div id="cell-fig-tcp-reno" class="cell" data-execution_count="2">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">7</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Simulate a TCP Reno-like congestion window over time (time in RTTs) ---</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>MSS <span class="op">=</span> <span class="dv">1460</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>ssthresh <span class="op">=</span> <span class="dv">64</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>cwnd <span class="op">=</span> <span class="fl">1.0</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>cubic_target <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>times, cwnds <span class="op">=</span> [], []</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> t <span class="op">&lt;</span> <span class="dv">120</span>:</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    times.append(t)<span class="op">;</span> cwnds.append(cwnd)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># exponential loss with low probability per RTT</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> rng.random() <span class="op">&lt;</span> <span class="fl">0.015</span>:</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        ssthresh <span class="op">=</span> <span class="bu">max</span>(cwnd <span class="op">/</span> <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        cwnd <span class="op">=</span> <span class="bu">max</span>(ssthresh, <span class="dv">1</span>)     <span class="co"># Reno fast recovery approximation</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> cwnd <span class="op">&lt;</span> ssthresh:</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>        cwnd <span class="op">*=</span> <span class="dv">2</span>                    <span class="co"># slow start</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>        cwnd <span class="op">+=</span> <span class="fl">1.0</span>                  <span class="co"># additive increase</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    t <span class="op">+=</span> <span class="fl">1.0</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>times <span class="op">=</span> np.array(times)<span class="op">;</span> cwnds <span class="op">=</span> np.array(cwnds)</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Throughput vs loss: Mathis model ---</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> np.logspace(<span class="op">-</span><span class="dv">8</span>, <span class="op">-</span><span class="dv">1</span>, <span class="dv">200</span>)</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>RTT <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>BW <span class="op">=</span> (MSS <span class="op">*</span> <span class="dv">8</span> <span class="op">/</span> RTT) <span class="op">*</span> <span class="fl">1.22</span> <span class="op">/</span> np.sqrt(p)   <span class="co"># bits/s</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="fl">4.8</span>))</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].plot(times, cwnds, color<span class="op">=</span><span class="st">"#2980b9"</span>, lw<span class="op">=</span><span class="fl">1.0</span>)</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].axhline(ssthresh, color<span class="op">=</span><span class="st">"#e74c3c"</span>, ls<span class="op">=</span><span class="st">"--"</span>, lw<span class="op">=</span><span class="dv">1</span>, label<span class="op">=</span><span class="st">"ssthresh (sample)"</span>)</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Simulated TCP Reno congestion window"</span>)</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">"time (RTTs)"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].set_ylabel(<span class="st">"cwnd (MSS)"</span>)</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].legend()<span class="op">;</span> axes[<span class="dv">0</span>].grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].loglog(p, BW <span class="op">/</span> <span class="fl">1e6</span>, color<span class="op">=</span><span class="st">"#8e44ad"</span>, label<span class="op">=</span><span class="st">"Mathis: (MSS/RTT)·1.22/√p"</span>)</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> loss, bw <span class="kw">in</span> [(<span class="fl">1e-6</span>, <span class="dv">100</span>), (<span class="fl">1e-5</span>, <span class="dv">40</span>), (<span class="fl">1e-4</span>, <span class="dv">10</span>), (<span class="fl">1e-3</span>, <span class="dv">3</span>)]:</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">1</span>].scatter([loss], [bw], color<span class="op">=</span><span class="st">"#e67e22"</span>, zorder<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"TCP throughput vs loss rate (RTT = 100 ms, MSS = 1460 B)"</span>)</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xlabel(<span class="st">"loss probability p"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].set_ylabel(<span class="st">"throughput (Mbps)"</span>)</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].legend()<span class="op">;</span> axes[<span class="dv">1</span>].grid(alpha<span class="op">=</span><span class="fl">0.3</span>, which<span class="op">=</span><span class="st">"both"</span>)</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== CONGESTION WINDOW STATISTICS ==="</span>)</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  samples=</span><span class="sc">{</span><span class="bu">len</span>(cwnds)<span class="sc">}</span><span class="ss">  min=</span><span class="sc">{</span>cwnds<span class="sc">.</span><span class="bu">min</span>()<span class="sc">:.1f}</span><span class="ss">  max=</span><span class="sc">{</span>cwnds<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.1f}</span><span class="ss">  "</span></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"mean=</span><span class="sc">{</span>cwnds<span class="sc">.</span>mean()<span class="sc">:.1f}</span><span class="ss"> MSS"</span>)</span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  mean throughput (MSS/RTT) = </span><span class="sc">{</span>cwnds<span class="sc">.</span>mean()<span class="op">*</span>MSS<span class="op">*</span><span class="dv">8</span><span class="op">/</span><span class="fl">0.1</span><span class="op">/</span><span class="fl">1e6</span><span class="sc">:.1f}</span><span class="ss"> Mbps at RTT=100 ms"</span>)</span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== MATHIS MODEL: THROUGHPUT VS LOSS ==="</span>)</span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'loss p'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'throughput'</span><span class="sc">:&gt;14}</span><span class="ss">"</span>)</span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> pp <span class="kw">in</span> [<span class="fl">1e-8</span>, <span class="fl">1e-7</span>, <span class="fl">1e-6</span>, <span class="fl">1e-5</span>, <span class="fl">1e-4</span>, <span class="fl">1e-3</span>, <span class="fl">1e-2</span>]:</span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>    bw <span class="op">=</span> (MSS <span class="op">*</span> <span class="dv">8</span> <span class="op">/</span> <span class="fl">0.05</span>) <span class="op">*</span> <span class="fl">1.22</span> <span class="op">/</span> np.sqrt(pp)</span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>pp<span class="sc">:10.0e}</span><span class="ss"> </span><span class="sc">{</span>bw<span class="op">/</span><span class="fl">1e6</span><span class="sc">:11.1f}</span><span class="ss"> Mbps"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-tcp-reno" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-tcp-reno-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="computer-networking-top-down-part-2-transport-layer_files/figure-html/fig-tcp-reno-output-1.png" width="1238" height="449" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tcp-reno-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Left: simulated TCP Reno congestion window under periodic loss, showing slow start, congestion avoidance with additive increase, and the multiplicative-decrease sawtooth (fast recovery). Right: TCP throughput versus loss rate on a log-log scale compared with the Mathis model BW ≈ (MSS/RTT)·(1.22/√p). Throughput degrades only as the inverse square root of loss, which is why TCP remains usable on lossy links.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== CONGESTION WINDOW STATISTICS ===
+  samples=120  min=1.0  max=92.2  mean=48.8 MSS
+  mean throughput (MSS/RTT) = 5.7 Mbps at RTT=100 ms
+
+=== MATHIS MODEL: THROUGHPUT VS LOSS ===
+    loss p     throughput
+     1e-08      2849.9 Mbps
+     1e-07       901.2 Mbps
+     1e-06       285.0 Mbps
+     1e-05        90.1 Mbps
+     1e-04        28.5 Mbps
+     1e-03         9.0 Mbps
+     1e-02         2.8 Mbps</code></pre>
+</div>
+</div>
+</section>
+<section id="pipelining-efficiency-gbn-vs-sr" class="level3" data-number="9.3">
+<h3 data-number="9.3" class="anchored" data-anchor-id="pipelining-efficiency-gbn-vs-sr"><span class="header-section-number">9.3</span> Pipelining Efficiency: GBN vs SR</h3>
+<p>Finally, compare how many retransmissions each pipelining scheme wastes under loss.</p>
+<div id="1c951f32" class="cell" data-execution_count="3">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== RETRANSMISSION COST UNDER LOSS (window N, one loss at position k) ==="</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="dv">10</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'loss at'</span><span class="sc">:&gt;8}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'GBN resends'</span><span class="sc">:&gt;14}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'SR resends'</span><span class="sc">:&gt;12}</span><span class="ss">"</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, N <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    gbn <span class="op">=</span> N <span class="op">-</span> k <span class="op">+</span> <span class="dv">1</span>     <span class="co"># resend the lost packet and everything after it</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    sr <span class="op">=</span> <span class="dv">1</span>              <span class="co"># resend only the lost packet</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>k<span class="sc">:8d}</span><span class="ss"> </span><span class="sc">{</span>gbn<span class="sc">:14d}</span><span class="ss"> </span><span class="sc">{</span>sr<span class="sc">:12d}</span><span class="ss">"</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">  average GBN retransmissions = </span><span class="sc">{</span>(N<span class="op">+</span><span class="dv">1</span>)<span class="op">/</span><span class="dv">2</span><span class="sc">:.1f}</span><span class="ss">, SR = 1.0"</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Selective Repeat wins by a factor of about (N+1)/2 on a single loss."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== RETRANSMISSION COST UNDER LOSS (window N, one loss at position k) ===
+ loss at    GBN resends   SR resends
+       1             10            1
+       2              9            1
+       3              8            1
+       4              7            1
+       5              6            1
+       6              5            1
+       7              4            1
+       8              3            1
+       9              2            1
+      10              1            1
+
+  average GBN retransmissions = 5.5, SR = 1.0
+  Selective Repeat wins by a factor of about (N+1)/2 on a single loss.</code></pre>
+</div>
+</div>
+<p>The laboratory makes the transport layer’s central trade-off concrete: <strong>reliability and fairness are engineered, not given.</strong> TCP’s AIMD sawtooth is the price of stability and fairness; pipelining is the price of sequence-number complexity; and modern algorithms (CUBIC, BBR, QUIC) are attempts to buy better throughput without paying the old taxes.</p>
+<hr>
+</section>
+</section>
+<section id="summary" class="level2" data-number="10">
+<h2 data-number="10" class="anchored" data-anchor-id="summary"><span class="header-section-number">10</span> Summary</h2>
+<p><span class="math display">\[
+\begin{aligned}
+&amp;\textbf{Transport: } &amp;&amp; \text{process-to-process; UDP (best-effort) vs TCP (reliable byte stream).} \\[3pt]
+&amp;\textbf{Reliability: } &amp;&amp; \text{checksums, ACK/NAK, sequence numbers, timers, windows.} \\[3pt]
+&amp;\textbf{Pipelining: } &amp;&amp; \text{GBN (cumulative, discard OOO) vs SR (buffer, selective ACK).} \\[3pt]
+&amp;\textbf{TCP: } &amp;&amp; \text{three-way handshake; byte sequence numbers; Jacobson/Karels timeout; fast retransmit.} \\[3pt]
+&amp;\textbf{Control: } &amp;&amp; \text{flow control (rwnd) protects the receiver; congestion control (cwnd) protects the network.} \\[3pt]
+&amp;\textbf{AIMD: } &amp;&amp; \text{additive increase, multiplicative decrease; sawtooth; fairness.} \\[3pt]
+&amp;\textbf{Modern: } &amp;&amp; \text{CUBIC, BBR, ECN, and QUIC over UDP.}
+\end{aligned}
+\]</span></p>
+<p>TCP gives applications a reliable byte stream, but it depends on the network layer to move datagrams from host to host. In <a href="../../posts/computer-science/computer-networking-top-down-part-3-network-layer-data-and-control-plane.html">Part 3</a> we descend into the <strong>network layer</strong>: how routers forward packets in the data plane, and how routing protocols compute the paths in the control plane.</p>
+<hr>
+</section>
+<section id="curated-references-and-further-reading" class="level2" data-number="11">
+<h2 data-number="11" class="anchored" data-anchor-id="curated-references-and-further-reading"><span class="header-section-number">11</span> Curated References and Further Reading</h2>
+<ol type="1">
+<li><strong>Kurose, J. &amp; Ross, K. (2021).</strong> <em>Computer Networking: A Top-Down Approach</em>, 8th ed.&nbsp;Pearson. (Primary source: Chapter 3.)</li>
+<li><strong>Postel, J. (1980).</strong> <em>Transmission Control Protocol.</em> RFC 793.</li>
+<li><strong>Postel, J. (1980).</strong> <em>User Datagram Protocol.</em> RFC 768.</li>
+<li><strong>Jacobson, V. (1988).</strong> <em>Congestion Avoidance and Control.</em> ACM SIGCOMM.</li>
+<li><strong>Mathis, M., Semke, J., Mahdavi, J. &amp; Ott, T. (1997).</strong> <em>The Macroscopic Behavior of the TCP Congestion Avoidance Algorithm.</em> ACM CCR.</li>
+<li><strong>Jacobson, V., Braden, R. &amp; Borman, D. (1992).</strong> <em>TCP Extensions for High Performance.</em> RFC 1323.</li>
+<li><strong>Ha, S., Rhee, I. &amp; Xu, L. (2008).</strong> <em>CUBIC: A New TCP-Friendly High-Speed TCP Variant.</em> ACM SIGOPS OSR.</li>
+<li><strong>Cardwell, N., Cheng, Y., Gunn, C., Yeganeh, S. &amp; Jacobson, V. (2016).</strong> <em>BBR: Congestion-Based Congestion Control.</em> ACM Queue.</li>
+<li><strong>Iyengar, J. &amp; Thomson, M. (2021).</strong> <em>QUIC: A UDP-Based Multiplexed and Secure Transport.</em> RFC 9000.</li>
+</ol>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const cellDetails = window.document.querySelectorAll(".cell details.code-fold");
+        for (let i=0; i<cellDetails.length; i++) {
+          const details = cellDetails[i];
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell div.sourceCode.cell-code");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/igor-kan\.github\.io\/quarto-writing\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Computer Networking: A Top-Down Approach, Part 2 — The Transport Layer"</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "Multiplexing, UDP, the principles of reliable data transfer, pipelining with Go-Back-N and Selective Repeat, TCP connection management and RTT estimation, flow control, and congestion control from Tahoe and Reno through CUBIC and BBR to QUIC — following Kurose &amp; Ross, Chapter 3"</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "Igor Kan"</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> "2026-09-14"</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="an">categories:</span><span class="co"> [Computer Science, Networking, Transport Layer, TCP, UDP, Congestion Control, Protocols, Distributed Systems]</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="an">description:</span><span class="co"> "A first-principles treatment of the transport layer following Kurose and Ross. It covers multiplexing and demultiplexing, the UDP segment and checksum, and then builds reliable data transfer from scratch: rdt 1.0 through 3.0 with ACKs, sequence numbers, timers, and pipelining; Go-Back-N and Selective Repeat; the full TCP segment structure; connection management with the three-way handshake and teardown; sequence and acknowledgment numbers; adaptive retransmission timers (Jacobson/Karels RTT estimation, Karn's algorithm) and fast retransmit; sliding-window flow control; the causes and costs of congestion; TCP Tahoe, Reno, slow start, congestion avoidance, fast recovery, and AIMD fairness; the Mathis throughput model; modern congestion control with CUBIC, BBR, and ECN; and QUIC, with an executable Python laboratory that simulates TCP Reno's congestion window, computes transfer efficiency, and plots throughput against loss."</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">    html-math-method: mathjax</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: show</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-depth: 4</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="co">    number-sections: true</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="an">jupyter:</span><span class="co"> python3</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="an">toc:</span><span class="co"> true</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="an">toc-depth:</span><span class="co"> 4</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="an">number-sections:</span><span class="co"> true</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>::: {.callout-note appearance="simple"}</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>*The network layer delivers datagrams host-to-host. The transport layer delivers them **process-to-process** — and, in TCP's case, turns an unreliable, reordering, best-effort channel into a reliable, ordered byte stream.*</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>This is **Part 2** of a three-part series following Kurose &amp; Ross, *Computer Networking: A Top-Down Approach*. Having seen in [Part 1](computer-networking-top-down-part-1-foundations-and-application-layer.qmd) what applications demand, we now descend to the layer that satisfies those demands: **Chapter 3, The Transport Layer**.</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip collapse="true"}</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Series</span></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Part 1 — Foundations and the Application Layer</span><span class="co">](computer-networking-top-down-part-1-foundations-and-application-layer.qmd)</span></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Part 2 — The Transport Layer** (this article)</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Part 3 — The Network Layer: Data Plane and Control Plane</span><span class="co">](computer-networking-top-down-part-3-network-layer-data-and-control-plane.qmd)</span></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Transport Layer's Job</span></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>The network layer provides **logical communication between hosts**. The transport layer extends that to **logical communication between processes**, and adds the services applications actually need: reliability, ordering, flow control, and congestion control.</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>Two protocols dominate:</span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**UDP** — connectionless, unreliable, minimal. It offers little beyond multiplexing, demultiplexing, and an optional checksum: the "null" transport.</span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**TCP** — connection-oriented, reliable, ordered byte stream with flow and congestion control.</span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>The transport layer lives **only in end systems**; routers in the core act on network-layer datagrams and do not implement transport. This is the key architectural boundary: **intelligence at the edge, simplicity in the core.**</span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a><span class="fu">## Multiplexing and Demultiplexing</span></span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a>A single host runs many processes; the transport layer must direct incoming segments to the right one. It does so with **port numbers**.</span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Multiplexing** (sender): gather data from multiple sockets, add transport headers, pass segments down.</span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Demultiplexing** (receiver): use header fields to deliver each segment to the correct socket.</span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a>A **UDP socket** is identified by a 2-tuple: <span class="in">`(destination IP, destination port)`</span>. Two datagrams with the same destination port but different source addresses go to the same socket.</span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a>A **TCP socket** is identified by a 4-tuple: <span class="in">`(source IP, source port, destination IP, destination port)`</span>. This is why a server can distinguish multiple simultaneous clients on port 443 — each connection has a distinct 4-tuple.</span>
+<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Transport <span class="pp">|</span> Demux key <span class="pp">|</span> Socket model <span class="pp">|</span></span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|</span></span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> UDP <span class="pp">|</span> <span class="in">`(dest IP, dest port)`</span> <span class="pp">|</span> one socket may receive from many sources <span class="pp">|</span></span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> TCP <span class="pp">|</span> <span class="in">`(src IP, src port, dest IP, dest port)`</span> <span class="pp">|</span> one socket per connection <span class="pp">|</span></span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a><span class="fu">## UDP</span></span>
+<span id="cb7-69"><a href="#cb7-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-70"><a href="#cb7-70" aria-hidden="true" tabindex="-1"></a>UDP is a thin veneer over IP. Its segment has four 2-byte fields — source port, destination port, length, checksum — an 8-byte header, followed by payload.</span>
+<span id="cb7-71"><a href="#cb7-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-72"><a href="#cb7-72" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Connectionless:** no handshake, no connection state.</span>
+<span id="cb7-73"><a href="#cb7-73" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**No reliability, ordering, or congestion control:** datagrams may be lost, duplicated, or reordered.</span>
+<span id="cb7-74"><a href="#cb7-74" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Checksum:** end-to-end detection of bit errors in the segment (including a pseudo-header with IP addresses), but no correction or retransmission.</span>
+<span id="cb7-75"><a href="#cb7-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-76"><a href="#cb7-76" aria-hidden="true" tabindex="-1"></a>Why use UDP at all?</span>
+<span id="cb7-77"><a href="#cb7-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-78"><a href="#cb7-78" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Fine-grained control:** the application decides what to send and when, without TCP's congestion throttling (important for real-time media that prefers loss to delay).</span>
+<span id="cb7-79"><a href="#cb7-79" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**No connection setup:** no handshake RTT — critical for DNS and for protocols like QUIC that build reliability themselves.</span>
+<span id="cb7-80"><a href="#cb7-80" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**No connection state:** a server can support far more active clients.</span>
+<span id="cb7-81"><a href="#cb7-81" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Small header:** 8 bytes versus TCP's minimum 20.</span>
+<span id="cb7-82"><a href="#cb7-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-83"><a href="#cb7-83" aria-hidden="true" tabindex="-1"></a>DNS, DHCP, RIP, VoIP, online games, and QUIC all use UDP.</span>
+<span id="cb7-84"><a href="#cb7-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-85"><a href="#cb7-85" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-86"><a href="#cb7-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-87"><a href="#cb7-87" aria-hidden="true" tabindex="-1"></a><span class="fu">## Principles of Reliable Data Transfer</span></span>
+<span id="cb7-88"><a href="#cb7-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-89"><a href="#cb7-89" aria-hidden="true" tabindex="-1"></a>Reliability is built from a small toolkit: **checksums** (detect errors), **acknowledgments (ACK) and negative acknowledgments (NAK)** (report outcomes), **sequence numbers** (identify and order), **timers** (recover from loss), and **windows** (enable pipelining). We build it up incrementally, as the textbook does.</span>
+<span id="cb7-90"><a href="#cb7-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-91"><a href="#cb7-91" aria-hidden="true" tabindex="-1"></a><span class="fu">### rdt 1.0: Perfectly Reliable Channel</span></span>
+<span id="cb7-92"><a href="#cb7-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-93"><a href="#cb7-93" aria-hidden="true" tabindex="-1"></a>Assume no bit errors and no loss. The sender sends, the receiver receives. Trivial.</span>
+<span id="cb7-94"><a href="#cb7-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-95"><a href="#cb7-95" aria-hidden="true" tabindex="-1"></a><span class="fu">### rdt 2.0: Channels with Bit Errors</span></span>
+<span id="cb7-96"><a href="#cb7-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-97"><a href="#cb7-97" aria-hidden="true" tabindex="-1"></a>Bits can flip. The receiver returns **ACK** or **NAK**. This introduces a fatal flaw: the ACK/NAK itself can be corrupted. The sender cannot know whether to retransmit.</span>
+<span id="cb7-98"><a href="#cb7-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-99"><a href="#cb7-99" aria-hidden="true" tabindex="-1"></a><span class="fu">### rdt 2.1: Sequence Numbers to the Rescue</span></span>
+<span id="cb7-100"><a href="#cb7-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-101"><a href="#cb7-101" aria-hidden="true" tabindex="-1"></a>Add a 1-bit **sequence number** to each packet. The sender alternates 0 and 1; the receiver tracks the expected number and can detect duplicates. A corrupted ACK/NAK is treated as a NAK (retransmit), and duplicate packets are ignored via the sequence number.</span>
+<span id="cb7-102"><a href="#cb7-102" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-103"><a href="#cb7-103" aria-hidden="true" tabindex="-1"></a><span class="fu">### rdt 2.2: NAK-Free</span></span>
+<span id="cb7-104"><a href="#cb7-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-105"><a href="#cb7-105" aria-hidden="true" tabindex="-1"></a>Drop NAKs entirely: the receiver ACKs the last correctly received packet. A duplicate ACK tells the sender the current packet was lost or corrupted — same information, one fewer message type.</span>
+<span id="cb7-106"><a href="#cb7-106" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-107"><a href="#cb7-107" aria-hidden="true" tabindex="-1"></a><span class="fu">### rdt 3.0: Channels with Errors and Loss</span></span>
+<span id="cb7-108"><a href="#cb7-108" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-109"><a href="#cb7-109" aria-hidden="true" tabindex="-1"></a>Losses are detected with a **countdown timer**. If no ACK arrives before timeout, retransmit. This is **stop-and-wait**, and it is correct — but catastrophically slow, because the sender idles while the ACK travels back.</span>
+<span id="cb7-110"><a href="#cb7-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-111"><a href="#cb7-111" aria-hidden="true" tabindex="-1"></a>The utilization of stop-and-wait is:</span>
+<span id="cb7-112"><a href="#cb7-112" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-113"><a href="#cb7-113" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-114"><a href="#cb7-114" aria-hidden="true" tabindex="-1"></a>U_{\text{stop-and-wait}} = \frac{L/R}{RTT + L/R}</span>
+<span id="cb7-115"><a href="#cb7-115" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-116"><a href="#cb7-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-117"><a href="#cb7-117" aria-hidden="true" tabindex="-1"></a>For a 1 Gbps link, 30 ms RTT, and a 1000-byte packet, $U \approx 0.00027$ — **0.027% utilization.** The network sits idle 99.97% of the time. This is the motivation for pipelining.</span>
+<span id="cb7-118"><a href="#cb7-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-119"><a href="#cb7-119" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-120"><a href="#cb7-120" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-121"><a href="#cb7-121" aria-hidden="true" tabindex="-1"></a><span class="fu">## Pipelining: Go-Back-N and Selective Repeat</span></span>
+<span id="cb7-122"><a href="#cb7-122" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-123"><a href="#cb7-123" aria-hidden="true" tabindex="-1"></a>Pipelining allows multiple in-flight, unacknowledged packets. It requires **sequence-number ranges** and **buffering** at the sender (and possibly receiver).</span>
+<span id="cb7-124"><a href="#cb7-124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-125"><a href="#cb7-125" aria-hidden="true" tabindex="-1"></a><span class="fu">### Go-Back-N (GBN)</span></span>
+<span id="cb7-126"><a href="#cb7-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-127"><a href="#cb7-127" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>The sender maintains a **window of size $N$** of consecutive unacknowledged packets.</span>
+<span id="cb7-128"><a href="#cb7-128" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>The receiver is **cumulative**: it ACKs the highest in-order packet; out-of-order packets are discarded.</span>
+<span id="cb7-129"><a href="#cb7-129" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>On timeout, the sender retransmits **all** packets from the lost one onward — hence "go back N."</span>
+<span id="cb7-130"><a href="#cb7-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-131"><a href="#cb7-131" aria-hidden="true" tabindex="-1"></a>Cumulative ACKs can be lost safely: a later ACK implies earlier ones. But a single loss wastes bandwidth by resending correctly received packets.</span>
+<span id="cb7-132"><a href="#cb7-132" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-133"><a href="#cb7-133" aria-hidden="true" tabindex="-1"></a><span class="fu">### Selective Repeat (SR)</span></span>
+<span id="cb7-134"><a href="#cb7-134" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-135"><a href="#cb7-135" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>The receiver **buffers** out-of-order packets and ACKs each one individually.</span>
+<span id="cb7-136"><a href="#cb7-136" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>The sender retransmits **only** the lost packet, using per-packet timers.</span>
+<span id="cb7-137"><a href="#cb7-137" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Window size must satisfy $N \le 2^{k-1}$ for a $k$-bit sequence number, to avoid ambiguity between new and retransmitted packets.</span>
+<span id="cb7-138"><a href="#cb7-138" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-139"><a href="#cb7-139" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Property <span class="pp">|</span> Go-Back-N <span class="pp">|</span> Selective Repeat <span class="pp">|</span></span>
+<span id="cb7-140"><a href="#cb7-140" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|</span></span>
+<span id="cb7-141"><a href="#cb7-141" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Receiver buffering <span class="pp">|</span> none (discards OOO) <span class="pp">|</span> buffers out-of-order <span class="pp">|</span></span>
+<span id="cb7-142"><a href="#cb7-142" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> ACK style <span class="pp">|</span> cumulative <span class="pp">|</span> individual <span class="pp">|</span></span>
+<span id="cb7-143"><a href="#cb7-143" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Retransmission <span class="pp">|</span> from loss onward <span class="pp">|</span> only lost packets <span class="pp">|</span></span>
+<span id="cb7-144"><a href="#cb7-144" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Timers <span class="pp">|</span> one (oldest) <span class="pp">|</span> one per outstanding packet <span class="pp">|</span></span>
+<span id="cb7-145"><a href="#cb7-145" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Efficiency under loss <span class="pp">|</span> lower <span class="pp">|</span> higher <span class="pp">|</span></span>
+<span id="cb7-146"><a href="#cb7-146" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Complexity <span class="pp">|</span> lower <span class="pp">|</span> higher <span class="pp">|</span></span>
+<span id="cb7-147"><a href="#cb7-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-148"><a href="#cb7-148" aria-hidden="true" tabindex="-1"></a>Pipelining raises utilization to approximately:</span>
+<span id="cb7-149"><a href="#cb7-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-150"><a href="#cb7-150" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-151"><a href="#cb7-151" aria-hidden="true" tabindex="-1"></a>U_{\text{pipelined}} = \frac{N \cdot L/R}{RTT + L/R}</span>
+<span id="cb7-152"><a href="#cb7-152" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-153"><a href="#cb7-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-154"><a href="#cb7-154" aria-hidden="true" tabindex="-1"></a>enabling full-link utilization once $N \ge RTT \cdot R / L$.</span>
+<span id="cb7-155"><a href="#cb7-155" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-156"><a href="#cb7-156" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-157"><a href="#cb7-157" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-158"><a href="#cb7-158" aria-hidden="true" tabindex="-1"></a><span class="fu">## TCP</span></span>
+<span id="cb7-159"><a href="#cb7-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-160"><a href="#cb7-160" aria-hidden="true" tabindex="-1"></a>TCP is a **connection-oriented, reliable, in-order byte-stream** protocol with flow and congestion control.</span>
+<span id="cb7-161"><a href="#cb7-161" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-162"><a href="#cb7-162" aria-hidden="true" tabindex="-1"></a><span class="fu">### The TCP Segment</span></span>
+<span id="cb7-163"><a href="#cb7-163" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-164"><a href="#cb7-164" aria-hidden="true" tabindex="-1"></a>Key fields:</span>
+<span id="cb7-165"><a href="#cb7-165" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-166"><a href="#cb7-166" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Source/destination ports** (16 bits each).</span>
+<span id="cb7-167"><a href="#cb7-167" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Sequence number** — byte-stream number of the first data byte in the segment.</span>
+<span id="cb7-168"><a href="#cb7-168" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Acknowledgment number** — the next byte the receiver expects (cumulative).</span>
+<span id="cb7-169"><a href="#cb7-169" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Header length, flags** (`SYN`, `ACK`, `FIN`, `RST`, `PSH`, `URG`), **receive window** (<span class="in">`rwnd`</span>).</span>
+<span id="cb7-170"><a href="#cb7-170" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Checksum**, **urgent pointer**, and **options** (MSS, window scaling, SACK, timestamps).</span>
+<span id="cb7-171"><a href="#cb7-171" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-172"><a href="#cb7-172" aria-hidden="true" tabindex="-1"></a>TCP numbers **bytes, not packets** — the essential difference from the rdt abstractions, and the reason ACKs are cumulative over a byte stream.</span>
+<span id="cb7-173"><a href="#cb7-173" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-174"><a href="#cb7-174" aria-hidden="true" tabindex="-1"></a><span class="fu">### Connection Management: The Three-Way Handshake</span></span>
+<span id="cb7-175"><a href="#cb7-175" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-178"><a href="#cb7-178" aria-hidden="true" tabindex="-1"></a><span class="in">```{mermaid}</span></span>
+<span id="cb7-179"><a href="#cb7-179" aria-hidden="true" tabindex="-1"></a>sequenceDiagram</span>
+<span id="cb7-180"><a href="#cb7-180" aria-hidden="true" tabindex="-1"></a>    participant C as Client</span>
+<span id="cb7-181"><a href="#cb7-181" aria-hidden="true" tabindex="-1"></a>    participant S as Server</span>
+<span id="cb7-182"><a href="#cb7-182" aria-hidden="true" tabindex="-1"></a>    Note over C,S: Connection establishment (three-way handshake)</span>
+<span id="cb7-183"><a href="#cb7-183" aria-hidden="true" tabindex="-1"></a>    C-&gt;&gt;S: SYN, seq=x</span>
+<span id="cb7-184"><a href="#cb7-184" aria-hidden="true" tabindex="-1"></a>    S-&gt;&gt;C: SYN-ACK, seq=<span class="ot">y</span>, ack=x+<span class="dv">1</span></span>
+<span id="cb7-185"><a href="#cb7-185" aria-hidden="true" tabindex="-1"></a>    C-&gt;&gt;S: ACK, ack=<span class="ot">y</span>+<span class="dv">1</span></span>
+<span id="cb7-186"><a href="#cb7-186" aria-hidden="true" tabindex="-1"></a>    Note over C,S: Data transfer (full duplex, byte stream)</span>
+<span id="cb7-187"><a href="#cb7-187" aria-hidden="true" tabindex="-1"></a>    C-&gt;&gt;S: data (seq=x+<span class="dv">1</span>)</span>
+<span id="cb7-188"><a href="#cb7-188" aria-hidden="true" tabindex="-1"></a>    S-&gt;&gt;C: ACK + data</span>
+<span id="cb7-189"><a href="#cb7-189" aria-hidden="true" tabindex="-1"></a>    Note over C,S: Connection teardown</span>
+<span id="cb7-190"><a href="#cb7-190" aria-hidden="true" tabindex="-1"></a>    C-&gt;&gt;S: FIN</span>
+<span id="cb7-191"><a href="#cb7-191" aria-hidden="true" tabindex="-1"></a>    S-&gt;&gt;C: ACK</span>
+<span id="cb7-192"><a href="#cb7-192" aria-hidden="true" tabindex="-1"></a>    S-&gt;&gt;C: FIN</span>
+<span id="cb7-193"><a href="#cb7-193" aria-hidden="true" tabindex="-1"></a>    C-&gt;&gt;S: ACK</span>
+<span id="cb7-194"><a href="#cb7-194" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-195"><a href="#cb7-195" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-196"><a href="#cb7-196" aria-hidden="true" tabindex="-1"></a>The initial sequence numbers are chosen randomly to prevent old duplicate connections from being mistaken for new ones. The **MSS** (maximum segment size) is negotiated so segments fit the path MTU without IP fragmentation.</span>
+<span id="cb7-197"><a href="#cb7-197" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-198"><a href="#cb7-198" aria-hidden="true" tabindex="-1"></a><span class="fu">### RTT Estimation and Timeouts</span></span>
+<span id="cb7-199"><a href="#cb7-199" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-200"><a href="#cb7-200" aria-hidden="true" tabindex="-1"></a>The retransmission timeout must adapt to the path. TCP uses an **exponentially weighted moving average**:</span>
+<span id="cb7-201"><a href="#cb7-201" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-202"><a href="#cb7-202" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-203"><a href="#cb7-203" aria-hidden="true" tabindex="-1"></a>\text{EstimatedRTT} = (1-\alpha)\,\text{EstimatedRTT} + \alpha\,\text{SampleRTT}, \quad \alpha = 1/8</span>
+<span id="cb7-204"><a href="#cb7-204" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-205"><a href="#cb7-205" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-206"><a href="#cb7-206" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-207"><a href="#cb7-207" aria-hidden="true" tabindex="-1"></a>\text{DevRTT} = (1-\beta)\,\text{DevRTT} + \beta\,|\text{SampleRTT} - \text{EstimatedRTT}|, \quad \beta = 1/4</span>
+<span id="cb7-208"><a href="#cb7-208" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-209"><a href="#cb7-209" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-210"><a href="#cb7-210" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-211"><a href="#cb7-211" aria-hidden="true" tabindex="-1"></a>\text{TimeoutInterval} = \text{EstimatedRTT} + 4\cdot\text{DevRTT}</span>
+<span id="cb7-212"><a href="#cb7-212" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-213"><a href="#cb7-213" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-214"><a href="#cb7-214" aria-hidden="true" tabindex="-1"></a>This is the **Jacobson/Karels** algorithm. **Karn's algorithm** resolves the retransmission ambiguity: do not use RTT samples from retransmitted segments, and double the timeout on each retransmission (exponential backoff).</span>
+<span id="cb7-215"><a href="#cb7-215" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-216"><a href="#cb7-216" aria-hidden="true" tabindex="-1"></a><span class="fu">### Fast Retransmit</span></span>
+<span id="cb7-217"><a href="#cb7-217" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-218"><a href="#cb7-218" aria-hidden="true" tabindex="-1"></a>Waiting for a timeout is slow. **Triple duplicate ACKs** (four ACKs for the same byte) signal a lost segment; the sender retransmits immediately without waiting for the timer. This is the foundation of Reno's fast recovery.</span>
+<span id="cb7-219"><a href="#cb7-219" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-220"><a href="#cb7-220" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-221"><a href="#cb7-221" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-222"><a href="#cb7-222" aria-hidden="true" tabindex="-1"></a><span class="fu">## Flow Control</span></span>
+<span id="cb7-223"><a href="#cb7-223" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-224"><a href="#cb7-224" aria-hidden="true" tabindex="-1"></a>TCP prevents a fast sender from overflowing a slow receiver using a **sliding window** governed by the receiver-advertised **receive window** (<span class="in">`rwnd`</span>): the sender never has more unacknowledged data than <span class="in">`rwnd`</span> (and the congestion window). The receiver's buffer size and the application's read rate determine <span class="in">`rwnd`</span>; a zero window pauses the sender.</span>
+<span id="cb7-225"><a href="#cb7-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-226"><a href="#cb7-226" aria-hidden="true" tabindex="-1"></a>Flow control protects the **receiver**; congestion control protects the **network**. They are distinct problems solved by distinct mechanisms.</span>
+<span id="cb7-227"><a href="#cb7-227" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-228"><a href="#cb7-228" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-229"><a href="#cb7-229" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-230"><a href="#cb7-230" aria-hidden="true" tabindex="-1"></a><span class="fu">## Congestion Control</span></span>
+<span id="cb7-231"><a href="#cb7-231" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-232"><a href="#cb7-232" aria-hidden="true" tabindex="-1"></a>Congestion occurs when the offered load exceeds network capacity. Its **costs** are queueing delay, packet loss, and wasted upstream transmission of packets later dropped.</span>
+<span id="cb7-233"><a href="#cb7-233" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-234"><a href="#cb7-234" aria-hidden="true" tabindex="-1"></a><span class="fu">### TCP Tahoe and Reno</span></span>
+<span id="cb7-235"><a href="#cb7-235" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-236"><a href="#cb7-236" aria-hidden="true" tabindex="-1"></a>The congestion window (<span class="in">`cwnd`</span>) limits in-flight data. Two classic algorithms:</span>
+<span id="cb7-237"><a href="#cb7-237" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-238"><a href="#cb7-238" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Slow start:** `cwnd` begins at 1 MSS and **doubles each RTT** until <span class="in">`ssthresh`</span> or loss.</span>
+<span id="cb7-239"><a href="#cb7-239" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Congestion avoidance:** after `ssthresh`, `cwnd` grows by ~1 MSS per RTT (**additive increase**).</span>
+<span id="cb7-240"><a href="#cb7-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-241"><a href="#cb7-241" aria-hidden="true" tabindex="-1"></a>On loss:</span>
+<span id="cb7-242"><a href="#cb7-242" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-243"><a href="#cb7-243" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Tahoe:** set <span class="in">`ssthresh = cwnd/2`</span>, <span class="in">`cwnd = 1`</span>, slow start again.</span>
+<span id="cb7-244"><a href="#cb7-244" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Reno:** same on timeout, but on triple duplicate ACKs, **fast recovery** — set <span class="in">`ssthresh = cwnd/2`</span>, <span class="in">`cwnd = ssthresh + 3`</span>, and continue additive increase without dropping to 1.</span>
+<span id="cb7-245"><a href="#cb7-245" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-246"><a href="#cb7-246" aria-hidden="true" tabindex="-1"></a><span class="fu">### AIMD and Fairness</span></span>
+<span id="cb7-247"><a href="#cb7-247" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-248"><a href="#cb7-248" aria-hidden="true" tabindex="-1"></a>Reno's behavior is **Additive Increase, Multiplicative Decrease (AIMD)**: add one MSS per RTT on success, halve on loss. This creates the characteristic **sawtooth** and drives multiple competing flows toward **fairness**: flows that gain more share are penalized proportionally, so rates converge near equal.</span>
+<span id="cb7-249"><a href="#cb7-249" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-250"><a href="#cb7-250" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Mathis Throughput Model</span></span>
+<span id="cb7-251"><a href="#cb7-251" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-252"><a href="#cb7-252" aria-hidden="true" tabindex="-1"></a>For a TCP flow with MSS $M$, round-trip time $RTT$, and loss probability $p$, a well-known approximation is:</span>
+<span id="cb7-253"><a href="#cb7-253" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-254"><a href="#cb7-254" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-255"><a href="#cb7-255" aria-hidden="true" tabindex="-1"></a>\text{BW} \approx \frac{M}{RTT} \cdot \frac{C}{\sqrt{p}}, \quad C \approx 1.22</span>
+<span id="cb7-256"><a href="#cb7-256" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-257"><a href="#cb7-257" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-258"><a href="#cb7-258" aria-hidden="true" tabindex="-1"></a>Throughput falls only as $1/\sqrt{p}$ — which is why TCP survives on lossy links, and why long fat networks (high RTT) need larger windows.</span>
+<span id="cb7-259"><a href="#cb7-259" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-260"><a href="#cb7-260" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Modern Era: CUBIC, BBR, and ECN</span></span>
+<span id="cb7-261"><a href="#cb7-261" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-262"><a href="#cb7-262" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**CUBIC (Linux default):** grows <span class="in">`cwnd`</span> as a cubic function of time since the last loss, making recovery faster on high-bandwidth, high-RTT paths.</span>
+<span id="cb7-263"><a href="#cb7-263" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**BBR (Google):** models the bottleneck bandwidth and minimum RTT rather than reacting to loss, improving throughput on lossy paths and reducing bufferbloat.</span>
+<span id="cb7-264"><a href="#cb7-264" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**ECN (Explicit Congestion Notification):** routers mark packets instead of dropping them, letting TCP react before loss.</span>
+<span id="cb7-265"><a href="#cb7-265" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**QUIC:** a UDP-based transport with its own reliability, congestion control, stream multiplexing, and 0-RTT/1-RTT handshakes, avoiding TCP head-of-line blocking and enabling faster connection setup.</span>
+<span id="cb7-266"><a href="#cb7-266" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-267"><a href="#cb7-267" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-268"><a href="#cb7-268" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-269"><a href="#cb7-269" aria-hidden="true" tabindex="-1"></a><span class="fu">## Laboratory: Reliable Transfer and Congestion Control</span></span>
+<span id="cb7-270"><a href="#cb7-270" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-271"><a href="#cb7-271" aria-hidden="true" tabindex="-1"></a><span class="fu">### Stop-and-Wait vs Pipelining</span></span>
+<span id="cb7-272"><a href="#cb7-272" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-273"><a href="#cb7-273" aria-hidden="true" tabindex="-1"></a>First, quantify why pipelining matters by computing link utilization.</span>
+<span id="cb7-274"><a href="#cb7-274" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-277"><a href="#cb7-277" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb7-278"><a href="#cb7-278" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb7-279"><a href="#cb7-279" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-280"><a href="#cb7-280" aria-hidden="true" tabindex="-1"></a>MSS <span class="op">=</span> <span class="dv">1000</span> <span class="op">*</span> <span class="dv">8</span>            <span class="co"># 1000-byte segments in bits</span></span>
+<span id="cb7-281"><a href="#cb7-281" aria-hidden="true" tabindex="-1"></a>R <span class="op">=</span> <span class="fl">1e9</span>                   <span class="co"># 1 Gbps</span></span>
+<span id="cb7-282"><a href="#cb7-282" aria-hidden="true" tabindex="-1"></a>RTTs <span class="op">=</span> [<span class="fl">1e-3</span>, <span class="fl">10e-3</span>, <span class="fl">30e-3</span>, <span class="fl">100e-3</span>]</span>
+<span id="cb7-283"><a href="#cb7-283" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-284"><a href="#cb7-284" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== LINK UTILIZATION: STOP-AND-WAIT VS PIPELINED ==="</span>)</span>
+<span id="cb7-285"><a href="#cb7-285" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'RTT(ms)'</span><span class="sc">:&gt;8}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'stop&amp;wait'</span><span class="sc">:&gt;12}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'N=10'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'N=100'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'N=1000'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'req N'</span><span class="sc">:&gt;8}</span><span class="ss">"</span>)</span>
+<span id="cb7-286"><a href="#cb7-286" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> rtt <span class="kw">in</span> RTTs:</span>
+<span id="cb7-287"><a href="#cb7-287" aria-hidden="true" tabindex="-1"></a>    base <span class="op">=</span> MSS <span class="op">/</span> R</span>
+<span id="cb7-288"><a href="#cb7-288" aria-hidden="true" tabindex="-1"></a>    u_sw <span class="op">=</span> base <span class="op">/</span> (rtt <span class="op">+</span> base)</span>
+<span id="cb7-289"><a href="#cb7-289" aria-hidden="true" tabindex="-1"></a>    row <span class="op">=</span> []</span>
+<span id="cb7-290"><a href="#cb7-290" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> N <span class="kw">in</span> [<span class="dv">10</span>, <span class="dv">100</span>, <span class="dv">1000</span>]:</span>
+<span id="cb7-291"><a href="#cb7-291" aria-hidden="true" tabindex="-1"></a>        u <span class="op">=</span> <span class="bu">min</span>(<span class="fl">1.0</span>, (N <span class="op">*</span> base) <span class="op">/</span> (rtt <span class="op">+</span> base))</span>
+<span id="cb7-292"><a href="#cb7-292" aria-hidden="true" tabindex="-1"></a>        row.append(u)</span>
+<span id="cb7-293"><a href="#cb7-293" aria-hidden="true" tabindex="-1"></a>    reqN <span class="op">=</span> <span class="bu">int</span>(np.ceil((rtt <span class="op">+</span> base) <span class="op">/</span> base)) <span class="cf">if</span> (rtt <span class="op">+</span> base) <span class="op">&gt;</span> base <span class="cf">else</span> <span class="dv">1</span></span>
+<span id="cb7-294"><a href="#cb7-294" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>rtt<span class="op">*</span><span class="fl">1e3</span><span class="sc">:8.1f}</span><span class="ss"> </span><span class="sc">{</span>u_sw<span class="op">*</span><span class="dv">100</span><span class="sc">:11.3f}</span><span class="ss">% </span><span class="sc">{</span>row[<span class="dv">0</span>]<span class="op">*</span><span class="dv">100</span><span class="sc">:9.1f}</span><span class="ss">% </span><span class="sc">{</span>row[<span class="dv">1</span>]<span class="op">*</span><span class="dv">100</span><span class="sc">:9.1f}</span><span class="ss">% </span><span class="sc">{</span>row[<span class="dv">2</span>]<span class="op">*</span><span class="dv">100</span><span class="sc">:9.1f}</span><span class="ss">% </span><span class="sc">{</span>reqN<span class="sc">:8d}</span><span class="ss">"</span>)</span>
+<span id="cb7-295"><a href="#cb7-295" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">  'req N' = window (in segments) needed to fill the pipe"</span>)</span>
+<span id="cb7-296"><a href="#cb7-296" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-297"><a href="#cb7-297" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-298"><a href="#cb7-298" aria-hidden="true" tabindex="-1"></a><span class="fu">### TCP Reno Sawtooth and the Mathis Model</span></span>
+<span id="cb7-299"><a href="#cb7-299" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-300"><a href="#cb7-300" aria-hidden="true" tabindex="-1"></a>The second experiment simulates Reno's congestion window over time and compares measured throughput with the $1/\sqrt{p}$ model.</span>
+<span id="cb7-301"><a href="#cb7-301" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-304"><a href="#cb7-304" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb7-305"><a href="#cb7-305" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-tcp-reno</span></span>
+<span id="cb7-306"><a href="#cb7-306" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Left: simulated TCP Reno congestion window under periodic loss, showing slow start, congestion avoidance with additive increase, and the multiplicative-decrease sawtooth (fast recovery). Right: TCP throughput versus loss rate on a log-log scale compared with the Mathis model BW ≈ (MSS/RTT)·(1.22/√p). Throughput degrades only as the inverse square root of loss, which is why TCP remains usable on lossy links."</span></span>
+<span id="cb7-307"><a href="#cb7-307" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-308"><a href="#cb7-308" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb7-309"><a href="#cb7-309" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb7-310"><a href="#cb7-310" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-311"><a href="#cb7-311" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">7</span>)</span>
+<span id="cb7-312"><a href="#cb7-312" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-313"><a href="#cb7-313" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Simulate a TCP Reno-like congestion window over time (time in RTTs) ---</span></span>
+<span id="cb7-314"><a href="#cb7-314" aria-hidden="true" tabindex="-1"></a>MSS <span class="op">=</span> <span class="dv">1460</span></span>
+<span id="cb7-315"><a href="#cb7-315" aria-hidden="true" tabindex="-1"></a>ssthresh <span class="op">=</span> <span class="dv">64</span></span>
+<span id="cb7-316"><a href="#cb7-316" aria-hidden="true" tabindex="-1"></a>cwnd <span class="op">=</span> <span class="fl">1.0</span></span>
+<span id="cb7-317"><a href="#cb7-317" aria-hidden="true" tabindex="-1"></a>cubic_target <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb7-318"><a href="#cb7-318" aria-hidden="true" tabindex="-1"></a>times, cwnds <span class="op">=</span> [], []</span>
+<span id="cb7-319"><a href="#cb7-319" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb7-320"><a href="#cb7-320" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> t <span class="op">&lt;</span> <span class="dv">120</span>:</span>
+<span id="cb7-321"><a href="#cb7-321" aria-hidden="true" tabindex="-1"></a>    times.append(t)<span class="op">;</span> cwnds.append(cwnd)</span>
+<span id="cb7-322"><a href="#cb7-322" aria-hidden="true" tabindex="-1"></a>    <span class="co"># exponential loss with low probability per RTT</span></span>
+<span id="cb7-323"><a href="#cb7-323" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> rng.random() <span class="op">&lt;</span> <span class="fl">0.015</span>:</span>
+<span id="cb7-324"><a href="#cb7-324" aria-hidden="true" tabindex="-1"></a>        ssthresh <span class="op">=</span> <span class="bu">max</span>(cwnd <span class="op">/</span> <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb7-325"><a href="#cb7-325" aria-hidden="true" tabindex="-1"></a>        cwnd <span class="op">=</span> <span class="bu">max</span>(ssthresh, <span class="dv">1</span>)     <span class="co"># Reno fast recovery approximation</span></span>
+<span id="cb7-326"><a href="#cb7-326" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> cwnd <span class="op">&lt;</span> ssthresh:</span>
+<span id="cb7-327"><a href="#cb7-327" aria-hidden="true" tabindex="-1"></a>        cwnd <span class="op">*=</span> <span class="dv">2</span>                    <span class="co"># slow start</span></span>
+<span id="cb7-328"><a href="#cb7-328" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb7-329"><a href="#cb7-329" aria-hidden="true" tabindex="-1"></a>        cwnd <span class="op">+=</span> <span class="fl">1.0</span>                  <span class="co"># additive increase</span></span>
+<span id="cb7-330"><a href="#cb7-330" aria-hidden="true" tabindex="-1"></a>    t <span class="op">+=</span> <span class="fl">1.0</span></span>
+<span id="cb7-331"><a href="#cb7-331" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-332"><a href="#cb7-332" aria-hidden="true" tabindex="-1"></a>times <span class="op">=</span> np.array(times)<span class="op">;</span> cwnds <span class="op">=</span> np.array(cwnds)</span>
+<span id="cb7-333"><a href="#cb7-333" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-334"><a href="#cb7-334" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Throughput vs loss: Mathis model ---</span></span>
+<span id="cb7-335"><a href="#cb7-335" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> np.logspace(<span class="op">-</span><span class="dv">8</span>, <span class="op">-</span><span class="dv">1</span>, <span class="dv">200</span>)</span>
+<span id="cb7-336"><a href="#cb7-336" aria-hidden="true" tabindex="-1"></a>RTT <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb7-337"><a href="#cb7-337" aria-hidden="true" tabindex="-1"></a>BW <span class="op">=</span> (MSS <span class="op">*</span> <span class="dv">8</span> <span class="op">/</span> RTT) <span class="op">*</span> <span class="fl">1.22</span> <span class="op">/</span> np.sqrt(p)   <span class="co"># bits/s</span></span>
+<span id="cb7-338"><a href="#cb7-338" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-339"><a href="#cb7-339" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="fl">4.8</span>))</span>
+<span id="cb7-340"><a href="#cb7-340" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].plot(times, cwnds, color<span class="op">=</span><span class="st">"#2980b9"</span>, lw<span class="op">=</span><span class="fl">1.0</span>)</span>
+<span id="cb7-341"><a href="#cb7-341" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].axhline(ssthresh, color<span class="op">=</span><span class="st">"#e74c3c"</span>, ls<span class="op">=</span><span class="st">"--"</span>, lw<span class="op">=</span><span class="dv">1</span>, label<span class="op">=</span><span class="st">"ssthresh (sample)"</span>)</span>
+<span id="cb7-342"><a href="#cb7-342" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Simulated TCP Reno congestion window"</span>)</span>
+<span id="cb7-343"><a href="#cb7-343" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">"time (RTTs)"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].set_ylabel(<span class="st">"cwnd (MSS)"</span>)</span>
+<span id="cb7-344"><a href="#cb7-344" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].legend()<span class="op">;</span> axes[<span class="dv">0</span>].grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb7-345"><a href="#cb7-345" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-346"><a href="#cb7-346" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].loglog(p, BW <span class="op">/</span> <span class="fl">1e6</span>, color<span class="op">=</span><span class="st">"#8e44ad"</span>, label<span class="op">=</span><span class="st">"Mathis: (MSS/RTT)·1.22/√p"</span>)</span>
+<span id="cb7-347"><a href="#cb7-347" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> loss, bw <span class="kw">in</span> [(<span class="fl">1e-6</span>, <span class="dv">100</span>), (<span class="fl">1e-5</span>, <span class="dv">40</span>), (<span class="fl">1e-4</span>, <span class="dv">10</span>), (<span class="fl">1e-3</span>, <span class="dv">3</span>)]:</span>
+<span id="cb7-348"><a href="#cb7-348" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">1</span>].scatter([loss], [bw], color<span class="op">=</span><span class="st">"#e67e22"</span>, zorder<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb7-349"><a href="#cb7-349" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"TCP throughput vs loss rate (RTT = 100 ms, MSS = 1460 B)"</span>)</span>
+<span id="cb7-350"><a href="#cb7-350" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xlabel(<span class="st">"loss probability p"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].set_ylabel(<span class="st">"throughput (Mbps)"</span>)</span>
+<span id="cb7-351"><a href="#cb7-351" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].legend()<span class="op">;</span> axes[<span class="dv">1</span>].grid(alpha<span class="op">=</span><span class="fl">0.3</span>, which<span class="op">=</span><span class="st">"both"</span>)</span>
+<span id="cb7-352"><a href="#cb7-352" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb7-353"><a href="#cb7-353" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-354"><a href="#cb7-354" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== CONGESTION WINDOW STATISTICS ==="</span>)</span>
+<span id="cb7-355"><a href="#cb7-355" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  samples=</span><span class="sc">{</span><span class="bu">len</span>(cwnds)<span class="sc">}</span><span class="ss">  min=</span><span class="sc">{</span>cwnds<span class="sc">.</span><span class="bu">min</span>()<span class="sc">:.1f}</span><span class="ss">  max=</span><span class="sc">{</span>cwnds<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.1f}</span><span class="ss">  "</span></span>
+<span id="cb7-356"><a href="#cb7-356" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"mean=</span><span class="sc">{</span>cwnds<span class="sc">.</span>mean()<span class="sc">:.1f}</span><span class="ss"> MSS"</span>)</span>
+<span id="cb7-357"><a href="#cb7-357" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  mean throughput (MSS/RTT) = </span><span class="sc">{</span>cwnds<span class="sc">.</span>mean()<span class="op">*</span>MSS<span class="op">*</span><span class="dv">8</span><span class="op">/</span><span class="fl">0.1</span><span class="op">/</span><span class="fl">1e6</span><span class="sc">:.1f}</span><span class="ss"> Mbps at RTT=100 ms"</span>)</span>
+<span id="cb7-358"><a href="#cb7-358" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-359"><a href="#cb7-359" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== MATHIS MODEL: THROUGHPUT VS LOSS ==="</span>)</span>
+<span id="cb7-360"><a href="#cb7-360" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'loss p'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'throughput'</span><span class="sc">:&gt;14}</span><span class="ss">"</span>)</span>
+<span id="cb7-361"><a href="#cb7-361" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> pp <span class="kw">in</span> [<span class="fl">1e-8</span>, <span class="fl">1e-7</span>, <span class="fl">1e-6</span>, <span class="fl">1e-5</span>, <span class="fl">1e-4</span>, <span class="fl">1e-3</span>, <span class="fl">1e-2</span>]:</span>
+<span id="cb7-362"><a href="#cb7-362" aria-hidden="true" tabindex="-1"></a>    bw <span class="op">=</span> (MSS <span class="op">*</span> <span class="dv">8</span> <span class="op">/</span> <span class="fl">0.05</span>) <span class="op">*</span> <span class="fl">1.22</span> <span class="op">/</span> np.sqrt(pp)</span>
+<span id="cb7-363"><a href="#cb7-363" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>pp<span class="sc">:10.0e}</span><span class="ss"> </span><span class="sc">{</span>bw<span class="op">/</span><span class="fl">1e6</span><span class="sc">:11.1f}</span><span class="ss"> Mbps"</span>)</span>
+<span id="cb7-364"><a href="#cb7-364" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-365"><a href="#cb7-365" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-366"><a href="#cb7-366" aria-hidden="true" tabindex="-1"></a><span class="fu">### Pipelining Efficiency: GBN vs SR</span></span>
+<span id="cb7-367"><a href="#cb7-367" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-368"><a href="#cb7-368" aria-hidden="true" tabindex="-1"></a>Finally, compare how many retransmissions each pipelining scheme wastes under loss.</span>
+<span id="cb7-369"><a href="#cb7-369" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-372"><a href="#cb7-372" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb7-373"><a href="#cb7-373" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== RETRANSMISSION COST UNDER LOSS (window N, one loss at position k) ==="</span>)</span>
+<span id="cb7-374"><a href="#cb7-374" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="dv">10</span></span>
+<span id="cb7-375"><a href="#cb7-375" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'loss at'</span><span class="sc">:&gt;8}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'GBN resends'</span><span class="sc">:&gt;14}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'SR resends'</span><span class="sc">:&gt;12}</span><span class="ss">"</span>)</span>
+<span id="cb7-376"><a href="#cb7-376" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, N <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb7-377"><a href="#cb7-377" aria-hidden="true" tabindex="-1"></a>    gbn <span class="op">=</span> N <span class="op">-</span> k <span class="op">+</span> <span class="dv">1</span>     <span class="co"># resend the lost packet and everything after it</span></span>
+<span id="cb7-378"><a href="#cb7-378" aria-hidden="true" tabindex="-1"></a>    sr <span class="op">=</span> <span class="dv">1</span>              <span class="co"># resend only the lost packet</span></span>
+<span id="cb7-379"><a href="#cb7-379" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>k<span class="sc">:8d}</span><span class="ss"> </span><span class="sc">{</span>gbn<span class="sc">:14d}</span><span class="ss"> </span><span class="sc">{</span>sr<span class="sc">:12d}</span><span class="ss">"</span>)</span>
+<span id="cb7-380"><a href="#cb7-380" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">  average GBN retransmissions = </span><span class="sc">{</span>(N<span class="op">+</span><span class="dv">1</span>)<span class="op">/</span><span class="dv">2</span><span class="sc">:.1f}</span><span class="ss">, SR = 1.0"</span>)</span>
+<span id="cb7-381"><a href="#cb7-381" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Selective Repeat wins by a factor of about (N+1)/2 on a single loss."</span>)</span>
+<span id="cb7-382"><a href="#cb7-382" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-383"><a href="#cb7-383" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-384"><a href="#cb7-384" aria-hidden="true" tabindex="-1"></a>The laboratory makes the transport layer's central trade-off concrete: **reliability and fairness are engineered, not given.** TCP's AIMD sawtooth is the price of stability and fairness; pipelining is the price of sequence-number complexity; and modern algorithms (CUBIC, BBR, QUIC) are attempts to buy better throughput without paying the old taxes.</span>
+<span id="cb7-385"><a href="#cb7-385" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-386"><a href="#cb7-386" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-387"><a href="#cb7-387" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-388"><a href="#cb7-388" aria-hidden="true" tabindex="-1"></a><span class="fu">## Summary</span></span>
+<span id="cb7-389"><a href="#cb7-389" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-390"><a href="#cb7-390" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-391"><a href="#cb7-391" aria-hidden="true" tabindex="-1"></a>\begin{aligned}</span>
+<span id="cb7-392"><a href="#cb7-392" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Transport: } &amp;&amp; \text{process-to-process; UDP (best-effort) vs TCP (reliable byte stream).} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-393"><a href="#cb7-393" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Reliability: } &amp;&amp; \text{checksums, ACK/NAK, sequence numbers, timers, windows.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-394"><a href="#cb7-394" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Pipelining: } &amp;&amp; \text{GBN (cumulative, discard OOO) vs SR (buffer, selective ACK).} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-395"><a href="#cb7-395" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{TCP: } &amp;&amp; \text{three-way handshake; byte sequence numbers; Jacobson/Karels timeout; fast retransmit.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-396"><a href="#cb7-396" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Control: } &amp;&amp; \text{flow control (rwnd) protects the receiver; congestion control (cwnd) protects the network.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-397"><a href="#cb7-397" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{AIMD: } &amp;&amp; \text{additive increase, multiplicative decrease; sawtooth; fairness.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-398"><a href="#cb7-398" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Modern: } &amp;&amp; \text{CUBIC, BBR, ECN, and QUIC over UDP.}</span>
+<span id="cb7-399"><a href="#cb7-399" aria-hidden="true" tabindex="-1"></a>\end{aligned}</span>
+<span id="cb7-400"><a href="#cb7-400" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-401"><a href="#cb7-401" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-402"><a href="#cb7-402" aria-hidden="true" tabindex="-1"></a>TCP gives applications a reliable byte stream, but it depends on the network layer to move datagrams from host to host. In <span class="co">[</span><span class="ot">Part 3</span><span class="co">](computer-networking-top-down-part-3-network-layer-data-and-control-plane.qmd)</span> we descend into the **network layer**: how routers forward packets in the data plane, and how routing protocols compute the paths in the control plane.</span>
+<span id="cb7-403"><a href="#cb7-403" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-404"><a href="#cb7-404" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-405"><a href="#cb7-405" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-406"><a href="#cb7-406" aria-hidden="true" tabindex="-1"></a><span class="fu">## Curated References and Further Reading</span></span>
+<span id="cb7-407"><a href="#cb7-407" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-408"><a href="#cb7-408" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Kurose, J. &amp; Ross, K. (2021).** *Computer Networking: A Top-Down Approach*, 8th ed. Pearson. (Primary source: Chapter 3.)</span>
+<span id="cb7-409"><a href="#cb7-409" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Postel, J. (1980).** *Transmission Control Protocol.* RFC 793.</span>
+<span id="cb7-410"><a href="#cb7-410" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Postel, J. (1980).** *User Datagram Protocol.* RFC 768.</span>
+<span id="cb7-411"><a href="#cb7-411" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Jacobson, V. (1988).** *Congestion Avoidance and Control.* ACM SIGCOMM.</span>
+<span id="cb7-412"><a href="#cb7-412" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>**Mathis, M., Semke, J., Mahdavi, J. &amp; Ott, T. (1997).** *The Macroscopic Behavior of the TCP Congestion Avoidance Algorithm.* ACM CCR.</span>
+<span id="cb7-413"><a href="#cb7-413" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>**Jacobson, V., Braden, R. &amp; Borman, D. (1992).** *TCP Extensions for High Performance.* RFC 1323.</span>
+<span id="cb7-414"><a href="#cb7-414" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>**Ha, S., Rhee, I. &amp; Xu, L. (2008).** *CUBIC: A New TCP-Friendly High-Speed TCP Variant.* ACM SIGOPS OSR.</span>
+<span id="cb7-415"><a href="#cb7-415" aria-hidden="true" tabindex="-1"></a><span class="ss">8. </span>**Cardwell, N., Cheng, Y., Gunn, C., Yeganeh, S. &amp; Jacobson, V. (2016).** *BBR: Congestion-Based Congestion Control.* ACM Queue.</span>
+<span id="cb7-416"><a href="#cb7-416" aria-hidden="true" tabindex="-1"></a><span class="ss">9. </span>**Iyengar, J. &amp; Thomson, M. (2021).** *QUIC: A UDP-Based Multiplexed and Secure Transport.* RFC 9000.</span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2026 Igor Kan</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

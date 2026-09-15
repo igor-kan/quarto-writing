@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Igor Kan">
+<meta name="dcterms.date" content="2026-09-14">
+<meta name="description" content="A careful development of Gödel’s two great theorems: the completeness theorem of first-order logic (validity = provability, Henkin’s construction, compactness, Löwenheim–Skolem) and the incompleteness theorems (Gödel numbering, arithmetization of syntax, representability, the diagonal/fixed-point lemma, the Gödel sentence ‘I am not provable’, Rosser’s trick, the second incompleteness theorem, Löb’s theorem, and how the proofs were discovered and later reproved via computability and Kolmogorov complexity), together with the implications for Hilbert’s program, decidability, independence, and the Lucas–Penrose argument, plus an executable Python laboratory implementing Gödel numbering, a quine (the computational diagonal lemma), a resolution prover demonstrating completeness against truth tables, and the halting-problem diagonal.">
+
+<title>Gödel’s Completeness and Incompleteness Theorems – My Writings</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-a515e054079012129989d5397ee3c9c1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">My Writings</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../literature/index.html"> 
+<span class="menu-text">Literature</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../chapters/index.html"> 
+<span class="menu-text">Chapters</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../tutorials/index.html"> 
+<span class="menu-text">Tutorials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction-two-theorems-often-confused" id="toc-introduction-two-theorems-often-confused" class="nav-link active" data-scroll-target="#introduction-two-theorems-often-confused"><span class="header-section-number">1</span> 1. Introduction: Two Theorems, Often Confused</a></li>
+  <li><a href="#formal-systems-the-vocabulary" id="toc-formal-systems-the-vocabulary" class="nav-link" data-scroll-target="#formal-systems-the-vocabulary"><span class="header-section-number">2</span> 2. Formal Systems: The Vocabulary</a></li>
+  <li><a href="#the-completeness-theorem-1929" id="toc-the-completeness-theorem-1929" class="nav-link" data-scroll-target="#the-completeness-theorem-1929"><span class="header-section-number">3</span> 3. The Completeness Theorem (1929)</a>
+  <ul>
+  <li><a href="#henkins-proof-sketch" id="toc-henkins-proof-sketch" class="nav-link" data-scroll-target="#henkins-proof-sketch"><span class="header-section-number">3.1</span> 3.1 Henkin’s Proof Sketch</a></li>
+  <li><a href="#corollaries" id="toc-corollaries" class="nav-link" data-scroll-target="#corollaries"><span class="header-section-number">3.2</span> 3.2 Corollaries</a></li>
+  </ul></li>
+  <li><a href="#the-incompleteness-theorems-1931" id="toc-the-incompleteness-theorems-1931" class="nav-link" data-scroll-target="#the-incompleteness-theorems-1931"><span class="header-section-number">4</span> 4. The Incompleteness Theorems (1931)</a>
+  <ul>
+  <li><a href="#the-setup-arithmetization" id="toc-the-setup-arithmetization" class="nav-link" data-scroll-target="#the-setup-arithmetization"><span class="header-section-number">4.1</span> 4.1 The Setup: Arithmetization</a></li>
+  <li><a href="#the-diagonal-lemma" id="toc-the-diagonal-lemma" class="nav-link" data-scroll-target="#the-diagonal-lemma"><span class="header-section-number">4.2</span> 4.2 The Diagonal Lemma</a></li>
+  <li><a href="#the-first-incompleteness-theorem" id="toc-the-first-incompleteness-theorem" class="nav-link" data-scroll-target="#the-first-incompleteness-theorem"><span class="header-section-number">4.3</span> 4.3 The First Incompleteness Theorem</a></li>
+  <li><a href="#the-second-incompleteness-theorem" id="toc-the-second-incompleteness-theorem" class="nav-link" data-scroll-target="#the-second-incompleteness-theorem"><span class="header-section-number">4.4</span> 4.4 The Second Incompleteness Theorem</a></li>
+  </ul></li>
+  <li><a href="#how-the-proofs-work-a-rough-summary" id="toc-how-the-proofs-work-a-rough-summary" class="nav-link" data-scroll-target="#how-the-proofs-work-a-rough-summary"><span class="header-section-number">5</span> 5. How the Proofs Work (a Rough Summary)</a>
+  <ul>
+  <li><a href="#the-mechanism" id="toc-the-mechanism" class="nav-link" data-scroll-target="#the-mechanism"><span class="header-section-number">5.1</span> 5.1 The Mechanism</a></li>
+  <li><a href="#gödels-original-proof-1931" id="toc-gödels-original-proof-1931" class="nav-link" data-scroll-target="#gödels-original-proof-1931"><span class="header-section-number">5.2</span> 5.2 Gödel’s Original Proof (1931)</a></li>
+  <li><a href="#later-and-alternative-proofs" id="toc-later-and-alternative-proofs" class="nav-link" data-scroll-target="#later-and-alternative-proofs"><span class="header-section-number">5.3</span> 5.3 Later and Alternative Proofs</a></li>
+  <li><a href="#the-abstract-diagonal-lawvere" id="toc-the-abstract-diagonal-lawvere" class="nav-link" data-scroll-target="#the-abstract-diagonal-lawvere"><span class="header-section-number">5.4</span> 5.4 The Abstract Diagonal (Lawvere)</a></li>
+  </ul></li>
+  <li><a href="#implications" id="toc-implications" class="nav-link" data-scroll-target="#implications"><span class="header-section-number">6</span> 6. Implications</a>
+  <ul>
+  <li><a href="#hilberts-program" id="toc-hilberts-program" class="nav-link" data-scroll-target="#hilberts-program"><span class="header-section-number">6.1</span> 6.1 Hilbert’s Program</a></li>
+  <li><a href="#truth-provability-and-independence" id="toc-truth-provability-and-independence" class="nav-link" data-scroll-target="#truth-provability-and-independence"><span class="header-section-number">6.2</span> 6.2 Truth, Provability, and Independence</a></li>
+  <li><a href="#computability-and-decidability" id="toc-computability-and-decidability" class="nav-link" data-scroll-target="#computability-and-decidability"><span class="header-section-number">6.3</span> 6.3 Computability and Decidability</a></li>
+  <li><a href="#the-lucaspenrose-argument-and-its-critics" id="toc-the-lucaspenrose-argument-and-its-critics" class="nav-link" data-scroll-target="#the-lucaspenrose-argument-and-its-critics"><span class="header-section-number">6.4</span> 6.4 The Lucas–Penrose Argument and Its Critics</a></li>
+  <li><a href="#common-misconceptions" id="toc-common-misconceptions" class="nav-link" data-scroll-target="#common-misconceptions"><span class="header-section-number">6.5</span> 6.5 Common Misconceptions</a></li>
+  </ul></li>
+  <li><a href="#computational-laboratory" id="toc-computational-laboratory" class="nav-link" data-scroll-target="#computational-laboratory"><span class="header-section-number">7</span> 7. Computational Laboratory</a></li>
+  <li><a href="#summary-matrix" id="toc-summary-matrix" class="nav-link" data-scroll-target="#summary-matrix"><span class="header-section-number">8</span> 8. Summary Matrix</a></li>
+  <li><a href="#curated-references-and-primary-sources" id="toc-curated-references-and-primary-sources" class="nav-link" data-scroll-target="#curated-references-and-primary-sources"><span class="header-section-number">9</span> 9. Curated References and Primary Sources</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title">Gödel’s Completeness and Incompleteness Theorems</h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
+<p class="subtitle lead">Why First-Order Logic Is Complete but Arithmetic Is Not: Henkin’s Model Construction, Gödel Numbering, the Diagonal Lemma, the Self-Referential Sentence, Rosser’s Refinement, the Second Theorem, and the Implications for Hilbert’s Program, Minds, and the Limits of Formal Proof</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Mathematics</div>
+    <div class="quarto-category">Logic &amp; Foundations</div>
+    <div class="quarto-category">Set Theory</div>
+    <div class="quarto-category">Theoretical Computer Science</div>
+    <div class="quarto-category">Philosophy</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    A careful development of Gödel’s two great theorems: the completeness theorem of first-order logic (validity = provability, Henkin’s construction, compactness, Löwenheim–Skolem) and the incompleteness theorems (Gödel numbering, arithmetization of syntax, representability, the diagonal/fixed-point lemma, the Gödel sentence ‘I am not provable’, Rosser’s trick, the second incompleteness theorem, Löb’s theorem, and how the proofs were discovered and later reproved via computability and Kolmogorov complexity), together with the implications for Hilbert’s program, decidability, independence, and the Lucas–Penrose argument, plus an executable Python laboratory implementing Gödel numbering, a quine (the computational diagonal lemma), a resolution prover demonstrating completeness against truth tables, and the halting-problem diagonal.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Igor Kan </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 14, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><em>“This statement is not provable.”</em></p>
+<p>Gödel’s <strong>completeness</strong> theorem (1929) is the good news: for first-order logic, <strong>truth and proof coincide</strong>. Gödel’s <strong>incompleteness</strong> theorems (1931) are the boundary: no consistent, effectively given theory of arithmetic can prove every truth about the natural numbers — and none can prove its own consistency. Together they are the twin pillars of mathematical logic. This essay explains both, sketches how they were proved, and untangles their implications.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Companion Treatises in this Series
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li><a href="../../posts/mathematics/uncountable-infinities-diagonal-argument-and-cantor-set-fractals.html">The Uncountable Infinite: Cantor’s Diagonal Argument, Cantor Set, and Fractals</a></li>
+<li><a href="../../posts/mathematics/axiomatic-set-theory-zfc-ordinals-cardinals-and-paradoxes.html">Axiomatic Set Theory, ZFC, Ordinals, Cardinals, and Paradoxes</a></li>
+<li><a href="../../posts/mathematics/rationals-density-enumeration-metric-spaces-and-topology.html">The Rational Line: Density, Enumeration, Cauchy Sequences, Dedekind Cuts, Metric Spaces, and Topology</a></li>
+<li><a href="../../posts/philosophy/philosophy-of-mathematics-platonism-formalism-infinity-godel.html">Philosophy of Mathematics: Platonism, Formalism, and Gödel</a></li>
+</ul>
+</div>
+</div>
+</div>
+<hr>
+<section id="introduction-two-theorems-often-confused" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="introduction-two-theorems-often-confused"><span class="header-section-number">1</span> 1. Introduction: Two Theorems, Often Confused</h2>
+<p>The words <em>complete</em> and <em>incomplete</em> refer to <strong>different notions</strong>, which is why the two theorems seem to contradict each other at first glance.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Theorem</th>
+<th style="text-align: left;">Year</th>
+<th style="text-align: left;">Statement</th>
+<th style="text-align: left;">Refers to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Completeness</strong></td>
+<td style="text-align: left;">1929</td>
+<td style="text-align: left;">logical validity <span class="math inline">\(\iff\)</span> provability in FOL</td>
+<td style="text-align: left;">the <em>proof system</em> of logic</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Incompleteness</strong></td>
+<td style="text-align: left;">1931</td>
+<td style="text-align: left;">arithmetic truth <span class="math inline">\(\not\subseteq\)</span> provability</td>
+<td style="text-align: left;">the <em>theory</em> of arithmetic</td>
+</tr>
+</tbody>
+</table>
+<p>Completeness says the <strong>deductive apparatus of first-order logic is strong enough</strong> to derive every logically valid sentence. Incompleteness says that <strong>any particular first-order theory rich enough to describe arithmetic is too weak</strong> to capture all truths of its intended subject matter. There is no contradiction: the validities of logic form a manageable class; the truths of arithmetic do not.</p>
+<p>We proceed: formal preliminaries (Section 2), completeness (Section 3), incompleteness (Section 4), how the proofs work (Section 5), implications (Section 6), and a computational laboratory (Section 7).</p>
+<hr>
+</section>
+<section id="formal-systems-the-vocabulary" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="formal-systems-the-vocabulary"><span class="header-section-number">2</span> 2. Formal Systems: The Vocabulary</h2>
+<div id="def-formal" class="theorem definition">
+<p><span class="theorem-title"><strong>Definition 1 (Definition 2.1 (Formal theory))</strong></span> A <strong>formal theory</strong> <span class="math inline">\(T\)</span> consists of: - a <strong>language</strong> <span class="math inline">\(\mathcal{L}\)</span>: a (usually countable) set of symbols with syntactic rules forming <strong>terms</strong> and <strong>formulas</strong>; - a decidable set of <strong>axioms</strong> (logical and non-logical); - <strong>inference rules</strong> (e.g.&nbsp;modus ponens, generalization).</p>
+<p>A <strong>proof</strong> is a finite sequence of formulas, each an axiom or following from earlier ones by a rule. <span class="math inline">\(T\vdash\varphi\)</span> means “<span class="math inline">\(\varphi\)</span> is provable in <span class="math inline">\(T\)</span>.”</p>
+</div>
+<p><strong>Semantics.</strong> A <strong>structure</strong> (or model) <span class="math inline">\(\mathcal{M}\)</span> gives the symbols meaning; <span class="math inline">\(\mathcal{M}\models\varphi\)</span> means “<span class="math inline">\(\varphi\)</span> is true in <span class="math inline">\(\mathcal{M}\)</span>.” A formula is: - <strong>satisfiable</strong> if true in some model; - <strong>valid</strong> if true in every model; - a <strong>semantic consequence</strong> of <span class="math inline">\(T\)</span> (<span class="math inline">\(T\models\varphi\)</span>) if every model of <span class="math inline">\(T\)</span> satisfies <span class="math inline">\(\varphi\)</span>.</p>
+<p>Key metalogical properties:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Property</th>
+<th style="text-align: left;">Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Soundness</strong></td>
+<td style="text-align: left;"><span class="math inline">\(T\vdash\varphi \Rightarrow T\models\varphi\)</span> (proofs yield truth)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Completeness</strong></td>
+<td style="text-align: left;"><span class="math inline">\(T\models\varphi \Rightarrow T\vdash\varphi\)</span> (truth is provable)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Consistency</strong></td>
+<td style="text-align: left;"><span class="math inline">\(T\nvdash\bot\)</span> (no contradiction derivable)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Decidability</strong></td>
+<td style="text-align: left;">there is an algorithm deciding <span class="math inline">\(T\vdash\varphi\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Recursive axiomatizability</strong></td>
+<td style="text-align: left;">the axiom set is decidable</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Robinson arithmetic (Q)</strong> and <strong>Peano arithmetic (PA)</strong> are the standard theories of the natural numbers. PA has axioms for <span class="math inline">\(0\)</span>, successor <span class="math inline">\(S\)</span>, <span class="math inline">\(+\)</span>, <span class="math inline">\(\times\)</span>, induction; Q keeps the arithmetic axioms but drops the induction schema.</p>
+<hr>
+</section>
+<section id="the-completeness-theorem-1929" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="the-completeness-theorem-1929"><span class="header-section-number">3</span> 3. The Completeness Theorem (1929)</h2>
+<div id="thm-completeness" class="theorem">
+<p><span class="theorem-title"><strong>Theorem 1 (Theorem 3.1 (Gödel’s Completeness Theorem))</strong></span> For any first-order theory <span class="math inline">\(T\)</span> and sentence <span class="math inline">\(\varphi\)</span>: <span class="math display">\[
+T\models\varphi \iff T\vdash\varphi.
+\]</span> Equivalently, every consistent first-order theory has a model.</p>
+</div>
+<p>This was Gödel’s doctoral dissertation. It turned the semantic notion of “truth in all models” into the syntactic notion of “derivable,” giving logic a usable proof theory.</p>
+<section id="henkins-proof-sketch" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="henkins-proof-sketch"><span class="header-section-number">3.1</span> 3.1 Henkin’s Proof Sketch</h3>
+<p>Leon Henkin (1949) gave the clean modern proof:</p>
+<ol type="1">
+<li><strong>Consistency expansion.</strong> Given consistent <span class="math inline">\(T\)</span> in a countable language, extend it to a <strong>maximal consistent</strong> theory <span class="math inline">\(T^*\)</span>: for every sentence <span class="math inline">\(\varphi\)</span>, add either <span class="math inline">\(\varphi\)</span> or <span class="math inline">\(\neg\varphi\)</span>, preserving consistency.</li>
+<li><strong>Witnesses.</strong> Enlarge the language with new constants <span class="math inline">\(c_\varphi\)</span> for each existential sentence <span class="math inline">\(\exists x\,\varphi(x)\)</span>, and add <strong>Henkin axioms</strong> <span class="math inline">\(\exists x\,\varphi(x)\to\varphi(c_\varphi)\)</span>, so that every existential claim has a named witness.</li>
+<li><strong>Term model.</strong> Build the <strong>canonical model</strong> whose elements are equivalence classes of closed terms (via <span class="math inline">\(t\sim s\)</span> iff <span class="math inline">\(T^*\vdash t=s\)</span>), interpreting function and relation symbols syntactically.</li>
+<li><strong>Truth lemma.</strong> Prove by induction on formulas that <span class="math inline">\(T^*\vdash\varphi \iff \mathcal{M}\models\varphi\)</span>. Hence <span class="math inline">\(\mathcal{M}\models T^*\supseteq T\)</span>.</li>
+</ol>
+<p>If <span class="math inline">\(T\)</span> is consistent, <span class="math inline">\(T^*\)</span> exists and has a model, so <span class="math inline">\(T\)</span> is satisfiable. Contrapositively, if <span class="math inline">\(T\)</span> has no model then <span class="math inline">\(T\vdash\bot\)</span>. For sentences, this yields completeness: if <span class="math inline">\(T\not\vdash\varphi\)</span>, then <span class="math inline">\(T\cup\{\neg\varphi\}\)</span> is consistent (syntactically), hence satisfiable (Theorem 3.1), so <span class="math inline">\(T\not\models\varphi\)</span>.</p>
+</section>
+<section id="corollaries" class="level3" data-number="3.2">
+<h3 data-number="3.2" class="anchored" data-anchor-id="corollaries"><span class="header-section-number">3.2</span> 3.2 Corollaries</h3>
+<div id="cor-compactness" class="theorem corollary">
+<p><span class="theorem-title"><strong>Corollary 1 (Corollary 3.1 (Compactness))</strong></span> If every finite subset of <span class="math inline">\(T\)</span> has a model, then <span class="math inline">\(T\)</span> has a model.</p>
+</div>
+<p><em>Proof.</em> If <span class="math inline">\(T\)</span> had no model, by completeness <span class="math inline">\(T\vdash\bot\)</span>; a proof is finite, so some finite <span class="math inline">\(T_0\subseteq T\)</span> proves <span class="math inline">\(\bot\)</span>, contradicting that <span class="math inline">\(T_0\)</span> has a model. <span class="math inline">\(\blacksquare\)</span></p>
+<p>Compactness yields <strong>nonstandard models</strong> of arithmetic (add a constant <span class="math inline">\(c\)</span> and axioms <span class="math inline">\(c&gt;0, c&gt;1, c&gt;2,\dots\)</span>; each finite subset is satisfiable, so a model exists with an infinite element) and <strong>nonstandard analysis</strong>.</p>
+<div id="cor-ls" class="theorem corollary">
+<p><span class="theorem-title"><strong>Corollary 2 (Corollary 3.2 (Löwenheim–Skolem))</strong></span> If a countable theory has an infinite model, it has models of every infinite cardinality; in particular, if ZFC has a model it has a countable one.</p>
+</div>
+<p>This is the source of <strong>Skolem’s paradox</strong> (see the <a href="../../posts/mathematics/uncountable-infinities-diagonal-argument-and-cantor-set-fractals.html">uncountable article</a>): a countable model of ZFC containing a set it “thinks” is uncountable.</p>
+<hr>
+</section>
+</section>
+<section id="the-incompleteness-theorems-1931" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="the-incompleteness-theorems-1931"><span class="header-section-number">4</span> 4. The Incompleteness Theorems (1931)</h2>
+<section id="the-setup-arithmetization" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="the-setup-arithmetization"><span class="header-section-number">4.1</span> 4.1 The Setup: Arithmetization</h3>
+<div id="def-godel-numbering" class="theorem definition">
+<p><span class="theorem-title"><strong>Definition 2 (Definition 4.1 (Gödel numbering))</strong></span> Assign to each symbol of the language a natural number. Encode a sequence of symbols <span class="math inline">\((s_1,\dots,s_n)\)</span> by <span class="math display">\[
+\ulcorner s_1\cdots s_n \urcorner \;=\; p_1^{c(s_1)}\cdots p_n^{c(s_n)},
+\]</span> where <span class="math inline">\(p_i\)</span> is the <span class="math inline">\(i\)</span>-th prime and <span class="math inline">\(c(s_i)\)</span> the code of <span class="math inline">\(s_i\)</span>. By unique factorization, this is injective, and decoding is algorithmic.</p>
+</div>
+<p>Syntax becomes arithmetic: “<span class="math inline">\(\varphi\)</span> is a formula,” “<span class="math inline">\(\pi\)</span> is a proof of <span class="math inline">\(\varphi\)</span>,” and “<span class="math inline">\(\varphi\)</span> is provable” are all <strong>decidable/recursive</strong> predicates on natural numbers.</p>
+<p>Crucially, PA can <strong>represent</strong> recursive predicates and functions: for every recursive relation <span class="math inline">\(R\)</span>, there is a formula <span class="math inline">\(\rho\)</span> such that <span class="math inline">\(R(\bar n)\Rightarrow \mathrm{PA}\vdash\rho(\bar n)\)</span> and <span class="math inline">\(\neg R(\bar n)\Rightarrow \mathrm{PA}\vdash\neg\rho(\bar n)\)</span> (the formalized version of “the proof checker can be written in arithmetic”).</p>
+</section>
+<section id="the-diagonal-lemma" class="level3" data-number="4.2">
+<h3 data-number="4.2" class="anchored" data-anchor-id="the-diagonal-lemma"><span class="header-section-number">4.2</span> 4.2 The Diagonal Lemma</h3>
+<div id="lem-diagonal" class="theorem lemma">
+<p><span class="theorem-title"><strong>Lemma 1 (Lemma 4.1 (Diagonal / fixed-point lemma))</strong></span> For every formula <span class="math inline">\(\varphi(x)\)</span> with one free variable, there is a sentence <span class="math inline">\(\psi\)</span> such that <span class="math display">\[
+\mathrm{PA}\vdash \psi \leftrightarrow \varphi(\ulcorner\psi\urcorner).
+\]</span></p>
+</div>
+<p><em>Proof sketch.</em> Define the <strong>substitution</strong> function on codes, which is primitive recursive and hence representable by a formula <span class="math inline">\(\mathrm{sub}(x,y,z)\)</span> computing “the code of the formula obtained by substituting the numeral <span class="math inline">\(y\)</span> for the variable with code <span class="math inline">\(x\)</span> in the formula with code <span class="math inline">\(z\)</span>.” Given <span class="math inline">\(\varphi(x)\)</span>, let <span class="math inline">\(\theta(z) := \varphi(\mathrm{sub}(x,z,z))\)</span> and let <span class="math inline">\(k=\ulcorner\theta\urcorner\)</span>. Set <span class="math display">\[
+\psi := \theta(\bar k) = \varphi\bigl(\mathrm{sub}(\bar x,\bar k,\bar k)\bigr),
+\]</span> so <span class="math inline">\(\psi\)</span>’s code is the result of substituting <span class="math inline">\(k\)</span> into <span class="math inline">\(\theta\)</span>; provably, <span class="math inline">\(\mathrm{sub}(x,k,k)\)</span> equals <span class="math inline">\(\ulcorner\psi\urcorner\)</span>. Hence <span class="math inline">\(\mathrm{PA}\vdash\psi\leftrightarrow\varphi(\ulcorner\psi\urcorner)\)</span>. <span class="math inline">\(\blacksquare\)</span></p>
+<p>This is the logical form of the diagonal argument: <strong>a sentence that refers to its own code</strong>.</p>
+</section>
+<section id="the-first-incompleteness-theorem" class="level3" data-number="4.3">
+<h3 data-number="4.3" class="anchored" data-anchor-id="the-first-incompleteness-theorem"><span class="header-section-number">4.3</span> 4.3 The First Incompleteness Theorem</h3>
+<p>Let <span class="math inline">\(\mathrm{Prov}_T(x)\)</span> be the formula expressing “the formula with code <span class="math inline">\(x\)</span> is provable in <span class="math inline">\(T\)</span>.” Apply the diagonal lemma to <span class="math inline">\(\varphi(x)=\neg\mathrm{Prov}_T(x)\)</span>, obtaining the <strong>Gödel sentence</strong> <span class="math inline">\(G\)</span> with <span class="math display">\[
+\mathrm{PA}\vdash G \;\leftrightarrow\; \neg\,\mathrm{Prov}_T(\ulcorner G\urcorner),
+\]</span> i.e.&nbsp;“<span class="math inline">\(G\)</span> is not provable in <span class="math inline">\(T\)</span>.”</p>
+<div id="thm-incompleteness-1" class="theorem">
+<p><span class="theorem-title"><strong>Theorem 2 (Theorem 4.1 (Gödel’s First Incompleteness Theorem))</strong></span> Let <span class="math inline">\(T\)</span> be a consistent, recursively axiomatizable theory that interprets a sufficient fragment of arithmetic (e.g.&nbsp;<span class="math inline">\(Q\)</span> or PA). Then <span class="math inline">\(T\)</span> is <strong>incomplete</strong>: there is a sentence <span class="math inline">\(G\)</span> with <span class="math display">\[
+T\nvdash G \quad\text{and}\quad T\nvdash\neg G.
+\]</span></p>
+</div>
+<p><em>Proof sketch.</em> By the diagonal lemma take <span class="math inline">\(G\leftrightarrow\neg\mathrm{Prov}_T(\ulcorner G\urcorner)\)</span>. - If <span class="math inline">\(T\vdash G\)</span>, then a proof of <span class="math inline">\(G\)</span> exists; by <strong>provable <span class="math inline">\(\Sigma\)</span>-completeness</strong> (the proof checker is representable), <span class="math inline">\(T\vdash\mathrm{Prov}_T(\ulcorner G\urcorner)\)</span>, hence <span class="math inline">\(T\vdash\neg G\)</span> by the fixed point — contradicting consistency. So <span class="math inline">\(T\nvdash G\)</span>. - If <span class="math inline">\(T\vdash\neg G\)</span>, then by the fixed point <span class="math inline">\(T\vdash\mathrm{Prov}_T(\ulcorner G\urcorner)\)</span>. In the standard model this asserts the existence of a proof of <span class="math inline">\(G\)</span>; under the stronger hypothesis of <strong><span class="math inline">\(\omega\)</span>-consistency</strong> (Gödel’s original) this forces <span class="math inline">\(T\vdash G\)</span>, contradiction. So <span class="math inline">\(T\nvdash\neg G\)</span>.</p>
+<p>Hence <span class="math inline">\(G\)</span> is independent of <span class="math inline">\(T\)</span>. <span class="math inline">\(\blacksquare\)</span></p>
+<p>Moreover, <span class="math inline">\(G\)</span> is <strong>true in the standard model</strong> <span class="math inline">\(\mathbb{N}\)</span>: it says (correctly) that <span class="math inline">\(G\)</span> has no proof. So “true but unprovable” is literal.</p>
+<div id="thm-rosser" class="theorem">
+<p><span class="theorem-title"><strong>Theorem 3 (Theorem 4.2 (Rosser, 1936))</strong></span> The first incompleteness theorem holds under <strong>mere consistency</strong> (no <span class="math inline">\(\omega\)</span>-consistency needed), using the <strong>Rosser sentence</strong> <span class="math display">\[
+R:\quad \text{"for every proof of } R \text{ there is a smaller proof of } \neg R\text{."}
+\]</span></p>
+</div>
+<p>Rosser’s trick compares lengths of hypothetical proofs and is the standard modern statement.</p>
+</section>
+<section id="the-second-incompleteness-theorem" class="level3" data-number="4.4">
+<h3 data-number="4.4" class="anchored" data-anchor-id="the-second-incompleteness-theorem"><span class="header-section-number">4.4</span> 4.4 The Second Incompleteness Theorem</h3>
+<p>Let <span class="math inline">\(\mathrm{Con}(T) := \neg\,\mathrm{Prov}_T(\ulcorner\bot\urcorner)\)</span> express “<span class="math inline">\(T\)</span> is consistent.”</p>
+<div id="thm-incompleteness-2" class="theorem">
+<p><span class="theorem-title"><strong>Theorem 4 (Theorem 4.3 (Gödel’s Second Incompleteness Theorem))</strong></span> If <span class="math inline">\(T\)</span> is consistent (and recursively axiomatizable, interpreting arithmetic), then <span class="math display">\[
+T \nvdash \mathrm{Con}(T).
+\]</span></p>
+</div>
+<p><em>Proof sketch.</em> Formalize the first incompleteness argument inside <span class="math inline">\(T\)</span>: one proves <span class="math display">\[
+T \vdash \mathrm{Con}(T)\;\to\;G.
+\]</span> (A contradiction implies everything, so consistency entails that <span class="math inline">\(G\)</span> is unprovable — the fixed point then gives <span class="math inline">\(G\)</span>.) Since the first theorem shows <span class="math inline">\(T\nvdash G\)</span>, it follows that <span class="math inline">\(T\nvdash\mathrm{Con}(T)\)</span>. <span class="math inline">\(\blacksquare\)</span></p>
+<p><strong>Löb’s theorem</strong> generalizes this: if <span class="math inline">\(T\vdash \mathrm{Prov}_T(\ulcorner\varphi\urcorner)\to\varphi\)</span>, then <span class="math inline">\(T\vdash\varphi\)</span>. Taking <span class="math inline">\(\varphi=\bot\)</span> recovers the second theorem: <span class="math inline">\(T\)</span> cannot prove “provable implies true” for its own proofs, on pain of inconsistency.</p>
+<hr>
+</section>
+</section>
+<section id="how-the-proofs-work-a-rough-summary" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="how-the-proofs-work-a-rough-summary"><span class="header-section-number">5</span> 5. How the Proofs Work (a Rough Summary)</h2>
+<section id="the-mechanism" class="level3" data-number="5.1">
+<h3 data-number="5.1" class="anchored" data-anchor-id="the-mechanism"><span class="header-section-number">5.1</span> 5.1 The Mechanism</h3>
+<p>The engine has four moving parts:</p>
+<ol type="1">
+<li><strong>Arithmetization.</strong> Encode syntax as numbers; proof checking becomes a primitive recursive relation <span class="math inline">\(\mathrm{Proof}(p,\ulcorner\varphi\urcorner)\)</span>.</li>
+<li><strong>Representability.</strong> PA proves the correct facts about recursive relations; in particular, it proves <span class="math inline">\(\Sigma_1\)</span> truths (provable <span class="math inline">\(\Sigma_1\)</span>-completeness).</li>
+<li><strong>Diagonal lemma.</strong> Manufacture a sentence asserting its own unprovability.</li>
+<li><strong>Derivability conditions</strong> (Hilbert–Bernays–Löb): for <span class="math inline">\(\Box\varphi := \mathrm{Prov}(\ulcorner\varphi\urcorner)\)</span>, <span class="math display">\[
+\text{(D1) } T\vdash\varphi \Rightarrow T\vdash\Box\varphi,\quad
+\text{(D2) } T\vdash\Box(\varphi\to\psi)\to(\Box\varphi\to\Box\psi),\quad
+\text{(D3) } T\vdash\Box\varphi\to\Box\Box\varphi.
+\]</span> These are exactly the properties a formalized provability predicate can be <em>proved</em> (inside <span class="math inline">\(T\)</span>) to satisfy, and they suffice to derive both incompleteness theorems and Löb’s theorem.</li>
+</ol>
+</section>
+<section id="gödels-original-proof-1931" class="level3" data-number="5.2">
+<h3 data-number="5.2" class="anchored" data-anchor-id="gödels-original-proof-1931"><span class="header-section-number">5.2</span> 5.2 Gödel’s Original Proof (1931)</h3>
+<p>Gödel’s paper defined 45 primitive recursive functions and relations (“is an axiom,” “is an immediate consequence,” etc.), proved each representable, constructed the sentence, and established incompleteness assuming <span class="math inline">\(\omega\)</span>-consistency. It was a tour de force of arithmetization. Gödel also announced the second theorem and proved it in outline.</p>
+</section>
+<section id="later-and-alternative-proofs" class="level3" data-number="5.3">
+<h3 data-number="5.3" class="anchored" data-anchor-id="later-and-alternative-proofs"><span class="header-section-number">5.3</span> 5.3 Later and Alternative Proofs</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Method</th>
+<th style="text-align: left;">Author(s)</th>
+<th style="text-align: left;">Idea</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Rosser sentence</td>
+<td style="text-align: left;">Rosser (1936)</td>
+<td style="text-align: left;">replace <span class="math inline">\(\omega\)</span>-consistency by consistency</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Recursion theory</td>
+<td style="text-align: left;">Kleene (1936)</td>
+<td style="text-align: left;">the recursion theorem; halting problem adjacency</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Consistency via ordinals</td>
+<td style="text-align: left;">Gentzen (1936)</td>
+<td style="text-align: left;">PA’s consistency follows from <span class="math inline">\(\varepsilon_0\)</span>-induction</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Diophantine</td>
+<td style="text-align: left;">Matiyasevich (1970), MRDP</td>
+<td style="text-align: left;">every r.e. set is Diophantine; a specific equation has no solutions, unprovably so</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Information-theoretic</td>
+<td style="text-align: left;">Chaitin (1970s)</td>
+<td style="text-align: left;">a theory of complexity <span class="math inline">\(c\)</span> proves finitely many strings of complexity <span class="math inline">\(&gt;c\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Abstract fixed points</td>
+<td style="text-align: left;">Lawvere (1969)</td>
+<td style="text-align: left;">a categorical diagonal theorem; incompleteness as a fixed-point phenomenon</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Gentzen’s theorem</strong> is especially important: it shows <span class="math inline">\(\mathrm{Con(PA)}\)</span> <em>is</em> provable — but in a stronger system (PA + transfinite induction to <span class="math inline">\(\varepsilon_0\)</span>). Incompleteness does not forbid consistency proofs; it forbids them <strong>inside the same system</strong>.</p>
+</section>
+<section id="the-abstract-diagonal-lawvere" class="level3" data-number="5.4">
+<h3 data-number="5.4" class="anchored" data-anchor-id="the-abstract-diagonal-lawvere"><span class="header-section-number">5.4</span> 5.4 The Abstract Diagonal (Lawvere)</h3>
+<p>Lawvere observed that self-reference is a special case of a <strong>fixed-point theorem</strong> in cartesian closed categories: if there is a surjection <span class="math inline">\(A\to B^A\)</span>, then every <span class="math inline">\(f:B\to B\)</span> has a fixed point. Cantor’s theorem, Russell’s paradox, Gödel’s lemma, and the recursion theorem are all instances of “there is no surjection onto a function space.” Incompleteness is a geometric/structural fact, not an accident of arithmetic.</p>
+<hr>
+</section>
+</section>
+<section id="implications" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="implications"><span class="header-section-number">6</span> 6. Implications</h2>
+<section id="hilberts-program" class="level3" data-number="6.1">
+<h3 data-number="6.1" class="anchored" data-anchor-id="hilberts-program"><span class="header-section-number">6.1</span> 6.1 Hilbert’s Program</h3>
+<p>Hilbert sought a <strong>finitary consistency proof</strong> for all of mathematics and a decision procedure for validity. Both fail: - <strong>Second theorem:</strong> consistency cannot be certified within the theory itself. - <strong>Church–Turing + incompleteness:</strong> validity in FOL is undecidable (no decision procedure).</p>
+<p>However, <strong>relative consistency</strong> and <strong>ordinal analysis</strong> succeeded on their own terms, and proof theory flourishes.</p>
+</section>
+<section id="truth-provability-and-independence" class="level3" data-number="6.2">
+<h3 data-number="6.2" class="anchored" data-anchor-id="truth-provability-and-independence"><span class="header-section-number">6.2</span> 6.2 Truth, Provability, and Independence</h3>
+<ul>
+<li><strong>Truth outruns provability.</strong> For any reasonable <span class="math inline">\(T\)</span>, there are true <span class="math inline">\(\Pi_1\)</span> sentences (like <span class="math inline">\(G\)</span>) it cannot prove.</li>
+<li><strong>Independence is real but mundane.</strong> <span class="math inline">\(\mathrm{Con(ZFC)}\)</span>, CH, the existence of large cardinals, Goodstein’s theorem (unprovable in PA), and the Paris–Harrington statement are all independent of their base theories.</li>
+<li><strong>Consistency strength</strong> is a well-ordering of theories by “what they can prove consistent”; large cardinals are a linear hierarchy of strength.</li>
+</ul>
+</section>
+<section id="computability-and-decidability" class="level3" data-number="6.3">
+<h3 data-number="6.3" class="anchored" data-anchor-id="computability-and-decidability"><span class="header-section-number">6.3</span> 6.3 Computability and Decidability</h3>
+<p>Incompleteness is the logical twin of undecidability:</p>
+<p><span class="math display">\[
+\text{undecidability of halting} \;\leftrightarrow\; \text{undecidability of provability} \;\leftrightarrow\; \text{incompleteness.}
+\]</span> If arithmetic were complete and decidable, the halting problem would be solvable (search for a proof). Rice’s theorem, the Entscheidungsproblem, and the unprovability of consistency are facets of one diagonal.</p>
+</section>
+<section id="the-lucaspenrose-argument-and-its-critics" class="level3" data-number="6.4">
+<h3 data-number="6.4" class="anchored" data-anchor-id="the-lucaspenrose-argument-and-its-critics"><span class="header-section-number">6.4</span> 6.4 The Lucas–Penrose Argument and Its Critics</h3>
+<p>Lucas and Penrose argue: since a human can “see” that <span class="math inline">\(G\)</span> is true while a machine formalizing <span class="math inline">\(T\)</span> cannot, minds exceed machines. Standard responses: - To “see” <span class="math inline">\(G\)</span> and treat it as true, one must know <span class="math inline">\(T\)</span> is consistent — which one cannot establish by finitary means (second theorem). - The argument assumes humans have access to a single, fixed, consistent formal system; human reasoning may be inconsistent, evolving, or non-algorithmic in ways the argument does not capture. - The conclusion “minds are not machines” does not follow from a proof about a specific formal system.</p>
+<p>The debate remains philosophically alive but is not regarded as mathematically decisive.</p>
+</section>
+<section id="common-misconceptions" class="level3" data-number="6.5">
+<h3 data-number="6.5" class="anchored" data-anchor-id="common-misconceptions"><span class="header-section-number">6.5</span> 6.5 Common Misconceptions</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Misconception</th>
+<th style="text-align: left;">Correction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">“Gödel proved mathematics is inconsistent.”</td>
+<td style="text-align: left;">He assumed consistency and derived incompleteness.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">“Gödel’s sentence is neither true nor false.”</td>
+<td style="text-align: left;">It is true in <span class="math inline">\(\mathbb{N}\)</span>, unprovable in <span class="math inline">\(T\)</span>.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">“A strong enough system avoids incompleteness.”</td>
+<td style="text-align: left;">The second theorem applies to it too.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">“Incompleteness applies to any theory.”</td>
+<td style="text-align: left;">Only consistent, r.e. theories interpreting enough arithmetic.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">“Consistency can never be proved.”</td>
+<td style="text-align: left;">It can, in a stronger system (Gentzen).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">“Incompleteness = inconsistency.”</td>
+<td style="text-align: left;">They are different notions; consistency is a hypothesis.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">“Logic is therefore useless.”</td>
+<td style="text-align: left;">Completeness makes FOL proof search possible; only full arithmetic is undecidable.</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+</section>
+<section id="computational-laboratory" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="computational-laboratory"><span class="header-section-number">7</span> 7. Computational Laboratory</h2>
+<p>The lab implements Gödel numbering, the quine (the computational diagonal lemma), the diagonal set, an empirical demonstration of resolution’s soundness <strong>and completeness</strong> against truth tables, and the halting diagonal.</p>
+<div id="2be85546" class="cell" data-execution_count="1">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> itertools, random</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== 1. GODEL NUMBERING BY PRIME POWERS ==="</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>syms <span class="op">=</span> [<span class="st">'0'</span>, <span class="st">'S'</span>, <span class="st">'+'</span>, <span class="st">'*'</span>, <span class="st">'='</span>, <span class="st">'('</span>, <span class="st">')'</span>, <span class="st">'not'</span>, <span class="st">'forall'</span>, <span class="st">'x'</span>, <span class="st">'y'</span>, <span class="st">'&lt;'</span>]</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>primes <span class="op">=</span> [<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">7</span>, <span class="dv">11</span>, <span class="dv">13</span>, <span class="dv">17</span>, <span class="dv">19</span>, <span class="dv">23</span>, <span class="dv">29</span>, <span class="dv">31</span>, <span class="dv">37</span>]</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> godel(seq):</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> s, p <span class="kw">in</span> <span class="bu">zip</span>(seq, primes):</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        n <span class="op">*=</span> p <span class="op">**</span> (syms.index(s) <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> n</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> decode(n):</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    out <span class="op">=</span> []</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> p <span class="kw">in</span> primes:</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        k <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> n <span class="op">%</span> p <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>            n <span class="op">//=</span> p<span class="op">;</span> k <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> k <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>            out.append(syms[k <span class="op">-</span> <span class="dv">1</span>])</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> out</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>formula <span class="op">=</span> [<span class="st">'forall'</span>, <span class="st">'x'</span>, <span class="st">'('</span>, <span class="st">'x'</span>, <span class="st">'+'</span>, <span class="st">'0'</span>, <span class="st">'='</span>, <span class="st">'x'</span>, <span class="st">')'</span>]</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>g <span class="op">=</span> godel(formula)</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  formula:"</span>, <span class="st">" "</span>.join(formula))</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Godel number:"</span>, g)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  decoded:"</span>, <span class="st">" "</span>.join(decode(g)))</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  syntax -&gt; arithmetic is injective by unique factorization."</span>)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== 2. QUINE: THE COMPUTATIONAL DIAGONAL LEMMA ==="</span>)</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> <span class="st">'s = </span><span class="sc">%r</span><span class="ch">\n</span><span class="st">print(s </span><span class="sc">%%</span><span class="st"> s)'</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  A program that prints its own source (a fixed point of 'print'):"</span>)</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  "</span> <span class="op">+</span> <span class="st">"</span><span class="ch">\n</span><span class="st">  "</span>.join((s <span class="op">%</span> s).splitlines()))</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  The diagonal lemma builds a sentence asserting a property OF ITSELF"</span>)</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  exactly as this program reproduces its own code."</span>)</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== 3. THE DIAGONAL SET: NOT ON ANY LIST ==="</span>)</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> diagonal_bits(rows):</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [<span class="dv">1</span> <span class="op">-</span> rows[i][i] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(rows))]</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> [[<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>], [<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>], [<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>], [<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>]]</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> diagonal_bits(rows)</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  rows:"</span>, rows)</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  diagonal:"</span>, d)</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  differs from row i at position i:"</span>, <span class="bu">all</span>(d[i] <span class="op">!=</span> rows[i][i] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(rows))))</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== 4. COMPLETENESS IN ACTION: RESOLUTION PROOF vs TRUTH TABLE ==="</span>)</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> resolve(c1, c2):</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> lit <span class="kw">in</span> c1:</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (lit[<span class="dv">0</span>], <span class="dv">1</span> <span class="op">-</span> lit[<span class="dv">1</span>]) <span class="kw">in</span> c2:</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="bu">frozenset</span>((c1 <span class="op">|</span> c2) <span class="op">-</span> {lit, (lit[<span class="dv">0</span>], <span class="dv">1</span> <span class="op">-</span> lit[<span class="dv">1</span>])})</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> is_tautology(cl):</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">any</span>((v, <span class="dv">0</span>) <span class="kw">in</span> cl <span class="kw">and</span> (v, <span class="dv">1</span>) <span class="kw">in</span> cl <span class="cf">for</span> (v, _) <span class="kw">in</span> cl)</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> resolution_unsat(clauses, limit<span class="op">=</span><span class="dv">50000</span>):</span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>    clauses <span class="op">=</span> <span class="bu">set</span>(c <span class="cf">for</span> c <span class="kw">in</span> clauses <span class="cf">if</span> <span class="kw">not</span> is_tautology(c))</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>    changed, steps <span class="op">=</span> <span class="va">True</span>, <span class="dv">0</span></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> changed <span class="kw">and</span> steps <span class="op">&lt;</span> limit:</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>        changed <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>        cur <span class="op">=</span> <span class="bu">list</span>(clauses)</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(cur)):</span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(i <span class="op">+</span> <span class="dv">1</span>, <span class="bu">len</span>(cur)):</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>                r <span class="op">=</span> resolve(cur[i], cur[j])</span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> r <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="kw">and</span> <span class="kw">not</span> is_tautology(r) <span class="kw">and</span> r <span class="kw">not</span> <span class="kw">in</span> clauses:</span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>                    clauses.add(r)<span class="op">;</span> changed <span class="op">=</span> <span class="va">True</span><span class="op">;</span> steps <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">if</span> <span class="bu">len</span>(r) <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a>                        <span class="cf">return</span> <span class="va">True</span></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">frozenset</span>() <span class="kw">in</span> clauses</span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> satisfiable(clauses, nvars):</span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> bits <span class="kw">in</span> itertools.product([<span class="va">False</span>, <span class="va">True</span>], repeat<span class="op">=</span>nvars):</span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>        asn <span class="op">=</span> {v <span class="op">+</span> <span class="dv">1</span>: bits[v] <span class="cf">for</span> v <span class="kw">in</span> <span class="bu">range</span>(nvars)}</span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">all</span>(<span class="bu">any</span>((asn[v] <span class="cf">if</span> sg <span class="op">==</span> <span class="dv">1</span> <span class="cf">else</span> <span class="kw">not</span> asn[v]) <span class="cf">for</span> (v, sg) <span class="kw">in</span> cl) <span class="cf">for</span> cl <span class="kw">in</span> clauses):</span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">True</span></span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a>random.seed(<span class="dv">1</span>)</span>
+<span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> rand_cnf(nvars, nclauses):</span>
+<span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [<span class="bu">frozenset</span>((v, random.choice([<span class="dv">0</span>, <span class="dv">1</span>])) <span class="cf">for</span> v <span class="kw">in</span> random.sample(<span class="bu">range</span>(<span class="dv">1</span>, nvars <span class="op">+</span> <span class="dv">1</span>), <span class="dv">3</span>))</span>
+<span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(nclauses)]</span>
+<span id="cb1-82"><a href="#cb1-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-83"><a href="#cb1-83" aria-hidden="true" tabindex="-1"></a>agree <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> total <span class="op">=</span> <span class="dv">60</span></span>
+<span id="cb1-84"><a href="#cb1-84" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(total):</span>
+<span id="cb1-85"><a href="#cb1-85" aria-hidden="true" tabindex="-1"></a>    cnf <span class="op">=</span> rand_cnf(<span class="dv">4</span>, <span class="dv">5</span>)</span>
+<span id="cb1-86"><a href="#cb1-86" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> satisfiable(cnf, <span class="dv">4</span>) <span class="op">==</span> (<span class="kw">not</span> resolution_unsat(cnf)):</span>
+<span id="cb1-87"><a href="#cb1-87" aria-hidden="true" tabindex="-1"></a>        agree <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb1-88"><a href="#cb1-88" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  proof (resolution) and semantics (truth tables) agree on </span><span class="sc">{</span>agree<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>total<span class="sc">}</span><span class="ss"> random 3-CNFs."</span>)</span>
+<span id="cb1-89"><a href="#cb1-89" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  This is the completeness theorem (valid &lt;=&gt; provable) in miniature."</span>)</span>
+<span id="cb1-90"><a href="#cb1-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-91"><a href="#cb1-91" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== 5. THE HALTING PROBLEM: THE SAME DIAGONAL ==="</span>)</span>
+<span id="cb1-92"><a href="#cb1-92" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Assume a total decider H(P, I). Define D(P): if H(P, P) then loop else halt."</span>)</span>
+<span id="cb1-93"><a href="#cb1-93" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Then D(D) halts  iff  H(D, D) says false  iff  D(D) does not halt. Contradiction."</span>)</span>
+<span id="cb1-94"><a href="#cb1-94" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  If arithmetic were complete/decidable, we could decide D by searching for proofs —"</span>)</span>
+<span id="cb1-95"><a href="#cb1-95" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  so incompleteness and undecidability are two faces of one diagonal."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== 1. GODEL NUMBERING BY PRIME POWERS ===
+  formula: forall x ( x + 0 = x )
+  Godel number: 68435242522090980230927938657015647658955375496000000
+  decoded: forall x ( x + 0 = x )
+  syntax -&gt; arithmetic is injective by unique factorization.
+
+=== 2. QUINE: THE COMPUTATIONAL DIAGONAL LEMMA ===
+  A program that prints its own source (a fixed point of 'print'):
+  s = 's = %r\nprint(s %% s)'
+  print(s % s)
+  The diagonal lemma builds a sentence asserting a property OF ITSELF
+  exactly as this program reproduces its own code.
+
+=== 3. THE DIAGONAL SET: NOT ON ANY LIST ===
+  rows: [[0, 1, 0, 1], [1, 0, 1, 0], [1, 1, 1, 1], [0, 0, 0, 0]]
+  diagonal: [1, 1, 0, 1]
+  differs from row i at position i: True
+
+=== 4. COMPLETENESS IN ACTION: RESOLUTION PROOF vs TRUTH TABLE ===
+  proof (resolution) and semantics (truth tables) agree on 60/60 random 3-CNFs.
+  This is the completeness theorem (valid &lt;=&gt; provable) in miniature.
+
+=== 5. THE HALTING PROBLEM: THE SAME DIAGONAL ===
+  Assume a total decider H(P, I). Define D(P): if H(P, P) then loop else halt.
+  Then D(D) halts  iff  H(D, D) says false  iff  D(D) does not halt. Contradiction.
+  If arithmetic were complete/decidable, we could decide D by searching for proofs —
+  so incompleteness and undecidability are two faces of one diagonal.</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="summary-matrix" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="summary-matrix"><span class="header-section-number">8</span> 8. Summary Matrix</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: left;">Completeness (1929)</th>
+<th style="text-align: left;">Incompleteness (1931)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Subject</strong></td>
+<td style="text-align: left;">first-order logic (the proof system)</td>
+<td style="text-align: left;">theories of arithmetic</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Statement</strong></td>
+<td style="text-align: left;">valid <span class="math inline">\(\iff\)</span> provable; consistent <span class="math inline">\(\iff\)</span> satisfiable</td>
+<td style="text-align: left;">some sentence undecided; <span class="math inline">\(\nvdash\mathrm{Con}(T)\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Key tool</strong></td>
+<td style="text-align: left;">Henkin model construction</td>
+<td style="text-align: left;">Gödel numbering + diagonal lemma</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Consequence</strong></td>
+<td style="text-align: left;">compactness, Löwenheim–Skolem</td>
+<td style="text-align: left;">Hilbert’s program fails; independence</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Proof style</strong></td>
+<td style="text-align: left;">build a canonical model</td>
+<td style="text-align: left;">build a self-referential sentence</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Extra hypothesis</strong></td>
+<td style="text-align: left;">none</td>
+<td style="text-align: left;">consistency (+ r.e. axioms, interpret arithmetic)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Limit</strong></td>
+<td style="text-align: left;">FOL is not decidable (Church–Turing)</td>
+<td style="text-align: left;">no complete r.e. arithmetic</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The unity.</strong> Cantor’s diagonal, Russell’s paradox, the halting problem, Gödel’s incompleteness, Tarski’s undefinability, and Chaitin’s randomness are one theorem wearing many costumes: <strong>there is no surjection from a set onto its own function space / powerset.</strong></p>
+<hr>
+</section>
+<section id="curated-references-and-primary-sources" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="curated-references-and-primary-sources"><span class="header-section-number">9</span> 9. Curated References and Primary Sources</h2>
+<ol type="1">
+<li><strong>Gödel, Kurt (1929)</strong>. <em>Über die Vollständigkeit des Logikkalküls</em>. Doctoral dissertation, University of Vienna. (Completeness.)</li>
+<li><strong>Gödel, Kurt (1931)</strong>. <em>“Über formal unentscheidbare Sätze der Principia Mathematica und verwandter Systeme I”</em>. Monatshefte für Mathematik und Physik, 38: 173–198. (Incompleteness.)</li>
+<li><strong>Henkin, Leon (1949)</strong>. <em>“The completeness of the first-order functional calculus”</em>. J. Symbolic Logic, 14(3): 159–166.</li>
+<li><strong>Rosser, J. Barkley (1936)</strong>. <em>“Extensions of some theorems of Gödel and Church”</em>. J. Symbolic Logic, 1(3): 87–91.</li>
+<li><strong>Gentzen, Gerhard (1936)</strong>. <em>“Die Widerspruchsfreiheit der reinen Zahlentheorie”</em>. Math. Annalen, 112: 493–565.</li>
+<li><strong>Löb, Martin (1955)</strong>. <em>“Solution of a problem of Leon Henkin”</em>. J. Symbolic Logic, 20(2): 115–118.</li>
+<li><strong>Kleene, Stephen (1936)</strong>. <em>“General recursive functions of natural numbers”</em>. Math. Annalen, 112: 727–742.</li>
+<li><strong>Turing, Alan (1936)</strong>. <em>“On computable numbers, with an application to the Entscheidungsproblem”</em>. Proc. London Math. Soc., s2-42(1): 230–265.</li>
+<li><strong>Matiyasevich, Yuri (1970)</strong>. <em>“Enumerable sets are Diophantine”</em>. Doklady AN SSSR, 191: 279–282.</li>
+<li><strong>Chaitin, Gregory (1974)</strong>. <em>“Information-theoretic limitations of formal systems”</em>. J. ACM, 21(3): 403–424.</li>
+<li><strong>Lawvere, F. William (1969)</strong>. <em>“Diagonal arguments and cartesian closed categories”</em>. Lecture Notes in Mathematics, 92: 134–145.</li>
+<li><strong>Smullyan, Raymond (1992)</strong>. <em>Gödel’s Incompleteness Theorems</em>. Oxford Logic Guides.</li>
+<li><strong>Boolos, G., Burgess, J., Jeffrey, R. (2007)</strong>. <em>Computability and Logic</em>, 5th ed.&nbsp;Cambridge University Press.</li>
+<li><strong>Enderton, Herbert (2001)</strong>. <em>A Mathematical Introduction to Logic</em>, 2nd ed.&nbsp;Academic Press.</li>
+<li><strong>Franzén, Torkel (2005)</strong>. <em>Gödel’s Theorem: An Incomplete Guide to Its Use and Abuse</em>. A K Peters.</li>
+<li><strong>Hofstadter, Douglas (1979)</strong>. <em>Gödel, Escher, Bach: An Eternal Golden Braid</em>. Basic Books.</li>
+</ol>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const cellDetails = window.document.querySelectorAll(".cell details.code-fold");
+        for (let i=0; i<cellDetails.length; i++) {
+          const details = cellDetails[i];
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell div.sourceCode.cell-code");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/igor-kan\.github\.io\/quarto-writing\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Gödel's Completeness and Incompleteness Theorems"</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "Why First-Order Logic Is Complete but Arithmetic Is Not: Henkin's Model Construction, Gödel Numbering, the Diagonal Lemma, the Self-Referential Sentence, Rosser's Refinement, the Second Theorem, and the Implications for Hilbert's Program, Minds, and the Limits of Formal Proof"</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "Igor Kan"</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> "2026-09-14"</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="an">categories:</span><span class="co"> [Mathematics, Logic &amp; Foundations, Set Theory, Theoretical Computer Science, Philosophy]</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="an">description:</span><span class="co"> "A careful development of Gödel's two great theorems: the completeness theorem of first-order logic (validity = provability, Henkin's construction, compactness, Löwenheim–Skolem) and the incompleteness theorems (Gödel numbering, arithmetization of syntax, representability, the diagonal/fixed-point lemma, the Gödel sentence 'I am not provable', Rosser's trick, the second incompleteness theorem, Löb's theorem, and how the proofs were discovered and later reproved via computability and Kolmogorov complexity), together with the implications for Hilbert's program, decidability, independence, and the Lucas–Penrose argument, plus an executable Python laboratory implementing Gödel numbering, a quine (the computational diagonal lemma), a resolution prover demonstrating completeness against truth tables, and the halting-problem diagonal."</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">    html-math-method: mathjax</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: show</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-depth: 4</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">    number-sections: true</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="an">jupyter:</span><span class="co"> python3</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="an">toc:</span><span class="co"> true</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="an">toc-depth:</span><span class="co"> 4</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="an">number-sections:</span><span class="co"> true</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>::: {.callout-note appearance="simple"}</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>*"This statement is not provable."*</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>Gödel's **completeness** theorem (1929) is the good news: for first-order logic, **truth and proof coincide**. Gödel's **incompleteness** theorems (1931) are the boundary: no consistent, effectively given theory of arithmetic can prove every truth about the natural numbers — and none can prove its own consistency. Together they are the twin pillars of mathematical logic. This essay explains both, sketches how they were proved, and untangles their implications.</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip collapse="true"}</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="fu">### Companion Treatises in this Series</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">The Uncountable Infinite: Cantor's Diagonal Argument, Cantor Set, and Fractals</span><span class="co">](uncountable-infinities-diagonal-argument-and-cantor-set-fractals.qmd)</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Axiomatic Set Theory, ZFC, Ordinals, Cardinals, and Paradoxes</span><span class="co">](axiomatic-set-theory-zfc-ordinals-cardinals-and-paradoxes.qmd)</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">The Rational Line: Density, Enumeration, Cauchy Sequences, Dedekind Cuts, Metric Spaces, and Topology</span><span class="co">](rationals-density-enumeration-metric-spaces-and-topology.qmd)</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Philosophy of Mathematics: Platonism, Formalism, and Gödel</span><span class="co">](../philosophy/philosophy-of-mathematics-platonism-formalism-infinity-godel.qmd)</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="fu">## 1. Introduction: Two Theorems, Often Confused</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>The words *complete* and *incomplete* refer to **different notions**, which is why the two theorems seem to contradict each other at first glance.</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Theorem <span class="pp">|</span> Year <span class="pp">|</span> Statement <span class="pp">|</span> Refers to <span class="pp">|</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="pp">| :---</span> <span class="pp">| :---</span> <span class="pp">| :---</span> <span class="pp">| :---</span> <span class="pp">|</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Completeness** <span class="pp">|</span> 1929 <span class="pp">|</span> logical validity $\iff$ provability in FOL <span class="pp">|</span> the *proof system* of logic <span class="pp">|</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Incompleteness** <span class="pp">|</span> 1931 <span class="pp">|</span> arithmetic truth $\not\subseteq$ provability <span class="pp">|</span> the *theory* of arithmetic <span class="pp">|</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>Completeness says the **deductive apparatus of first-order logic is strong enough** to derive every logically valid sentence. Incompleteness says that **any particular first-order theory rich enough to describe arithmetic is too weak** to capture all truths of its intended subject matter. There is no contradiction: the validities of logic form a manageable class; the truths of arithmetic do not.</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>We proceed: formal preliminaries (Section 2), completeness (Section 3), incompleteness (Section 4), how the proofs work (Section 5), implications (Section 6), and a computational laboratory (Section 7).</span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2. Formal Systems: The Vocabulary</span></span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>::: {#def-formal}</span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Definition 2.1 (Formal theory)</span></span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>A **formal theory** $T$ consists of:</span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>a **language** $\mathcal{L}$: a (usually countable) set of symbols with syntactic rules forming **terms** and **formulas**;</span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>a decidable set of **axioms** (logical and non-logical);</span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**inference rules** (e.g. modus ponens, generalization).</span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>A **proof** is a finite sequence of formulas, each an axiom or following from earlier ones by a rule. $T\vdash\varphi$ means "$\varphi$ is provable in $T$."</span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>**Semantics.** A **structure** (or model) $\mathcal{M}$ gives the symbols meaning; $\mathcal{M}\models\varphi$ means "$\varphi$ is true in $\mathcal{M}$." A formula is:</span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**satisfiable** if true in some model;</span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**valid** if true in every model;</span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>a **semantic consequence** of $T$ ($T\models\varphi$) if every model of $T$ satisfies $\varphi$.</span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>Key metalogical properties:</span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Property <span class="pp">|</span> Meaning <span class="pp">|</span></span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a><span class="pp">| :---</span> <span class="pp">| :---</span> <span class="pp">|</span></span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Soundness** <span class="pp">|</span> $T\vdash\varphi \Rightarrow T\models\varphi$ (proofs yield truth) <span class="pp">|</span></span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Completeness** <span class="pp">|</span> $T\models\varphi \Rightarrow T\vdash\varphi$ (truth is provable) <span class="pp">|</span></span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Consistency** <span class="pp">|</span> $T\nvdash\bot$ (no contradiction derivable) <span class="pp">|</span></span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Decidability** <span class="pp">|</span> there is an algorithm deciding $T\vdash\varphi$ <span class="pp">|</span></span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Recursive axiomatizability** <span class="pp">|</span> the axiom set is decidable <span class="pp">|</span></span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>**Robinson arithmetic (Q)** and **Peano arithmetic (PA)** are the standard theories of the natural numbers. PA has axioms for $0$, successor $S$, $+$, $\times$, induction; Q keeps the arithmetic axioms but drops the induction schema.</span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. The Completeness Theorem (1929)</span></span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>::: {#thm-completeness}</span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Theorem 3.1 (Gödel's Completeness Theorem)</span></span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>For any first-order theory $T$ and sentence $\varphi$:</span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>T\models\varphi \iff T\vdash\varphi.</span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a>Equivalently, every consistent first-order theory has a model.</span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a>This was Gödel's doctoral dissertation. It turned the semantic notion of "truth in all models" into the syntactic notion of "derivable," giving logic a usable proof theory.</span>
+<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a><span class="fu">### 3.1 Henkin's Proof Sketch</span></span>
+<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a>Leon Henkin (1949) gave the clean modern proof:</span>
+<span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Consistency expansion.** Given consistent $T$ in a countable language, extend it to a **maximal consistent** theory $T^*$: for every sentence $\varphi$, add either $\varphi$ or $\neg\varphi$, preserving consistency.</span>
+<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Witnesses.** Enlarge the language with new constants $c_\varphi$ for each existential sentence $\exists x\,\varphi(x)$, and add **Henkin axioms** $\exists x\,\varphi(x)\to\varphi(c_\varphi)$, so that every existential claim has a named witness.</span>
+<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Term model.** Build the **canonical model** whose elements are equivalence classes of closed terms (via $t\sim s$ iff $T^*\vdash t=s$), interpreting function and relation symbols syntactically.</span>
+<span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Truth lemma.** Prove by induction on formulas that $T^*\vdash\varphi \iff \mathcal{M}\models\varphi$. Hence $\mathcal{M}\models T^*\supseteq T$.</span>
+<span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a>If $T$ is consistent, $T^*$ exists and has a model, so $T$ is satisfiable. Contrapositively, if $T$ has no model then $T\vdash\bot$. For sentences, this yields completeness: if $T\not\vdash\varphi$, then $T\cup<span class="sc">\{</span>\neg\varphi<span class="sc">\}</span>$ is consistent (syntactically), hence satisfiable (Theorem 3.1), so $T\not\models\varphi$.</span>
+<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a><span class="fu">### 3.2 Corollaries</span></span>
+<span id="cb3-109"><a href="#cb3-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-110"><a href="#cb3-110" aria-hidden="true" tabindex="-1"></a>::: {#cor-compactness}</span>
+<span id="cb3-111"><a href="#cb3-111" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Corollary 3.1 (Compactness)</span></span>
+<span id="cb3-112"><a href="#cb3-112" aria-hidden="true" tabindex="-1"></a>If every finite subset of $T$ has a model, then $T$ has a model.</span>
+<span id="cb3-113"><a href="#cb3-113" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-114"><a href="#cb3-114" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-115"><a href="#cb3-115" aria-hidden="true" tabindex="-1"></a>*Proof.* If $T$ had no model, by completeness $T\vdash\bot$; a proof is finite, so some finite $T_0\subseteq T$ proves $\bot$, contradicting that $T_0$ has a model. $\blacksquare$</span>
+<span id="cb3-116"><a href="#cb3-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-117"><a href="#cb3-117" aria-hidden="true" tabindex="-1"></a>Compactness yields **nonstandard models** of arithmetic (add a constant $c$ and axioms $c&gt;0, c&gt;1, c&gt;2,\dots$; each finite subset is satisfiable, so a model exists with an infinite element) and **nonstandard analysis**.</span>
+<span id="cb3-118"><a href="#cb3-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-119"><a href="#cb3-119" aria-hidden="true" tabindex="-1"></a>::: {#cor-ls}</span>
+<span id="cb3-120"><a href="#cb3-120" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Corollary 3.2 (Löwenheim–Skolem)</span></span>
+<span id="cb3-121"><a href="#cb3-121" aria-hidden="true" tabindex="-1"></a>If a countable theory has an infinite model, it has models of every infinite cardinality; in particular, if ZFC has a model it has a countable one.</span>
+<span id="cb3-122"><a href="#cb3-122" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-123"><a href="#cb3-123" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-124"><a href="#cb3-124" aria-hidden="true" tabindex="-1"></a>This is the source of **Skolem's paradox** (see the <span class="co">[</span><span class="ot">uncountable article</span><span class="co">](uncountable-infinities-diagonal-argument-and-cantor-set-fractals.qmd)</span>): a countable model of ZFC containing a set it "thinks" is uncountable.</span>
+<span id="cb3-125"><a href="#cb3-125" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-126"><a href="#cb3-126" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb3-127"><a href="#cb3-127" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-128"><a href="#cb3-128" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. The Incompleteness Theorems (1931)</span></span>
+<span id="cb3-129"><a href="#cb3-129" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-130"><a href="#cb3-130" aria-hidden="true" tabindex="-1"></a><span class="fu">### 4.1 The Setup: Arithmetization</span></span>
+<span id="cb3-131"><a href="#cb3-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-132"><a href="#cb3-132" aria-hidden="true" tabindex="-1"></a>::: {#def-godel-numbering}</span>
+<span id="cb3-133"><a href="#cb3-133" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Definition 4.1 (Gödel numbering)</span></span>
+<span id="cb3-134"><a href="#cb3-134" aria-hidden="true" tabindex="-1"></a>Assign to each symbol of the language a natural number. Encode a sequence of symbols $(s_1,\dots,s_n)$ by</span>
+<span id="cb3-135"><a href="#cb3-135" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-136"><a href="#cb3-136" aria-hidden="true" tabindex="-1"></a>\ulcorner s_1\cdots s_n \urcorner \;=\; p_1^{c(s_1)}\cdots p_n^{c(s_n)},</span>
+<span id="cb3-137"><a href="#cb3-137" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-138"><a href="#cb3-138" aria-hidden="true" tabindex="-1"></a>where $p_i$ is the $i$-th prime and $c(s_i)$ the code of $s_i$. By unique factorization, this is injective, and decoding is algorithmic.</span>
+<span id="cb3-139"><a href="#cb3-139" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-140"><a href="#cb3-140" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-141"><a href="#cb3-141" aria-hidden="true" tabindex="-1"></a>Syntax becomes arithmetic: "$\varphi$ is a formula," "$\pi$ is a proof of $\varphi$," and "$\varphi$ is provable" are all **decidable/recursive** predicates on natural numbers.</span>
+<span id="cb3-142"><a href="#cb3-142" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-143"><a href="#cb3-143" aria-hidden="true" tabindex="-1"></a>Crucially, PA can **represent** recursive predicates and functions: for every recursive relation $R$, there is a formula $\rho$ such that $R(\bar n)\Rightarrow \mathrm{PA}\vdash\rho(\bar n)$ and $\neg R(\bar n)\Rightarrow \mathrm{PA}\vdash\neg\rho(\bar n)$ (the formalized version of "the proof checker can be written in arithmetic").</span>
+<span id="cb3-144"><a href="#cb3-144" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-145"><a href="#cb3-145" aria-hidden="true" tabindex="-1"></a><span class="fu">### 4.2 The Diagonal Lemma</span></span>
+<span id="cb3-146"><a href="#cb3-146" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-147"><a href="#cb3-147" aria-hidden="true" tabindex="-1"></a>::: {#lem-diagonal}</span>
+<span id="cb3-148"><a href="#cb3-148" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Lemma 4.1 (Diagonal / fixed-point lemma)</span></span>
+<span id="cb3-149"><a href="#cb3-149" aria-hidden="true" tabindex="-1"></a>For every formula $\varphi(x)$ with one free variable, there is a sentence $\psi$ such that</span>
+<span id="cb3-150"><a href="#cb3-150" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-151"><a href="#cb3-151" aria-hidden="true" tabindex="-1"></a>\mathrm{PA}\vdash \psi \leftrightarrow \varphi(\ulcorner\psi\urcorner).</span>
+<span id="cb3-152"><a href="#cb3-152" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-153"><a href="#cb3-153" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-154"><a href="#cb3-154" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-155"><a href="#cb3-155" aria-hidden="true" tabindex="-1"></a>*Proof sketch.* Define the **substitution** function on codes, which is primitive recursive and hence representable by a formula $\mathrm{sub}(x,y,z)$ computing "the code of the formula obtained by substituting the numeral $y$ for the variable with code $x$ in the formula with code $z$." Given $\varphi(x)$, let $\theta(z) := \varphi(\mathrm{sub}(x,z,z))$ and let $k=\ulcorner\theta\urcorner$. Set</span>
+<span id="cb3-156"><a href="#cb3-156" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-157"><a href="#cb3-157" aria-hidden="true" tabindex="-1"></a>\psi := \theta(\bar k) = \varphi\bigl(\mathrm{sub}(\bar x,\bar k,\bar k)\bigr),</span>
+<span id="cb3-158"><a href="#cb3-158" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-159"><a href="#cb3-159" aria-hidden="true" tabindex="-1"></a>so $\psi$'s code is the result of substituting $k$ into $\theta$; provably, $\mathrm{sub}(x,k,k)$ equals $\ulcorner\psi\urcorner$. Hence $\mathrm{PA}\vdash\psi\leftrightarrow\varphi(\ulcorner\psi\urcorner)$. $\blacksquare$</span>
+<span id="cb3-160"><a href="#cb3-160" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-161"><a href="#cb3-161" aria-hidden="true" tabindex="-1"></a>This is the logical form of the diagonal argument: **a sentence that refers to its own code**.</span>
+<span id="cb3-162"><a href="#cb3-162" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-163"><a href="#cb3-163" aria-hidden="true" tabindex="-1"></a><span class="fu">### 4.3 The First Incompleteness Theorem</span></span>
+<span id="cb3-164"><a href="#cb3-164" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-165"><a href="#cb3-165" aria-hidden="true" tabindex="-1"></a>Let $\mathrm{Prov}_T(x)$ be the formula expressing "the formula with code $x$ is provable in $T$." Apply the diagonal lemma to $\varphi(x)=\neg\mathrm{Prov}_T(x)$, obtaining the **Gödel sentence** $G$ with</span>
+<span id="cb3-166"><a href="#cb3-166" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-167"><a href="#cb3-167" aria-hidden="true" tabindex="-1"></a>\mathrm{PA}\vdash G \;\leftrightarrow\; \neg\,\mathrm{Prov}_T(\ulcorner G\urcorner),</span>
+<span id="cb3-168"><a href="#cb3-168" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-169"><a href="#cb3-169" aria-hidden="true" tabindex="-1"></a>i.e. "$G$ is not provable in $T$."</span>
+<span id="cb3-170"><a href="#cb3-170" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-171"><a href="#cb3-171" aria-hidden="true" tabindex="-1"></a>::: {#thm-incompleteness-1}</span>
+<span id="cb3-172"><a href="#cb3-172" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Theorem 4.1 (Gödel's First Incompleteness Theorem)</span></span>
+<span id="cb3-173"><a href="#cb3-173" aria-hidden="true" tabindex="-1"></a>Let $T$ be a consistent, recursively axiomatizable theory that interprets a sufficient fragment of arithmetic (e.g. $Q$ or PA). Then $T$ is **incomplete**: there is a sentence $G$ with</span>
+<span id="cb3-174"><a href="#cb3-174" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-175"><a href="#cb3-175" aria-hidden="true" tabindex="-1"></a>T\nvdash G \quad\text{and}\quad T\nvdash\neg G.</span>
+<span id="cb3-176"><a href="#cb3-176" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-177"><a href="#cb3-177" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-178"><a href="#cb3-178" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-179"><a href="#cb3-179" aria-hidden="true" tabindex="-1"></a>*Proof sketch.* By the diagonal lemma take $G\leftrightarrow\neg\mathrm{Prov}_T(\ulcorner G\urcorner)$.</span>
+<span id="cb3-180"><a href="#cb3-180" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>If $T\vdash G$, then a proof of $G$ exists; by **provable $\Sigma$-completeness** (the proof checker is representable), $T\vdash\mathrm{Prov}_T(\ulcorner G\urcorner)$, hence $T\vdash\neg G$ by the fixed point — contradicting consistency. So $T\nvdash G$.</span>
+<span id="cb3-181"><a href="#cb3-181" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>If $T\vdash\neg G$, then by the fixed point $T\vdash\mathrm{Prov}_T(\ulcorner G\urcorner)$. In the standard model this asserts the existence of a proof of $G$; under the stronger hypothesis of **$\omega$-consistency** (Gödel's original) this forces $T\vdash G$, contradiction. So $T\nvdash\neg G$.</span>
+<span id="cb3-182"><a href="#cb3-182" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-183"><a href="#cb3-183" aria-hidden="true" tabindex="-1"></a>Hence $G$ is independent of $T$. $\blacksquare$</span>
+<span id="cb3-184"><a href="#cb3-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-185"><a href="#cb3-185" aria-hidden="true" tabindex="-1"></a>Moreover, $G$ is **true in the standard model** $\mathbb{N}$: it says (correctly) that $G$ has no proof. So "true but unprovable" is literal.</span>
+<span id="cb3-186"><a href="#cb3-186" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-187"><a href="#cb3-187" aria-hidden="true" tabindex="-1"></a>::: {#thm-rosser}</span>
+<span id="cb3-188"><a href="#cb3-188" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Theorem 4.2 (Rosser, 1936)</span></span>
+<span id="cb3-189"><a href="#cb3-189" aria-hidden="true" tabindex="-1"></a>The first incompleteness theorem holds under **mere consistency** (no $\omega$-consistency needed), using the **Rosser sentence**</span>
+<span id="cb3-190"><a href="#cb3-190" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-191"><a href="#cb3-191" aria-hidden="true" tabindex="-1"></a>R:\quad \text{"for every proof of } R \text{ there is a smaller proof of } \neg R\text{."}</span>
+<span id="cb3-192"><a href="#cb3-192" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-193"><a href="#cb3-193" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-194"><a href="#cb3-194" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-195"><a href="#cb3-195" aria-hidden="true" tabindex="-1"></a>Rosser's trick compares lengths of hypothetical proofs and is the standard modern statement.</span>
+<span id="cb3-196"><a href="#cb3-196" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-197"><a href="#cb3-197" aria-hidden="true" tabindex="-1"></a><span class="fu">### 4.4 The Second Incompleteness Theorem</span></span>
+<span id="cb3-198"><a href="#cb3-198" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-199"><a href="#cb3-199" aria-hidden="true" tabindex="-1"></a>Let $\mathrm{Con}(T) := \neg\,\mathrm{Prov}_T(\ulcorner\bot\urcorner)$ express "$T$ is consistent."</span>
+<span id="cb3-200"><a href="#cb3-200" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-201"><a href="#cb3-201" aria-hidden="true" tabindex="-1"></a>::: {#thm-incompleteness-2}</span>
+<span id="cb3-202"><a href="#cb3-202" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Theorem 4.3 (Gödel's Second Incompleteness Theorem)</span></span>
+<span id="cb3-203"><a href="#cb3-203" aria-hidden="true" tabindex="-1"></a>If $T$ is consistent (and recursively axiomatizable, interpreting arithmetic), then</span>
+<span id="cb3-204"><a href="#cb3-204" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-205"><a href="#cb3-205" aria-hidden="true" tabindex="-1"></a>T \nvdash \mathrm{Con}(T).</span>
+<span id="cb3-206"><a href="#cb3-206" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-207"><a href="#cb3-207" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-208"><a href="#cb3-208" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-209"><a href="#cb3-209" aria-hidden="true" tabindex="-1"></a>*Proof sketch.* Formalize the first incompleteness argument inside $T$: one proves</span>
+<span id="cb3-210"><a href="#cb3-210" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-211"><a href="#cb3-211" aria-hidden="true" tabindex="-1"></a>T \vdash \mathrm{Con}(T)\;\to\;G.</span>
+<span id="cb3-212"><a href="#cb3-212" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-213"><a href="#cb3-213" aria-hidden="true" tabindex="-1"></a>(A contradiction implies everything, so consistency entails that $G$ is unprovable — the fixed point then gives $G$.) Since the first theorem shows $T\nvdash G$, it follows that $T\nvdash\mathrm{Con}(T)$. $\blacksquare$</span>
+<span id="cb3-214"><a href="#cb3-214" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-215"><a href="#cb3-215" aria-hidden="true" tabindex="-1"></a>**Löb's theorem** generalizes this: if $T\vdash \mathrm{Prov}_T(\ulcorner\varphi\urcorner)\to\varphi$, then $T\vdash\varphi$. Taking $\varphi=\bot$ recovers the second theorem: $T$ cannot prove "provable implies true" for its own proofs, on pain of inconsistency.</span>
+<span id="cb3-216"><a href="#cb3-216" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-217"><a href="#cb3-217" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb3-218"><a href="#cb3-218" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-219"><a href="#cb3-219" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. How the Proofs Work (a Rough Summary)</span></span>
+<span id="cb3-220"><a href="#cb3-220" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-221"><a href="#cb3-221" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.1 The Mechanism</span></span>
+<span id="cb3-222"><a href="#cb3-222" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-223"><a href="#cb3-223" aria-hidden="true" tabindex="-1"></a>The engine has four moving parts:</span>
+<span id="cb3-224"><a href="#cb3-224" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-225"><a href="#cb3-225" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Arithmetization.** Encode syntax as numbers; proof checking becomes a primitive recursive relation $\mathrm{Proof}(p,\ulcorner\varphi\urcorner)$.</span>
+<span id="cb3-226"><a href="#cb3-226" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Representability.** PA proves the correct facts about recursive relations; in particular, it proves $\Sigma_1$ truths (provable $\Sigma_1$-completeness).</span>
+<span id="cb3-227"><a href="#cb3-227" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Diagonal lemma.** Manufacture a sentence asserting its own unprovability.</span>
+<span id="cb3-228"><a href="#cb3-228" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Derivability conditions** (Hilbert–Bernays–Löb): for $\Box\varphi := \mathrm{Prov}(\ulcorner\varphi\urcorner)$,</span>
+<span id="cb3-229"><a href="#cb3-229" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-230"><a href="#cb3-230" aria-hidden="true" tabindex="-1"></a>\text{(D1) } T\vdash\varphi \Rightarrow T\vdash\Box\varphi,\quad</span>
+<span id="cb3-231"><a href="#cb3-231" aria-hidden="true" tabindex="-1"></a>\text{(D2) } T\vdash\Box(\varphi\to\psi)\to(\Box\varphi\to\Box\psi),\quad</span>
+<span id="cb3-232"><a href="#cb3-232" aria-hidden="true" tabindex="-1"></a>\text{(D3) } T\vdash\Box\varphi\to\Box\Box\varphi.</span>
+<span id="cb3-233"><a href="#cb3-233" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-234"><a href="#cb3-234" aria-hidden="true" tabindex="-1"></a>These are exactly the properties a formalized provability predicate can be *proved* (inside $T$) to satisfy, and they suffice to derive both incompleteness theorems and Löb's theorem.</span>
+<span id="cb3-235"><a href="#cb3-235" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-236"><a href="#cb3-236" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.2 Gödel's Original Proof (1931)</span></span>
+<span id="cb3-237"><a href="#cb3-237" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-238"><a href="#cb3-238" aria-hidden="true" tabindex="-1"></a>Gödel's paper defined 45 primitive recursive functions and relations ("is an axiom," "is an immediate consequence," etc.), proved each representable, constructed the sentence, and established incompleteness assuming $\omega$-consistency. It was a tour de force of arithmetization. Gödel also announced the second theorem and proved it in outline.</span>
+<span id="cb3-239"><a href="#cb3-239" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-240"><a href="#cb3-240" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.3 Later and Alternative Proofs</span></span>
+<span id="cb3-241"><a href="#cb3-241" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-242"><a href="#cb3-242" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Method <span class="pp">|</span> Author(s) <span class="pp">|</span> Idea <span class="pp">|</span></span>
+<span id="cb3-243"><a href="#cb3-243" aria-hidden="true" tabindex="-1"></a><span class="pp">| :---</span> <span class="pp">| :---</span> <span class="pp">| :---</span> <span class="pp">|</span></span>
+<span id="cb3-244"><a href="#cb3-244" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Rosser sentence <span class="pp">|</span> Rosser (1936) <span class="pp">|</span> replace $\omega$-consistency by consistency <span class="pp">|</span></span>
+<span id="cb3-245"><a href="#cb3-245" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Recursion theory <span class="pp">|</span> Kleene (1936) <span class="pp">|</span> the recursion theorem; halting problem adjacency <span class="pp">|</span></span>
+<span id="cb3-246"><a href="#cb3-246" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Consistency via ordinals <span class="pp">|</span> Gentzen (1936) <span class="pp">|</span> PA's consistency follows from $\varepsilon_0$-induction <span class="pp">|</span></span>
+<span id="cb3-247"><a href="#cb3-247" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Diophantine <span class="pp">|</span> Matiyasevich (1970), MRDP <span class="pp">|</span> every r.e. set is Diophantine; a specific equation has no solutions, unprovably so <span class="pp">|</span></span>
+<span id="cb3-248"><a href="#cb3-248" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Information-theoretic <span class="pp">|</span> Chaitin (1970s) <span class="pp">|</span> a theory of complexity $c$ proves finitely many strings of complexity $&gt;c$ <span class="pp">|</span></span>
+<span id="cb3-249"><a href="#cb3-249" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Abstract fixed points <span class="pp">|</span> Lawvere (1969) <span class="pp">|</span> a categorical diagonal theorem; incompleteness as a fixed-point phenomenon <span class="pp">|</span></span>
+<span id="cb3-250"><a href="#cb3-250" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-251"><a href="#cb3-251" aria-hidden="true" tabindex="-1"></a>**Gentzen's theorem** is especially important: it shows $\mathrm{Con(PA)}$ *is* provable — but in a stronger system (PA + transfinite induction to $\varepsilon_0$). Incompleteness does not forbid consistency proofs; it forbids them **inside the same system**.</span>
+<span id="cb3-252"><a href="#cb3-252" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-253"><a href="#cb3-253" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.4 The Abstract Diagonal (Lawvere)</span></span>
+<span id="cb3-254"><a href="#cb3-254" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-255"><a href="#cb3-255" aria-hidden="true" tabindex="-1"></a>Lawvere observed that self-reference is a special case of a **fixed-point theorem** in cartesian closed categories: if there is a surjection $A\to B^A$, then every $f:B\to B$ has a fixed point. Cantor's theorem, Russell's paradox, Gödel's lemma, and the recursion theorem are all instances of "there is no surjection onto a function space." Incompleteness is a geometric/structural fact, not an accident of arithmetic.</span>
+<span id="cb3-256"><a href="#cb3-256" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-257"><a href="#cb3-257" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb3-258"><a href="#cb3-258" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-259"><a href="#cb3-259" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. Implications</span></span>
+<span id="cb3-260"><a href="#cb3-260" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-261"><a href="#cb3-261" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.1 Hilbert's Program</span></span>
+<span id="cb3-262"><a href="#cb3-262" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-263"><a href="#cb3-263" aria-hidden="true" tabindex="-1"></a>Hilbert sought a **finitary consistency proof** for all of mathematics and a decision procedure for validity. Both fail:</span>
+<span id="cb3-264"><a href="#cb3-264" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Second theorem:** consistency cannot be certified within the theory itself.</span>
+<span id="cb3-265"><a href="#cb3-265" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Church–Turing + incompleteness:** validity in FOL is undecidable (no decision procedure).</span>
+<span id="cb3-266"><a href="#cb3-266" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-267"><a href="#cb3-267" aria-hidden="true" tabindex="-1"></a>However, **relative consistency** and **ordinal analysis** succeeded on their own terms, and proof theory flourishes.</span>
+<span id="cb3-268"><a href="#cb3-268" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-269"><a href="#cb3-269" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.2 Truth, Provability, and Independence</span></span>
+<span id="cb3-270"><a href="#cb3-270" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-271"><a href="#cb3-271" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Truth outruns provability.** For any reasonable $T$, there are true $\Pi_1$ sentences (like $G$) it cannot prove.</span>
+<span id="cb3-272"><a href="#cb3-272" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Independence is real but mundane.** $\mathrm{Con(ZFC)}$, CH, the existence of large cardinals, Goodstein's theorem (unprovable in PA), and the Paris–Harrington statement are all independent of their base theories.</span>
+<span id="cb3-273"><a href="#cb3-273" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Consistency strength** is a well-ordering of theories by "what they can prove consistent"; large cardinals are a linear hierarchy of strength.</span>
+<span id="cb3-274"><a href="#cb3-274" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-275"><a href="#cb3-275" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.3 Computability and Decidability</span></span>
+<span id="cb3-276"><a href="#cb3-276" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-277"><a href="#cb3-277" aria-hidden="true" tabindex="-1"></a>Incompleteness is the logical twin of undecidability:</span>
+<span id="cb3-278"><a href="#cb3-278" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-279"><a href="#cb3-279" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-280"><a href="#cb3-280" aria-hidden="true" tabindex="-1"></a>\text{undecidability of halting} \;\leftrightarrow\; \text{undecidability of provability} \;\leftrightarrow\; \text{incompleteness.}</span>
+<span id="cb3-281"><a href="#cb3-281" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb3-282"><a href="#cb3-282" aria-hidden="true" tabindex="-1"></a>If arithmetic were complete and decidable, the halting problem would be solvable (search for a proof). Rice's theorem, the Entscheidungsproblem, and the unprovability of consistency are facets of one diagonal.</span>
+<span id="cb3-283"><a href="#cb3-283" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-284"><a href="#cb3-284" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.4 The Lucas–Penrose Argument and Its Critics</span></span>
+<span id="cb3-285"><a href="#cb3-285" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-286"><a href="#cb3-286" aria-hidden="true" tabindex="-1"></a>Lucas and Penrose argue: since a human can "see" that $G$ is true while a machine formalizing $T$ cannot, minds exceed machines. Standard responses:</span>
+<span id="cb3-287"><a href="#cb3-287" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>To "see" $G$ and treat it as true, one must know $T$ is consistent — which one cannot establish by finitary means (second theorem).</span>
+<span id="cb3-288"><a href="#cb3-288" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>The argument assumes humans have access to a single, fixed, consistent formal system; human reasoning may be inconsistent, evolving, or non-algorithmic in ways the argument does not capture.</span>
+<span id="cb3-289"><a href="#cb3-289" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>The conclusion "minds are not machines" does not follow from a proof about a specific formal system.</span>
+<span id="cb3-290"><a href="#cb3-290" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-291"><a href="#cb3-291" aria-hidden="true" tabindex="-1"></a>The debate remains philosophically alive but is not regarded as mathematically decisive.</span>
+<span id="cb3-292"><a href="#cb3-292" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-293"><a href="#cb3-293" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.5 Common Misconceptions</span></span>
+<span id="cb3-294"><a href="#cb3-294" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-295"><a href="#cb3-295" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Misconception <span class="pp">|</span> Correction <span class="pp">|</span></span>
+<span id="cb3-296"><a href="#cb3-296" aria-hidden="true" tabindex="-1"></a><span class="pp">| :---</span> <span class="pp">| :---</span> <span class="pp">|</span></span>
+<span id="cb3-297"><a href="#cb3-297" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> "Gödel proved mathematics is inconsistent." <span class="pp">|</span> He assumed consistency and derived incompleteness. <span class="pp">|</span></span>
+<span id="cb3-298"><a href="#cb3-298" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> "Gödel's sentence is neither true nor false." <span class="pp">|</span> It is true in $\mathbb{N}$, unprovable in $T$. <span class="pp">|</span></span>
+<span id="cb3-299"><a href="#cb3-299" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> "A strong enough system avoids incompleteness." <span class="pp">|</span> The second theorem applies to it too. <span class="pp">|</span></span>
+<span id="cb3-300"><a href="#cb3-300" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> "Incompleteness applies to any theory." <span class="pp">|</span> Only consistent, r.e. theories interpreting enough arithmetic. <span class="pp">|</span></span>
+<span id="cb3-301"><a href="#cb3-301" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> "Consistency can never be proved." <span class="pp">|</span> It can, in a stronger system (Gentzen). <span class="pp">|</span></span>
+<span id="cb3-302"><a href="#cb3-302" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> "Incompleteness = inconsistency." <span class="pp">|</span> They are different notions; consistency is a hypothesis. <span class="pp">|</span></span>
+<span id="cb3-303"><a href="#cb3-303" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> "Logic is therefore useless." <span class="pp">|</span> Completeness makes FOL proof search possible; only full arithmetic is undecidable. <span class="pp">|</span></span>
+<span id="cb3-304"><a href="#cb3-304" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-305"><a href="#cb3-305" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb3-306"><a href="#cb3-306" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-307"><a href="#cb3-307" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. Computational Laboratory</span></span>
+<span id="cb3-308"><a href="#cb3-308" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-309"><a href="#cb3-309" aria-hidden="true" tabindex="-1"></a>The lab implements Gödel numbering, the quine (the computational diagonal lemma), the diagonal set, an empirical demonstration of resolution's soundness **and completeness** against truth tables, and the halting diagonal.</span>
+<span id="cb3-310"><a href="#cb3-310" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-313"><a href="#cb3-313" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb3-314"><a href="#cb3-314" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> itertools, random</span>
+<span id="cb3-315"><a href="#cb3-315" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-316"><a href="#cb3-316" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== 1. GODEL NUMBERING BY PRIME POWERS ==="</span>)</span>
+<span id="cb3-317"><a href="#cb3-317" aria-hidden="true" tabindex="-1"></a>syms <span class="op">=</span> [<span class="st">'0'</span>, <span class="st">'S'</span>, <span class="st">'+'</span>, <span class="st">'*'</span>, <span class="st">'='</span>, <span class="st">'('</span>, <span class="st">')'</span>, <span class="st">'not'</span>, <span class="st">'forall'</span>, <span class="st">'x'</span>, <span class="st">'y'</span>, <span class="st">'&lt;'</span>]</span>
+<span id="cb3-318"><a href="#cb3-318" aria-hidden="true" tabindex="-1"></a>primes <span class="op">=</span> [<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">7</span>, <span class="dv">11</span>, <span class="dv">13</span>, <span class="dv">17</span>, <span class="dv">19</span>, <span class="dv">23</span>, <span class="dv">29</span>, <span class="dv">31</span>, <span class="dv">37</span>]</span>
+<span id="cb3-319"><a href="#cb3-319" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-320"><a href="#cb3-320" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> godel(seq):</span>
+<span id="cb3-321"><a href="#cb3-321" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb3-322"><a href="#cb3-322" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> s, p <span class="kw">in</span> <span class="bu">zip</span>(seq, primes):</span>
+<span id="cb3-323"><a href="#cb3-323" aria-hidden="true" tabindex="-1"></a>        n <span class="op">*=</span> p <span class="op">**</span> (syms.index(s) <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb3-324"><a href="#cb3-324" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> n</span>
+<span id="cb3-325"><a href="#cb3-325" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-326"><a href="#cb3-326" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> decode(n):</span>
+<span id="cb3-327"><a href="#cb3-327" aria-hidden="true" tabindex="-1"></a>    out <span class="op">=</span> []</span>
+<span id="cb3-328"><a href="#cb3-328" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> p <span class="kw">in</span> primes:</span>
+<span id="cb3-329"><a href="#cb3-329" aria-hidden="true" tabindex="-1"></a>        k <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb3-330"><a href="#cb3-330" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> n <span class="op">%</span> p <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb3-331"><a href="#cb3-331" aria-hidden="true" tabindex="-1"></a>            n <span class="op">//=</span> p<span class="op">;</span> k <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb3-332"><a href="#cb3-332" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> k <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb3-333"><a href="#cb3-333" aria-hidden="true" tabindex="-1"></a>            out.append(syms[k <span class="op">-</span> <span class="dv">1</span>])</span>
+<span id="cb3-334"><a href="#cb3-334" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> out</span>
+<span id="cb3-335"><a href="#cb3-335" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-336"><a href="#cb3-336" aria-hidden="true" tabindex="-1"></a>formula <span class="op">=</span> [<span class="st">'forall'</span>, <span class="st">'x'</span>, <span class="st">'('</span>, <span class="st">'x'</span>, <span class="st">'+'</span>, <span class="st">'0'</span>, <span class="st">'='</span>, <span class="st">'x'</span>, <span class="st">')'</span>]</span>
+<span id="cb3-337"><a href="#cb3-337" aria-hidden="true" tabindex="-1"></a>g <span class="op">=</span> godel(formula)</span>
+<span id="cb3-338"><a href="#cb3-338" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  formula:"</span>, <span class="st">" "</span>.join(formula))</span>
+<span id="cb3-339"><a href="#cb3-339" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Godel number:"</span>, g)</span>
+<span id="cb3-340"><a href="#cb3-340" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  decoded:"</span>, <span class="st">" "</span>.join(decode(g)))</span>
+<span id="cb3-341"><a href="#cb3-341" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  syntax -&gt; arithmetic is injective by unique factorization."</span>)</span>
+<span id="cb3-342"><a href="#cb3-342" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-343"><a href="#cb3-343" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== 2. QUINE: THE COMPUTATIONAL DIAGONAL LEMMA ==="</span>)</span>
+<span id="cb3-344"><a href="#cb3-344" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> <span class="st">'s = </span><span class="sc">%r</span><span class="ch">\n</span><span class="st">print(s </span><span class="sc">%%</span><span class="st"> s)'</span></span>
+<span id="cb3-345"><a href="#cb3-345" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  A program that prints its own source (a fixed point of 'print'):"</span>)</span>
+<span id="cb3-346"><a href="#cb3-346" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  "</span> <span class="op">+</span> <span class="st">"</span><span class="ch">\n</span><span class="st">  "</span>.join((s <span class="op">%</span> s).splitlines()))</span>
+<span id="cb3-347"><a href="#cb3-347" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  The diagonal lemma builds a sentence asserting a property OF ITSELF"</span>)</span>
+<span id="cb3-348"><a href="#cb3-348" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  exactly as this program reproduces its own code."</span>)</span>
+<span id="cb3-349"><a href="#cb3-349" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-350"><a href="#cb3-350" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== 3. THE DIAGONAL SET: NOT ON ANY LIST ==="</span>)</span>
+<span id="cb3-351"><a href="#cb3-351" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> diagonal_bits(rows):</span>
+<span id="cb3-352"><a href="#cb3-352" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [<span class="dv">1</span> <span class="op">-</span> rows[i][i] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(rows))]</span>
+<span id="cb3-353"><a href="#cb3-353" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> [[<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>], [<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>], [<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>], [<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>]]</span>
+<span id="cb3-354"><a href="#cb3-354" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> diagonal_bits(rows)</span>
+<span id="cb3-355"><a href="#cb3-355" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  rows:"</span>, rows)</span>
+<span id="cb3-356"><a href="#cb3-356" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  diagonal:"</span>, d)</span>
+<span id="cb3-357"><a href="#cb3-357" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  differs from row i at position i:"</span>, <span class="bu">all</span>(d[i] <span class="op">!=</span> rows[i][i] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(rows))))</span>
+<span id="cb3-358"><a href="#cb3-358" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-359"><a href="#cb3-359" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== 4. COMPLETENESS IN ACTION: RESOLUTION PROOF vs TRUTH TABLE ==="</span>)</span>
+<span id="cb3-360"><a href="#cb3-360" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> resolve(c1, c2):</span>
+<span id="cb3-361"><a href="#cb3-361" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> lit <span class="kw">in</span> c1:</span>
+<span id="cb3-362"><a href="#cb3-362" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (lit[<span class="dv">0</span>], <span class="dv">1</span> <span class="op">-</span> lit[<span class="dv">1</span>]) <span class="kw">in</span> c2:</span>
+<span id="cb3-363"><a href="#cb3-363" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="bu">frozenset</span>((c1 <span class="op">|</span> c2) <span class="op">-</span> {lit, (lit[<span class="dv">0</span>], <span class="dv">1</span> <span class="op">-</span> lit[<span class="dv">1</span>])})</span>
+<span id="cb3-364"><a href="#cb3-364" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb3-365"><a href="#cb3-365" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-366"><a href="#cb3-366" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> is_tautology(cl):</span>
+<span id="cb3-367"><a href="#cb3-367" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">any</span>((v, <span class="dv">0</span>) <span class="kw">in</span> cl <span class="kw">and</span> (v, <span class="dv">1</span>) <span class="kw">in</span> cl <span class="cf">for</span> (v, _) <span class="kw">in</span> cl)</span>
+<span id="cb3-368"><a href="#cb3-368" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-369"><a href="#cb3-369" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> resolution_unsat(clauses, limit<span class="op">=</span><span class="dv">50000</span>):</span>
+<span id="cb3-370"><a href="#cb3-370" aria-hidden="true" tabindex="-1"></a>    clauses <span class="op">=</span> <span class="bu">set</span>(c <span class="cf">for</span> c <span class="kw">in</span> clauses <span class="cf">if</span> <span class="kw">not</span> is_tautology(c))</span>
+<span id="cb3-371"><a href="#cb3-371" aria-hidden="true" tabindex="-1"></a>    changed, steps <span class="op">=</span> <span class="va">True</span>, <span class="dv">0</span></span>
+<span id="cb3-372"><a href="#cb3-372" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> changed <span class="kw">and</span> steps <span class="op">&lt;</span> limit:</span>
+<span id="cb3-373"><a href="#cb3-373" aria-hidden="true" tabindex="-1"></a>        changed <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb3-374"><a href="#cb3-374" aria-hidden="true" tabindex="-1"></a>        cur <span class="op">=</span> <span class="bu">list</span>(clauses)</span>
+<span id="cb3-375"><a href="#cb3-375" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(cur)):</span>
+<span id="cb3-376"><a href="#cb3-376" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(i <span class="op">+</span> <span class="dv">1</span>, <span class="bu">len</span>(cur)):</span>
+<span id="cb3-377"><a href="#cb3-377" aria-hidden="true" tabindex="-1"></a>                r <span class="op">=</span> resolve(cur[i], cur[j])</span>
+<span id="cb3-378"><a href="#cb3-378" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> r <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="kw">and</span> <span class="kw">not</span> is_tautology(r) <span class="kw">and</span> r <span class="kw">not</span> <span class="kw">in</span> clauses:</span>
+<span id="cb3-379"><a href="#cb3-379" aria-hidden="true" tabindex="-1"></a>                    clauses.add(r)<span class="op">;</span> changed <span class="op">=</span> <span class="va">True</span><span class="op">;</span> steps <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb3-380"><a href="#cb3-380" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">if</span> <span class="bu">len</span>(r) <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb3-381"><a href="#cb3-381" aria-hidden="true" tabindex="-1"></a>                        <span class="cf">return</span> <span class="va">True</span></span>
+<span id="cb3-382"><a href="#cb3-382" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">frozenset</span>() <span class="kw">in</span> clauses</span>
+<span id="cb3-383"><a href="#cb3-383" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-384"><a href="#cb3-384" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> satisfiable(clauses, nvars):</span>
+<span id="cb3-385"><a href="#cb3-385" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> bits <span class="kw">in</span> itertools.product([<span class="va">False</span>, <span class="va">True</span>], repeat<span class="op">=</span>nvars):</span>
+<span id="cb3-386"><a href="#cb3-386" aria-hidden="true" tabindex="-1"></a>        asn <span class="op">=</span> {v <span class="op">+</span> <span class="dv">1</span>: bits[v] <span class="cf">for</span> v <span class="kw">in</span> <span class="bu">range</span>(nvars)}</span>
+<span id="cb3-387"><a href="#cb3-387" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">all</span>(<span class="bu">any</span>((asn[v] <span class="cf">if</span> sg <span class="op">==</span> <span class="dv">1</span> <span class="cf">else</span> <span class="kw">not</span> asn[v]) <span class="cf">for</span> (v, sg) <span class="kw">in</span> cl) <span class="cf">for</span> cl <span class="kw">in</span> clauses):</span>
+<span id="cb3-388"><a href="#cb3-388" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">True</span></span>
+<span id="cb3-389"><a href="#cb3-389" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb3-390"><a href="#cb3-390" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-391"><a href="#cb3-391" aria-hidden="true" tabindex="-1"></a>random.seed(<span class="dv">1</span>)</span>
+<span id="cb3-392"><a href="#cb3-392" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> rand_cnf(nvars, nclauses):</span>
+<span id="cb3-393"><a href="#cb3-393" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [<span class="bu">frozenset</span>((v, random.choice([<span class="dv">0</span>, <span class="dv">1</span>])) <span class="cf">for</span> v <span class="kw">in</span> random.sample(<span class="bu">range</span>(<span class="dv">1</span>, nvars <span class="op">+</span> <span class="dv">1</span>), <span class="dv">3</span>))</span>
+<span id="cb3-394"><a href="#cb3-394" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(nclauses)]</span>
+<span id="cb3-395"><a href="#cb3-395" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-396"><a href="#cb3-396" aria-hidden="true" tabindex="-1"></a>agree <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> total <span class="op">=</span> <span class="dv">60</span></span>
+<span id="cb3-397"><a href="#cb3-397" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(total):</span>
+<span id="cb3-398"><a href="#cb3-398" aria-hidden="true" tabindex="-1"></a>    cnf <span class="op">=</span> rand_cnf(<span class="dv">4</span>, <span class="dv">5</span>)</span>
+<span id="cb3-399"><a href="#cb3-399" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> satisfiable(cnf, <span class="dv">4</span>) <span class="op">==</span> (<span class="kw">not</span> resolution_unsat(cnf)):</span>
+<span id="cb3-400"><a href="#cb3-400" aria-hidden="true" tabindex="-1"></a>        agree <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb3-401"><a href="#cb3-401" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  proof (resolution) and semantics (truth tables) agree on </span><span class="sc">{</span>agree<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>total<span class="sc">}</span><span class="ss"> random 3-CNFs."</span>)</span>
+<span id="cb3-402"><a href="#cb3-402" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  This is the completeness theorem (valid &lt;=&gt; provable) in miniature."</span>)</span>
+<span id="cb3-403"><a href="#cb3-403" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-404"><a href="#cb3-404" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== 5. THE HALTING PROBLEM: THE SAME DIAGONAL ==="</span>)</span>
+<span id="cb3-405"><a href="#cb3-405" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Assume a total decider H(P, I). Define D(P): if H(P, P) then loop else halt."</span>)</span>
+<span id="cb3-406"><a href="#cb3-406" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Then D(D) halts  iff  H(D, D) says false  iff  D(D) does not halt. Contradiction."</span>)</span>
+<span id="cb3-407"><a href="#cb3-407" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  If arithmetic were complete/decidable, we could decide D by searching for proofs —"</span>)</span>
+<span id="cb3-408"><a href="#cb3-408" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  so incompleteness and undecidability are two faces of one diagonal."</span>)</span>
+<span id="cb3-409"><a href="#cb3-409" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-410"><a href="#cb3-410" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-411"><a href="#cb3-411" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb3-412"><a href="#cb3-412" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-413"><a href="#cb3-413" aria-hidden="true" tabindex="-1"></a><span class="fu">## 8. Summary Matrix</span></span>
+<span id="cb3-414"><a href="#cb3-414" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-415"><a href="#cb3-415" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="pp">|</span> Completeness (1929) <span class="pp">|</span> Incompleteness (1931) <span class="pp">|</span></span>
+<span id="cb3-416"><a href="#cb3-416" aria-hidden="true" tabindex="-1"></a><span class="pp">| :---</span> <span class="pp">| :---</span> <span class="pp">| :---</span> <span class="pp">|</span></span>
+<span id="cb3-417"><a href="#cb3-417" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Subject** <span class="pp">|</span> first-order logic (the proof system) <span class="pp">|</span> theories of arithmetic <span class="pp">|</span></span>
+<span id="cb3-418"><a href="#cb3-418" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Statement** <span class="pp">|</span> valid $\iff$ provable; consistent $\iff$ satisfiable <span class="pp">|</span> some sentence undecided; $\nvdash\mathrm{Con}(T)$ <span class="pp">|</span></span>
+<span id="cb3-419"><a href="#cb3-419" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Key tool** <span class="pp">|</span> Henkin model construction <span class="pp">|</span> Gödel numbering + diagonal lemma <span class="pp">|</span></span>
+<span id="cb3-420"><a href="#cb3-420" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Consequence** <span class="pp">|</span> compactness, Löwenheim–Skolem <span class="pp">|</span> Hilbert's program fails; independence <span class="pp">|</span></span>
+<span id="cb3-421"><a href="#cb3-421" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Proof style** <span class="pp">|</span> build a canonical model <span class="pp">|</span> build a self-referential sentence <span class="pp">|</span></span>
+<span id="cb3-422"><a href="#cb3-422" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Extra hypothesis** <span class="pp">|</span> none <span class="pp">|</span> consistency (+ r.e. axioms, interpret arithmetic) <span class="pp">|</span></span>
+<span id="cb3-423"><a href="#cb3-423" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Limit** <span class="pp">|</span> FOL is not decidable (Church–Turing) <span class="pp">|</span> no complete r.e. arithmetic <span class="pp">|</span></span>
+<span id="cb3-424"><a href="#cb3-424" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-425"><a href="#cb3-425" aria-hidden="true" tabindex="-1"></a>**The unity.** Cantor's diagonal, Russell's paradox, the halting problem, Gödel's incompleteness, Tarski's undefinability, and Chaitin's randomness are one theorem wearing many costumes: **there is no surjection from a set onto its own function space / powerset.**</span>
+<span id="cb3-426"><a href="#cb3-426" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-427"><a href="#cb3-427" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb3-428"><a href="#cb3-428" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-429"><a href="#cb3-429" aria-hidden="true" tabindex="-1"></a><span class="fu">## 9. Curated References and Primary Sources</span></span>
+<span id="cb3-430"><a href="#cb3-430" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-431"><a href="#cb3-431" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Gödel, Kurt (1929)**. *Über die Vollständigkeit des Logikkalküls*. Doctoral dissertation, University of Vienna. (Completeness.)</span>
+<span id="cb3-432"><a href="#cb3-432" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Gödel, Kurt (1931)**. *"Über formal unentscheidbare Sätze der Principia Mathematica und verwandter Systeme I"*. Monatshefte für Mathematik und Physik, 38: 173–198. (Incompleteness.)</span>
+<span id="cb3-433"><a href="#cb3-433" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Henkin, Leon (1949)**. *"The completeness of the first-order functional calculus"*. J. Symbolic Logic, 14(3): 159–166.</span>
+<span id="cb3-434"><a href="#cb3-434" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Rosser, J. Barkley (1936)**. *"Extensions of some theorems of Gödel and Church"*. J. Symbolic Logic, 1(3): 87–91.</span>
+<span id="cb3-435"><a href="#cb3-435" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>**Gentzen, Gerhard (1936)**. *"Die Widerspruchsfreiheit der reinen Zahlentheorie"*. Math. Annalen, 112: 493–565.</span>
+<span id="cb3-436"><a href="#cb3-436" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>**Löb, Martin (1955)**. *"Solution of a problem of Leon Henkin"*. J. Symbolic Logic, 20(2): 115–118.</span>
+<span id="cb3-437"><a href="#cb3-437" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>**Kleene, Stephen (1936)**. *"General recursive functions of natural numbers"*. Math. Annalen, 112: 727–742.</span>
+<span id="cb3-438"><a href="#cb3-438" aria-hidden="true" tabindex="-1"></a><span class="ss">8. </span>**Turing, Alan (1936)**. *"On computable numbers, with an application to the Entscheidungsproblem"*. Proc. London Math. Soc., s2-42(1): 230–265.</span>
+<span id="cb3-439"><a href="#cb3-439" aria-hidden="true" tabindex="-1"></a><span class="ss">9. </span>**Matiyasevich, Yuri (1970)**. *"Enumerable sets are Diophantine"*. Doklady AN SSSR, 191: 279–282.</span>
+<span id="cb3-440"><a href="#cb3-440" aria-hidden="true" tabindex="-1"></a><span class="ss">10. </span>**Chaitin, Gregory (1974)**. *"Information-theoretic limitations of formal systems"*. J. ACM, 21(3): 403–424.</span>
+<span id="cb3-441"><a href="#cb3-441" aria-hidden="true" tabindex="-1"></a><span class="ss">11. </span>**Lawvere, F. William (1969)**. *"Diagonal arguments and cartesian closed categories"*. Lecture Notes in Mathematics, 92: 134–145.</span>
+<span id="cb3-442"><a href="#cb3-442" aria-hidden="true" tabindex="-1"></a><span class="ss">12. </span>**Smullyan, Raymond (1992)**. *Gödel's Incompleteness Theorems*. Oxford Logic Guides.</span>
+<span id="cb3-443"><a href="#cb3-443" aria-hidden="true" tabindex="-1"></a><span class="ss">13. </span>**Boolos, G., Burgess, J., Jeffrey, R. (2007)**. *Computability and Logic*, 5th ed. Cambridge University Press.</span>
+<span id="cb3-444"><a href="#cb3-444" aria-hidden="true" tabindex="-1"></a><span class="ss">14. </span>**Enderton, Herbert (2001)**. *A Mathematical Introduction to Logic*, 2nd ed. Academic Press.</span>
+<span id="cb3-445"><a href="#cb3-445" aria-hidden="true" tabindex="-1"></a><span class="ss">15. </span>**Franzén, Torkel (2005)**. *Gödel's Theorem: An Incomplete Guide to Its Use and Abuse*. A K Peters.</span>
+<span id="cb3-446"><a href="#cb3-446" aria-hidden="true" tabindex="-1"></a><span class="ss">16. </span>**Hofstadter, Douglas (1979)**. *Gödel, Escher, Bach: An Eternal Golden Braid*. Basic Books.</span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2026 Igor Kan</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

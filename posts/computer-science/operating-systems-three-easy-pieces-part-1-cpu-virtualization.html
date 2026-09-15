@@ -1,0 +1,1953 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Igor Kan">
+<meta name="dcterms.date" content="2026-09-14">
+<meta name="description" content="A first-principles treatment of CPU virtualization following Operating Systems: Three Easy Pieces. It covers the definition of a process and its machine state, the process API (fork, wait, exec, file descriptors, pipes) and shell implementation, limited direct execution with user and kernel modes, system calls, traps, and context switches, cooperative versus preemptive scheduling with timer interrupts, and the core CPU scheduling algorithms and metrics: turnaround and response time, FIFO, SJF, STCF, round-robin, multi-level feedback queues with priority boost, lottery and stride scheduling and CFS, and multi-processor scheduling with cache affinity, load balancing, and work stealing, with an executable Python laboratory that simulates every scheduler and plots Gantt charts and performance metrics.">
+
+<title>Operating Systems: Three Easy Pieces, Part 1 — CPU Virtualization – My Writings</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-a515e054079012129989d5397ee3c9c1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">My Writings</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../literature/index.html"> 
+<span class="menu-text">Literature</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../chapters/index.html"> 
+<span class="menu-text">Chapters</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../tutorials/index.html"> 
+<span class="menu-text">Tutorials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-three-easy-pieces" id="toc-the-three-easy-pieces" class="nav-link active" data-scroll-target="#the-three-easy-pieces"><span class="header-section-number">1</span> The Three Easy Pieces</a></li>
+  <li><a href="#processes" id="toc-processes" class="nav-link" data-scroll-target="#processes"><span class="header-section-number">2</span> Processes</a>
+  <ul>
+  <li><a href="#from-program-to-process" id="toc-from-program-to-process" class="nav-link" data-scroll-target="#from-program-to-process"><span class="header-section-number">2.1</span> From Program to Process</a></li>
+  <li><a href="#process-states" id="toc-process-states" class="nav-link" data-scroll-target="#process-states"><span class="header-section-number">2.2</span> Process States</a></li>
+  </ul></li>
+  <li><a href="#the-process-api" id="toc-the-process-api" class="nav-link" data-scroll-target="#the-process-api"><span class="header-section-number">3</span> The Process API</a>
+  <ul>
+  <li><a href="#fork-the-weird-part" id="toc-fork-the-weird-part" class="nav-link" data-scroll-target="#fork-the-weird-part"><span class="header-section-number">3.1</span> <code>fork()</code>: The Weird Part</a></li>
+  <li><a href="#exec-and-the-shell" id="toc-exec-and-the-shell" class="nav-link" data-scroll-target="#exec-and-the-shell"><span class="header-section-number">3.2</span> <code>exec()</code> and the Shell</a></li>
+  </ul></li>
+  <li><a href="#limited-direct-execution" id="toc-limited-direct-execution" class="nav-link" data-scroll-target="#limited-direct-execution"><span class="header-section-number">4</span> Limited Direct Execution</a>
+  <ul>
+  <li><a href="#user-mode-and-kernel-mode" id="toc-user-mode-and-kernel-mode" class="nav-link" data-scroll-target="#user-mode-and-kernel-mode"><span class="header-section-number">4.1</span> User Mode and Kernel Mode</a></li>
+  <li><a href="#system-calls-and-traps" id="toc-system-calls-and-traps" class="nav-link" data-scroll-target="#system-calls-and-traps"><span class="header-section-number">4.2</span> System Calls and Traps</a></li>
+  <li><a href="#context-switching" id="toc-context-switching" class="nav-link" data-scroll-target="#context-switching"><span class="header-section-number">4.3</span> Context Switching</a></li>
+  <li><a href="#cooperative-vs-preemptive" id="toc-cooperative-vs-preemptive" class="nav-link" data-scroll-target="#cooperative-vs-preemptive"><span class="header-section-number">4.4</span> Cooperative vs Preemptive</a></li>
+  </ul></li>
+  <li><a href="#cpu-scheduling" id="toc-cpu-scheduling" class="nav-link" data-scroll-target="#cpu-scheduling"><span class="header-section-number">5</span> CPU Scheduling</a>
+  <ul>
+  <li><a href="#metrics" id="toc-metrics" class="nav-link" data-scroll-target="#metrics"><span class="header-section-number">5.1</span> Metrics</a></li>
+  <li><a href="#fifo-sjf-and-stcf" id="toc-fifo-sjf-and-stcf" class="nav-link" data-scroll-target="#fifo-sjf-and-stcf"><span class="header-section-number">5.2</span> FIFO, SJF, and STCF</a></li>
+  <li><a href="#round-robin" id="toc-round-robin" class="nav-link" data-scroll-target="#round-robin"><span class="header-section-number">5.3</span> Round-Robin</a></li>
+  <li><a href="#the-fundamental-trade-off" id="toc-the-fundamental-trade-off" class="nav-link" data-scroll-target="#the-fundamental-trade-off"><span class="header-section-number">5.4</span> The Fundamental Trade-off</a></li>
+  </ul></li>
+  <li><a href="#multi-level-feedback-queue-mlfq" id="toc-multi-level-feedback-queue-mlfq" class="nav-link" data-scroll-target="#multi-level-feedback-queue-mlfq"><span class="header-section-number">6</span> Multi-Level Feedback Queue (MLFQ)</a></li>
+  <li><a href="#lottery-and-proportional-share-scheduling" id="toc-lottery-and-proportional-share-scheduling" class="nav-link" data-scroll-target="#lottery-and-proportional-share-scheduling"><span class="header-section-number">7</span> Lottery and Proportional-Share Scheduling</a></li>
+  <li><a href="#multi-cpu-scheduling" id="toc-multi-cpu-scheduling" class="nav-link" data-scroll-target="#multi-cpu-scheduling"><span class="header-section-number">8</span> Multi-CPU Scheduling</a></li>
+  <li><a href="#laboratory-scheduling-algorithms" id="toc-laboratory-scheduling-algorithms" class="nav-link" data-scroll-target="#laboratory-scheduling-algorithms"><span class="header-section-number">9</span> Laboratory: Scheduling Algorithms</a>
+  <ul>
+  <li><a href="#multi-level-feedback-queue" id="toc-multi-level-feedback-queue" class="nav-link" data-scroll-target="#multi-level-feedback-queue"><span class="header-section-number">9.1</span> Multi-Level Feedback Queue</a></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary"><span class="header-section-number">10</span> Summary</a></li>
+  <li><a href="#curated-references-and-further-reading" id="toc-curated-references-and-further-reading" class="nav-link" data-scroll-target="#curated-references-and-further-reading"><span class="header-section-number">11</span> Curated References and Further Reading</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title">Operating Systems: Three Easy Pieces, Part 1 — CPU Virtualization</h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
+<p class="subtitle lead">Processes and their API, limited direct execution, and CPU scheduling from FIFO and SJF through round-robin, multi-level feedback queues, lottery scheduling, and multi-CPU affinity — following OSTEP, Chapters 4–11</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Computer Science</div>
+    <div class="quarto-category">Operating Systems</div>
+    <div class="quarto-category">Virtualization</div>
+    <div class="quarto-category">Processes</div>
+    <div class="quarto-category">CPU Scheduling</div>
+    <div class="quarto-category">Systems Programming</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    A first-principles treatment of CPU virtualization following Operating Systems: Three Easy Pieces. It covers the definition of a process and its machine state, the process API (fork, wait, exec, file descriptors, pipes) and shell implementation, limited direct execution with user and kernel modes, system calls, traps, and context switches, cooperative versus preemptive scheduling with timer interrupts, and the core CPU scheduling algorithms and metrics: turnaround and response time, FIFO, SJF, STCF, round-robin, multi-level feedback queues with priority boost, lottery and stride scheduling and CFS, and multi-processor scheduling with cache affinity, load balancing, and work stealing, with an executable Python laboratory that simulates every scheduler and plots Gantt charts and performance metrics.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Igor Kan </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 14, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><em>The operating system runs a magic trick: it takes one physical CPU and makes it appear that many programs are running at once. It also takes physical memory and gives each program the illusion of a private, contiguous address space. OSTEP calls these <strong>virtualization</strong>, and it is the organizing idea behind everything an OS does.</em></p>
+<p>This is <strong>Part 1</strong> of a three-part series following <em>Operating Systems: Three Easy Pieces</em> (OSTEP). Here we cover <strong>CPU virtualization</strong>: Chapters 4–11. <a href="../../posts/computer-science/operating-systems-three-easy-pieces-part-2-memory-virtualization.html">Part 2</a> covers <strong>memory virtualization</strong>, and <a href="../../posts/computer-science/operating-systems-three-easy-pieces-part-3-concurrency.html">Part 3</a> covers <strong>concurrency</strong>.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>The Series
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Part 1 — CPU Virtualization</strong> (this article)</li>
+<li><a href="../../posts/computer-science/operating-systems-three-easy-pieces-part-2-memory-virtualization.html">Part 2 — Memory Virtualization</a></li>
+<li><a href="../../posts/computer-science/operating-systems-three-easy-pieces-part-3-concurrency.html">Part 3 — Concurrency</a></li>
+</ul>
+<section id="companion-reading" class="level3" data-number="0.1">
+<h3 data-number="0.1" class="anchored" data-anchor-id="companion-reading"><span class="header-section-number">0.1</span> Companion Reading</h3>
+<ul>
+<li><a href="../../posts/computer-science/cpp20-big-four-stl-smart-pointers-and-reinventing-the-wheel.html">Modern C++: STL, Smart Pointers, and Reinventing the Wheel</a></li>
+<li><a href="../../posts/computer-science/bottom-up-computer-engineering-roadmap.html">Bottom-Up Computer Engineering Roadmap</a></li>
+<li><a href="../../posts/computer-science/computer-networking-top-down-part-2-transport-layer.html">Computer Networking: Top-Down Part 2 — The Transport Layer</a></li>
+<li><a href="../../posts/computer-science/linux-filesystem-hierarchy.html">Linux Filesystem Hierarchy</a></li>
+</ul>
+</section>
+</div>
+</div>
+</div>
+<hr>
+<section id="the-three-easy-pieces" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="the-three-easy-pieces"><span class="header-section-number">1</span> The Three Easy Pieces</h2>
+<p>OSTEP reduces operating systems to three fundamental concerns:</p>
+<ol type="1">
+<li><strong>Virtualization</strong> — the OS gives each process the illusion of a private CPU and a private memory.</li>
+<li><strong>Concurrency</strong> — managing multiple simultaneous actors (threads, interrupts) safely.</li>
+<li><strong>Persistence</strong> — storing data reliably across crashes and reboots.</li>
+</ol>
+<p>Virtualization itself splits into <strong>CPU virtualization</strong> (this article) and <strong>memory virtualization</strong> (<a href="../../posts/computer-science/operating-systems-three-easy-pieces-part-2-memory-virtualization.html">Part 2</a>). The recurring design tension is <strong>mechanism versus policy</strong>: a <em>mechanism</em> is how something is done (a context switch, a page table walk); a <em>policy</em> is what to do (which process to run next, which page to evict). The OS provides mechanisms; schedulers and replacement policies embody policy.</p>
+<hr>
+</section>
+<section id="processes" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="processes"><span class="header-section-number">2</span> Processes</h2>
+<p>A <strong>process</strong> is a running program. At any instant it can be described by its <strong>machine state</strong>:</p>
+<ul>
+<li><strong>Memory</strong> — the address space: code, data, heap, stack.</li>
+<li><strong>Registers</strong> — the program counter, stack pointer, general-purpose registers.</li>
+<li><strong>I/O state</strong> — open files, network sockets, and other resources.</li>
+</ul>
+<section id="from-program-to-process" class="level3" data-number="2.1">
+<h3 data-number="2.1" class="anchored" data-anchor-id="from-program-to-process"><span class="header-section-number">2.1</span> From Program to Process</h3>
+<p>A program on disk is passive. To run it, the OS <strong>loads</strong> its code and static data into memory (eagerly or lazily), allocates a <strong>stack</strong> and a <strong>heap</strong>, initializes registers, and starts execution at <code>main</code>. This transformation from disk image to running process is the core of virtualization.</p>
+</section>
+<section id="process-states" class="level3" data-number="2.2">
+<h3 data-number="2.2" class="anchored" data-anchor-id="process-states"><span class="header-section-number">2.2</span> Process States</h3>
+<p>OSTEP’s canonical simplification:</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">stateDiagram-v2
+    [*] --&gt; Ready
+    Ready --&gt; Running: dispatched
+    Running --&gt; Ready: preempted / descheduled
+    Running --&gt; Blocked: I/O request (I/O initiate)
+    Blocked --&gt; Ready: I/O done
+    Running --&gt; [*]: exit
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<ul>
+<li><strong>Running</strong> — executing on the CPU.</li>
+<li><strong>Ready</strong> — able to run, but waiting for the CPU.</li>
+<li><strong>Blocked</strong> — waiting for some event (I/O completion); not runnable.</li>
+</ul>
+<p>A process moves from ready to running when <strong>dispatched</strong>, from running to ready when <strong>descheduled</strong> (preempted), and from running to blocked when it initiates I/O. Transitions are triggered by the OS, which maintains a <strong>process list</strong> of <strong>Process Control Blocks (PCBs)</strong> — a data structure per process holding its state, registers, and metadata.</p>
+<hr>
+</section>
+</section>
+<section id="the-process-api" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="the-process-api"><span class="header-section-number">3</span> The Process API</h2>
+<p>Unix’s process creation interface is famously strange and famously powerful.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Call</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>fork()</code></td>
+<td>create a nearly identical copy of the calling process</td>
+</tr>
+<tr class="even">
+<td><code>wait()</code> / <code>waitpid()</code></td>
+<td>wait for a child to finish</td>
+</tr>
+<tr class="odd">
+<td><code>exec()</code> (family)</td>
+<td>replace the current program with a different one</td>
+</tr>
+<tr class="even">
+<td><code>exit()</code></td>
+<td>terminate the process</td>
+</tr>
+</tbody>
+</table>
+<section id="fork-the-weird-part" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="fork-the-weird-part"><span class="header-section-number">3.1</span> <code>fork()</code>: The Weird Part</h3>
+<p><code>fork()</code> returns <strong>twice</strong>: once in the parent (returning the child’s PID) and once in the child (returning 0). The child is a <strong>copy</strong> of the parent — same memory contents, same open file descriptors — but with its own address space and a different return value. The OS does not guarantee which runs first.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode c code-with-copy"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> pid <span class="op">=</span> fork<span class="op">();</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>pid <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span> perror<span class="op">(</span><span class="st">"fork"</span><span class="op">);</span> <span class="op">}</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>pid <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span> printf<span class="op">(</span><span class="st">"child: pid=</span><span class="sc">%d\n</span><span class="st">"</span><span class="op">,</span> getpid<span class="op">());</span> <span class="op">}</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span> <span class="op">{</span> printf<span class="op">(</span><span class="st">"parent: child=</span><span class="sc">%d\n</span><span class="st">"</span><span class="op">,</span> pid<span class="op">);</span> <span class="op">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="exec-and-the-shell" class="level3" data-number="3.2">
+<h3 data-number="3.2" class="anchored" data-anchor-id="exec-and-the-shell"><span class="header-section-number">3.2</span> <code>exec()</code> and the Shell</h3>
+<p><code>exec()</code> does not create a process; it <strong>transforms</strong> one. It loads a new program into the current address space and begins executing it — and on success it never returns. This is why the shell works as it does:</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TD
+    A["Shell: read command"] --&gt; B["fork()"]
+    B --&gt;|parent| C["wait() for child"]
+    B --&gt;|child| D["exec(&lt;command&gt;)"]
+    D --&gt; E["program runs, exits"]
+    E --&gt; C
+    C --&gt; A
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p><code>fork()</code> + <code>exec()</code> + <code>wait()</code> is the entire mechanism behind a shell prompt. Redirecting output is done with <code>dup2</code>, which manipulates <strong>file descriptors</strong> before <code>exec</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode c code-with-copy"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> fd <span class="op">=</span> open<span class="op">(</span><span class="st">"out.txt"</span><span class="op">,</span> O_WRONLY <span class="op">|</span> O_CREAT <span class="op">|</span> O_TRUNC<span class="op">,</span> <span class="bn">0644</span><span class="op">);</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>dup2<span class="op">(</span>fd<span class="op">,</span> STDOUT_FILENO<span class="op">);</span>   <span class="co">// make stdout go to the file</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>close<span class="op">(</span>fd<span class="op">);</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>execvp<span class="op">(</span><span class="st">"ls"</span><span class="op">,</span> argv<span class="op">);</span>        <span class="co">// now `ls` writes to out.txt</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Pipes connect descriptors of two processes: <code>pipe()</code> creates a read end and a write end; <code>fork</code>, <code>dup2</code>, and <code>exec</code> wire them together — the same three calls implement <code>ls | wc -l</code>.</p>
+<hr>
+</section>
+</section>
+<section id="limited-direct-execution" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="limited-direct-execution"><span class="header-section-number">4</span> Limited Direct Execution</h2>
+<p>The naive approach — just run the program on the CPU — fails for two reasons: the program could do something privileged (access hardware, disable interrupts), and the OS must be able to regain control to multiplex the CPU. OSTEP’s solution is <strong>limited direct execution (LDE)</strong>: run the program directly, but set up hardware protections and a controlled way to enter the kernel.</p>
+<section id="user-mode-and-kernel-mode" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="user-mode-and-kernel-mode"><span class="header-section-number">4.1</span> User Mode and Kernel Mode</h3>
+<p>The CPU has at least two privilege levels. Application code runs in <strong>user mode</strong>, where privileged instructions (I/O, setting the timer, halting) trap. The OS runs in <strong>kernel mode</strong>, where everything is permitted.</p>
+</section>
+<section id="system-calls-and-traps" class="level3" data-number="4.2">
+<h3 data-number="4.2" class="anchored" data-anchor-id="system-calls-and-traps"><span class="header-section-number">4.2</span> System Calls and Traps</h3>
+<p>To request a privileged service, a user program executes a <strong>system call</strong> — a special trap instruction that switches to kernel mode and jumps to a handler. The kernel validates the request, performs it, and returns. The trap table is configured <strong>at boot</strong> so the process cannot redirect traps to its own code.</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">sequenceDiagram
+    participant P as Process (user mode)
+    participant K as Kernel (kernel mode)
+    P-&gt;&gt;P: normal execution
+    P-&gt;&gt;K: trap (system call, e.g. read)
+    Note over K: save registers to kernel stack
+    K-&gt;&gt;K: validate + service request
+    K-&gt;&gt;P: return-from-trap
+    Note over P: restore registers, resume
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</section>
+<section id="context-switching" class="level3" data-number="4.3">
+<h3 data-number="4.3" class="anchored" data-anchor-id="context-switching"><span class="header-section-number">4.3</span> Context Switching</h3>
+<p>To switch between processes, the OS must save the current process’s registers and restore another’s — a <strong>context switch</strong>. The mechanism is subtle: the kernel saves user registers, switches to the kernel stack, and later executes a return-from-trap that restores a <em>different</em> process’s registers. This is the concrete machinery behind the “dispatch” and “preempt” transitions above.</p>
+</section>
+<section id="cooperative-vs-preemptive" class="level3" data-number="4.4">
+<h3 data-number="4.4" class="anchored" data-anchor-id="cooperative-vs-preemptive"><span class="header-section-number">4.4</span> Cooperative vs Preemptive</h3>
+<ul>
+<li><strong>Cooperative</strong> scheduling relies on processes voluntarily yielding (via system calls or faults). If a process loops forever, the system hangs — this is how early Mac OS and some systems behaved.</li>
+<li><strong>Preemptive</strong> scheduling uses a <strong>timer interrupt</strong>: the OS sets a timer to fire periodically; when it fires, the CPU traps to the kernel, which regains control and may switch processes. The timer interrupt is what makes a modern general-purpose OS responsive.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="cpu-scheduling" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="cpu-scheduling"><span class="header-section-number">5</span> CPU Scheduling</h2>
+<p>Now the central policy question: given a set of ready processes, which should run?</p>
+<section id="metrics" class="level3" data-number="5.1">
+<h3 data-number="5.1" class="anchored" data-anchor-id="metrics"><span class="header-section-number">5.1</span> Metrics</h3>
+<ul>
+<li><strong>Turnaround time</strong> <span class="math inline">\(T_{\text{turnaround}} = T_{\text{completion}} - T_{\text{arrival}}\)</span> — total time from arrival to finish.</li>
+<li><strong>Response time</strong> <span class="math inline">\(T_{\text{response}} = T_{\text{firstrun}} - T_{\text{arrival}}\)</span> — time until the process first runs.</li>
+<li><strong>Fairness</strong>, <strong>throughput</strong>, <strong>overhead</strong>, and <strong>meeting deadlines</strong> also matter.</li>
+</ul>
+<p>Turnaround optimizes batch throughput; response optimizes interactivity. They often conflict.</p>
+</section>
+<section id="fifo-sjf-and-stcf" class="level3" data-number="5.2">
+<h3 data-number="5.2" class="anchored" data-anchor-id="fifo-sjf-and-stcf"><span class="header-section-number">5.2</span> FIFO, SJF, and STCF</h3>
+<p><strong>FIFO (First In, First Out)</strong> is trivial but suffers the <strong>convoy effect</strong>: one long job delays every short job behind it, wrecking average turnaround. A single 100 ms job at the head makes three 10 ms jobs wait.</p>
+<p><strong>SJF (Shortest Job First)</strong> runs the shortest ready job to completion. It is <strong>provably optimal</strong> for average turnaround when all jobs arrive together — but it is non-preemptive, so a long job already running still blocks short arrivals.</p>
+<p><strong>STCF (Shortest Time-to-Completion First)</strong> adds <strong>preemption</strong>: whenever a new job arrives, the scheduler picks the job with the least <em>remaining</em> time. This minimizes average turnaround for arbitrary arrival times, but it starves long jobs and gives terrible response times.</p>
+</section>
+<section id="round-robin" class="level3" data-number="5.3">
+<h3 data-number="5.3" class="anchored" data-anchor-id="round-robin"><span class="header-section-number">5.3</span> Round-Robin</h3>
+<p><strong>Round-Robin (RR)</strong> runs each job for a fixed <strong>time slice</strong> (quantum) and cycles. It minimizes response time and feels fair and interactive, but it inflates turnaround time because it stretches out the finishing of every job. The <strong>quantum</strong> is a tuning knob: too small and context-switch overhead dominates; too large and RR degrades toward FIFO.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Scheduler</th>
+<th>Preemptive</th>
+<th>Optimizes</th>
+<th>Weakness</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>FIFO</td>
+<td>no</td>
+<td>simplicity</td>
+<td>convoy effect</td>
+</tr>
+<tr class="even">
+<td>SJF</td>
+<td>no</td>
+<td>avg turnaround (with SJF assumptions)</td>
+<td>bad with late short jobs</td>
+</tr>
+<tr class="odd">
+<td>STCF</td>
+<td>yes</td>
+<td>avg turnaround</td>
+<td>starvation, poor response</td>
+</tr>
+<tr class="even">
+<td>RR</td>
+<td>yes</td>
+<td>response time, fairness</td>
+<td>worse turnaround</td>
+</tr>
+<tr class="odd">
+<td>MLFQ</td>
+<td>yes</td>
+<td>both, adaptively</td>
+<td>tuning complexity</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="the-fundamental-trade-off" class="level3" data-number="5.4">
+<h3 data-number="5.4" class="anchored" data-anchor-id="the-fundamental-trade-off"><span class="header-section-number">5.4</span> The Fundamental Trade-off</h3>
+<p>OSTEP states it bluntly: <strong>minimizing response time and minimizing turnaround time are in direct conflict.</strong> SJF/STCF finish jobs quickly on average but make short jobs wait behind long ones; RR responds quickly but finishes slowly. Real systems resolve this with multi-level feedback queues.</p>
+<hr>
+</section>
+</section>
+<section id="multi-level-feedback-queue-mlfq" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="multi-level-feedback-queue-mlfq"><span class="header-section-number">6</span> Multi-Level Feedback Queue (MLFQ)</h2>
+<p>The MLFQ is the classic attempt to get both good turnaround and good response <strong>without knowing job lengths in advance</strong>. It uses several priority queues and observes behavior to infer whether a job is short or long.</p>
+<p>Rules (the classic version):</p>
+<ol type="1">
+<li>If <code>Priority(A) &gt; Priority(B)</code>, A runs (B does not).</li>
+<li>If <code>Priority(A) == Priority(B)</code>, A and B run round-robin.</li>
+<li>When a job enters the system, it starts at the <strong>highest</strong> priority.</li>
+<li>If a job uses its entire time slice, its priority is <strong>reduced</strong> (it is probably a long-running CPU hog).</li>
+<li>If a job yields the CPU before its slice expires (I/O or interaction), it <strong>stays</strong> at its priority (it is probably interactive).</li>
+<li>After some period <span class="math inline">\(S\)</span>, <strong>boost all jobs to the top priority</strong> (priority boost), preventing starvation and adapting to changed behavior.</li>
+</ol>
+<p>The MLFQ approximates SJF for short jobs (they finish before using a full slice) while still making progress on long jobs. It is vulnerable to <strong>gaming</strong> (yield just before the slice ends to keep high priority), which later rules (e.g., accounting CPU time cumulatively) address. Parameters — number of queues, slice lengths, boost interval — are all policy choices.</p>
+<hr>
+</section>
+<section id="lottery-and-proportional-share-scheduling" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="lottery-and-proportional-share-scheduling"><span class="header-section-number">7</span> Lottery and Proportional-Share Scheduling</h2>
+<p><strong>Lottery scheduling</strong> achieves <strong>proportional share</strong> with elegant randomness: each process holds <strong>tickets</strong>; on each scheduling decision the scheduler draws a winning ticket at random. A process with 75 of 100 tickets gets ~75% of the CPU <em>in expectation</em>. It is simple, handles new processes gracefully, and supports ticket transfer and inflation.</p>
+<p><strong>Stride scheduling</strong> achieves the same proportion deterministically: each process has a <strong>stride</strong> inversely proportional to its tickets, and the scheduler picks the process with the smallest <strong>pass</strong> value. It is exact but requires global state.</p>
+<p>Modern Linux uses <strong>CFS (Completely Fair Scheduler)</strong>, which models an idealized fair CPU by tracking <strong>virtual runtime</strong> and always running the task with the smallest virtual runtime; weights (niceness) set relative shares. Windows and macOS use similar weighted-fair designs.</p>
+<hr>
+</section>
+<section id="multi-cpu-scheduling" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="multi-cpu-scheduling"><span class="header-section-number">8</span> Multi-CPU Scheduling</h2>
+<p>With multiple CPUs, new problems appear:</p>
+<ul>
+<li><strong>Cache affinity.</strong> A thread’s data may be hot in one CPU’s cache. Migrating it to another CPU hurts performance, so schedulers prefer to keep running a thread where it ran.</li>
+<li><strong>Single queue vs multi-queue.</strong> A single global queue load-balances naturally but suffers lock contention and poor affinity. <strong>Multi-queue</strong> designs give each CPU its own queue (good affinity, cache-local) and require explicit <strong>load balancing</strong>.</li>
+<li><strong>Work stealing.</strong> An idle CPU steals a task from another CPU’s queue, typically from the tail (to avoid contending with the owner working the head). This is the dominant modern design (e.g., Go’s runtime, Java’s ForkJoinPool, Cilk).</li>
+</ul>
+<p><strong>Synchronization</strong> across CPUs adds overhead, which is why multi-CPU schedulers favor designs that avoid a single global lock — the bridge to <a href="../../posts/computer-science/operating-systems-three-easy-pieces-part-3-concurrency.html">Part 3</a>.</p>
+<hr>
+</section>
+<section id="laboratory-scheduling-algorithms" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="laboratory-scheduling-algorithms"><span class="header-section-number">9</span> Laboratory: Scheduling Algorithms</h2>
+<p>We now simulate the schedulers and measure them on a common workload. We use a small job set with staggered arrivals to expose the differences.</p>
+<div id="cell-fig-schedulers" class="cell" data-execution_count="1">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Workload: (pid, arrival, burst) -- classic OSTEP-style mix</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>jobs <span class="op">=</span> [(<span class="st">"A"</span>, <span class="dv">0</span>, <span class="dv">10</span>), (<span class="st">"B"</span>, <span class="dv">0</span>, <span class="dv">5</span>), (<span class="st">"C"</span>, <span class="dv">5</span>, <span class="dv">8</span>), (<span class="st">"D"</span>, <span class="dv">10</span>, <span class="dv">2</span>)]</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>COLORS <span class="op">=</span> {<span class="st">"A"</span>: <span class="st">"#2980b9"</span>, <span class="st">"B"</span>: <span class="st">"#27ae60"</span>, <span class="st">"C"</span>: <span class="st">"#e67e22"</span>, <span class="st">"D"</span>: <span class="st">"#8e44ad"</span>}</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> schedule_fifo(jobs):</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    t, timeline, done <span class="op">=</span> <span class="dv">0</span>, [], {}</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> pid, arr, burst <span class="kw">in</span> <span class="bu">sorted</span>(jobs, key<span class="op">=</span><span class="kw">lambda</span> j: j[<span class="dv">1</span>]):</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        start <span class="op">=</span> <span class="bu">max</span>(t, arr)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        timeline.append((pid, start, start <span class="op">+</span> burst))</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        done[pid] <span class="op">=</span> (start <span class="op">+</span> burst, start, arr)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        t <span class="op">=</span> start <span class="op">+</span> burst</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> timeline, done</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> schedule_sjf(jobs):</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># non-preemptive, choose shortest burst among arrived</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    remaining <span class="op">=</span> <span class="bu">list</span>(jobs)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    t, timeline, done <span class="op">=</span> <span class="dv">0</span>, [], {}</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> remaining:</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>        arrived <span class="op">=</span> [j <span class="cf">for</span> j <span class="kw">in</span> remaining <span class="cf">if</span> j[<span class="dv">1</span>] <span class="op">&lt;=</span> t]</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> arrived:</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>            t <span class="op">=</span> <span class="bu">min</span>(j[<span class="dv">1</span>] <span class="cf">for</span> j <span class="kw">in</span> remaining)<span class="op">;</span> <span class="cf">continue</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>        pid, arr, burst <span class="op">=</span> <span class="bu">min</span>(arrived, key<span class="op">=</span><span class="kw">lambda</span> j: j[<span class="dv">2</span>])</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>        timeline.append((pid, t, t <span class="op">+</span> burst))</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>        done[pid] <span class="op">=</span> (t <span class="op">+</span> burst, t, arr)</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>        t <span class="op">+=</span> burst</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        remaining.remove((pid, arr, burst))</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> timeline, done</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> schedule_stcf(jobs):</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># preemptive shortest-time-to-completion</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    rem <span class="op">=</span> {pid: burst <span class="cf">for</span> pid, arr, burst <span class="kw">in</span> jobs}</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    arrd <span class="op">=</span> {pid: arr <span class="cf">for</span> pid, arr, burst <span class="kw">in</span> jobs}</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    t, timeline, done, first <span class="op">=</span> <span class="dv">0</span>, [], {}, {}</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> <span class="bu">sum</span>(rem.values())</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> total <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>        ready <span class="op">=</span> [p <span class="cf">for</span> p <span class="kw">in</span> rem <span class="cf">if</span> rem[p] <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">and</span> arrd[p] <span class="op">&lt;=</span> t]</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> ready:</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>            t <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span> <span class="cf">continue</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>        p <span class="op">=</span> <span class="bu">min</span>(ready, key<span class="op">=</span><span class="kw">lambda</span> x: rem[x])</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> p <span class="kw">not</span> <span class="kw">in</span> first:</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>            first[p] <span class="op">=</span> t</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>        timeline.append((p, t, t <span class="op">+</span> <span class="dv">1</span>))</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>        rem[p] <span class="op">-=</span> <span class="dv">1</span><span class="op">;</span> total <span class="op">-=</span> <span class="dv">1</span><span class="op">;</span> t <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> rem[p] <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>            done[p] <span class="op">=</span> (t, first[p], arrd[p])</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> timeline, done</span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> schedule_rr(jobs, quantum<span class="op">=</span><span class="dv">3</span>):</span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>    rem <span class="op">=</span> {pid: burst <span class="cf">for</span> pid, arr, burst <span class="kw">in</span> jobs}</span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>    arrd <span class="op">=</span> {pid: arr <span class="cf">for</span> pid, arr, burst <span class="kw">in</span> jobs}</span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>    order <span class="op">=</span> [pid <span class="cf">for</span> pid, arr, burst <span class="kw">in</span> <span class="bu">sorted</span>(jobs, key<span class="op">=</span><span class="kw">lambda</span> j: j[<span class="dv">1</span>])]</span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>    t, timeline, done, first, queue <span class="op">=</span> <span class="dv">0</span>, [], {}, {}, []</span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="bu">any</span>(rem[p] <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">for</span> p <span class="kw">in</span> rem) <span class="kw">or</span> queue:</span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> p <span class="kw">in</span> order:</span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> arrd[p] <span class="op">&lt;=</span> t <span class="kw">and</span> rem[p] <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">and</span> p <span class="kw">not</span> <span class="kw">in</span> queue <span class="kw">and</span> <span class="kw">not</span> <span class="bu">any</span>(x <span class="op">==</span> p <span class="cf">for</span> x, _, _ <span class="kw">in</span> timeline <span class="cf">if</span> _ <span class="op">==</span> t):</span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> p <span class="kw">not</span> <span class="kw">in</span> queue:</span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>                    queue.append(p)</span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> queue:</span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>            t <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span> <span class="cf">continue</span></span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>        p <span class="op">=</span> queue.pop(<span class="dv">0</span>)</span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> p <span class="kw">not</span> <span class="kw">in</span> first:</span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>            first[p] <span class="op">=</span> t</span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>        run <span class="op">=</span> <span class="bu">min</span>(quantum, rem[p])</span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>        timeline.append((p, t, t <span class="op">+</span> run))</span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>        rem[p] <span class="op">-=</span> run<span class="op">;</span> t <span class="op">+=</span> run</span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> q <span class="kw">in</span> order:</span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> arrd[q] <span class="op">&lt;=</span> t <span class="kw">and</span> rem[q] <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">and</span> q <span class="op">!=</span> p <span class="kw">and</span> q <span class="kw">not</span> <span class="kw">in</span> queue:</span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>                queue.append(q)</span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> rem[p] <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>            queue.append(p)</span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>            done[p] <span class="op">=</span> (t, first[p], arrd[p])</span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> timeline, done</span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> metrics(done):</span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>    tt <span class="op">=</span> [c <span class="op">-</span> a <span class="cf">for</span> (c, f, a) <span class="kw">in</span> done.values()]</span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>    rt <span class="op">=</span> [f <span class="op">-</span> a <span class="cf">for</span> (c, f, a) <span class="kw">in</span> done.values()]</span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.mean(tt), np.mean(rt)</span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a>schedulers <span class="op">=</span> {</span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>    <span class="st">"FIFO"</span>: schedule_fifo(jobs),</span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>    <span class="st">"SJF"</span>: schedule_sjf(jobs),</span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>    <span class="st">"STCF"</span>: schedule_stcf(jobs),</span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>    <span class="st">"RR (q=3)"</span>: schedule_rr(jobs, <span class="dv">3</span>),</span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">8</span>))</span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>ax_flat <span class="op">=</span> axes.flatten()</span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, (name, (tl, done)) <span class="kw">in</span> <span class="bu">zip</span>(ax_flat[:<span class="dv">4</span>], schedulers.items()):</span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> pid, s, e <span class="kw">in</span> tl:</span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a>        ax.barh(<span class="dv">0</span>, e <span class="op">-</span> s, left<span class="op">=</span>s, height<span class="op">=</span><span class="fl">0.5</span>, color<span class="op">=</span>COLORS[pid],</span>
+<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a>                edgecolor<span class="op">=</span><span class="st">"white"</span>, align<span class="op">=</span><span class="st">"center"</span>)</span>
+<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a>        ax.text((s <span class="op">+</span> e) <span class="op">/</span> <span class="dv">2</span>, <span class="dv">0</span>, pid, ha<span class="op">=</span><span class="st">"center"</span>, va<span class="op">=</span><span class="st">"center"</span>,</span>
+<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a>                color<span class="op">=</span><span class="st">"white"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a>    tt, rt <span class="op">=</span> metrics(done)</span>
+<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f"</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">  |  avg turnaround=</span><span class="sc">{</span>tt<span class="sc">:.2f}</span><span class="ss">  response=</span><span class="sc">{</span>rt<span class="sc">:.2f}</span><span class="ss">"</span>)</span>
+<span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a>    ax.set_yticks([])<span class="op">;</span> ax.set_xlabel(<span class="st">"time"</span>)<span class="op">;</span> ax.set_xlim(<span class="op">-</span><span class="fl">0.5</span>, <span class="bu">max</span>(e <span class="cf">for</span> _, _, e <span class="kw">in</span> tl) <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a>    allt <span class="op">=</span> <span class="bu">sorted</span>({s <span class="cf">for</span> _, s, _ <span class="kw">in</span> tl} <span class="op">|</span> {e <span class="cf">for</span> _, _, e <span class="kw">in</span> tl})</span>
+<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a>    ax.set_xticks(allt)<span class="op">;</span> ax.grid(axis<span class="op">=</span><span class="st">"x"</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== SCHEDULER METRICS ==="</span>)</span>
+<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'scheduler'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'avg turnaround'</span><span class="sc">:&gt;15}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'avg response'</span><span class="sc">:&gt;13}</span><span class="ss">"</span>)</span>
+<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, (tl, done) <span class="kw">in</span> schedulers.items():</span>
+<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a>    tt, rt <span class="op">=</span> metrics(done)</span>
+<span id="cb3-109"><a href="#cb3-109" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>name<span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span>tt<span class="sc">:15.2f}</span><span class="ss"> </span><span class="sc">{</span>rt<span class="sc">:13.2f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-schedulers" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-schedulers-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="operating-systems-three-easy-pieces-part-1-cpu-virtualization_files/figure-html/fig-schedulers-output-1.png" width="1334" height="758" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-schedulers-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: CPU scheduling compared on a common workload (three short jobs and one long job with staggered arrivals). Top panels: Gantt charts for FIFO, SJF, STCF, and Round-Robin. Bottom-left: average turnaround and response times. RR minimizes response time at the cost of turnaround; STCF minimizes average turnaround but treats the long job poorly. Bottom-right: MLFQ behavior, where short jobs finish at high priority while the long job sinks.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== SCHEDULER METRICS ===
+ scheduler  avg turnaround  avg response
+      FIFO           14.50          8.25
+       SJF           10.75          4.50
+      STCF           10.50          3.75
+  RR (q=3)           16.50          3.50</code></pre>
+</div>
+</div>
+<section id="multi-level-feedback-queue" class="level3" data-number="9.1">
+<h3 data-number="9.1" class="anchored" data-anchor-id="multi-level-feedback-queue"><span class="header-section-number">9.1</span> Multi-Level Feedback Queue</h3>
+<p>The next simulation implements a three-queue MLFQ with priority boost and shows how a CPU-bound job sinks while short jobs finish quickly.</p>
+<div id="cell-fig-mlfq" class="cell" data-execution_count="2">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mlfq(jobs, slices<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">8</span>), boost<span class="op">=</span><span class="dv">30</span>):</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># jobs: (pid, arrival, burst)</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    rem <span class="op">=</span> {p: b <span class="cf">for</span> p, a, b <span class="kw">in</span> jobs}</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    arrd <span class="op">=</span> {p: a <span class="cf">for</span> p, a, b <span class="kw">in</span> jobs}</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    prio <span class="op">=</span> {p: <span class="dv">0</span> <span class="cf">for</span> p, a, b <span class="kw">in</span> jobs}</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    t, timeline, last_boost <span class="op">=</span> <span class="dv">0</span>, [], <span class="dv">0</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> <span class="bu">sum</span>(rem.values())</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> total <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> t <span class="op">-</span> last_boost <span class="op">&gt;=</span> boost:</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> p <span class="kw">in</span> prio:</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>                prio[p] <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>            last_boost <span class="op">=</span> t</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        ready <span class="op">=</span> [p <span class="cf">for</span> p <span class="kw">in</span> rem <span class="cf">if</span> rem[p] <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">and</span> arrd[p] <span class="op">&lt;=</span> t]</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> ready:</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>            t <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span> <span class="cf">continue</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>        p <span class="op">=</span> <span class="bu">min</span>(ready, key<span class="op">=</span><span class="kw">lambda</span> x: (prio[x], arrd[x]))</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>        q <span class="op">=</span> prio[p]</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        run <span class="op">=</span> <span class="bu">min</span>(slices[q], rem[p])</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>        timeline.append((p, t, t <span class="op">+</span> run, q))</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>        rem[p] <span class="op">-=</span> run<span class="op">;</span> t <span class="op">+=</span> run<span class="op">;</span> total <span class="op">-=</span> run</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> rem[p] <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">and</span> run <span class="op">==</span> slices[q]:</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>            prio[p] <span class="op">=</span> <span class="bu">min</span>(q <span class="op">+</span> <span class="dv">1</span>, <span class="bu">len</span>(slices) <span class="op">-</span> <span class="dv">1</span>)   <span class="co"># demote on full slice</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> timeline, prio</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>jobs2 <span class="op">=</span> [(<span class="st">"E"</span>, <span class="dv">0</span>, <span class="dv">20</span>), (<span class="st">"F"</span>, <span class="dv">2</span>, <span class="dv">3</span>), (<span class="st">"G"</span>, <span class="dv">4</span>, <span class="dv">3</span>), (<span class="st">"H"</span>, <span class="dv">6</span>, <span class="dv">3</span>)]</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>tl, prio <span class="op">=</span> mlfq(jobs2)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> {<span class="st">"E"</span>: <span class="st">"#e74c3c"</span>, <span class="st">"F"</span>: <span class="st">"#27ae60"</span>, <span class="st">"G"</span>: <span class="st">"#2980b9"</span>, <span class="st">"H"</span>: <span class="st">"#e67e22"</span>}</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="fl">4.2</span>))</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> pid, s, e, q <span class="kw">in</span> tl:</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    ax.barh(q, e <span class="op">-</span> s, left<span class="op">=</span>s, height<span class="op">=</span><span class="fl">0.5</span>, color<span class="op">=</span>colors[pid], edgecolor<span class="op">=</span><span class="st">"white"</span>)</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>    ax.text((s <span class="op">+</span> e) <span class="op">/</span> <span class="dv">2</span>, q, pid, ha<span class="op">=</span><span class="st">"center"</span>, va<span class="op">=</span><span class="st">"center"</span>, color<span class="op">=</span><span class="st">"white"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>ax.set_yticks([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>])<span class="op">;</span> ax.set_yticklabels([<span class="st">"Q0 (high)"</span>, <span class="st">"Q1"</span>, <span class="st">"Q2 (low)"</span>])</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"time"</span>)<span class="op">;</span> ax.set_title(<span class="st">"MLFQ: short jobs finish high, long job sinks"</span>)</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>ax.grid(axis<span class="op">=</span><span class="st">"x"</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)<span class="op">;</span> ax.invert_yaxis()</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== MLFQ FINAL PRIORITIES ==="</span>)</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> prio:</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>p<span class="sc">}</span><span class="ss">: priority level </span><span class="sc">{</span>prio[p]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">  E is CPU-bound and sinks; F, G, H are short and stay responsive."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-mlfq" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-mlfq-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="operating-systems-three-easy-pieces-part-1-cpu-virtualization_files/figure-html/fig-mlfq-output-1.png" width="1238" height="394" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-mlfq-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Multi-level feedback queue with three priority levels, slices of 2 and 4 ticks, and a periodic priority boost. The CPU-bound job E descends to the lowest queue, while the short interactive jobs finish at high priority. Priority boosts periodically rescue long jobs from starvation.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== MLFQ FINAL PRIORITIES ===
+  E: priority level 2
+  F: priority level 1
+  G: priority level 1
+  H: priority level 1
+
+  E is CPU-bound and sinks; F, G, H are short and stay responsive.</code></pre>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="summary" class="level2" data-number="10">
+<h2 data-number="10" class="anchored" data-anchor-id="summary"><span class="header-section-number">10</span> Summary</h2>
+<p><span class="math display">\[
+\begin{aligned}
+&amp;\textbf{Virtualization: } &amp;&amp; \text{the OS fakes a private CPU and memory for each process.} \\[3pt]
+&amp;\textbf{Process: } &amp;&amp; \text{memory + registers + I/O state; states: running, ready, blocked.} \\[3pt]
+&amp;\textbf{API: } &amp;&amp; \texttt{fork}, \texttt{exec}, \texttt{wait}, \texttt{dup2}, \texttt{pipe} \text{ — the shell in four calls.} \\[3pt]
+&amp;\textbf{LDE: } &amp;&amp; \text{user/kernel modes, traps, context switches, timer interrupts.} \\[3pt]
+&amp;\textbf{Metrics: } &amp;&amp; \text{turnaround (batch) vs response (interactive) — fundamentally in tension.} \\[3pt]
+&amp;\textbf{Schedulers: } &amp;&amp; \text{FIFO, SJF, STCF, RR, MLFQ, lottery/stride, CFS.} \\[3pt]
+&amp;\textbf{Multi-CPU: } &amp;&amp; \text{cache affinity, multi-queue, load balancing, work stealing.}
+\end{aligned}
+\]</span></p>
+<p>CPU virtualization is the OS’s first trick. Its second — giving every process the illusion of its own contiguous memory — is the subject of <a href="../../posts/computer-science/operating-systems-three-easy-pieces-part-2-memory-virtualization.html">Part 2</a>.</p>
+<hr>
+</section>
+<section id="curated-references-and-further-reading" class="level2" data-number="11">
+<h2 data-number="11" class="anchored" data-anchor-id="curated-references-and-further-reading"><span class="header-section-number">11</span> Curated References and Further Reading</h2>
+<ol type="1">
+<li><strong>Arpaci-Dusseau, R. &amp; Arpaci-Dusseau, A. (2018).</strong> <em>Operating Systems: Three Easy Pieces.</em> Arpaci-Dusseau Books. (Primary source: Chapters 4–11.) Free online at <code>pages.cs.wisc.edu/~remzi/OSTEP</code>.</li>
+<li><strong>Ritchie, D. &amp; Thompson, K. (1974).</strong> <em>The UNIX Time-Sharing System.</em> Communications of the ACM.</li>
+<li><strong>Corbató, F. et al.&nbsp;(1962).</strong> <em>An Experimental Time-Sharing System.</em> AFIPS. (CTSS, and the ancestor of MLFQ.)</li>
+<li><strong>Waldspurger, C. &amp; Weihl, B. (1994).</strong> <em>Lottery Scheduling: Flexible Proportional-Share Resource Management.</em> OSDI.</li>
+<li><strong>Linux kernel documentation.</strong> <em>CFS (Completely Fair Scheduler) design.</em></li>
+<li><strong>Blumofe, R. &amp; Leiserson, C. (1999).</strong> <em>Scheduling Multithreaded Computations by Work Stealing.</em> JACM.</li>
+</ol>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const cellDetails = window.document.querySelectorAll(".cell details.code-fold");
+        for (let i=0; i<cellDetails.length; i++) {
+          const details = cellDetails[i];
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell div.sourceCode.cell-code");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/igor-kan\.github\.io\/quarto-writing\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Operating Systems: Three Easy Pieces, Part 1 — CPU Virtualization"</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "Processes and their API, limited direct execution, and CPU scheduling from FIFO and SJF through round-robin, multi-level feedback queues, lottery scheduling, and multi-CPU affinity — following OSTEP, Chapters 4–11"</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "Igor Kan"</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> "2026-09-14"</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="an">categories:</span><span class="co"> [Computer Science, Operating Systems, Virtualization, Processes, CPU Scheduling, Systems Programming]</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="an">description:</span><span class="co"> "A first-principles treatment of CPU virtualization following Operating Systems: Three Easy Pieces. It covers the definition of a process and its machine state, the process API (fork, wait, exec, file descriptors, pipes) and shell implementation, limited direct execution with user and kernel modes, system calls, traps, and context switches, cooperative versus preemptive scheduling with timer interrupts, and the core CPU scheduling algorithms and metrics: turnaround and response time, FIFO, SJF, STCF, round-robin, multi-level feedback queues with priority boost, lottery and stride scheduling and CFS, and multi-processor scheduling with cache affinity, load balancing, and work stealing, with an executable Python laboratory that simulates every scheduler and plots Gantt charts and performance metrics."</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">    html-math-method: mathjax</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: show</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-depth: 4</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="co">    number-sections: true</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="an">jupyter:</span><span class="co"> python3</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="an">toc:</span><span class="co"> true</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="an">toc-depth:</span><span class="co"> 4</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="an">number-sections:</span><span class="co"> true</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>::: {.callout-note appearance="simple"}</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>*The operating system runs a magic trick: it takes one physical CPU and makes it appear that many programs are running at once. It also takes physical memory and gives each program the illusion of a private, contiguous address space. OSTEP calls these **virtualization**, and it is the organizing idea behind everything an OS does.*</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>This is **Part 1** of a three-part series following *Operating Systems: Three Easy Pieces* (OSTEP). Here we cover **CPU virtualization**: Chapters 4–11. [Part 2](operating-systems-three-easy-pieces-part-2-memory-virtualization.qmd) covers **memory virtualization**, and [Part 3](operating-systems-three-easy-pieces-part-3-concurrency.qmd) covers **concurrency**.</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip collapse="true"}</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Series</span></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Part 1 — CPU Virtualization** (this article)</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Part 2 — Memory Virtualization</span><span class="co">](operating-systems-three-easy-pieces-part-2-memory-virtualization.qmd)</span></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Part 3 — Concurrency</span><span class="co">](operating-systems-three-easy-pieces-part-3-concurrency.qmd)</span></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a><span class="fu">### Companion Reading</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Modern C++: STL, Smart Pointers, and Reinventing the Wheel</span><span class="co">](cpp20-big-four-stl-smart-pointers-and-reinventing-the-wheel.qmd)</span></span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Bottom-Up Computer Engineering Roadmap</span><span class="co">](bottom-up-computer-engineering-roadmap.qmd)</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Computer Networking: Top-Down Part 2 — The Transport Layer</span><span class="co">](computer-networking-top-down-part-2-transport-layer.qmd)</span></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Linux Filesystem Hierarchy</span><span class="co">](linux-filesystem-hierarchy.qmd)</span></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Three Easy Pieces</span></span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>OSTEP reduces operating systems to three fundamental concerns:</span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Virtualization** — the OS gives each process the illusion of a private CPU and a private memory.</span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Concurrency** — managing multiple simultaneous actors (threads, interrupts) safely.</span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Persistence** — storing data reliably across crashes and reboots.</span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a>Virtualization itself splits into **CPU virtualization** (this article) and **memory virtualization** ([Part 2](operating-systems-three-easy-pieces-part-2-memory-virtualization.qmd)). The recurring design tension is **mechanism versus policy**: a *mechanism* is how something is done (a context switch, a page table walk); a *policy* is what to do (which process to run next, which page to evict). The OS provides mechanisms; schedulers and replacement policies embody policy.</span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a><span class="fu">## Processes</span></span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a>A **process** is a running program. At any instant it can be described by its **machine state**:</span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Memory** — the address space: code, data, heap, stack.</span>
+<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Registers** — the program counter, stack pointer, general-purpose registers.</span>
+<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**I/O state** — open files, network sockets, and other resources.</span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a><span class="fu">### From Program to Process</span></span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a>A program on disk is passive. To run it, the OS **loads** its code and static data into memory (eagerly or lazily), allocates a **stack** and a **heap**, initializes registers, and starts execution at <span class="in">`main`</span>. This transformation from disk image to running process is the core of virtualization.</span>
+<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a><span class="fu">### Process States</span></span>
+<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-69"><a href="#cb7-69" aria-hidden="true" tabindex="-1"></a>OSTEP's canonical simplification:</span>
+<span id="cb7-70"><a href="#cb7-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-73"><a href="#cb7-73" aria-hidden="true" tabindex="-1"></a><span class="in">```{mermaid}</span></span>
+<span id="cb7-74"><a href="#cb7-74" aria-hidden="true" tabindex="-1"></a>stateDiagram-v2</span>
+<span id="cb7-75"><a href="#cb7-75" aria-hidden="true" tabindex="-1"></a>    [<span class="ot">*</span>] --&gt; Ready</span>
+<span id="cb7-76"><a href="#cb7-76" aria-hidden="true" tabindex="-1"></a>    Ready --&gt; Running: dispatched</span>
+<span id="cb7-77"><a href="#cb7-77" aria-hidden="true" tabindex="-1"></a>    Running --&gt; Ready: preempted / descheduled</span>
+<span id="cb7-78"><a href="#cb7-78" aria-hidden="true" tabindex="-1"></a>    Running --&gt; Blocked: I/O request (I/O initiate)</span>
+<span id="cb7-79"><a href="#cb7-79" aria-hidden="true" tabindex="-1"></a>    Blocked --&gt; Ready: I/O done</span>
+<span id="cb7-80"><a href="#cb7-80" aria-hidden="true" tabindex="-1"></a>    Running --&gt; [<span class="ot">*</span>]: <span class="fu">exit</span></span>
+<span id="cb7-81"><a href="#cb7-81" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-82"><a href="#cb7-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-83"><a href="#cb7-83" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Running** — executing on the CPU.</span>
+<span id="cb7-84"><a href="#cb7-84" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Ready** — able to run, but waiting for the CPU.</span>
+<span id="cb7-85"><a href="#cb7-85" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Blocked** — waiting for some event (I/O completion); not runnable.</span>
+<span id="cb7-86"><a href="#cb7-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-87"><a href="#cb7-87" aria-hidden="true" tabindex="-1"></a>A process moves from ready to running when **dispatched**, from running to ready when **descheduled** (preempted), and from running to blocked when it initiates I/O. Transitions are triggered by the OS, which maintains a **process list** of **Process Control Blocks (PCBs)** — a data structure per process holding its state, registers, and metadata.</span>
+<span id="cb7-88"><a href="#cb7-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-89"><a href="#cb7-89" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-90"><a href="#cb7-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-91"><a href="#cb7-91" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Process API</span></span>
+<span id="cb7-92"><a href="#cb7-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-93"><a href="#cb7-93" aria-hidden="true" tabindex="-1"></a>Unix's process creation interface is famously strange and famously powerful.</span>
+<span id="cb7-94"><a href="#cb7-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-95"><a href="#cb7-95" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Call <span class="pp">|</span> Purpose <span class="pp">|</span></span>
+<span id="cb7-96"><a href="#cb7-96" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|</span></span>
+<span id="cb7-97"><a href="#cb7-97" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`fork()`</span> <span class="pp">|</span> create a nearly identical copy of the calling process <span class="pp">|</span></span>
+<span id="cb7-98"><a href="#cb7-98" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`wait()`</span> / <span class="in">`waitpid()`</span> <span class="pp">|</span> wait for a child to finish <span class="pp">|</span></span>
+<span id="cb7-99"><a href="#cb7-99" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`exec()`</span> (family) <span class="pp">|</span> replace the current program with a different one <span class="pp">|</span></span>
+<span id="cb7-100"><a href="#cb7-100" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`exit()`</span> <span class="pp">|</span> terminate the process <span class="pp">|</span></span>
+<span id="cb7-101"><a href="#cb7-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-102"><a href="#cb7-102" aria-hidden="true" tabindex="-1"></a><span class="fu">### `fork()`: The Weird Part</span></span>
+<span id="cb7-103"><a href="#cb7-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-104"><a href="#cb7-104" aria-hidden="true" tabindex="-1"></a><span class="in">`fork()`</span> returns **twice**: once in the parent (returning the child's PID) and once in the child (returning 0). The child is a **copy** of the parent — same memory contents, same open file descriptors — but with its own address space and a different return value. The OS does not guarantee which runs first.</span>
+<span id="cb7-105"><a href="#cb7-105" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-106"><a href="#cb7-106" aria-hidden="true" tabindex="-1"></a><span class="in">```c</span></span>
+<span id="cb7-107"><a href="#cb7-107" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> pid <span class="op">=</span> fork<span class="op">();</span></span>
+<span id="cb7-108"><a href="#cb7-108" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>pid <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span> perror<span class="op">(</span><span class="st">"fork"</span><span class="op">);</span> <span class="op">}</span></span>
+<span id="cb7-109"><a href="#cb7-109" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>pid <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span> printf<span class="op">(</span><span class="st">"child: pid=</span><span class="sc">%d\n</span><span class="st">"</span><span class="op">,</span> getpid<span class="op">());</span> <span class="op">}</span></span>
+<span id="cb7-110"><a href="#cb7-110" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span> <span class="op">{</span> printf<span class="op">(</span><span class="st">"parent: child=</span><span class="sc">%d\n</span><span class="st">"</span><span class="op">,</span> pid<span class="op">);</span> <span class="op">}</span></span>
+<span id="cb7-111"><a href="#cb7-111" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-112"><a href="#cb7-112" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-113"><a href="#cb7-113" aria-hidden="true" tabindex="-1"></a><span class="fu">### `exec()` and the Shell</span></span>
+<span id="cb7-114"><a href="#cb7-114" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-115"><a href="#cb7-115" aria-hidden="true" tabindex="-1"></a><span class="in">`exec()`</span> does not create a process; it **transforms** one. It loads a new program into the current address space and begins executing it — and on success it never returns. This is why the shell works as it does:</span>
+<span id="cb7-116"><a href="#cb7-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-119"><a href="#cb7-119" aria-hidden="true" tabindex="-1"></a><span class="in">```{mermaid}</span></span>
+<span id="cb7-120"><a href="#cb7-120" aria-hidden="true" tabindex="-1"></a>flowchart TD</span>
+<span id="cb7-121"><a href="#cb7-121" aria-hidden="true" tabindex="-1"></a>    A[<span class="ot">"</span><span class="st">Shell: read command</span><span class="ot">"</span>] --&gt; B[<span class="ot">"</span><span class="st">fork()</span><span class="ot">"</span>]</span>
+<span id="cb7-122"><a href="#cb7-122" aria-hidden="true" tabindex="-1"></a>    B --&gt;|parent| C[<span class="ot">"</span><span class="st">wait() for child</span><span class="ot">"</span>]</span>
+<span id="cb7-123"><a href="#cb7-123" aria-hidden="true" tabindex="-1"></a>    B --&gt;|child| D[<span class="ot">"</span><span class="st">exec(&lt;command&gt;)</span><span class="ot">"</span>]</span>
+<span id="cb7-124"><a href="#cb7-124" aria-hidden="true" tabindex="-1"></a>    D --&gt; E[<span class="ot">"</span><span class="st">program runs, exits</span><span class="ot">"</span>]</span>
+<span id="cb7-125"><a href="#cb7-125" aria-hidden="true" tabindex="-1"></a>    E --&gt; C</span>
+<span id="cb7-126"><a href="#cb7-126" aria-hidden="true" tabindex="-1"></a>    C --&gt; A</span>
+<span id="cb7-127"><a href="#cb7-127" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-128"><a href="#cb7-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-129"><a href="#cb7-129" aria-hidden="true" tabindex="-1"></a><span class="in">`fork()`</span> + <span class="in">`exec()`</span> + <span class="in">`wait()`</span> is the entire mechanism behind a shell prompt. Redirecting output is done with <span class="in">`dup2`</span>, which manipulates **file descriptors** before <span class="in">`exec`</span>:</span>
+<span id="cb7-130"><a href="#cb7-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-131"><a href="#cb7-131" aria-hidden="true" tabindex="-1"></a><span class="in">```c</span></span>
+<span id="cb7-132"><a href="#cb7-132" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> fd <span class="op">=</span> open<span class="op">(</span><span class="st">"out.txt"</span><span class="op">,</span> O_WRONLY <span class="op">|</span> O_CREAT <span class="op">|</span> O_TRUNC<span class="op">,</span> <span class="bn">0644</span><span class="op">);</span></span>
+<span id="cb7-133"><a href="#cb7-133" aria-hidden="true" tabindex="-1"></a>dup2<span class="op">(</span>fd<span class="op">,</span> STDOUT_FILENO<span class="op">);</span>   <span class="co">// make stdout go to the file</span></span>
+<span id="cb7-134"><a href="#cb7-134" aria-hidden="true" tabindex="-1"></a>close<span class="op">(</span>fd<span class="op">);</span></span>
+<span id="cb7-135"><a href="#cb7-135" aria-hidden="true" tabindex="-1"></a>execvp<span class="op">(</span><span class="st">"ls"</span><span class="op">,</span> argv<span class="op">);</span>        <span class="co">// now `ls` writes to out.txt</span></span>
+<span id="cb7-136"><a href="#cb7-136" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-137"><a href="#cb7-137" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-138"><a href="#cb7-138" aria-hidden="true" tabindex="-1"></a>Pipes connect descriptors of two processes: <span class="in">`pipe()`</span> creates a read end and a write end; <span class="in">`fork`</span>, <span class="in">`dup2`</span>, and <span class="in">`exec`</span> wire them together — the same three calls implement <span class="in">`ls | wc -l`</span>.</span>
+<span id="cb7-139"><a href="#cb7-139" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-140"><a href="#cb7-140" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-141"><a href="#cb7-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-142"><a href="#cb7-142" aria-hidden="true" tabindex="-1"></a><span class="fu">## Limited Direct Execution</span></span>
+<span id="cb7-143"><a href="#cb7-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-144"><a href="#cb7-144" aria-hidden="true" tabindex="-1"></a>The naive approach — just run the program on the CPU — fails for two reasons: the program could do something privileged (access hardware, disable interrupts), and the OS must be able to regain control to multiplex the CPU. OSTEP's solution is **limited direct execution (LDE)**: run the program directly, but set up hardware protections and a controlled way to enter the kernel.</span>
+<span id="cb7-145"><a href="#cb7-145" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-146"><a href="#cb7-146" aria-hidden="true" tabindex="-1"></a><span class="fu">### User Mode and Kernel Mode</span></span>
+<span id="cb7-147"><a href="#cb7-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-148"><a href="#cb7-148" aria-hidden="true" tabindex="-1"></a>The CPU has at least two privilege levels. Application code runs in **user mode**, where privileged instructions (I/O, setting the timer, halting) trap. The OS runs in **kernel mode**, where everything is permitted.</span>
+<span id="cb7-149"><a href="#cb7-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-150"><a href="#cb7-150" aria-hidden="true" tabindex="-1"></a><span class="fu">### System Calls and Traps</span></span>
+<span id="cb7-151"><a href="#cb7-151" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-152"><a href="#cb7-152" aria-hidden="true" tabindex="-1"></a>To request a privileged service, a user program executes a **system call** — a special trap instruction that switches to kernel mode and jumps to a handler. The kernel validates the request, performs it, and returns. The trap table is configured **at boot** so the process cannot redirect traps to its own code.</span>
+<span id="cb7-153"><a href="#cb7-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-156"><a href="#cb7-156" aria-hidden="true" tabindex="-1"></a><span class="in">```{mermaid}</span></span>
+<span id="cb7-157"><a href="#cb7-157" aria-hidden="true" tabindex="-1"></a>sequenceDiagram</span>
+<span id="cb7-158"><a href="#cb7-158" aria-hidden="true" tabindex="-1"></a>    participant P as Process (user mode)</span>
+<span id="cb7-159"><a href="#cb7-159" aria-hidden="true" tabindex="-1"></a>    participant K as Kernel (kernel mode)</span>
+<span id="cb7-160"><a href="#cb7-160" aria-hidden="true" tabindex="-1"></a>    P-&gt;&gt;P: normal execution</span>
+<span id="cb7-161"><a href="#cb7-161" aria-hidden="true" tabindex="-1"></a>    P-&gt;&gt;K: trap (<span class="fu">system</span> call, e.g. <span class="fu">read</span>)</span>
+<span id="cb7-162"><a href="#cb7-162" aria-hidden="true" tabindex="-1"></a>    Note over K: save registers to kernel stack</span>
+<span id="cb7-163"><a href="#cb7-163" aria-hidden="true" tabindex="-1"></a>    K-&gt;&gt;K: validate + service request</span>
+<span id="cb7-164"><a href="#cb7-164" aria-hidden="true" tabindex="-1"></a>    K-&gt;&gt;P: <span class="cf">return</span>-from-trap</span>
+<span id="cb7-165"><a href="#cb7-165" aria-hidden="true" tabindex="-1"></a>    Note over P: restore registers, resume</span>
+<span id="cb7-166"><a href="#cb7-166" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-167"><a href="#cb7-167" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-168"><a href="#cb7-168" aria-hidden="true" tabindex="-1"></a><span class="fu">### Context Switching</span></span>
+<span id="cb7-169"><a href="#cb7-169" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-170"><a href="#cb7-170" aria-hidden="true" tabindex="-1"></a>To switch between processes, the OS must save the current process's registers and restore another's — a **context switch**. The mechanism is subtle: the kernel saves user registers, switches to the kernel stack, and later executes a return-from-trap that restores a *different* process's registers. This is the concrete machinery behind the "dispatch" and "preempt" transitions above.</span>
+<span id="cb7-171"><a href="#cb7-171" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-172"><a href="#cb7-172" aria-hidden="true" tabindex="-1"></a><span class="fu">### Cooperative vs Preemptive</span></span>
+<span id="cb7-173"><a href="#cb7-173" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-174"><a href="#cb7-174" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Cooperative** scheduling relies on processes voluntarily yielding (via system calls or faults). If a process loops forever, the system hangs — this is how early Mac OS and some systems behaved.</span>
+<span id="cb7-175"><a href="#cb7-175" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Preemptive** scheduling uses a **timer interrupt**: the OS sets a timer to fire periodically; when it fires, the CPU traps to the kernel, which regains control and may switch processes. The timer interrupt is what makes a modern general-purpose OS responsive.</span>
+<span id="cb7-176"><a href="#cb7-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-177"><a href="#cb7-177" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-178"><a href="#cb7-178" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-179"><a href="#cb7-179" aria-hidden="true" tabindex="-1"></a><span class="fu">## CPU Scheduling</span></span>
+<span id="cb7-180"><a href="#cb7-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-181"><a href="#cb7-181" aria-hidden="true" tabindex="-1"></a>Now the central policy question: given a set of ready processes, which should run?</span>
+<span id="cb7-182"><a href="#cb7-182" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-183"><a href="#cb7-183" aria-hidden="true" tabindex="-1"></a><span class="fu">### Metrics</span></span>
+<span id="cb7-184"><a href="#cb7-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-185"><a href="#cb7-185" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Turnaround time** $T_{\text{turnaround}} = T_{\text{completion}} - T_{\text{arrival}}$ — total time from arrival to finish.</span>
+<span id="cb7-186"><a href="#cb7-186" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Response time** $T_{\text{response}} = T_{\text{firstrun}} - T_{\text{arrival}}$ — time until the process first runs.</span>
+<span id="cb7-187"><a href="#cb7-187" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Fairness**, **throughput**, **overhead**, and **meeting deadlines** also matter.</span>
+<span id="cb7-188"><a href="#cb7-188" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-189"><a href="#cb7-189" aria-hidden="true" tabindex="-1"></a>Turnaround optimizes batch throughput; response optimizes interactivity. They often conflict.</span>
+<span id="cb7-190"><a href="#cb7-190" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-191"><a href="#cb7-191" aria-hidden="true" tabindex="-1"></a><span class="fu">### FIFO, SJF, and STCF</span></span>
+<span id="cb7-192"><a href="#cb7-192" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-193"><a href="#cb7-193" aria-hidden="true" tabindex="-1"></a>**FIFO (First In, First Out)** is trivial but suffers the **convoy effect**: one long job delays every short job behind it, wrecking average turnaround. A single 100 ms job at the head makes three 10 ms jobs wait.</span>
+<span id="cb7-194"><a href="#cb7-194" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-195"><a href="#cb7-195" aria-hidden="true" tabindex="-1"></a>**SJF (Shortest Job First)** runs the shortest ready job to completion. It is **provably optimal** for average turnaround when all jobs arrive together — but it is non-preemptive, so a long job already running still blocks short arrivals.</span>
+<span id="cb7-196"><a href="#cb7-196" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-197"><a href="#cb7-197" aria-hidden="true" tabindex="-1"></a>**STCF (Shortest Time-to-Completion First)** adds **preemption**: whenever a new job arrives, the scheduler picks the job with the least *remaining* time. This minimizes average turnaround for arbitrary arrival times, but it starves long jobs and gives terrible response times.</span>
+<span id="cb7-198"><a href="#cb7-198" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-199"><a href="#cb7-199" aria-hidden="true" tabindex="-1"></a><span class="fu">### Round-Robin</span></span>
+<span id="cb7-200"><a href="#cb7-200" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-201"><a href="#cb7-201" aria-hidden="true" tabindex="-1"></a>**Round-Robin (RR)** runs each job for a fixed **time slice** (quantum) and cycles. It minimizes response time and feels fair and interactive, but it inflates turnaround time because it stretches out the finishing of every job. The **quantum** is a tuning knob: too small and context-switch overhead dominates; too large and RR degrades toward FIFO.</span>
+<span id="cb7-202"><a href="#cb7-202" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-203"><a href="#cb7-203" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Scheduler <span class="pp">|</span> Preemptive <span class="pp">|</span> Optimizes <span class="pp">|</span> Weakness <span class="pp">|</span></span>
+<span id="cb7-204"><a href="#cb7-204" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|---|</span></span>
+<span id="cb7-205"><a href="#cb7-205" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> FIFO <span class="pp">|</span> no <span class="pp">|</span> simplicity <span class="pp">|</span> convoy effect <span class="pp">|</span></span>
+<span id="cb7-206"><a href="#cb7-206" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> SJF <span class="pp">|</span> no <span class="pp">|</span> avg turnaround (with SJF assumptions) <span class="pp">|</span> bad with late short jobs <span class="pp">|</span></span>
+<span id="cb7-207"><a href="#cb7-207" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> STCF <span class="pp">|</span> yes <span class="pp">|</span> avg turnaround <span class="pp">|</span> starvation, poor response <span class="pp">|</span></span>
+<span id="cb7-208"><a href="#cb7-208" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> RR <span class="pp">|</span> yes <span class="pp">|</span> response time, fairness <span class="pp">|</span> worse turnaround <span class="pp">|</span></span>
+<span id="cb7-209"><a href="#cb7-209" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> MLFQ <span class="pp">|</span> yes <span class="pp">|</span> both, adaptively <span class="pp">|</span> tuning complexity <span class="pp">|</span></span>
+<span id="cb7-210"><a href="#cb7-210" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-211"><a href="#cb7-211" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Fundamental Trade-off</span></span>
+<span id="cb7-212"><a href="#cb7-212" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-213"><a href="#cb7-213" aria-hidden="true" tabindex="-1"></a>OSTEP states it bluntly: **minimizing response time and minimizing turnaround time are in direct conflict.** SJF/STCF finish jobs quickly on average but make short jobs wait behind long ones; RR responds quickly but finishes slowly. Real systems resolve this with multi-level feedback queues.</span>
+<span id="cb7-214"><a href="#cb7-214" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-215"><a href="#cb7-215" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-216"><a href="#cb7-216" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-217"><a href="#cb7-217" aria-hidden="true" tabindex="-1"></a><span class="fu">## Multi-Level Feedback Queue (MLFQ)</span></span>
+<span id="cb7-218"><a href="#cb7-218" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-219"><a href="#cb7-219" aria-hidden="true" tabindex="-1"></a>The MLFQ is the classic attempt to get both good turnaround and good response **without knowing job lengths in advance**. It uses several priority queues and observes behavior to infer whether a job is short or long.</span>
+<span id="cb7-220"><a href="#cb7-220" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-221"><a href="#cb7-221" aria-hidden="true" tabindex="-1"></a>Rules (the classic version):</span>
+<span id="cb7-222"><a href="#cb7-222" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-223"><a href="#cb7-223" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>If <span class="in">`Priority(A) &gt; Priority(B)`</span>, A runs (B does not).</span>
+<span id="cb7-224"><a href="#cb7-224" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>If <span class="in">`Priority(A) == Priority(B)`</span>, A and B run round-robin.</span>
+<span id="cb7-225"><a href="#cb7-225" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>When a job enters the system, it starts at the **highest** priority.</span>
+<span id="cb7-226"><a href="#cb7-226" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>If a job uses its entire time slice, its priority is **reduced** (it is probably a long-running CPU hog).</span>
+<span id="cb7-227"><a href="#cb7-227" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>If a job yields the CPU before its slice expires (I/O or interaction), it **stays** at its priority (it is probably interactive).</span>
+<span id="cb7-228"><a href="#cb7-228" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>After some period $S$, **boost all jobs to the top priority** (priority boost), preventing starvation and adapting to changed behavior.</span>
+<span id="cb7-229"><a href="#cb7-229" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-230"><a href="#cb7-230" aria-hidden="true" tabindex="-1"></a>The MLFQ approximates SJF for short jobs (they finish before using a full slice) while still making progress on long jobs. It is vulnerable to **gaming** (yield just before the slice ends to keep high priority), which later rules (e.g., accounting CPU time cumulatively) address. Parameters — number of queues, slice lengths, boost interval — are all policy choices.</span>
+<span id="cb7-231"><a href="#cb7-231" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-232"><a href="#cb7-232" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-233"><a href="#cb7-233" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-234"><a href="#cb7-234" aria-hidden="true" tabindex="-1"></a><span class="fu">## Lottery and Proportional-Share Scheduling</span></span>
+<span id="cb7-235"><a href="#cb7-235" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-236"><a href="#cb7-236" aria-hidden="true" tabindex="-1"></a>**Lottery scheduling** achieves **proportional share** with elegant randomness: each process holds **tickets**; on each scheduling decision the scheduler draws a winning ticket at random. A process with 75 of 100 tickets gets ~75% of the CPU *in expectation*. It is simple, handles new processes gracefully, and supports ticket transfer and inflation.</span>
+<span id="cb7-237"><a href="#cb7-237" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-238"><a href="#cb7-238" aria-hidden="true" tabindex="-1"></a>**Stride scheduling** achieves the same proportion deterministically: each process has a **stride** inversely proportional to its tickets, and the scheduler picks the process with the smallest **pass** value. It is exact but requires global state.</span>
+<span id="cb7-239"><a href="#cb7-239" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-240"><a href="#cb7-240" aria-hidden="true" tabindex="-1"></a>Modern Linux uses **CFS (Completely Fair Scheduler)**, which models an idealized fair CPU by tracking **virtual runtime** and always running the task with the smallest virtual runtime; weights (niceness) set relative shares. Windows and macOS use similar weighted-fair designs.</span>
+<span id="cb7-241"><a href="#cb7-241" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-242"><a href="#cb7-242" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-243"><a href="#cb7-243" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-244"><a href="#cb7-244" aria-hidden="true" tabindex="-1"></a><span class="fu">## Multi-CPU Scheduling</span></span>
+<span id="cb7-245"><a href="#cb7-245" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-246"><a href="#cb7-246" aria-hidden="true" tabindex="-1"></a>With multiple CPUs, new problems appear:</span>
+<span id="cb7-247"><a href="#cb7-247" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-248"><a href="#cb7-248" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Cache affinity.** A thread's data may be hot in one CPU's cache. Migrating it to another CPU hurts performance, so schedulers prefer to keep running a thread where it ran.</span>
+<span id="cb7-249"><a href="#cb7-249" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Single queue vs multi-queue.** A single global queue load-balances naturally but suffers lock contention and poor affinity. **Multi-queue** designs give each CPU its own queue (good affinity, cache-local) and require explicit **load balancing**.</span>
+<span id="cb7-250"><a href="#cb7-250" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Work stealing.** An idle CPU steals a task from another CPU's queue, typically from the tail (to avoid contending with the owner working the head). This is the dominant modern design (e.g., Go's runtime, Java's ForkJoinPool, Cilk).</span>
+<span id="cb7-251"><a href="#cb7-251" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-252"><a href="#cb7-252" aria-hidden="true" tabindex="-1"></a>**Synchronization** across CPUs adds overhead, which is why multi-CPU schedulers favor designs that avoid a single global lock — the bridge to <span class="co">[</span><span class="ot">Part 3</span><span class="co">](operating-systems-three-easy-pieces-part-3-concurrency.qmd)</span>.</span>
+<span id="cb7-253"><a href="#cb7-253" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-254"><a href="#cb7-254" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-255"><a href="#cb7-255" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-256"><a href="#cb7-256" aria-hidden="true" tabindex="-1"></a><span class="fu">## Laboratory: Scheduling Algorithms</span></span>
+<span id="cb7-257"><a href="#cb7-257" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-258"><a href="#cb7-258" aria-hidden="true" tabindex="-1"></a>We now simulate the schedulers and measure them on a common workload. We use a small job set with staggered arrivals to expose the differences.</span>
+<span id="cb7-259"><a href="#cb7-259" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-262"><a href="#cb7-262" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb7-263"><a href="#cb7-263" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-schedulers</span></span>
+<span id="cb7-264"><a href="#cb7-264" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "CPU scheduling compared on a common workload (three short jobs and one long job with staggered arrivals). Top panels: Gantt charts for FIFO, SJF, STCF, and Round-Robin. Bottom-left: average turnaround and response times. RR minimizes response time at the cost of turnaround; STCF minimizes average turnaround but treats the long job poorly. Bottom-right: MLFQ behavior, where short jobs finish at high priority while the long job sinks."</span></span>
+<span id="cb7-265"><a href="#cb7-265" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-266"><a href="#cb7-266" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb7-267"><a href="#cb7-267" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb7-268"><a href="#cb7-268" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-269"><a href="#cb7-269" aria-hidden="true" tabindex="-1"></a><span class="co"># Workload: (pid, arrival, burst) -- classic OSTEP-style mix</span></span>
+<span id="cb7-270"><a href="#cb7-270" aria-hidden="true" tabindex="-1"></a>jobs <span class="op">=</span> [(<span class="st">"A"</span>, <span class="dv">0</span>, <span class="dv">10</span>), (<span class="st">"B"</span>, <span class="dv">0</span>, <span class="dv">5</span>), (<span class="st">"C"</span>, <span class="dv">5</span>, <span class="dv">8</span>), (<span class="st">"D"</span>, <span class="dv">10</span>, <span class="dv">2</span>)]</span>
+<span id="cb7-271"><a href="#cb7-271" aria-hidden="true" tabindex="-1"></a>COLORS <span class="op">=</span> {<span class="st">"A"</span>: <span class="st">"#2980b9"</span>, <span class="st">"B"</span>: <span class="st">"#27ae60"</span>, <span class="st">"C"</span>: <span class="st">"#e67e22"</span>, <span class="st">"D"</span>: <span class="st">"#8e44ad"</span>}</span>
+<span id="cb7-272"><a href="#cb7-272" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-273"><a href="#cb7-273" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> schedule_fifo(jobs):</span>
+<span id="cb7-274"><a href="#cb7-274" aria-hidden="true" tabindex="-1"></a>    t, timeline, done <span class="op">=</span> <span class="dv">0</span>, [], {}</span>
+<span id="cb7-275"><a href="#cb7-275" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> pid, arr, burst <span class="kw">in</span> <span class="bu">sorted</span>(jobs, key<span class="op">=</span><span class="kw">lambda</span> j: j[<span class="dv">1</span>]):</span>
+<span id="cb7-276"><a href="#cb7-276" aria-hidden="true" tabindex="-1"></a>        start <span class="op">=</span> <span class="bu">max</span>(t, arr)</span>
+<span id="cb7-277"><a href="#cb7-277" aria-hidden="true" tabindex="-1"></a>        timeline.append((pid, start, start <span class="op">+</span> burst))</span>
+<span id="cb7-278"><a href="#cb7-278" aria-hidden="true" tabindex="-1"></a>        done[pid] <span class="op">=</span> (start <span class="op">+</span> burst, start, arr)</span>
+<span id="cb7-279"><a href="#cb7-279" aria-hidden="true" tabindex="-1"></a>        t <span class="op">=</span> start <span class="op">+</span> burst</span>
+<span id="cb7-280"><a href="#cb7-280" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> timeline, done</span>
+<span id="cb7-281"><a href="#cb7-281" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-282"><a href="#cb7-282" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> schedule_sjf(jobs):</span>
+<span id="cb7-283"><a href="#cb7-283" aria-hidden="true" tabindex="-1"></a>    <span class="co"># non-preemptive, choose shortest burst among arrived</span></span>
+<span id="cb7-284"><a href="#cb7-284" aria-hidden="true" tabindex="-1"></a>    remaining <span class="op">=</span> <span class="bu">list</span>(jobs)</span>
+<span id="cb7-285"><a href="#cb7-285" aria-hidden="true" tabindex="-1"></a>    t, timeline, done <span class="op">=</span> <span class="dv">0</span>, [], {}</span>
+<span id="cb7-286"><a href="#cb7-286" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> remaining:</span>
+<span id="cb7-287"><a href="#cb7-287" aria-hidden="true" tabindex="-1"></a>        arrived <span class="op">=</span> [j <span class="cf">for</span> j <span class="kw">in</span> remaining <span class="cf">if</span> j[<span class="dv">1</span>] <span class="op">&lt;=</span> t]</span>
+<span id="cb7-288"><a href="#cb7-288" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> arrived:</span>
+<span id="cb7-289"><a href="#cb7-289" aria-hidden="true" tabindex="-1"></a>            t <span class="op">=</span> <span class="bu">min</span>(j[<span class="dv">1</span>] <span class="cf">for</span> j <span class="kw">in</span> remaining)<span class="op">;</span> <span class="cf">continue</span></span>
+<span id="cb7-290"><a href="#cb7-290" aria-hidden="true" tabindex="-1"></a>        pid, arr, burst <span class="op">=</span> <span class="bu">min</span>(arrived, key<span class="op">=</span><span class="kw">lambda</span> j: j[<span class="dv">2</span>])</span>
+<span id="cb7-291"><a href="#cb7-291" aria-hidden="true" tabindex="-1"></a>        timeline.append((pid, t, t <span class="op">+</span> burst))</span>
+<span id="cb7-292"><a href="#cb7-292" aria-hidden="true" tabindex="-1"></a>        done[pid] <span class="op">=</span> (t <span class="op">+</span> burst, t, arr)</span>
+<span id="cb7-293"><a href="#cb7-293" aria-hidden="true" tabindex="-1"></a>        t <span class="op">+=</span> burst</span>
+<span id="cb7-294"><a href="#cb7-294" aria-hidden="true" tabindex="-1"></a>        remaining.remove((pid, arr, burst))</span>
+<span id="cb7-295"><a href="#cb7-295" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> timeline, done</span>
+<span id="cb7-296"><a href="#cb7-296" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-297"><a href="#cb7-297" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> schedule_stcf(jobs):</span>
+<span id="cb7-298"><a href="#cb7-298" aria-hidden="true" tabindex="-1"></a>    <span class="co"># preemptive shortest-time-to-completion</span></span>
+<span id="cb7-299"><a href="#cb7-299" aria-hidden="true" tabindex="-1"></a>    rem <span class="op">=</span> {pid: burst <span class="cf">for</span> pid, arr, burst <span class="kw">in</span> jobs}</span>
+<span id="cb7-300"><a href="#cb7-300" aria-hidden="true" tabindex="-1"></a>    arrd <span class="op">=</span> {pid: arr <span class="cf">for</span> pid, arr, burst <span class="kw">in</span> jobs}</span>
+<span id="cb7-301"><a href="#cb7-301" aria-hidden="true" tabindex="-1"></a>    t, timeline, done, first <span class="op">=</span> <span class="dv">0</span>, [], {}, {}</span>
+<span id="cb7-302"><a href="#cb7-302" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> <span class="bu">sum</span>(rem.values())</span>
+<span id="cb7-303"><a href="#cb7-303" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> total <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb7-304"><a href="#cb7-304" aria-hidden="true" tabindex="-1"></a>        ready <span class="op">=</span> [p <span class="cf">for</span> p <span class="kw">in</span> rem <span class="cf">if</span> rem[p] <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">and</span> arrd[p] <span class="op">&lt;=</span> t]</span>
+<span id="cb7-305"><a href="#cb7-305" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> ready:</span>
+<span id="cb7-306"><a href="#cb7-306" aria-hidden="true" tabindex="-1"></a>            t <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span> <span class="cf">continue</span></span>
+<span id="cb7-307"><a href="#cb7-307" aria-hidden="true" tabindex="-1"></a>        p <span class="op">=</span> <span class="bu">min</span>(ready, key<span class="op">=</span><span class="kw">lambda</span> x: rem[x])</span>
+<span id="cb7-308"><a href="#cb7-308" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> p <span class="kw">not</span> <span class="kw">in</span> first:</span>
+<span id="cb7-309"><a href="#cb7-309" aria-hidden="true" tabindex="-1"></a>            first[p] <span class="op">=</span> t</span>
+<span id="cb7-310"><a href="#cb7-310" aria-hidden="true" tabindex="-1"></a>        timeline.append((p, t, t <span class="op">+</span> <span class="dv">1</span>))</span>
+<span id="cb7-311"><a href="#cb7-311" aria-hidden="true" tabindex="-1"></a>        rem[p] <span class="op">-=</span> <span class="dv">1</span><span class="op">;</span> total <span class="op">-=</span> <span class="dv">1</span><span class="op">;</span> t <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb7-312"><a href="#cb7-312" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> rem[p] <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb7-313"><a href="#cb7-313" aria-hidden="true" tabindex="-1"></a>            done[p] <span class="op">=</span> (t, first[p], arrd[p])</span>
+<span id="cb7-314"><a href="#cb7-314" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> timeline, done</span>
+<span id="cb7-315"><a href="#cb7-315" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-316"><a href="#cb7-316" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> schedule_rr(jobs, quantum<span class="op">=</span><span class="dv">3</span>):</span>
+<span id="cb7-317"><a href="#cb7-317" aria-hidden="true" tabindex="-1"></a>    rem <span class="op">=</span> {pid: burst <span class="cf">for</span> pid, arr, burst <span class="kw">in</span> jobs}</span>
+<span id="cb7-318"><a href="#cb7-318" aria-hidden="true" tabindex="-1"></a>    arrd <span class="op">=</span> {pid: arr <span class="cf">for</span> pid, arr, burst <span class="kw">in</span> jobs}</span>
+<span id="cb7-319"><a href="#cb7-319" aria-hidden="true" tabindex="-1"></a>    order <span class="op">=</span> [pid <span class="cf">for</span> pid, arr, burst <span class="kw">in</span> <span class="bu">sorted</span>(jobs, key<span class="op">=</span><span class="kw">lambda</span> j: j[<span class="dv">1</span>])]</span>
+<span id="cb7-320"><a href="#cb7-320" aria-hidden="true" tabindex="-1"></a>    t, timeline, done, first, queue <span class="op">=</span> <span class="dv">0</span>, [], {}, {}, []</span>
+<span id="cb7-321"><a href="#cb7-321" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="bu">any</span>(rem[p] <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">for</span> p <span class="kw">in</span> rem) <span class="kw">or</span> queue:</span>
+<span id="cb7-322"><a href="#cb7-322" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> p <span class="kw">in</span> order:</span>
+<span id="cb7-323"><a href="#cb7-323" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> arrd[p] <span class="op">&lt;=</span> t <span class="kw">and</span> rem[p] <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">and</span> p <span class="kw">not</span> <span class="kw">in</span> queue <span class="kw">and</span> <span class="kw">not</span> <span class="bu">any</span>(x <span class="op">==</span> p <span class="cf">for</span> x, _, _ <span class="kw">in</span> timeline <span class="cf">if</span> _ <span class="op">==</span> t):</span>
+<span id="cb7-324"><a href="#cb7-324" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> p <span class="kw">not</span> <span class="kw">in</span> queue:</span>
+<span id="cb7-325"><a href="#cb7-325" aria-hidden="true" tabindex="-1"></a>                    queue.append(p)</span>
+<span id="cb7-326"><a href="#cb7-326" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> queue:</span>
+<span id="cb7-327"><a href="#cb7-327" aria-hidden="true" tabindex="-1"></a>            t <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span> <span class="cf">continue</span></span>
+<span id="cb7-328"><a href="#cb7-328" aria-hidden="true" tabindex="-1"></a>        p <span class="op">=</span> queue.pop(<span class="dv">0</span>)</span>
+<span id="cb7-329"><a href="#cb7-329" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> p <span class="kw">not</span> <span class="kw">in</span> first:</span>
+<span id="cb7-330"><a href="#cb7-330" aria-hidden="true" tabindex="-1"></a>            first[p] <span class="op">=</span> t</span>
+<span id="cb7-331"><a href="#cb7-331" aria-hidden="true" tabindex="-1"></a>        run <span class="op">=</span> <span class="bu">min</span>(quantum, rem[p])</span>
+<span id="cb7-332"><a href="#cb7-332" aria-hidden="true" tabindex="-1"></a>        timeline.append((p, t, t <span class="op">+</span> run))</span>
+<span id="cb7-333"><a href="#cb7-333" aria-hidden="true" tabindex="-1"></a>        rem[p] <span class="op">-=</span> run<span class="op">;</span> t <span class="op">+=</span> run</span>
+<span id="cb7-334"><a href="#cb7-334" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> q <span class="kw">in</span> order:</span>
+<span id="cb7-335"><a href="#cb7-335" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> arrd[q] <span class="op">&lt;=</span> t <span class="kw">and</span> rem[q] <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">and</span> q <span class="op">!=</span> p <span class="kw">and</span> q <span class="kw">not</span> <span class="kw">in</span> queue:</span>
+<span id="cb7-336"><a href="#cb7-336" aria-hidden="true" tabindex="-1"></a>                queue.append(q)</span>
+<span id="cb7-337"><a href="#cb7-337" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> rem[p] <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb7-338"><a href="#cb7-338" aria-hidden="true" tabindex="-1"></a>            queue.append(p)</span>
+<span id="cb7-339"><a href="#cb7-339" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb7-340"><a href="#cb7-340" aria-hidden="true" tabindex="-1"></a>            done[p] <span class="op">=</span> (t, first[p], arrd[p])</span>
+<span id="cb7-341"><a href="#cb7-341" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> timeline, done</span>
+<span id="cb7-342"><a href="#cb7-342" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-343"><a href="#cb7-343" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> metrics(done):</span>
+<span id="cb7-344"><a href="#cb7-344" aria-hidden="true" tabindex="-1"></a>    tt <span class="op">=</span> [c <span class="op">-</span> a <span class="cf">for</span> (c, f, a) <span class="kw">in</span> done.values()]</span>
+<span id="cb7-345"><a href="#cb7-345" aria-hidden="true" tabindex="-1"></a>    rt <span class="op">=</span> [f <span class="op">-</span> a <span class="cf">for</span> (c, f, a) <span class="kw">in</span> done.values()]</span>
+<span id="cb7-346"><a href="#cb7-346" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.mean(tt), np.mean(rt)</span>
+<span id="cb7-347"><a href="#cb7-347" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-348"><a href="#cb7-348" aria-hidden="true" tabindex="-1"></a>schedulers <span class="op">=</span> {</span>
+<span id="cb7-349"><a href="#cb7-349" aria-hidden="true" tabindex="-1"></a>    <span class="st">"FIFO"</span>: schedule_fifo(jobs),</span>
+<span id="cb7-350"><a href="#cb7-350" aria-hidden="true" tabindex="-1"></a>    <span class="st">"SJF"</span>: schedule_sjf(jobs),</span>
+<span id="cb7-351"><a href="#cb7-351" aria-hidden="true" tabindex="-1"></a>    <span class="st">"STCF"</span>: schedule_stcf(jobs),</span>
+<span id="cb7-352"><a href="#cb7-352" aria-hidden="true" tabindex="-1"></a>    <span class="st">"RR (q=3)"</span>: schedule_rr(jobs, <span class="dv">3</span>),</span>
+<span id="cb7-353"><a href="#cb7-353" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-354"><a href="#cb7-354" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-355"><a href="#cb7-355" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">8</span>))</span>
+<span id="cb7-356"><a href="#cb7-356" aria-hidden="true" tabindex="-1"></a>ax_flat <span class="op">=</span> axes.flatten()</span>
+<span id="cb7-357"><a href="#cb7-357" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, (name, (tl, done)) <span class="kw">in</span> <span class="bu">zip</span>(ax_flat[:<span class="dv">4</span>], schedulers.items()):</span>
+<span id="cb7-358"><a href="#cb7-358" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> pid, s, e <span class="kw">in</span> tl:</span>
+<span id="cb7-359"><a href="#cb7-359" aria-hidden="true" tabindex="-1"></a>        ax.barh(<span class="dv">0</span>, e <span class="op">-</span> s, left<span class="op">=</span>s, height<span class="op">=</span><span class="fl">0.5</span>, color<span class="op">=</span>COLORS[pid],</span>
+<span id="cb7-360"><a href="#cb7-360" aria-hidden="true" tabindex="-1"></a>                edgecolor<span class="op">=</span><span class="st">"white"</span>, align<span class="op">=</span><span class="st">"center"</span>)</span>
+<span id="cb7-361"><a href="#cb7-361" aria-hidden="true" tabindex="-1"></a>        ax.text((s <span class="op">+</span> e) <span class="op">/</span> <span class="dv">2</span>, <span class="dv">0</span>, pid, ha<span class="op">=</span><span class="st">"center"</span>, va<span class="op">=</span><span class="st">"center"</span>,</span>
+<span id="cb7-362"><a href="#cb7-362" aria-hidden="true" tabindex="-1"></a>                color<span class="op">=</span><span class="st">"white"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb7-363"><a href="#cb7-363" aria-hidden="true" tabindex="-1"></a>    tt, rt <span class="op">=</span> metrics(done)</span>
+<span id="cb7-364"><a href="#cb7-364" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f"</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">  |  avg turnaround=</span><span class="sc">{</span>tt<span class="sc">:.2f}</span><span class="ss">  response=</span><span class="sc">{</span>rt<span class="sc">:.2f}</span><span class="ss">"</span>)</span>
+<span id="cb7-365"><a href="#cb7-365" aria-hidden="true" tabindex="-1"></a>    ax.set_yticks([])<span class="op">;</span> ax.set_xlabel(<span class="st">"time"</span>)<span class="op">;</span> ax.set_xlim(<span class="op">-</span><span class="fl">0.5</span>, <span class="bu">max</span>(e <span class="cf">for</span> _, _, e <span class="kw">in</span> tl) <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb7-366"><a href="#cb7-366" aria-hidden="true" tabindex="-1"></a>    allt <span class="op">=</span> <span class="bu">sorted</span>({s <span class="cf">for</span> _, s, _ <span class="kw">in</span> tl} <span class="op">|</span> {e <span class="cf">for</span> _, _, e <span class="kw">in</span> tl})</span>
+<span id="cb7-367"><a href="#cb7-367" aria-hidden="true" tabindex="-1"></a>    ax.set_xticks(allt)<span class="op">;</span> ax.grid(axis<span class="op">=</span><span class="st">"x"</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb7-368"><a href="#cb7-368" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb7-369"><a href="#cb7-369" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-370"><a href="#cb7-370" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== SCHEDULER METRICS ==="</span>)</span>
+<span id="cb7-371"><a href="#cb7-371" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'scheduler'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'avg turnaround'</span><span class="sc">:&gt;15}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'avg response'</span><span class="sc">:&gt;13}</span><span class="ss">"</span>)</span>
+<span id="cb7-372"><a href="#cb7-372" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, (tl, done) <span class="kw">in</span> schedulers.items():</span>
+<span id="cb7-373"><a href="#cb7-373" aria-hidden="true" tabindex="-1"></a>    tt, rt <span class="op">=</span> metrics(done)</span>
+<span id="cb7-374"><a href="#cb7-374" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>name<span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span>tt<span class="sc">:15.2f}</span><span class="ss"> </span><span class="sc">{</span>rt<span class="sc">:13.2f}</span><span class="ss">"</span>)</span>
+<span id="cb7-375"><a href="#cb7-375" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-376"><a href="#cb7-376" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-377"><a href="#cb7-377" aria-hidden="true" tabindex="-1"></a><span class="fu">### Multi-Level Feedback Queue</span></span>
+<span id="cb7-378"><a href="#cb7-378" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-379"><a href="#cb7-379" aria-hidden="true" tabindex="-1"></a>The next simulation implements a three-queue MLFQ with priority boost and shows how a CPU-bound job sinks while short jobs finish quickly.</span>
+<span id="cb7-380"><a href="#cb7-380" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-383"><a href="#cb7-383" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb7-384"><a href="#cb7-384" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-mlfq</span></span>
+<span id="cb7-385"><a href="#cb7-385" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Multi-level feedback queue with three priority levels, slices of 2 and 4 ticks, and a periodic priority boost. The CPU-bound job E descends to the lowest queue, while the short interactive jobs finish at high priority. Priority boosts periodically rescue long jobs from starvation."</span></span>
+<span id="cb7-386"><a href="#cb7-386" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-387"><a href="#cb7-387" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb7-388"><a href="#cb7-388" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-389"><a href="#cb7-389" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mlfq(jobs, slices<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">8</span>), boost<span class="op">=</span><span class="dv">30</span>):</span>
+<span id="cb7-390"><a href="#cb7-390" aria-hidden="true" tabindex="-1"></a>    <span class="co"># jobs: (pid, arrival, burst)</span></span>
+<span id="cb7-391"><a href="#cb7-391" aria-hidden="true" tabindex="-1"></a>    rem <span class="op">=</span> {p: b <span class="cf">for</span> p, a, b <span class="kw">in</span> jobs}</span>
+<span id="cb7-392"><a href="#cb7-392" aria-hidden="true" tabindex="-1"></a>    arrd <span class="op">=</span> {p: a <span class="cf">for</span> p, a, b <span class="kw">in</span> jobs}</span>
+<span id="cb7-393"><a href="#cb7-393" aria-hidden="true" tabindex="-1"></a>    prio <span class="op">=</span> {p: <span class="dv">0</span> <span class="cf">for</span> p, a, b <span class="kw">in</span> jobs}</span>
+<span id="cb7-394"><a href="#cb7-394" aria-hidden="true" tabindex="-1"></a>    t, timeline, last_boost <span class="op">=</span> <span class="dv">0</span>, [], <span class="dv">0</span></span>
+<span id="cb7-395"><a href="#cb7-395" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> <span class="bu">sum</span>(rem.values())</span>
+<span id="cb7-396"><a href="#cb7-396" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> total <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb7-397"><a href="#cb7-397" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> t <span class="op">-</span> last_boost <span class="op">&gt;=</span> boost:</span>
+<span id="cb7-398"><a href="#cb7-398" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> p <span class="kw">in</span> prio:</span>
+<span id="cb7-399"><a href="#cb7-399" aria-hidden="true" tabindex="-1"></a>                prio[p] <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb7-400"><a href="#cb7-400" aria-hidden="true" tabindex="-1"></a>            last_boost <span class="op">=</span> t</span>
+<span id="cb7-401"><a href="#cb7-401" aria-hidden="true" tabindex="-1"></a>        ready <span class="op">=</span> [p <span class="cf">for</span> p <span class="kw">in</span> rem <span class="cf">if</span> rem[p] <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">and</span> arrd[p] <span class="op">&lt;=</span> t]</span>
+<span id="cb7-402"><a href="#cb7-402" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> ready:</span>
+<span id="cb7-403"><a href="#cb7-403" aria-hidden="true" tabindex="-1"></a>            t <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span> <span class="cf">continue</span></span>
+<span id="cb7-404"><a href="#cb7-404" aria-hidden="true" tabindex="-1"></a>        p <span class="op">=</span> <span class="bu">min</span>(ready, key<span class="op">=</span><span class="kw">lambda</span> x: (prio[x], arrd[x]))</span>
+<span id="cb7-405"><a href="#cb7-405" aria-hidden="true" tabindex="-1"></a>        q <span class="op">=</span> prio[p]</span>
+<span id="cb7-406"><a href="#cb7-406" aria-hidden="true" tabindex="-1"></a>        run <span class="op">=</span> <span class="bu">min</span>(slices[q], rem[p])</span>
+<span id="cb7-407"><a href="#cb7-407" aria-hidden="true" tabindex="-1"></a>        timeline.append((p, t, t <span class="op">+</span> run, q))</span>
+<span id="cb7-408"><a href="#cb7-408" aria-hidden="true" tabindex="-1"></a>        rem[p] <span class="op">-=</span> run<span class="op">;</span> t <span class="op">+=</span> run<span class="op">;</span> total <span class="op">-=</span> run</span>
+<span id="cb7-409"><a href="#cb7-409" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> rem[p] <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">and</span> run <span class="op">==</span> slices[q]:</span>
+<span id="cb7-410"><a href="#cb7-410" aria-hidden="true" tabindex="-1"></a>            prio[p] <span class="op">=</span> <span class="bu">min</span>(q <span class="op">+</span> <span class="dv">1</span>, <span class="bu">len</span>(slices) <span class="op">-</span> <span class="dv">1</span>)   <span class="co"># demote on full slice</span></span>
+<span id="cb7-411"><a href="#cb7-411" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> timeline, prio</span>
+<span id="cb7-412"><a href="#cb7-412" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-413"><a href="#cb7-413" aria-hidden="true" tabindex="-1"></a>jobs2 <span class="op">=</span> [(<span class="st">"E"</span>, <span class="dv">0</span>, <span class="dv">20</span>), (<span class="st">"F"</span>, <span class="dv">2</span>, <span class="dv">3</span>), (<span class="st">"G"</span>, <span class="dv">4</span>, <span class="dv">3</span>), (<span class="st">"H"</span>, <span class="dv">6</span>, <span class="dv">3</span>)]</span>
+<span id="cb7-414"><a href="#cb7-414" aria-hidden="true" tabindex="-1"></a>tl, prio <span class="op">=</span> mlfq(jobs2)</span>
+<span id="cb7-415"><a href="#cb7-415" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> {<span class="st">"E"</span>: <span class="st">"#e74c3c"</span>, <span class="st">"F"</span>: <span class="st">"#27ae60"</span>, <span class="st">"G"</span>: <span class="st">"#2980b9"</span>, <span class="st">"H"</span>: <span class="st">"#e67e22"</span>}</span>
+<span id="cb7-416"><a href="#cb7-416" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-417"><a href="#cb7-417" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="fl">4.2</span>))</span>
+<span id="cb7-418"><a href="#cb7-418" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> pid, s, e, q <span class="kw">in</span> tl:</span>
+<span id="cb7-419"><a href="#cb7-419" aria-hidden="true" tabindex="-1"></a>    ax.barh(q, e <span class="op">-</span> s, left<span class="op">=</span>s, height<span class="op">=</span><span class="fl">0.5</span>, color<span class="op">=</span>colors[pid], edgecolor<span class="op">=</span><span class="st">"white"</span>)</span>
+<span id="cb7-420"><a href="#cb7-420" aria-hidden="true" tabindex="-1"></a>    ax.text((s <span class="op">+</span> e) <span class="op">/</span> <span class="dv">2</span>, q, pid, ha<span class="op">=</span><span class="st">"center"</span>, va<span class="op">=</span><span class="st">"center"</span>, color<span class="op">=</span><span class="st">"white"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb7-421"><a href="#cb7-421" aria-hidden="true" tabindex="-1"></a>ax.set_yticks([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>])<span class="op">;</span> ax.set_yticklabels([<span class="st">"Q0 (high)"</span>, <span class="st">"Q1"</span>, <span class="st">"Q2 (low)"</span>])</span>
+<span id="cb7-422"><a href="#cb7-422" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"time"</span>)<span class="op">;</span> ax.set_title(<span class="st">"MLFQ: short jobs finish high, long job sinks"</span>)</span>
+<span id="cb7-423"><a href="#cb7-423" aria-hidden="true" tabindex="-1"></a>ax.grid(axis<span class="op">=</span><span class="st">"x"</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)<span class="op">;</span> ax.invert_yaxis()</span>
+<span id="cb7-424"><a href="#cb7-424" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb7-425"><a href="#cb7-425" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-426"><a href="#cb7-426" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== MLFQ FINAL PRIORITIES ==="</span>)</span>
+<span id="cb7-427"><a href="#cb7-427" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> prio:</span>
+<span id="cb7-428"><a href="#cb7-428" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>p<span class="sc">}</span><span class="ss">: priority level </span><span class="sc">{</span>prio[p]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-429"><a href="#cb7-429" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">  E is CPU-bound and sinks; F, G, H are short and stay responsive."</span>)</span>
+<span id="cb7-430"><a href="#cb7-430" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-431"><a href="#cb7-431" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-432"><a href="#cb7-432" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-433"><a href="#cb7-433" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-434"><a href="#cb7-434" aria-hidden="true" tabindex="-1"></a><span class="fu">## Summary</span></span>
+<span id="cb7-435"><a href="#cb7-435" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-436"><a href="#cb7-436" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-437"><a href="#cb7-437" aria-hidden="true" tabindex="-1"></a>\begin{aligned}</span>
+<span id="cb7-438"><a href="#cb7-438" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Virtualization: } &amp;&amp; \text{the OS fakes a private CPU and memory for each process.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-439"><a href="#cb7-439" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Process: } &amp;&amp; \text{memory + registers + I/O state; states: running, ready, blocked.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-440"><a href="#cb7-440" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{API: } &amp;&amp; \texttt{fork}, \texttt{exec}, \texttt{wait}, \texttt{dup2}, \texttt{pipe} \text{ — the shell in four calls.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-441"><a href="#cb7-441" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{LDE: } &amp;&amp; \text{user/kernel modes, traps, context switches, timer interrupts.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-442"><a href="#cb7-442" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Metrics: } &amp;&amp; \text{turnaround (batch) vs response (interactive) — fundamentally in tension.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-443"><a href="#cb7-443" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Schedulers: } &amp;&amp; \text{FIFO, SJF, STCF, RR, MLFQ, lottery/stride, CFS.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb7-444"><a href="#cb7-444" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Multi-CPU: } &amp;&amp; \text{cache affinity, multi-queue, load balancing, work stealing.}</span>
+<span id="cb7-445"><a href="#cb7-445" aria-hidden="true" tabindex="-1"></a>\end{aligned}</span>
+<span id="cb7-446"><a href="#cb7-446" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb7-447"><a href="#cb7-447" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-448"><a href="#cb7-448" aria-hidden="true" tabindex="-1"></a>CPU virtualization is the OS's first trick. Its second — giving every process the illusion of its own contiguous memory — is the subject of <span class="co">[</span><span class="ot">Part 2</span><span class="co">](operating-systems-three-easy-pieces-part-2-memory-virtualization.qmd)</span>.</span>
+<span id="cb7-449"><a href="#cb7-449" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-450"><a href="#cb7-450" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-451"><a href="#cb7-451" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-452"><a href="#cb7-452" aria-hidden="true" tabindex="-1"></a><span class="fu">## Curated References and Further Reading</span></span>
+<span id="cb7-453"><a href="#cb7-453" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-454"><a href="#cb7-454" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Arpaci-Dusseau, R. &amp; Arpaci-Dusseau, A. (2018).** *Operating Systems: Three Easy Pieces.* Arpaci-Dusseau Books. (Primary source: Chapters 4–11.) Free online at <span class="in">`pages.cs.wisc.edu/~remzi/OSTEP`</span>.</span>
+<span id="cb7-455"><a href="#cb7-455" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Ritchie, D. &amp; Thompson, K. (1974).** *The UNIX Time-Sharing System.* Communications of the ACM.</span>
+<span id="cb7-456"><a href="#cb7-456" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Corbató, F. et al. (1962).** *An Experimental Time-Sharing System.* AFIPS. (CTSS, and the ancestor of MLFQ.)</span>
+<span id="cb7-457"><a href="#cb7-457" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Waldspurger, C. &amp; Weihl, B. (1994).** *Lottery Scheduling: Flexible Proportional-Share Resource Management.* OSDI.</span>
+<span id="cb7-458"><a href="#cb7-458" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>**Linux kernel documentation.** *CFS (Completely Fair Scheduler) design.*</span>
+<span id="cb7-459"><a href="#cb7-459" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>**Blumofe, R. &amp; Leiserson, C. (1999).** *Scheduling Multithreaded Computations by Work Stealing.* JACM.</span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2026 Igor Kan</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

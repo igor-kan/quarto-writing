@@ -1,0 +1,1969 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Igor Kan">
+<meta name="dcterms.date" content="2026-09-14">
+<meta name="description" content="A first-principles treatment of memory virtualization following Operating Systems: Three Easy Pieces. It covers the address-space abstraction, the memory API and its common errors, base-and-bounds dynamic relocation, segmented address translation, free-space management with splitting and coalescing and allocation strategies, the introduction of paging with page tables and page-table entries, translation lookaside buffers and effective access time, multi-level and advanced page tables, and swapping mechanisms and policies including the optimal algorithm, FIFO, LRU, approximate LRU with the clock algorithm, Belady’s anomaly, and complete virtual memory systems, with an executable Python laboratory that simulates address translation, TLB performance, page replacement, and free-space allocation.">
+
+<title>Operating Systems: Three Easy Pieces, Part 2 — Memory Virtualization – My Writings</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-a515e054079012129989d5397ee3c9c1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">My Writings</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../literature/index.html"> 
+<span class="menu-text">Literature</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../chapters/index.html"> 
+<span class="menu-text">Chapters</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../tutorials/index.html"> 
+<span class="menu-text">Tutorials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-address-space" id="toc-the-address-space" class="nav-link active" data-scroll-target="#the-address-space"><span class="header-section-number">1</span> The Address Space</a>
+  <ul>
+  <li><a href="#goals" id="toc-goals" class="nav-link" data-scroll-target="#goals"><span class="header-section-number">1.1</span> Goals</a></li>
+  <li><a href="#multiprogramming-and-time-sharing" id="toc-multiprogramming-and-time-sharing" class="nav-link" data-scroll-target="#multiprogramming-and-time-sharing"><span class="header-section-number">1.2</span> Multiprogramming and Time-Sharing</a></li>
+  </ul></li>
+  <li><a href="#the-memory-api" id="toc-the-memory-api" class="nav-link" data-scroll-target="#the-memory-api"><span class="header-section-number">2</span> The Memory API</a>
+  <ul>
+  <li><a href="#the-seven-deadly-memory-errors" id="toc-the-seven-deadly-memory-errors" class="nav-link" data-scroll-target="#the-seven-deadly-memory-errors"><span class="header-section-number">2.1</span> The Seven Deadly Memory Errors</a></li>
+  </ul></li>
+  <li><a href="#address-translation-base-and-bounds" id="toc-address-translation-base-and-bounds" class="nav-link" data-scroll-target="#address-translation-base-and-bounds"><span class="header-section-number">3</span> Address Translation: Base and Bounds</a></li>
+  <li><a href="#segmentation" id="toc-segmentation" class="nav-link" data-scroll-target="#segmentation"><span class="header-section-number">4</span> Segmentation</a></li>
+  <li><a href="#free-space-management" id="toc-free-space-management" class="nav-link" data-scroll-target="#free-space-management"><span class="header-section-number">5</span> Free-Space Management</a>
+  <ul>
+  <li><a href="#allocation-strategies" id="toc-allocation-strategies" class="nav-link" data-scroll-target="#allocation-strategies"><span class="header-section-number">5.1</span> Allocation Strategies</a></li>
+  <li><a href="#segregated-lists-and-slab-allocators" id="toc-segregated-lists-and-slab-allocators" class="nav-link" data-scroll-target="#segregated-lists-and-slab-allocators"><span class="header-section-number">5.2</span> Segregated Lists and Slab Allocators</a></li>
+  </ul></li>
+  <li><a href="#introduction-to-paging" id="toc-introduction-to-paging" class="nav-link" data-scroll-target="#introduction-to-paging"><span class="header-section-number">6</span> Introduction to Paging</a></li>
+  <li><a href="#translation-lookaside-buffers-tlbs" id="toc-translation-lookaside-buffers-tlbs" class="nav-link" data-scroll-target="#translation-lookaside-buffers-tlbs"><span class="header-section-number">7</span> Translation Lookaside Buffers (TLBs)</a></li>
+  <li><a href="#advanced-page-tables" id="toc-advanced-page-tables" class="nav-link" data-scroll-target="#advanced-page-tables"><span class="header-section-number">8</span> Advanced Page Tables</a></li>
+  <li><a href="#swapping-mechanisms" id="toc-swapping-mechanisms" class="nav-link" data-scroll-target="#swapping-mechanisms"><span class="header-section-number">9</span> Swapping: Mechanisms</a></li>
+  <li><a href="#swapping-policies" id="toc-swapping-policies" class="nav-link" data-scroll-target="#swapping-policies"><span class="header-section-number">10</span> Swapping: Policies</a>
+  <ul>
+  <li><a href="#locality" id="toc-locality" class="nav-link" data-scroll-target="#locality"><span class="header-section-number">10.1</span> Locality</a></li>
+  </ul></li>
+  <li><a href="#laboratory-translation-tlbs-and-replacement" id="toc-laboratory-translation-tlbs-and-replacement" class="nav-link" data-scroll-target="#laboratory-translation-tlbs-and-replacement"><span class="header-section-number">11</span> Laboratory: Translation, TLBs, and Replacement</a>
+  <ul>
+  <li><a href="#address-translation" id="toc-address-translation" class="nav-link" data-scroll-target="#address-translation"><span class="header-section-number">11.1</span> Address Translation</a></li>
+  <li><a href="#tlb-effective-access-time" id="toc-tlb-effective-access-time" class="nav-link" data-scroll-target="#tlb-effective-access-time"><span class="header-section-number">11.2</span> TLB Effective Access Time</a></li>
+  <li><a href="#page-replacement-and-beladys-anomaly" id="toc-page-replacement-and-beladys-anomaly" class="nav-link" data-scroll-target="#page-replacement-and-beladys-anomaly"><span class="header-section-number">11.3</span> Page Replacement and Belady’s Anomaly</a></li>
+  <li><a href="#free-space-allocation-strategies" id="toc-free-space-allocation-strategies" class="nav-link" data-scroll-target="#free-space-allocation-strategies"><span class="header-section-number">11.4</span> Free-Space Allocation Strategies</a></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary"><span class="header-section-number">12</span> Summary</a></li>
+  <li><a href="#curated-references-and-further-reading" id="toc-curated-references-and-further-reading" class="nav-link" data-scroll-target="#curated-references-and-further-reading"><span class="header-section-number">13</span> Curated References and Further Reading</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title">Operating Systems: Three Easy Pieces, Part 2 — Memory Virtualization</h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
+<p class="subtitle lead">Address spaces and the memory API, base-and-bounds translation, segmentation, free-space management, paging and page tables, translation lookaside buffers, multi-level page tables, and swapping mechanisms and policies from optimal and FIFO/LRU to the clock algorithm — following OSTEP, Chapters 13–24</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Computer Science</div>
+    <div class="quarto-category">Operating Systems</div>
+    <div class="quarto-category">Virtual Memory</div>
+    <div class="quarto-category">Paging</div>
+    <div class="quarto-category">Address Translation</div>
+    <div class="quarto-category">Systems Programming</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    A first-principles treatment of memory virtualization following Operating Systems: Three Easy Pieces. It covers the address-space abstraction, the memory API and its common errors, base-and-bounds dynamic relocation, segmented address translation, free-space management with splitting and coalescing and allocation strategies, the introduction of paging with page tables and page-table entries, translation lookaside buffers and effective access time, multi-level and advanced page tables, and swapping mechanisms and policies including the optimal algorithm, FIFO, LRU, approximate LRU with the clock algorithm, Belady’s anomaly, and complete virtual memory systems, with an executable Python laboratory that simulates address translation, TLB performance, page replacement, and free-space allocation.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Igor Kan </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 14, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><em>Every process believes it has all of memory to itself: a private, contiguous address space starting at zero. In reality, the OS and hardware cooperatively map each virtual address to a physical location — sometimes in RAM, sometimes on disk. This is the second half of virtualization.</em></p>
+<p>This is <strong>Part 2</strong> of a three-part series following <em>Operating Systems: Three Easy Pieces</em> (OSTEP). Here we cover <strong>memory virtualization</strong>: Chapters 13–24. See <a href="../../posts/computer-science/operating-systems-three-easy-pieces-part-1-cpu-virtualization.html">Part 1</a> for CPU virtualization and <a href="../../posts/computer-science/operating-systems-three-easy-pieces-part-3-concurrency.html">Part 3</a> for concurrency.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>The Series
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li><a href="../../posts/computer-science/operating-systems-three-easy-pieces-part-1-cpu-virtualization.html">Part 1 — CPU Virtualization</a></li>
+<li><strong>Part 2 — Memory Virtualization</strong> (this article)</li>
+<li><a href="../../posts/computer-science/operating-systems-three-easy-pieces-part-3-concurrency.html">Part 3 — Concurrency</a></li>
+</ul>
+</div>
+</div>
+</div>
+<hr>
+<section id="the-address-space" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="the-address-space"><span class="header-section-number">1</span> The Address Space</h2>
+<p>The OS must give each process the illusion of a large, private, contiguous block of memory: the <strong>address space</strong>. It contains, conceptually:</p>
+<ul>
+<li><strong>Code</strong> (instructions) at the bottom,</li>
+<li><strong>Static data</strong> (globals),</li>
+<li><strong>Heap</strong> (growing upward, managed by <code>malloc</code>),</li>
+<li><strong>Stack</strong> (growing downward, holding locals and call frames).</li>
+</ul>
+<p>The address space is a fiction. A process’s virtual address <code>0x1000</code> might live at physical address <code>0x4A1000</code>, or be on disk, or not exist at all.</p>
+<section id="goals" class="level3" data-number="1.1">
+<h3 data-number="1.1" class="anchored" data-anchor-id="goals"><span class="header-section-number">1.1</span> Goals</h3>
+<ul>
+<li><strong>Transparency</strong> — the program should not know memory is virtualized.</li>
+<li><strong>Efficiency</strong> — both time (minimal translation overhead) and space (small metadata).</li>
+<li><strong>Protection</strong> — one process must not read or write another’s memory.</li>
+</ul>
+</section>
+<section id="multiprogramming-and-time-sharing" class="level3" data-number="1.2">
+<h3 data-number="1.2" class="anchored" data-anchor-id="multiprogramming-and-time-sharing"><span class="header-section-number">1.2</span> Multiprogramming and Time-Sharing</h3>
+<p>Early machines ran one program at a time. To run several, the machine must <strong>swap</strong> processes in and out — and to do that cheaply, it needs the address-space abstraction so a process can be relocated anywhere in physical memory.</p>
+<hr>
+</section>
+</section>
+<section id="the-memory-api" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="the-memory-api"><span class="header-section-number">2</span> The Memory API</h2>
+<p>In C, memory is managed with <code>malloc()</code> and <code>free()</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode c code-with-copy"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> <span class="op">*</span>x <span class="op">=</span> malloc<span class="op">(</span><span class="dv">10</span> <span class="op">*</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">int</span><span class="op">));</span>   <span class="co">// allocate</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>free<span class="op">(</span>x<span class="op">);</span>                             <span class="co">// release</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The library sits on top of system calls: <code>brk</code>/<code>sbrk</code> extend the heap, while <code>mmap</code> maps anonymous or file-backed regions. The OS tracks which physical frames back which virtual pages.</p>
+<section id="the-seven-deadly-memory-errors" class="level3" data-number="2.1">
+<h3 data-number="2.1" class="anchored" data-anchor-id="the-seven-deadly-memory-errors"><span class="header-section-number">2.1</span> The Seven Deadly Memory Errors</h3>
+<p>OSTEP’s catalogue, worth memorizing:</p>
+<ol type="1">
+<li><strong>Allocating the wrong size</strong> — <code>sizeof(int)</code> versus <code>sizeof(int*)</code>.</li>
+<li><strong>Not allocating</strong> — dereferencing an uninitialized pointer.</li>
+<li><strong>Not initializing</strong> — reading uninitialized heap memory.</li>
+<li><strong>Forgetting to free</strong> — a <strong>memory leak</strong>.</li>
+<li><strong>Freeing memory too early</strong> — a <strong>dangling pointer</strong> / <strong>use-after-free</strong>.</li>
+<li><strong>Double free</strong> — undefined behavior, often heap corruption.</li>
+<li><strong>Buffer overflow</strong> — writing past the end of an allocation.</li>
+</ol>
+<p>These bugs are exactly what <a href="../../posts/computer-science/operating-systems-three-easy-pieces-part-3-concurrency.html">Part 3</a>’s concurrency errors and modern tools (ASan, Valgrind) exist to catch.</p>
+<hr>
+</section>
+</section>
+<section id="address-translation-base-and-bounds" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="address-translation-base-and-bounds"><span class="header-section-number">3</span> Address Translation: Base and Bounds</h2>
+<p>The first mechanism is <strong>dynamic relocation</strong> with two registers:</p>
+<ul>
+<li><strong>Base</strong> — the physical start of the process’s region.</li>
+<li><strong>Bounds</strong> — its size (or limit).</li>
+</ul>
+<p>The CPU’s <strong>Memory Management Unit (MMU)</strong> translates each virtual address on the fly:</p>
+<p><span class="math display">\[
+\text{physical address} = \text{base} + \text{virtual address}, \qquad \text{valid iff } 0 \le \text{virtual address} &lt; \text{bounds}
+\]</span></p>
+<p>If the check fails, the MMU raises an exception (segmentation fault). The OS, not the hardware, sets the base/bounds on a context switch — this is <strong>limited direct execution</strong> applied to memory.</p>
+<p><strong>Hardware requirements:</strong> privileged mode, base/bounds registers, address translation, exception handling, and privileged instructions to set the registers. <strong>OS responsibilities:</strong> allocate address spaces, maintain a free list of physical memory, set base/bounds on context switch, and handle faults.</p>
+<p>Base-and-bounds is elegant but wastes memory: the stack and heap are far apart, yet the whole span between them is allocated contiguously. This motivates segmentation.</p>
+<hr>
+</section>
+<section id="segmentation" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="segmentation"><span class="header-section-number">4</span> Segmentation</h2>
+<p><strong>Segmentation</strong> generalizes base-and-bounds by dividing the address space into logical <strong>segments</strong> — code, heap, and stack — each with its own base and bounds. A virtual address is a pair <code>(segment, offset)</code>; the hardware adds the segment’s base to the offset, checking the offset against that segment’s bound.</p>
+<p>Segments can grow (the heap grows up, the stack grows down), so the hardware may support a <strong>negative-growth bit</strong>. Sharing and protection bits (read/write/execute) attach naturally per segment.</p>
+<p>The difficulty is <strong>external fragmentation</strong>: variable-sized segments leave holes between allocations, and free memory becomes a collection of awkward gaps. Compacting memory is expensive. The fix is to manage free space well (next section), or to abandon variable sizes entirely — which leads to paging.</p>
+<hr>
+</section>
+<section id="free-space-management" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="free-space-management"><span class="header-section-number">5</span> Free-Space Management</h2>
+<p>The allocator must service variable-sized requests from a pool of free memory. The classic implementation is a <strong>free list</strong>.</p>
+<ul>
+<li><strong>Splitting:</strong> a request smaller than a free chunk splits it, returning the remainder to the list.</li>
+<li><strong>Coalescing:</strong> when a chunk is freed, adjacent free chunks are merged to fight fragmentation.</li>
+<li><strong>Headers:</strong> because <code>free()</code> receives only a pointer, each allocation carries a small <strong>header</strong> storing its size and magic number.</li>
+</ul>
+<section id="allocation-strategies" class="level3" data-number="5.1">
+<h3 data-number="5.1" class="anchored" data-anchor-id="allocation-strategies"><span class="header-section-number">5.1</span> Allocation Strategies</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Strategy</th>
+<th>Rule</th>
+<th>Trade-off</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Best fit</strong></td>
+<td>smallest chunk that fits</td>
+<td>minimizes leftover but slow (searches all) and leaves tiny fragments</td>
+</tr>
+<tr class="even">
+<td><strong>Worst fit</strong></td>
+<td>largest chunk</td>
+<td>leaves large remainders, but slow and often worse</td>
+</tr>
+<tr class="odd">
+<td><strong>First fit</strong></td>
+<td>first chunk that fits</td>
+<td>fast; can pollute the front of the list</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="segregated-lists-and-slab-allocators" class="level3" data-number="5.2">
+<h3 data-number="5.2" class="anchored" data-anchor-id="segregated-lists-and-slab-allocators"><span class="header-section-number">5.2</span> Segregated Lists and Slab Allocators</h3>
+<p>Real allocators keep <strong>segregated free lists</strong> for common sizes: a request for 8 bytes goes to the 8-byte list, avoiding a search. <strong>Slab allocators</strong> pre-package kernel objects into caches. These are the practical realization of free-space management in Linux.</p>
+<hr>
+</section>
+</section>
+<section id="introduction-to-paging" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="introduction-to-paging"><span class="header-section-number">6</span> Introduction to Paging</h2>
+<p>The big idea: chop the address space into fixed-size <strong>pages</strong> (e.g., 4 KB) and physical memory into equal <strong>frames</strong>. Mapping is now per-page, stored in a <strong>page table</strong> — one <strong>Page Table Entry (PTE)</strong> per virtual page.</p>
+<p>Translation for virtual page number <code>VPN</code> with <code>offset</code>:</p>
+<p><span class="math display">\[
+\text{VPN} = \frac{\text{VA}}{\text{page size}}, \qquad \text{offset} = \text{VA} \bmod \text{page size}
+\]</span></p>
+<p><span class="math display">\[
+\text{physical address} = \text{PFN} \times \text{page size} + \text{offset}
+\]</span></p>
+<p>where <code>PFN</code> is the <strong>page frame number</strong> read from the PTE. A PTE also carries a <strong>valid/present bit</strong>, <strong>protection bits</strong> (read/write/execute), a <strong>dirty bit</strong>, and a <strong>reference bit</strong> — used later by replacement policies.</p>
+<p>Paging eliminates external fragmentation but introduces two costs: <strong>internal fragmentation</strong> (the last page is partly wasted) and the <strong>memory overhead of page tables</strong> (typically 4 bytes per 4 KB page, ~0.1% of the address space).</p>
+<hr>
+</section>
+<section id="translation-lookaside-buffers-tlbs" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="translation-lookaside-buffers-tlbs"><span class="header-section-number">7</span> Translation Lookaside Buffers (TLBs)</h2>
+<p>If every memory access required a page-table access, we would <em>double</em> memory traffic. The <strong>TLB</strong> is a small, fast, fully associative hardware cache of recent translations. A <strong>TLB hit</strong> costs one fast lookup; a <strong>TLB miss</strong> requires walking the page table (and updating the TLB).</p>
+<p>Key details:</p>
+<ul>
+<li><strong>Who handles the miss?</strong> Older hardware did it; modern designs raise an exception to the OS (software-managed TLB).</li>
+<li><strong>Context switches and ASIDs.</strong> Two processes may use the same virtual page numbers for different frames. <strong>Address Space Identifiers (ASIDs)</strong> tag TLB entries so they need not be flushed on every switch.</li>
+<li><strong>Replacement.</strong> TLBs use the same policies as caches (LRU, random), since translation locality resembles memory locality.</li>
+<li><strong>Effective Access Time (EAT):</strong> with hit ratio <span class="math inline">\(h\)</span>, TLB lookup time <span class="math inline">\(t_{\text{TLB}}\)</span>, and memory access time <span class="math inline">\(t_{\text{mem}}\)</span>:</li>
+</ul>
+<p><span class="math display">\[
+\text{EAT} = h\,(t_{\text{TLB}} + t_{\text{mem}}) + (1-h)\,(t_{\text{TLB}} + t_{\text{mem}} + t_{\text{mem}})
+\]</span></p>
+<p>Even a modest hit ratio yields near-full performance, because the second term grows quickly as <span class="math inline">\(h\)</span> falls. This is why the TLB is one of the most performance-critical structures in a CPU.</p>
+<hr>
+</section>
+<section id="advanced-page-tables" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="advanced-page-tables"><span class="header-section-number">8</span> Advanced Page Tables</h2>
+<p>A flat page table for a 32-bit address space with 4 KB pages has <span class="math inline">\(2^{20}\)</span> entries — 4 MB <em>per process</em>. <strong>Multi-level page tables</strong> solve this by paging the page table itself: a <strong>page directory</strong> points to page-table pages, and unused regions simply omit their page-table pages entirely. The cost is that a TLB miss now requires multiple dependent memory accesses (one per level).</p>
+<p>Alternatives include <strong>inverted page tables</strong> (one entry per physical frame, indexed by a hash) and <strong>hashed page tables</strong> — the latter common in 64-bit systems (x86-64 uses four-level paging). The lesson is a recurring systems theme: <strong>hierarchical indirection</strong> trades time for space, and caches (the TLB) restore the time.</p>
+<hr>
+</section>
+<section id="swapping-mechanisms" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="swapping-mechanisms"><span class="header-section-number">9</span> Swapping: Mechanisms</h2>
+<p>When physical memory fills, the OS moves some pages to <strong>swap space</strong> on disk. A PTE’s <strong>present bit</strong> indicates whether a page is in memory; if not, accessing it raises a <strong>page fault</strong>:</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TD
+    A["CPU accesses virtual address"] --&gt; B{"PTE present?"}
+    B -- "yes" --&gt; C["translate via PFN"]
+    B -- "no" --&gt; D["page-fault trap to OS"]
+    D --&gt; E{"free frame available?"}
+    E -- "no" --&gt; F["run replacement policy, write victim"]
+    F --&gt; G["read page from swap into frame"]
+    E -- "yes" --&gt; G
+    G --&gt; H["update PTE, retry instruction"]
+    H --&gt; A
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>Details that matter:</p>
+<ul>
+<li><strong>Dirty bit.</strong> If the victim page was modified, it must be written back to swap; if clean, it can be dropped.</li>
+<li><strong>Watermarks.</strong> The OS keeps <strong>low</strong> and <strong>high</strong> watermarks; when free frames drop below <code>LW</code>, a background cleaner evicts until <code>HW</code> is reached.</li>
+<li><strong>Clustering.</strong> The OS may write back several pages at once to amortize disk seeks.</li>
+</ul>
+<hr>
+</section>
+<section id="swapping-policies" class="level2" data-number="10">
+<h2 data-number="10" class="anchored" data-anchor-id="swapping-policies"><span class="header-section-number">10</span> Swapping: Policies</h2>
+<p>Which page should be evicted? The <strong>optimal</strong> policy (Belady’s) evicts the page used farthest in the future — unimplementable (it needs the future) but the gold standard for comparison.</p>
+<p>Practical policies:</p>
+<ul>
+<li><strong>FIFO</strong> — evict the oldest loaded page. Simple, but can evict hot pages and suffers <strong>Belady’s anomaly</strong>: <em>more frames can produce more faults</em>.</li>
+<li><strong>LRU (Least Recently Used)</strong> — evict the page unused for the longest. A good approximation of optimal, but expensive to implement exactly (it needs ordering on every access).</li>
+<li><strong>Approximate LRU via the clock algorithm</strong> — pages sit in a circle with a <strong>reference bit</strong>; the hand advances, clearing bits, and evicts the first page whose bit is 0. This is the standard implementation (with a dirty bit to avoid needless writes).</li>
+<li><strong>Random</strong> — surprisingly competitive and trivial.</li>
+</ul>
+<section id="locality" class="level3" data-number="10.1">
+<h3 data-number="10.1" class="anchored" data-anchor-id="locality"><span class="header-section-number">10.1</span> Locality</h3>
+<p>All of this works because programs exhibit <strong>temporal and spatial locality</strong>: recently used pages are likely to be used again. Without locality, no caching scheme works. When the working set exceeds physical memory, the system <strong>thrashes</strong> — spending all its time paging and little executing.</p>
+<hr>
+</section>
+</section>
+<section id="laboratory-translation-tlbs-and-replacement" class="level2" data-number="11">
+<h2 data-number="11" class="anchored" data-anchor-id="laboratory-translation-tlbs-and-replacement"><span class="header-section-number">11</span> Laboratory: Translation, TLBs, and Replacement</h2>
+<section id="address-translation" class="level3" data-number="11.1">
+<h3 data-number="11.1" class="anchored" data-anchor-id="address-translation"><span class="header-section-number">11.1</span> Address Translation</h3>
+<div id="b328a897" class="cell" data-execution_count="1">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> math <span class="im">import</span> log2</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>PAGE_SIZE <span class="op">=</span> <span class="dv">4096</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>OFFSET_BITS <span class="op">=</span> <span class="bu">int</span>(log2(PAGE_SIZE))</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> translate(va, page_table):</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    vpn <span class="op">=</span> va <span class="op">&gt;&gt;</span> OFFSET_BITS</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    offset <span class="op">=</span> va <span class="op">&amp;</span> (PAGE_SIZE <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> vpn <span class="kw">not</span> <span class="kw">in</span> page_table:</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (page_table[vpn] <span class="op">&lt;&lt;</span> OFFSET_BITS) <span class="op">|</span> offset</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>page_table <span class="op">=</span> {<span class="dv">0</span>: <span class="dv">5</span>, <span class="dv">1</span>: <span class="dv">2</span>, <span class="dv">2</span>: <span class="dv">9</span>, <span class="dv">3</span>: <span class="dv">1</span>}</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== ADDRESS TRANSLATION (page size 4096) ==="</span>)</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> va <span class="kw">in</span> [<span class="bn">0x0000</span>, <span class="bn">0x1234</span>, <span class="bn">0x2000</span>, <span class="bn">0x3FFF</span>, <span class="bn">0x8000</span>]:</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    pa <span class="op">=</span> translate(va, page_table)</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    vpn <span class="op">=</span> va <span class="op">&gt;&gt;</span> OFFSET_BITS</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> pa <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  VA=0x</span><span class="sc">{</span>va<span class="sc">:04x}</span><span class="ss">  VPN=</span><span class="sc">{</span>vpn<span class="sc">:2d}</span><span class="ss">  -&gt; PAGE FAULT (not present)"</span>)</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  VA=0x</span><span class="sc">{</span>va<span class="sc">:04x}</span><span class="ss">  VPN=</span><span class="sc">{</span>vpn<span class="sc">:2d}</span><span class="ss">  PA=0x</span><span class="sc">{</span>pa<span class="sc">:05x}</span><span class="ss">  "</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>              <span class="ss">f"(PFN=</span><span class="sc">{</span>page_table[vpn]<span class="sc">}</span><span class="ss">, offset=</span><span class="sc">{</span>va <span class="op">&amp;</span> (PAGE_SIZE<span class="op">-</span><span class="dv">1</span>)<span class="sc">}</span><span class="ss">)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== ADDRESS TRANSLATION (page size 4096) ===
+  VA=0x0000  VPN= 0  PA=0x05000  (PFN=5, offset=0)
+  VA=0x1234  VPN= 1  PA=0x02234  (PFN=2, offset=564)
+  VA=0x2000  VPN= 2  PA=0x09000  (PFN=9, offset=0)
+  VA=0x3fff  VPN= 3  PA=0x01fff  (PFN=1, offset=4095)
+  VA=0x8000  VPN= 8  -&gt; PAGE FAULT (not present)</code></pre>
+</div>
+</div>
+</section>
+<section id="tlb-effective-access-time" class="level3" data-number="11.2">
+<h3 data-number="11.2" class="anchored" data-anchor-id="tlb-effective-access-time"><span class="header-section-number">11.2</span> TLB Effective Access Time</h3>
+<div id="cell-fig-tlb-eat" class="cell" data-execution_count="2">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> eat(h, t_tlb, t_mem):</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> h <span class="op">*</span> (t_tlb <span class="op">+</span> t_mem) <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> h) <span class="op">*</span> (t_tlb <span class="op">+</span> t_mem <span class="op">+</span> t_mem)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>h <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">200</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="dv">5</span>))</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t_mem, color <span class="kw">in</span> [(<span class="dv">100</span>, <span class="st">"#2980b9"</span>), (<span class="dv">200</span>, <span class="st">"#e74c3c"</span>)]:</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    ax.plot(h, eat(h, <span class="dv">1</span>, t_mem), color<span class="op">=</span>color, label<span class="op">=</span><span class="ss">f"t_mem=</span><span class="sc">{</span>t_mem<span class="sc">}</span><span class="ss"> ns"</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> hh, col <span class="kw">in</span> [(<span class="fl">0.80</span>, <span class="st">"#27ae60"</span>), (<span class="fl">0.95</span>, <span class="st">"#e67e22"</span>)]:</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    ax.axvline(hh, color<span class="op">=</span>col, ls<span class="op">=</span><span class="st">":"</span>, lw<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    ax.annotate(<span class="ss">f"h=</span><span class="sc">{</span>hh<span class="sc">:.0%}</span><span class="ss">"</span>, (hh, <span class="dv">250</span>), rotation<span class="op">=</span><span class="dv">90</span>, color<span class="op">=</span>col, va<span class="op">=</span><span class="st">"top"</span>)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"TLB effective access time vs hit ratio (t_TLB = 1 ns)"</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"TLB hit ratio h"</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">"effective access time (ns)"</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>ax.legend()<span class="op">;</span> ax.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== TLB EFFECTIVE ACCESS TIME (t_TLB=1ns, t_mem=100ns) ==="</span>)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'hit ratio'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'EAT (ns)'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'overhead'</span><span class="sc">:&gt;10}</span><span class="ss">"</span>)</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> hh <span class="kw">in</span> [<span class="fl">0.50</span>, <span class="fl">0.80</span>, <span class="fl">0.90</span>, <span class="fl">0.95</span>, <span class="fl">0.98</span>, <span class="fl">0.99</span>, <span class="fl">1.00</span>]:</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    e <span class="op">=</span> eat(hh, <span class="dv">1</span>, <span class="dv">100</span>)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>hh<span class="sc">:10.0%}</span><span class="ss"> </span><span class="sc">{</span>e<span class="sc">:10.2f}</span><span class="ss"> </span><span class="sc">{</span>(e<span class="op">-</span><span class="dv">101</span>)<span class="op">/</span><span class="dv">101</span><span class="op">*</span><span class="dv">100</span><span class="sc">:9.1f}</span><span class="ss">%"</span>)</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  (101 ns = compulsory TLB + memory access; a miss adds a second access)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-tlb-eat" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-tlb-eat-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="operating-systems-three-easy-pieces-part-2-memory-virtualization_files/figure-html/fig-tlb-eat-output-1.png" width="854" height="470" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tlb-eat-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Effective access time as a function of TLB hit ratio. With a 1 ns TLB lookup and 100 ns memory access, EAT = h·(t_TLB + t_mem) + (1−h)·(t_TLB + 2·t_mem). Because a miss adds a full extra memory access, performance degrades steeply as the hit ratio falls, which is why even a small TLB is so valuable.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== TLB EFFECTIVE ACCESS TIME (t_TLB=1ns, t_mem=100ns) ===
+ hit ratio   EAT (ns)   overhead
+       50%     151.00      49.5%
+       80%     121.00      19.8%
+       90%     111.00       9.9%
+       95%     106.00       5.0%
+       98%     103.00       2.0%
+       99%     102.00       1.0%
+      100%     101.00       0.0%
+  (101 ns = compulsory TLB + memory access; a miss adds a second access)</code></pre>
+</div>
+</div>
+</section>
+<section id="page-replacement-and-beladys-anomaly" class="level3" data-number="11.3">
+<h3 data-number="11.3" class="anchored" data-anchor-id="page-replacement-and-beladys-anomaly"><span class="header-section-number">11.3</span> Page Replacement and Belady’s Anomaly</h3>
+<div id="cell-fig-replacement" class="cell" data-execution_count="3">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> faults_fifo(refs, frames):</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    q, cur, f <span class="op">=</span> [], <span class="bu">set</span>(), <span class="dv">0</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> r <span class="kw">in</span> refs:</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> r <span class="kw">in</span> cur:</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        f <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(cur) <span class="op">&lt;</span> frames:</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>            cur.add(r)<span class="op">;</span> q.append(r)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>            victim <span class="op">=</span> q.pop(<span class="dv">0</span>)<span class="op">;</span> cur.discard(victim)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            cur.add(r)<span class="op">;</span> q.append(r)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> f</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> faults_lru(refs, frames):</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    cur, f, last <span class="op">=</span> <span class="bu">set</span>(), <span class="dv">0</span>, {}</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, r <span class="kw">in</span> <span class="bu">enumerate</span>(refs):</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        last[r] <span class="op">=</span> i</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> r <span class="kw">in</span> cur:</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        f <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(cur) <span class="op">&lt;</span> frames:</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>            cur.add(r)</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>            victim <span class="op">=</span> <span class="bu">min</span>(cur, key<span class="op">=</span><span class="kw">lambda</span> x: last[x])</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>            cur.discard(victim)<span class="op">;</span> cur.add(r)</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> f</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> faults_opt(refs, frames):</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>    cur, f <span class="op">=</span> <span class="bu">set</span>(), <span class="dv">0</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, r <span class="kw">in</span> <span class="bu">enumerate</span>(refs):</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> r <span class="kw">in</span> cur:</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>        f <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(cur) <span class="op">&lt;</span> frames:</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>            cur.add(r)</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>            future <span class="op">=</span> {x: (refs[i<span class="op">+</span><span class="dv">1</span>:].index(x) <span class="cf">if</span> x <span class="kw">in</span> refs[i<span class="op">+</span><span class="dv">1</span>:] <span class="cf">else</span> <span class="dv">10</span><span class="op">**</span><span class="dv">9</span>) <span class="cf">for</span> x <span class="kw">in</span> cur}</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>            victim <span class="op">=</span> <span class="bu">max</span>(future, key<span class="op">=</span>future.get)</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>            cur.discard(victim)<span class="op">;</span> cur.add(r)</span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> f</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> faults_clock(refs, frames):</span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>    cur, ref_bit, f, hand <span class="op">=</span> [<span class="va">None</span>]<span class="op">*</span>frames, [<span class="dv">0</span>]<span class="op">*</span>frames, <span class="dv">0</span>, <span class="dv">0</span></span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>    present <span class="op">=</span> {}</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> r <span class="kw">in</span> refs:</span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> r <span class="kw">in</span> present:</span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>            ref_bit[present[r]] <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a>        f <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> cur[hand] <span class="kw">is</span> <span class="va">None</span> <span class="kw">or</span> ref_bit[hand] <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> cur[hand] <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a>                    <span class="kw">del</span> present[cur[hand]]</span>
+<span id="cb6-56"><a href="#cb6-56" aria-hidden="true" tabindex="-1"></a>                cur[hand] <span class="op">=</span> r<span class="op">;</span> present[r] <span class="op">=</span> hand<span class="op">;</span> ref_bit[hand] <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb6-57"><a href="#cb6-57" aria-hidden="true" tabindex="-1"></a>                hand <span class="op">=</span> (hand <span class="op">+</span> <span class="dv">1</span>) <span class="op">%</span> frames</span>
+<span id="cb6-58"><a href="#cb6-58" aria-hidden="true" tabindex="-1"></a>                <span class="cf">break</span></span>
+<span id="cb6-59"><a href="#cb6-59" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb6-60"><a href="#cb6-60" aria-hidden="true" tabindex="-1"></a>                ref_bit[hand] <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb6-61"><a href="#cb6-61" aria-hidden="true" tabindex="-1"></a>                hand <span class="op">=</span> (hand <span class="op">+</span> <span class="dv">1</span>) <span class="op">%</span> frames</span>
+<span id="cb6-62"><a href="#cb6-62" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> f</span>
+<span id="cb6-63"><a href="#cb6-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-64"><a href="#cb6-64" aria-hidden="true" tabindex="-1"></a>belady <span class="op">=</span> [<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">5</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>]</span>
+<span id="cb6-65"><a href="#cb6-65" aria-hidden="true" tabindex="-1"></a>frames_range <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">8</span>))</span>
+<span id="cb6-66"><a href="#cb6-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-67"><a href="#cb6-67" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="fl">4.8</span>))</span>
+<span id="cb6-68"><a href="#cb6-68" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, fn, color <span class="kw">in</span> [(<span class="st">"OPT"</span>, faults_opt, <span class="st">"#27ae60"</span>), (<span class="st">"LRU"</span>, faults_lru, <span class="st">"#2980b9"</span>),</span>
+<span id="cb6-69"><a href="#cb6-69" aria-hidden="true" tabindex="-1"></a>                        (<span class="st">"CLOCK"</span>, faults_clock, <span class="st">"#8e44ad"</span>), (<span class="st">"FIFO"</span>, faults_fifo, <span class="st">"#e74c3c"</span>)]:</span>
+<span id="cb6-70"><a href="#cb6-70" aria-hidden="true" tabindex="-1"></a>    ys <span class="op">=</span> [fn(belady, f) <span class="cf">for</span> f <span class="kw">in</span> frames_range]</span>
+<span id="cb6-71"><a href="#cb6-71" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">0</span>].plot(frames_range, ys, <span class="st">"o-"</span>, color<span class="op">=</span>color, label<span class="op">=</span>name)</span>
+<span id="cb6-72"><a href="#cb6-72" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Belady string [1,2,3,4,1,2,5,1,2,3,4,5]"</span>)</span>
+<span id="cb6-73"><a href="#cb6-73" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">"frames"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].set_ylabel(<span class="st">"page faults"</span>)</span>
+<span id="cb6-74"><a href="#cb6-74" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].legend()<span class="op">;</span> axes[<span class="dv">0</span>].grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb6-75"><a href="#cb6-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-76"><a href="#cb6-76" aria-hidden="true" tabindex="-1"></a>fifo_ys <span class="op">=</span> [faults_fifo(belady, f) <span class="cf">for</span> f <span class="kw">in</span> frames_range]</span>
+<span id="cb6-77"><a href="#cb6-77" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].bar([<span class="bu">str</span>(f) <span class="cf">for</span> f <span class="kw">in</span> frames_range], fifo_ys, color<span class="op">=</span><span class="st">"#e74c3c"</span>)</span>
+<span id="cb6-78"><a href="#cb6-78" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"FIFO alone: faults can RISE with more frames"</span>)</span>
+<span id="cb6-79"><a href="#cb6-79" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xlabel(<span class="st">"frames"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].set_ylabel(<span class="st">"page faults"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].grid(axis<span class="op">=</span><span class="st">"y"</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb6-80"><a href="#cb6-80" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb6-81"><a href="#cb6-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-82"><a href="#cb6-82" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== PAGE FAULTS ON BELADY STRING ==="</span>)</span>
+<span id="cb6-83"><a href="#cb6-83" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'frames'</span><span class="sc">:&gt;7}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'OPT'</span><span class="sc">:&gt;5}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'LRU'</span><span class="sc">:&gt;5}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'CLOCK'</span><span class="sc">:&gt;7}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'FIFO'</span><span class="sc">:&gt;5}</span><span class="ss">"</span>)</span>
+<span id="cb6-84"><a href="#cb6-84" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> frames_range:</span>
+<span id="cb6-85"><a href="#cb6-85" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>f<span class="sc">:7d}</span><span class="ss"> </span><span class="sc">{</span>faults_opt(belady,f)<span class="sc">:5d}</span><span class="ss"> </span><span class="sc">{</span>faults_lru(belady,f)<span class="sc">:5d}</span><span class="ss"> "</span></span>
+<span id="cb6-86"><a href="#cb6-86" aria-hidden="true" tabindex="-1"></a>          <span class="ss">f"</span><span class="sc">{</span>faults_clock(belady,f)<span class="sc">:7d}</span><span class="ss"> </span><span class="sc">{</span>faults_fifo(belady,f)<span class="sc">:5d}</span><span class="ss">"</span>)</span>
+<span id="cb6-87"><a href="#cb6-87" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">  watch FIFO: 3 frames -&gt; 9 faults, 4 frames -&gt; 10 faults (the anomaly)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-replacement" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-replacement-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="operating-systems-three-easy-pieces-part-2-memory-virtualization_files/figure-html/fig-replacement-output-1.png" width="1238" height="451" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-replacement-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Page-replacement fault counts on a reference string as the number of physical frames grows. LRU and the clock approximation track the optimal curve closely, while FIFO can get worse with more frames — Belady’s anomaly. The clock algorithm uses only a reference bit, making it cheap and nearly as effective as exact LRU.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== PAGE FAULTS ON BELADY STRING ===
+ frames   OPT   LRU   CLOCK  FIFO
+      1    12    12      12    12
+      2     9    12      12    12
+      3     7    10       9     9
+      4     6     8      10    10
+      5     5     5       5     5
+      6     5     5       5     5
+      7     5     5       5     5
+
+  watch FIFO: 3 frames -&gt; 9 faults, 4 frames -&gt; 10 faults (the anomaly)</code></pre>
+</div>
+</div>
+</section>
+<section id="free-space-allocation-strategies" class="level3" data-number="11.4">
+<h3 data-number="11.4" class="anchored" data-anchor-id="free-space-allocation-strategies"><span class="header-section-number">11.4</span> Free-Space Allocation Strategies</h3>
+<div id="42f76d0c" class="cell" data-execution_count="4">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> allocate(free_list, size, strategy):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    candidates <span class="op">=</span> [i <span class="cf">for</span> i, c <span class="kw">in</span> <span class="bu">enumerate</span>(free_list) <span class="cf">if</span> c <span class="op">&gt;=</span> size]</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> candidates:</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> strategy <span class="op">==</span> <span class="st">"first"</span>:</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        i <span class="op">=</span> candidates[<span class="dv">0</span>]</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> strategy <span class="op">==</span> <span class="st">"best"</span>:</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        i <span class="op">=</span> <span class="bu">min</span>(candidates, key<span class="op">=</span><span class="kw">lambda</span> i: free_list[i])</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        i <span class="op">=</span> <span class="bu">max</span>(candidates, key<span class="op">=</span><span class="kw">lambda</span> i: free_list[i])</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i, free_list[i] <span class="op">-</span> size</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> simulate(strategy, requests, initial<span class="op">=</span><span class="dv">100</span>):</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    free <span class="op">=</span> [initial]</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    layout <span class="op">=</span> []</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> req <span class="kw">in</span> requests:</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        res <span class="op">=</span> allocate(free, req, strategy)</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> res <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>            layout.append(<span class="ss">f"req </span><span class="sc">{</span>req<span class="sc">:2d}</span><span class="ss">: FAIL"</span>)</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>        i, rem <span class="op">=</span> res</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>        free.pop(i)</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> rem <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>            free.insert(i, rem)</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>        layout.append(<span class="ss">f"req </span><span class="sc">{</span>req<span class="sc">:2d}</span><span class="ss">: used chunk #</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">, remainder </span><span class="sc">{</span>rem<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> layout, <span class="bu">sum</span>(free), (<span class="bu">max</span>(free) <span class="cf">if</span> free <span class="cf">else</span> <span class="dv">0</span>)</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>requests <span class="op">=</span> [<span class="dv">20</span>, <span class="dv">15</span>, <span class="dv">30</span>, <span class="dv">10</span>, <span class="dv">25</span>, <span class="dv">5</span>]</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== FREE-SPACE ALLOCATION (initial 100) ==="</span>)</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> strat <span class="kw">in</span> [<span class="st">"first"</span>, <span class="st">"best"</span>, <span class="st">"worst"</span>]:</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>    layout, external, largest <span class="op">=</span> simulate(strat, requests)</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">  </span><span class="sc">{</span>strat<span class="sc">}</span><span class="ss"> fit:"</span>)</span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> line <span class="kw">in</span> layout:</span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"    "</span> <span class="op">+</span> line)</span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"    -&gt; free regions total </span><span class="sc">{</span>external<span class="sc">}</span><span class="ss">, largest contiguous </span><span class="sc">{</span>largest<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">  'best fit' minimizes leftover but fragments; 'first fit' is fastest;"</span>)</span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  segregated free lists avoid the search entirely."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== FREE-SPACE ALLOCATION (initial 100) ===
+
+  first fit:
+    req 20: used chunk #0, remainder 80
+    req 15: used chunk #0, remainder 65
+    req 30: used chunk #0, remainder 35
+    req 10: used chunk #0, remainder 25
+    req 25: used chunk #0, remainder 0
+    req  5: FAIL
+    -&gt; free regions total 0, largest contiguous 0
+
+  best fit:
+    req 20: used chunk #0, remainder 80
+    req 15: used chunk #0, remainder 65
+    req 30: used chunk #0, remainder 35
+    req 10: used chunk #0, remainder 25
+    req 25: used chunk #0, remainder 0
+    req  5: FAIL
+    -&gt; free regions total 0, largest contiguous 0
+
+  worst fit:
+    req 20: used chunk #0, remainder 80
+    req 15: used chunk #0, remainder 65
+    req 30: used chunk #0, remainder 35
+    req 10: used chunk #0, remainder 25
+    req 25: used chunk #0, remainder 0
+    req  5: FAIL
+    -&gt; free regions total 0, largest contiguous 0
+
+  'best fit' minimizes leftover but fragments; 'first fit' is fastest;
+  segregated free lists avoid the search entirely.</code></pre>
+</div>
+</div>
+<p>The laboratory shows memory virtualization as a stack of trade-offs: <strong>translation indirection</strong> costs time, so the TLB caches it; <strong>paging</strong> removes external fragmentation, so multi-level tables reduce its metadata cost; and <strong>replacement</strong> policy determines whether locality is exploited or squandered.</p>
+<hr>
+</section>
+</section>
+<section id="summary" class="level2" data-number="12">
+<h2 data-number="12" class="anchored" data-anchor-id="summary"><span class="header-section-number">12</span> Summary</h2>
+<p><span class="math display">\[
+\begin{aligned}
+&amp;\textbf{Address space: } &amp;&amp; \text{private virtual memory; goals: transparency, efficiency, protection.} \\[3pt]
+&amp;\textbf{API: } &amp;&amp; \texttt{malloc}/\texttt{free}; \text{ seven deadly errors an OS must expose safely.} \\[3pt]
+&amp;\textbf{Translation: } &amp;&amp; \text{base+bounds via the MMU; faults on violation.} \\[3pt]
+&amp;\textbf{Segmentation: } &amp;&amp; \text{per-segment base/bounds; external fragmentation.} \\[3pt]
+&amp;\textbf{Free space: } &amp;&amp; \text{free lists with splitting/coalescing; first/best/worst fit; segregated lists.} \\[3pt]
+&amp;\textbf{Paging: } &amp;&amp; \text{pages/frames, page tables, PTEs; internal fragmentation instead of external.} \\[3pt]
+&amp;\textbf{TLB: } &amp;&amp; \text{caches translations; EAT dominated by hit ratio; ASIDs.} \\[3pt]
+&amp;\textbf{Page tables: } &amp;&amp; \text{multi-level; trade time for space.} \\[3pt]
+&amp;\textbf{Swapping: } &amp;&amp; \text{present bit, page fault, dirty bit; OPT, FIFO, LRU, clock, Belady's anomaly.}
+\end{aligned}
+\]</span></p>
+<p>Memory virtualization completes the OS’s two great illusions. The third piece — <strong>concurrency</strong> — is the subject of <a href="../../posts/computer-science/operating-systems-three-easy-pieces-part-3-concurrency.html">Part 3</a>, where threads, locks, condition variables, and semaphores let a single process do many things at once.</p>
+<hr>
+</section>
+<section id="curated-references-and-further-reading" class="level2" data-number="13">
+<h2 data-number="13" class="anchored" data-anchor-id="curated-references-and-further-reading"><span class="header-section-number">13</span> Curated References and Further Reading</h2>
+<ol type="1">
+<li><strong>Arpaci-Dusseau, R. &amp; Arpaci-Dusseau, A. (2018).</strong> <em>Operating Systems: Three Easy Pieces.</em> (Primary source: Chapters 13–24.) Free at <code>pages.cs.wisc.edu/~remzi/OSTEP</code>.</li>
+<li><strong>Saltzer, J. &amp; Kaashoek, M. (2009).</strong> <em>Principles of Computer System Design.</em> Morgan Kaufmann. (Naming and virtual memory.)</li>
+<li><strong>Denning, P. (1968).</strong> <em>The Working Set Model for Program Behavior.</em> CACM.</li>
+<li><strong>Belady, L. (1966).</strong> <em>A Study of Replacement Algorithms for a Virtual-Storage Computer.</em> IBM Systems Journal.</li>
+<li><strong>Intel (current).</strong> <em>Intel 64 and IA-32 Architectures Software Developer’s Manual, Vol. 3A.</em> (Paging and TLBs.)</li>
+<li><strong>Love, R. (2010).</strong> <em>Linux Kernel Development</em>, 3rd ed.&nbsp;Addison-Wesley. (Page cache, reclaim, and the clock algorithm.)</li>
+</ol>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const cellDetails = window.document.querySelectorAll(".cell details.code-fold");
+        for (let i=0; i<cellDetails.length; i++) {
+          const details = cellDetails[i];
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell div.sourceCode.cell-code");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/igor-kan\.github\.io\/quarto-writing\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Operating Systems: Three Easy Pieces, Part 2 — Memory Virtualization"</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "Address spaces and the memory API, base-and-bounds translation, segmentation, free-space management, paging and page tables, translation lookaside buffers, multi-level page tables, and swapping mechanisms and policies from optimal and FIFO/LRU to the clock algorithm — following OSTEP, Chapters 13–24"</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "Igor Kan"</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> "2026-09-14"</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="an">categories:</span><span class="co"> [Computer Science, Operating Systems, Virtual Memory, Paging, Address Translation, Systems Programming]</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="an">description:</span><span class="co"> "A first-principles treatment of memory virtualization following Operating Systems: Three Easy Pieces. It covers the address-space abstraction, the memory API and its common errors, base-and-bounds dynamic relocation, segmented address translation, free-space management with splitting and coalescing and allocation strategies, the introduction of paging with page tables and page-table entries, translation lookaside buffers and effective access time, multi-level and advanced page tables, and swapping mechanisms and policies including the optimal algorithm, FIFO, LRU, approximate LRU with the clock algorithm, Belady's anomaly, and complete virtual memory systems, with an executable Python laboratory that simulates address translation, TLB performance, page replacement, and free-space allocation."</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">    html-math-method: mathjax</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: show</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-depth: 4</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co">    number-sections: true</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="an">jupyter:</span><span class="co"> python3</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="an">toc:</span><span class="co"> true</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="an">toc-depth:</span><span class="co"> 4</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="an">number-sections:</span><span class="co"> true</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>::: {.callout-note appearance="simple"}</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>*Every process believes it has all of memory to itself: a private, contiguous address space starting at zero. In reality, the OS and hardware cooperatively map each virtual address to a physical location — sometimes in RAM, sometimes on disk. This is the second half of virtualization.*</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>This is **Part 2** of a three-part series following *Operating Systems: Three Easy Pieces* (OSTEP). Here we cover **memory virtualization**: Chapters 13–24. See <span class="co">[</span><span class="ot">Part 1</span><span class="co">](operating-systems-three-easy-pieces-part-1-cpu-virtualization.qmd)</span> for CPU virtualization and <span class="co">[</span><span class="ot">Part 3</span><span class="co">](operating-systems-three-easy-pieces-part-3-concurrency.qmd)</span> for concurrency.</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip collapse="true"}</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Series</span></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Part 1 — CPU Virtualization</span><span class="co">](operating-systems-three-easy-pieces-part-1-cpu-virtualization.qmd)</span></span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Part 2 — Memory Virtualization** (this article)</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Part 3 — Concurrency</span><span class="co">](operating-systems-three-easy-pieces-part-3-concurrency.qmd)</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Address Space</span></span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>The OS must give each process the illusion of a large, private, contiguous block of memory: the **address space**. It contains, conceptually:</span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Code** (instructions) at the bottom,</span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Static data** (globals),</span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Heap** (growing upward, managed by <span class="in">`malloc`</span>),</span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Stack** (growing downward, holding locals and call frames).</span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>The address space is a fiction. A process's virtual address <span class="in">`0x1000`</span> might live at physical address <span class="in">`0x4A1000`</span>, or be on disk, or not exist at all.</span>
+<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a><span class="fu">### Goals</span></span>
+<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Transparency** — the program should not know memory is virtualized.</span>
+<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Efficiency** — both time (minimal translation overhead) and space (small metadata).</span>
+<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Protection** — one process must not read or write another's memory.</span>
+<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-54"><a href="#cb10-54" aria-hidden="true" tabindex="-1"></a><span class="fu">### Multiprogramming and Time-Sharing</span></span>
+<span id="cb10-55"><a href="#cb10-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-56"><a href="#cb10-56" aria-hidden="true" tabindex="-1"></a>Early machines ran one program at a time. To run several, the machine must **swap** processes in and out — and to do that cheaply, it needs the address-space abstraction so a process can be relocated anywhere in physical memory.</span>
+<span id="cb10-57"><a href="#cb10-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-58"><a href="#cb10-58" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb10-59"><a href="#cb10-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-60"><a href="#cb10-60" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Memory API</span></span>
+<span id="cb10-61"><a href="#cb10-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-62"><a href="#cb10-62" aria-hidden="true" tabindex="-1"></a>In C, memory is managed with <span class="in">`malloc()`</span> and <span class="in">`free()`</span>:</span>
+<span id="cb10-63"><a href="#cb10-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-64"><a href="#cb10-64" aria-hidden="true" tabindex="-1"></a><span class="in">```c</span></span>
+<span id="cb10-65"><a href="#cb10-65" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> <span class="op">*</span>x <span class="op">=</span> malloc<span class="op">(</span><span class="dv">10</span> <span class="op">*</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">int</span><span class="op">));</span>   <span class="co">// allocate</span></span>
+<span id="cb10-66"><a href="#cb10-66" aria-hidden="true" tabindex="-1"></a>free<span class="op">(</span>x<span class="op">);</span>                             <span class="co">// release</span></span>
+<span id="cb10-67"><a href="#cb10-67" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb10-68"><a href="#cb10-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-69"><a href="#cb10-69" aria-hidden="true" tabindex="-1"></a>The library sits on top of system calls: <span class="in">`brk`</span>/<span class="in">`sbrk`</span> extend the heap, while <span class="in">`mmap`</span> maps anonymous or file-backed regions. The OS tracks which physical frames back which virtual pages.</span>
+<span id="cb10-70"><a href="#cb10-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-71"><a href="#cb10-71" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Seven Deadly Memory Errors</span></span>
+<span id="cb10-72"><a href="#cb10-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-73"><a href="#cb10-73" aria-hidden="true" tabindex="-1"></a>OSTEP's catalogue, worth memorizing:</span>
+<span id="cb10-74"><a href="#cb10-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-75"><a href="#cb10-75" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Allocating the wrong size** — <span class="in">`sizeof(int)`</span> versus <span class="in">`sizeof(int*)`</span>.</span>
+<span id="cb10-76"><a href="#cb10-76" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Not allocating** — dereferencing an uninitialized pointer.</span>
+<span id="cb10-77"><a href="#cb10-77" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Not initializing** — reading uninitialized heap memory.</span>
+<span id="cb10-78"><a href="#cb10-78" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Forgetting to free** — a **memory leak**.</span>
+<span id="cb10-79"><a href="#cb10-79" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>**Freeing memory too early** — a **dangling pointer** / **use-after-free**.</span>
+<span id="cb10-80"><a href="#cb10-80" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>**Double free** — undefined behavior, often heap corruption.</span>
+<span id="cb10-81"><a href="#cb10-81" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>**Buffer overflow** — writing past the end of an allocation.</span>
+<span id="cb10-82"><a href="#cb10-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-83"><a href="#cb10-83" aria-hidden="true" tabindex="-1"></a>These bugs are exactly what <span class="co">[</span><span class="ot">Part 3</span><span class="co">](operating-systems-three-easy-pieces-part-3-concurrency.qmd)</span>'s concurrency errors and modern tools (ASan, Valgrind) exist to catch.</span>
+<span id="cb10-84"><a href="#cb10-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-85"><a href="#cb10-85" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb10-86"><a href="#cb10-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-87"><a href="#cb10-87" aria-hidden="true" tabindex="-1"></a><span class="fu">## Address Translation: Base and Bounds</span></span>
+<span id="cb10-88"><a href="#cb10-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-89"><a href="#cb10-89" aria-hidden="true" tabindex="-1"></a>The first mechanism is **dynamic relocation** with two registers:</span>
+<span id="cb10-90"><a href="#cb10-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-91"><a href="#cb10-91" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Base** — the physical start of the process's region.</span>
+<span id="cb10-92"><a href="#cb10-92" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Bounds** — its size (or limit).</span>
+<span id="cb10-93"><a href="#cb10-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-94"><a href="#cb10-94" aria-hidden="true" tabindex="-1"></a>The CPU's **Memory Management Unit (MMU)** translates each virtual address on the fly:</span>
+<span id="cb10-95"><a href="#cb10-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-96"><a href="#cb10-96" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb10-97"><a href="#cb10-97" aria-hidden="true" tabindex="-1"></a>\text{physical address} = \text{base} + \text{virtual address}, \qquad \text{valid iff } 0 \le \text{virtual address} &lt; \text{bounds}</span>
+<span id="cb10-98"><a href="#cb10-98" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb10-99"><a href="#cb10-99" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-100"><a href="#cb10-100" aria-hidden="true" tabindex="-1"></a>If the check fails, the MMU raises an exception (segmentation fault). The OS, not the hardware, sets the base/bounds on a context switch — this is **limited direct execution** applied to memory.</span>
+<span id="cb10-101"><a href="#cb10-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-102"><a href="#cb10-102" aria-hidden="true" tabindex="-1"></a>**Hardware requirements:** privileged mode, base/bounds registers, address translation, exception handling, and privileged instructions to set the registers. **OS responsibilities:** allocate address spaces, maintain a free list of physical memory, set base/bounds on context switch, and handle faults.</span>
+<span id="cb10-103"><a href="#cb10-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-104"><a href="#cb10-104" aria-hidden="true" tabindex="-1"></a>Base-and-bounds is elegant but wastes memory: the stack and heap are far apart, yet the whole span between them is allocated contiguously. This motivates segmentation.</span>
+<span id="cb10-105"><a href="#cb10-105" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-106"><a href="#cb10-106" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb10-107"><a href="#cb10-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-108"><a href="#cb10-108" aria-hidden="true" tabindex="-1"></a><span class="fu">## Segmentation</span></span>
+<span id="cb10-109"><a href="#cb10-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-110"><a href="#cb10-110" aria-hidden="true" tabindex="-1"></a>**Segmentation** generalizes base-and-bounds by dividing the address space into logical **segments** — code, heap, and stack — each with its own base and bounds. A virtual address is a pair <span class="in">`(segment, offset)`</span>; the hardware adds the segment's base to the offset, checking the offset against that segment's bound.</span>
+<span id="cb10-111"><a href="#cb10-111" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-112"><a href="#cb10-112" aria-hidden="true" tabindex="-1"></a>Segments can grow (the heap grows up, the stack grows down), so the hardware may support a **negative-growth bit**. Sharing and protection bits (read/write/execute) attach naturally per segment.</span>
+<span id="cb10-113"><a href="#cb10-113" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-114"><a href="#cb10-114" aria-hidden="true" tabindex="-1"></a>The difficulty is **external fragmentation**: variable-sized segments leave holes between allocations, and free memory becomes a collection of awkward gaps. Compacting memory is expensive. The fix is to manage free space well (next section), or to abandon variable sizes entirely — which leads to paging.</span>
+<span id="cb10-115"><a href="#cb10-115" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-116"><a href="#cb10-116" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb10-117"><a href="#cb10-117" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-118"><a href="#cb10-118" aria-hidden="true" tabindex="-1"></a><span class="fu">## Free-Space Management</span></span>
+<span id="cb10-119"><a href="#cb10-119" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-120"><a href="#cb10-120" aria-hidden="true" tabindex="-1"></a>The allocator must service variable-sized requests from a pool of free memory. The classic implementation is a **free list**.</span>
+<span id="cb10-121"><a href="#cb10-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-122"><a href="#cb10-122" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Splitting:** a request smaller than a free chunk splits it, returning the remainder to the list.</span>
+<span id="cb10-123"><a href="#cb10-123" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Coalescing:** when a chunk is freed, adjacent free chunks are merged to fight fragmentation.</span>
+<span id="cb10-124"><a href="#cb10-124" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Headers:** because `free()` receives only a pointer, each allocation carries a small **header** storing its size and magic number.</span>
+<span id="cb10-125"><a href="#cb10-125" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-126"><a href="#cb10-126" aria-hidden="true" tabindex="-1"></a><span class="fu">### Allocation Strategies</span></span>
+<span id="cb10-127"><a href="#cb10-127" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-128"><a href="#cb10-128" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Strategy <span class="pp">|</span> Rule <span class="pp">|</span> Trade-off <span class="pp">|</span></span>
+<span id="cb10-129"><a href="#cb10-129" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|</span></span>
+<span id="cb10-130"><a href="#cb10-130" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Best fit** <span class="pp">|</span> smallest chunk that fits <span class="pp">|</span> minimizes leftover but slow (searches all) and leaves tiny fragments <span class="pp">|</span></span>
+<span id="cb10-131"><a href="#cb10-131" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Worst fit** <span class="pp">|</span> largest chunk <span class="pp">|</span> leaves large remainders, but slow and often worse <span class="pp">|</span></span>
+<span id="cb10-132"><a href="#cb10-132" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **First fit** <span class="pp">|</span> first chunk that fits <span class="pp">|</span> fast; can pollute the front of the list <span class="pp">|</span></span>
+<span id="cb10-133"><a href="#cb10-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-134"><a href="#cb10-134" aria-hidden="true" tabindex="-1"></a><span class="fu">### Segregated Lists and Slab Allocators</span></span>
+<span id="cb10-135"><a href="#cb10-135" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-136"><a href="#cb10-136" aria-hidden="true" tabindex="-1"></a>Real allocators keep **segregated free lists** for common sizes: a request for 8 bytes goes to the 8-byte list, avoiding a search. **Slab allocators** pre-package kernel objects into caches. These are the practical realization of free-space management in Linux.</span>
+<span id="cb10-137"><a href="#cb10-137" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-138"><a href="#cb10-138" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb10-139"><a href="#cb10-139" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-140"><a href="#cb10-140" aria-hidden="true" tabindex="-1"></a><span class="fu">## Introduction to Paging</span></span>
+<span id="cb10-141"><a href="#cb10-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-142"><a href="#cb10-142" aria-hidden="true" tabindex="-1"></a>The big idea: chop the address space into fixed-size **pages** (e.g., 4 KB) and physical memory into equal **frames**. Mapping is now per-page, stored in a **page table** — one **Page Table Entry (PTE)** per virtual page.</span>
+<span id="cb10-143"><a href="#cb10-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-144"><a href="#cb10-144" aria-hidden="true" tabindex="-1"></a>Translation for virtual page number <span class="in">`VPN`</span> with <span class="in">`offset`</span>:</span>
+<span id="cb10-145"><a href="#cb10-145" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-146"><a href="#cb10-146" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb10-147"><a href="#cb10-147" aria-hidden="true" tabindex="-1"></a>\text{VPN} = \frac{\text{VA}}{\text{page size}}, \qquad \text{offset} = \text{VA} \bmod \text{page size}</span>
+<span id="cb10-148"><a href="#cb10-148" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb10-149"><a href="#cb10-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-150"><a href="#cb10-150" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb10-151"><a href="#cb10-151" aria-hidden="true" tabindex="-1"></a>\text{physical address} = \text{PFN} \times \text{page size} + \text{offset}</span>
+<span id="cb10-152"><a href="#cb10-152" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb10-153"><a href="#cb10-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-154"><a href="#cb10-154" aria-hidden="true" tabindex="-1"></a>where <span class="in">`PFN`</span> is the **page frame number** read from the PTE. A PTE also carries a **valid/present bit**, **protection bits** (read/write/execute), a **dirty bit**, and a **reference bit** — used later by replacement policies.</span>
+<span id="cb10-155"><a href="#cb10-155" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-156"><a href="#cb10-156" aria-hidden="true" tabindex="-1"></a>Paging eliminates external fragmentation but introduces two costs: **internal fragmentation** (the last page is partly wasted) and the **memory overhead of page tables** (typically 4 bytes per 4 KB page, ~0.1% of the address space).</span>
+<span id="cb10-157"><a href="#cb10-157" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-158"><a href="#cb10-158" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb10-159"><a href="#cb10-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-160"><a href="#cb10-160" aria-hidden="true" tabindex="-1"></a><span class="fu">## Translation Lookaside Buffers (TLBs)</span></span>
+<span id="cb10-161"><a href="#cb10-161" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-162"><a href="#cb10-162" aria-hidden="true" tabindex="-1"></a>If every memory access required a page-table access, we would *double* memory traffic. The **TLB** is a small, fast, fully associative hardware cache of recent translations. A **TLB hit** costs one fast lookup; a **TLB miss** requires walking the page table (and updating the TLB).</span>
+<span id="cb10-163"><a href="#cb10-163" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-164"><a href="#cb10-164" aria-hidden="true" tabindex="-1"></a>Key details:</span>
+<span id="cb10-165"><a href="#cb10-165" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-166"><a href="#cb10-166" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Who handles the miss?** Older hardware did it; modern designs raise an exception to the OS (software-managed TLB).</span>
+<span id="cb10-167"><a href="#cb10-167" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Context switches and ASIDs.** Two processes may use the same virtual page numbers for different frames. **Address Space Identifiers (ASIDs)** tag TLB entries so they need not be flushed on every switch.</span>
+<span id="cb10-168"><a href="#cb10-168" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Replacement.** TLBs use the same policies as caches (LRU, random), since translation locality resembles memory locality.</span>
+<span id="cb10-169"><a href="#cb10-169" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Effective Access Time (EAT):** with hit ratio $h$, TLB lookup time $t_{\text{TLB}}$, and memory access time $t_{\text{mem}}$:</span>
+<span id="cb10-170"><a href="#cb10-170" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-171"><a href="#cb10-171" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb10-172"><a href="#cb10-172" aria-hidden="true" tabindex="-1"></a>\text{EAT} = h\,(t_{\text{TLB}} + t_{\text{mem}}) + (1-h)\,(t_{\text{TLB}} + t_{\text{mem}} + t_{\text{mem}})</span>
+<span id="cb10-173"><a href="#cb10-173" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb10-174"><a href="#cb10-174" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-175"><a href="#cb10-175" aria-hidden="true" tabindex="-1"></a>Even a modest hit ratio yields near-full performance, because the second term grows quickly as $h$ falls. This is why the TLB is one of the most performance-critical structures in a CPU.</span>
+<span id="cb10-176"><a href="#cb10-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-177"><a href="#cb10-177" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb10-178"><a href="#cb10-178" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-179"><a href="#cb10-179" aria-hidden="true" tabindex="-1"></a><span class="fu">## Advanced Page Tables</span></span>
+<span id="cb10-180"><a href="#cb10-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-181"><a href="#cb10-181" aria-hidden="true" tabindex="-1"></a>A flat page table for a 32-bit address space with 4 KB pages has $2^{20}$ entries — 4 MB *per process*. **Multi-level page tables** solve this by paging the page table itself: a **page directory** points to page-table pages, and unused regions simply omit their page-table pages entirely. The cost is that a TLB miss now requires multiple dependent memory accesses (one per level).</span>
+<span id="cb10-182"><a href="#cb10-182" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-183"><a href="#cb10-183" aria-hidden="true" tabindex="-1"></a>Alternatives include **inverted page tables** (one entry per physical frame, indexed by a hash) and **hashed page tables** — the latter common in 64-bit systems (x86-64 uses four-level paging). The lesson is a recurring systems theme: **hierarchical indirection** trades time for space, and caches (the TLB) restore the time.</span>
+<span id="cb10-184"><a href="#cb10-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-185"><a href="#cb10-185" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb10-186"><a href="#cb10-186" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-187"><a href="#cb10-187" aria-hidden="true" tabindex="-1"></a><span class="fu">## Swapping: Mechanisms</span></span>
+<span id="cb10-188"><a href="#cb10-188" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-189"><a href="#cb10-189" aria-hidden="true" tabindex="-1"></a>When physical memory fills, the OS moves some pages to **swap space** on disk. A PTE's **present bit** indicates whether a page is in memory; if not, accessing it raises a **page fault**:</span>
+<span id="cb10-190"><a href="#cb10-190" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-193"><a href="#cb10-193" aria-hidden="true" tabindex="-1"></a><span class="in">```{mermaid}</span></span>
+<span id="cb10-194"><a href="#cb10-194" aria-hidden="true" tabindex="-1"></a>flowchart TD</span>
+<span id="cb10-195"><a href="#cb10-195" aria-hidden="true" tabindex="-1"></a>    A[<span class="ot">"</span><span class="st">CPU accesses virtual address</span><span class="ot">"</span>] --&gt; B{<span class="ot">"</span><span class="st">PTE present?</span><span class="ot">"</span>}</span>
+<span id="cb10-196"><a href="#cb10-196" aria-hidden="true" tabindex="-1"></a>    B -- <span class="ot">"</span><span class="st">yes</span><span class="ot">"</span> --&gt; C[<span class="ot">"</span><span class="st">translate via PFN</span><span class="ot">"</span>]</span>
+<span id="cb10-197"><a href="#cb10-197" aria-hidden="true" tabindex="-1"></a>    B -- <span class="ot">"</span><span class="st">no</span><span class="ot">"</span> --&gt; D[<span class="ot">"</span><span class="st">page-fault trap to OS</span><span class="ot">"</span>]</span>
+<span id="cb10-198"><a href="#cb10-198" aria-hidden="true" tabindex="-1"></a>    D --&gt; E{<span class="ot">"</span><span class="st">free frame available?</span><span class="ot">"</span>}</span>
+<span id="cb10-199"><a href="#cb10-199" aria-hidden="true" tabindex="-1"></a>    E -- <span class="ot">"</span><span class="st">no</span><span class="ot">"</span> --&gt; F[<span class="ot">"</span><span class="st">run replacement policy, write victim</span><span class="ot">"</span>]</span>
+<span id="cb10-200"><a href="#cb10-200" aria-hidden="true" tabindex="-1"></a>    F --&gt; G[<span class="ot">"</span><span class="st">read page from swap into frame</span><span class="ot">"</span>]</span>
+<span id="cb10-201"><a href="#cb10-201" aria-hidden="true" tabindex="-1"></a>    E -- <span class="ot">"</span><span class="st">yes</span><span class="ot">"</span> --&gt; G</span>
+<span id="cb10-202"><a href="#cb10-202" aria-hidden="true" tabindex="-1"></a>    G --&gt; H[<span class="ot">"</span><span class="st">update PTE, retry instruction</span><span class="ot">"</span>]</span>
+<span id="cb10-203"><a href="#cb10-203" aria-hidden="true" tabindex="-1"></a>    H --&gt; A</span>
+<span id="cb10-204"><a href="#cb10-204" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb10-205"><a href="#cb10-205" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-206"><a href="#cb10-206" aria-hidden="true" tabindex="-1"></a>Details that matter:</span>
+<span id="cb10-207"><a href="#cb10-207" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-208"><a href="#cb10-208" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Dirty bit.** If the victim page was modified, it must be written back to swap; if clean, it can be dropped.</span>
+<span id="cb10-209"><a href="#cb10-209" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Watermarks.** The OS keeps **low** and **high** watermarks; when free frames drop below <span class="in">`LW`</span>, a background cleaner evicts until <span class="in">`HW`</span> is reached.</span>
+<span id="cb10-210"><a href="#cb10-210" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Clustering.** The OS may write back several pages at once to amortize disk seeks.</span>
+<span id="cb10-211"><a href="#cb10-211" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-212"><a href="#cb10-212" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb10-213"><a href="#cb10-213" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-214"><a href="#cb10-214" aria-hidden="true" tabindex="-1"></a><span class="fu">## Swapping: Policies</span></span>
+<span id="cb10-215"><a href="#cb10-215" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-216"><a href="#cb10-216" aria-hidden="true" tabindex="-1"></a>Which page should be evicted? The **optimal** policy (Belady's) evicts the page used farthest in the future — unimplementable (it needs the future) but the gold standard for comparison.</span>
+<span id="cb10-217"><a href="#cb10-217" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-218"><a href="#cb10-218" aria-hidden="true" tabindex="-1"></a>Practical policies:</span>
+<span id="cb10-219"><a href="#cb10-219" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-220"><a href="#cb10-220" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**FIFO** — evict the oldest loaded page. Simple, but can evict hot pages and suffers **Belady's anomaly**: *more frames can produce more faults*.</span>
+<span id="cb10-221"><a href="#cb10-221" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**LRU (Least Recently Used)** — evict the page unused for the longest. A good approximation of optimal, but expensive to implement exactly (it needs ordering on every access).</span>
+<span id="cb10-222"><a href="#cb10-222" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Approximate LRU via the clock algorithm** — pages sit in a circle with a **reference bit**; the hand advances, clearing bits, and evicts the first page whose bit is 0. This is the standard implementation (with a dirty bit to avoid needless writes).</span>
+<span id="cb10-223"><a href="#cb10-223" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Random** — surprisingly competitive and trivial.</span>
+<span id="cb10-224"><a href="#cb10-224" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-225"><a href="#cb10-225" aria-hidden="true" tabindex="-1"></a><span class="fu">### Locality</span></span>
+<span id="cb10-226"><a href="#cb10-226" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-227"><a href="#cb10-227" aria-hidden="true" tabindex="-1"></a>All of this works because programs exhibit **temporal and spatial locality**: recently used pages are likely to be used again. Without locality, no caching scheme works. When the working set exceeds physical memory, the system **thrashes** — spending all its time paging and little executing.</span>
+<span id="cb10-228"><a href="#cb10-228" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-229"><a href="#cb10-229" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb10-230"><a href="#cb10-230" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-231"><a href="#cb10-231" aria-hidden="true" tabindex="-1"></a><span class="fu">## Laboratory: Translation, TLBs, and Replacement</span></span>
+<span id="cb10-232"><a href="#cb10-232" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-233"><a href="#cb10-233" aria-hidden="true" tabindex="-1"></a><span class="fu">### Address Translation</span></span>
+<span id="cb10-234"><a href="#cb10-234" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-237"><a href="#cb10-237" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb10-238"><a href="#cb10-238" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> math <span class="im">import</span> log2</span>
+<span id="cb10-239"><a href="#cb10-239" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-240"><a href="#cb10-240" aria-hidden="true" tabindex="-1"></a>PAGE_SIZE <span class="op">=</span> <span class="dv">4096</span></span>
+<span id="cb10-241"><a href="#cb10-241" aria-hidden="true" tabindex="-1"></a>OFFSET_BITS <span class="op">=</span> <span class="bu">int</span>(log2(PAGE_SIZE))</span>
+<span id="cb10-242"><a href="#cb10-242" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-243"><a href="#cb10-243" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> translate(va, page_table):</span>
+<span id="cb10-244"><a href="#cb10-244" aria-hidden="true" tabindex="-1"></a>    vpn <span class="op">=</span> va <span class="op">&gt;&gt;</span> OFFSET_BITS</span>
+<span id="cb10-245"><a href="#cb10-245" aria-hidden="true" tabindex="-1"></a>    offset <span class="op">=</span> va <span class="op">&amp;</span> (PAGE_SIZE <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb10-246"><a href="#cb10-246" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> vpn <span class="kw">not</span> <span class="kw">in</span> page_table:</span>
+<span id="cb10-247"><a href="#cb10-247" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb10-248"><a href="#cb10-248" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (page_table[vpn] <span class="op">&lt;&lt;</span> OFFSET_BITS) <span class="op">|</span> offset</span>
+<span id="cb10-249"><a href="#cb10-249" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-250"><a href="#cb10-250" aria-hidden="true" tabindex="-1"></a>page_table <span class="op">=</span> {<span class="dv">0</span>: <span class="dv">5</span>, <span class="dv">1</span>: <span class="dv">2</span>, <span class="dv">2</span>: <span class="dv">9</span>, <span class="dv">3</span>: <span class="dv">1</span>}</span>
+<span id="cb10-251"><a href="#cb10-251" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-252"><a href="#cb10-252" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== ADDRESS TRANSLATION (page size 4096) ==="</span>)</span>
+<span id="cb10-253"><a href="#cb10-253" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> va <span class="kw">in</span> [<span class="bn">0x0000</span>, <span class="bn">0x1234</span>, <span class="bn">0x2000</span>, <span class="bn">0x3FFF</span>, <span class="bn">0x8000</span>]:</span>
+<span id="cb10-254"><a href="#cb10-254" aria-hidden="true" tabindex="-1"></a>    pa <span class="op">=</span> translate(va, page_table)</span>
+<span id="cb10-255"><a href="#cb10-255" aria-hidden="true" tabindex="-1"></a>    vpn <span class="op">=</span> va <span class="op">&gt;&gt;</span> OFFSET_BITS</span>
+<span id="cb10-256"><a href="#cb10-256" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> pa <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb10-257"><a href="#cb10-257" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  VA=0x</span><span class="sc">{</span>va<span class="sc">:04x}</span><span class="ss">  VPN=</span><span class="sc">{</span>vpn<span class="sc">:2d}</span><span class="ss">  -&gt; PAGE FAULT (not present)"</span>)</span>
+<span id="cb10-258"><a href="#cb10-258" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb10-259"><a href="#cb10-259" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  VA=0x</span><span class="sc">{</span>va<span class="sc">:04x}</span><span class="ss">  VPN=</span><span class="sc">{</span>vpn<span class="sc">:2d}</span><span class="ss">  PA=0x</span><span class="sc">{</span>pa<span class="sc">:05x}</span><span class="ss">  "</span></span>
+<span id="cb10-260"><a href="#cb10-260" aria-hidden="true" tabindex="-1"></a>              <span class="ss">f"(PFN=</span><span class="sc">{</span>page_table[vpn]<span class="sc">}</span><span class="ss">, offset=</span><span class="sc">{</span>va <span class="op">&amp;</span> (PAGE_SIZE<span class="op">-</span><span class="dv">1</span>)<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb10-261"><a href="#cb10-261" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb10-262"><a href="#cb10-262" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-263"><a href="#cb10-263" aria-hidden="true" tabindex="-1"></a><span class="fu">### TLB Effective Access Time</span></span>
+<span id="cb10-264"><a href="#cb10-264" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-267"><a href="#cb10-267" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb10-268"><a href="#cb10-268" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-tlb-eat</span></span>
+<span id="cb10-269"><a href="#cb10-269" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Effective access time as a function of TLB hit ratio. With a 1 ns TLB lookup and 100 ns memory access, EAT = h·(t_TLB + t_mem) + (1−h)·(t_TLB + 2·t_mem). Because a miss adds a full extra memory access, performance degrades steeply as the hit ratio falls, which is why even a small TLB is so valuable."</span></span>
+<span id="cb10-270"><a href="#cb10-270" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-271"><a href="#cb10-271" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb10-272"><a href="#cb10-272" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb10-273"><a href="#cb10-273" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-274"><a href="#cb10-274" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> eat(h, t_tlb, t_mem):</span>
+<span id="cb10-275"><a href="#cb10-275" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> h <span class="op">*</span> (t_tlb <span class="op">+</span> t_mem) <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> h) <span class="op">*</span> (t_tlb <span class="op">+</span> t_mem <span class="op">+</span> t_mem)</span>
+<span id="cb10-276"><a href="#cb10-276" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-277"><a href="#cb10-277" aria-hidden="true" tabindex="-1"></a>h <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">200</span>)</span>
+<span id="cb10-278"><a href="#cb10-278" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="dv">5</span>))</span>
+<span id="cb10-279"><a href="#cb10-279" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t_mem, color <span class="kw">in</span> [(<span class="dv">100</span>, <span class="st">"#2980b9"</span>), (<span class="dv">200</span>, <span class="st">"#e74c3c"</span>)]:</span>
+<span id="cb10-280"><a href="#cb10-280" aria-hidden="true" tabindex="-1"></a>    ax.plot(h, eat(h, <span class="dv">1</span>, t_mem), color<span class="op">=</span>color, label<span class="op">=</span><span class="ss">f"t_mem=</span><span class="sc">{</span>t_mem<span class="sc">}</span><span class="ss"> ns"</span>)</span>
+<span id="cb10-281"><a href="#cb10-281" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> hh, col <span class="kw">in</span> [(<span class="fl">0.80</span>, <span class="st">"#27ae60"</span>), (<span class="fl">0.95</span>, <span class="st">"#e67e22"</span>)]:</span>
+<span id="cb10-282"><a href="#cb10-282" aria-hidden="true" tabindex="-1"></a>    ax.axvline(hh, color<span class="op">=</span>col, ls<span class="op">=</span><span class="st">":"</span>, lw<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb10-283"><a href="#cb10-283" aria-hidden="true" tabindex="-1"></a>    ax.annotate(<span class="ss">f"h=</span><span class="sc">{</span>hh<span class="sc">:.0%}</span><span class="ss">"</span>, (hh, <span class="dv">250</span>), rotation<span class="op">=</span><span class="dv">90</span>, color<span class="op">=</span>col, va<span class="op">=</span><span class="st">"top"</span>)</span>
+<span id="cb10-284"><a href="#cb10-284" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"TLB effective access time vs hit ratio (t_TLB = 1 ns)"</span>)</span>
+<span id="cb10-285"><a href="#cb10-285" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"TLB hit ratio h"</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">"effective access time (ns)"</span>)</span>
+<span id="cb10-286"><a href="#cb10-286" aria-hidden="true" tabindex="-1"></a>ax.legend()<span class="op">;</span> ax.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb10-287"><a href="#cb10-287" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb10-288"><a href="#cb10-288" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-289"><a href="#cb10-289" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== TLB EFFECTIVE ACCESS TIME (t_TLB=1ns, t_mem=100ns) ==="</span>)</span>
+<span id="cb10-290"><a href="#cb10-290" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'hit ratio'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'EAT (ns)'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'overhead'</span><span class="sc">:&gt;10}</span><span class="ss">"</span>)</span>
+<span id="cb10-291"><a href="#cb10-291" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> hh <span class="kw">in</span> [<span class="fl">0.50</span>, <span class="fl">0.80</span>, <span class="fl">0.90</span>, <span class="fl">0.95</span>, <span class="fl">0.98</span>, <span class="fl">0.99</span>, <span class="fl">1.00</span>]:</span>
+<span id="cb10-292"><a href="#cb10-292" aria-hidden="true" tabindex="-1"></a>    e <span class="op">=</span> eat(hh, <span class="dv">1</span>, <span class="dv">100</span>)</span>
+<span id="cb10-293"><a href="#cb10-293" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>hh<span class="sc">:10.0%}</span><span class="ss"> </span><span class="sc">{</span>e<span class="sc">:10.2f}</span><span class="ss"> </span><span class="sc">{</span>(e<span class="op">-</span><span class="dv">101</span>)<span class="op">/</span><span class="dv">101</span><span class="op">*</span><span class="dv">100</span><span class="sc">:9.1f}</span><span class="ss">%"</span>)</span>
+<span id="cb10-294"><a href="#cb10-294" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  (101 ns = compulsory TLB + memory access; a miss adds a second access)"</span>)</span>
+<span id="cb10-295"><a href="#cb10-295" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb10-296"><a href="#cb10-296" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-297"><a href="#cb10-297" aria-hidden="true" tabindex="-1"></a><span class="fu">### Page Replacement and Belady's Anomaly</span></span>
+<span id="cb10-298"><a href="#cb10-298" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-301"><a href="#cb10-301" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb10-302"><a href="#cb10-302" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-replacement</span></span>
+<span id="cb10-303"><a href="#cb10-303" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Page-replacement fault counts on a reference string as the number of physical frames grows. LRU and the clock approximation track the optimal curve closely, while FIFO can get worse with more frames — Belady's anomaly. The clock algorithm uses only a reference bit, making it cheap and nearly as effective as exact LRU."</span></span>
+<span id="cb10-304"><a href="#cb10-304" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-305"><a href="#cb10-305" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb10-306"><a href="#cb10-306" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-307"><a href="#cb10-307" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> faults_fifo(refs, frames):</span>
+<span id="cb10-308"><a href="#cb10-308" aria-hidden="true" tabindex="-1"></a>    q, cur, f <span class="op">=</span> [], <span class="bu">set</span>(), <span class="dv">0</span></span>
+<span id="cb10-309"><a href="#cb10-309" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> r <span class="kw">in</span> refs:</span>
+<span id="cb10-310"><a href="#cb10-310" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> r <span class="kw">in</span> cur:</span>
+<span id="cb10-311"><a href="#cb10-311" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb10-312"><a href="#cb10-312" aria-hidden="true" tabindex="-1"></a>        f <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb10-313"><a href="#cb10-313" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(cur) <span class="op">&lt;</span> frames:</span>
+<span id="cb10-314"><a href="#cb10-314" aria-hidden="true" tabindex="-1"></a>            cur.add(r)<span class="op">;</span> q.append(r)</span>
+<span id="cb10-315"><a href="#cb10-315" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb10-316"><a href="#cb10-316" aria-hidden="true" tabindex="-1"></a>            victim <span class="op">=</span> q.pop(<span class="dv">0</span>)<span class="op">;</span> cur.discard(victim)</span>
+<span id="cb10-317"><a href="#cb10-317" aria-hidden="true" tabindex="-1"></a>            cur.add(r)<span class="op">;</span> q.append(r)</span>
+<span id="cb10-318"><a href="#cb10-318" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> f</span>
+<span id="cb10-319"><a href="#cb10-319" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-320"><a href="#cb10-320" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> faults_lru(refs, frames):</span>
+<span id="cb10-321"><a href="#cb10-321" aria-hidden="true" tabindex="-1"></a>    cur, f, last <span class="op">=</span> <span class="bu">set</span>(), <span class="dv">0</span>, {}</span>
+<span id="cb10-322"><a href="#cb10-322" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, r <span class="kw">in</span> <span class="bu">enumerate</span>(refs):</span>
+<span id="cb10-323"><a href="#cb10-323" aria-hidden="true" tabindex="-1"></a>        last[r] <span class="op">=</span> i</span>
+<span id="cb10-324"><a href="#cb10-324" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> r <span class="kw">in</span> cur:</span>
+<span id="cb10-325"><a href="#cb10-325" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb10-326"><a href="#cb10-326" aria-hidden="true" tabindex="-1"></a>        f <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb10-327"><a href="#cb10-327" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(cur) <span class="op">&lt;</span> frames:</span>
+<span id="cb10-328"><a href="#cb10-328" aria-hidden="true" tabindex="-1"></a>            cur.add(r)</span>
+<span id="cb10-329"><a href="#cb10-329" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb10-330"><a href="#cb10-330" aria-hidden="true" tabindex="-1"></a>            victim <span class="op">=</span> <span class="bu">min</span>(cur, key<span class="op">=</span><span class="kw">lambda</span> x: last[x])</span>
+<span id="cb10-331"><a href="#cb10-331" aria-hidden="true" tabindex="-1"></a>            cur.discard(victim)<span class="op">;</span> cur.add(r)</span>
+<span id="cb10-332"><a href="#cb10-332" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> f</span>
+<span id="cb10-333"><a href="#cb10-333" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-334"><a href="#cb10-334" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> faults_opt(refs, frames):</span>
+<span id="cb10-335"><a href="#cb10-335" aria-hidden="true" tabindex="-1"></a>    cur, f <span class="op">=</span> <span class="bu">set</span>(), <span class="dv">0</span></span>
+<span id="cb10-336"><a href="#cb10-336" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, r <span class="kw">in</span> <span class="bu">enumerate</span>(refs):</span>
+<span id="cb10-337"><a href="#cb10-337" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> r <span class="kw">in</span> cur:</span>
+<span id="cb10-338"><a href="#cb10-338" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb10-339"><a href="#cb10-339" aria-hidden="true" tabindex="-1"></a>        f <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb10-340"><a href="#cb10-340" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(cur) <span class="op">&lt;</span> frames:</span>
+<span id="cb10-341"><a href="#cb10-341" aria-hidden="true" tabindex="-1"></a>            cur.add(r)</span>
+<span id="cb10-342"><a href="#cb10-342" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb10-343"><a href="#cb10-343" aria-hidden="true" tabindex="-1"></a>            future <span class="op">=</span> {x: (refs[i<span class="op">+</span><span class="dv">1</span>:].index(x) <span class="cf">if</span> x <span class="kw">in</span> refs[i<span class="op">+</span><span class="dv">1</span>:] <span class="cf">else</span> <span class="dv">10</span><span class="op">**</span><span class="dv">9</span>) <span class="cf">for</span> x <span class="kw">in</span> cur}</span>
+<span id="cb10-344"><a href="#cb10-344" aria-hidden="true" tabindex="-1"></a>            victim <span class="op">=</span> <span class="bu">max</span>(future, key<span class="op">=</span>future.get)</span>
+<span id="cb10-345"><a href="#cb10-345" aria-hidden="true" tabindex="-1"></a>            cur.discard(victim)<span class="op">;</span> cur.add(r)</span>
+<span id="cb10-346"><a href="#cb10-346" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> f</span>
+<span id="cb10-347"><a href="#cb10-347" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-348"><a href="#cb10-348" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> faults_clock(refs, frames):</span>
+<span id="cb10-349"><a href="#cb10-349" aria-hidden="true" tabindex="-1"></a>    cur, ref_bit, f, hand <span class="op">=</span> [<span class="va">None</span>]<span class="op">*</span>frames, [<span class="dv">0</span>]<span class="op">*</span>frames, <span class="dv">0</span>, <span class="dv">0</span></span>
+<span id="cb10-350"><a href="#cb10-350" aria-hidden="true" tabindex="-1"></a>    present <span class="op">=</span> {}</span>
+<span id="cb10-351"><a href="#cb10-351" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> r <span class="kw">in</span> refs:</span>
+<span id="cb10-352"><a href="#cb10-352" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> r <span class="kw">in</span> present:</span>
+<span id="cb10-353"><a href="#cb10-353" aria-hidden="true" tabindex="-1"></a>            ref_bit[present[r]] <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb10-354"><a href="#cb10-354" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb10-355"><a href="#cb10-355" aria-hidden="true" tabindex="-1"></a>        f <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb10-356"><a href="#cb10-356" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb10-357"><a href="#cb10-357" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> cur[hand] <span class="kw">is</span> <span class="va">None</span> <span class="kw">or</span> ref_bit[hand] <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb10-358"><a href="#cb10-358" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> cur[hand] <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb10-359"><a href="#cb10-359" aria-hidden="true" tabindex="-1"></a>                    <span class="kw">del</span> present[cur[hand]]</span>
+<span id="cb10-360"><a href="#cb10-360" aria-hidden="true" tabindex="-1"></a>                cur[hand] <span class="op">=</span> r<span class="op">;</span> present[r] <span class="op">=</span> hand<span class="op">;</span> ref_bit[hand] <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb10-361"><a href="#cb10-361" aria-hidden="true" tabindex="-1"></a>                hand <span class="op">=</span> (hand <span class="op">+</span> <span class="dv">1</span>) <span class="op">%</span> frames</span>
+<span id="cb10-362"><a href="#cb10-362" aria-hidden="true" tabindex="-1"></a>                <span class="cf">break</span></span>
+<span id="cb10-363"><a href="#cb10-363" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb10-364"><a href="#cb10-364" aria-hidden="true" tabindex="-1"></a>                ref_bit[hand] <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb10-365"><a href="#cb10-365" aria-hidden="true" tabindex="-1"></a>                hand <span class="op">=</span> (hand <span class="op">+</span> <span class="dv">1</span>) <span class="op">%</span> frames</span>
+<span id="cb10-366"><a href="#cb10-366" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> f</span>
+<span id="cb10-367"><a href="#cb10-367" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-368"><a href="#cb10-368" aria-hidden="true" tabindex="-1"></a>belady <span class="op">=</span> [<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">5</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>]</span>
+<span id="cb10-369"><a href="#cb10-369" aria-hidden="true" tabindex="-1"></a>frames_range <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">8</span>))</span>
+<span id="cb10-370"><a href="#cb10-370" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-371"><a href="#cb10-371" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="fl">4.8</span>))</span>
+<span id="cb10-372"><a href="#cb10-372" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, fn, color <span class="kw">in</span> [(<span class="st">"OPT"</span>, faults_opt, <span class="st">"#27ae60"</span>), (<span class="st">"LRU"</span>, faults_lru, <span class="st">"#2980b9"</span>),</span>
+<span id="cb10-373"><a href="#cb10-373" aria-hidden="true" tabindex="-1"></a>                        (<span class="st">"CLOCK"</span>, faults_clock, <span class="st">"#8e44ad"</span>), (<span class="st">"FIFO"</span>, faults_fifo, <span class="st">"#e74c3c"</span>)]:</span>
+<span id="cb10-374"><a href="#cb10-374" aria-hidden="true" tabindex="-1"></a>    ys <span class="op">=</span> [fn(belady, f) <span class="cf">for</span> f <span class="kw">in</span> frames_range]</span>
+<span id="cb10-375"><a href="#cb10-375" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">0</span>].plot(frames_range, ys, <span class="st">"o-"</span>, color<span class="op">=</span>color, label<span class="op">=</span>name)</span>
+<span id="cb10-376"><a href="#cb10-376" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Belady string [1,2,3,4,1,2,5,1,2,3,4,5]"</span>)</span>
+<span id="cb10-377"><a href="#cb10-377" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">"frames"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].set_ylabel(<span class="st">"page faults"</span>)</span>
+<span id="cb10-378"><a href="#cb10-378" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].legend()<span class="op">;</span> axes[<span class="dv">0</span>].grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb10-379"><a href="#cb10-379" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-380"><a href="#cb10-380" aria-hidden="true" tabindex="-1"></a>fifo_ys <span class="op">=</span> [faults_fifo(belady, f) <span class="cf">for</span> f <span class="kw">in</span> frames_range]</span>
+<span id="cb10-381"><a href="#cb10-381" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].bar([<span class="bu">str</span>(f) <span class="cf">for</span> f <span class="kw">in</span> frames_range], fifo_ys, color<span class="op">=</span><span class="st">"#e74c3c"</span>)</span>
+<span id="cb10-382"><a href="#cb10-382" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"FIFO alone: faults can RISE with more frames"</span>)</span>
+<span id="cb10-383"><a href="#cb10-383" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xlabel(<span class="st">"frames"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].set_ylabel(<span class="st">"page faults"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].grid(axis<span class="op">=</span><span class="st">"y"</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb10-384"><a href="#cb10-384" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb10-385"><a href="#cb10-385" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-386"><a href="#cb10-386" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== PAGE FAULTS ON BELADY STRING ==="</span>)</span>
+<span id="cb10-387"><a href="#cb10-387" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'frames'</span><span class="sc">:&gt;7}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'OPT'</span><span class="sc">:&gt;5}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'LRU'</span><span class="sc">:&gt;5}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'CLOCK'</span><span class="sc">:&gt;7}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'FIFO'</span><span class="sc">:&gt;5}</span><span class="ss">"</span>)</span>
+<span id="cb10-388"><a href="#cb10-388" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> frames_range:</span>
+<span id="cb10-389"><a href="#cb10-389" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>f<span class="sc">:7d}</span><span class="ss"> </span><span class="sc">{</span>faults_opt(belady,f)<span class="sc">:5d}</span><span class="ss"> </span><span class="sc">{</span>faults_lru(belady,f)<span class="sc">:5d}</span><span class="ss"> "</span></span>
+<span id="cb10-390"><a href="#cb10-390" aria-hidden="true" tabindex="-1"></a>          <span class="ss">f"</span><span class="sc">{</span>faults_clock(belady,f)<span class="sc">:7d}</span><span class="ss"> </span><span class="sc">{</span>faults_fifo(belady,f)<span class="sc">:5d}</span><span class="ss">"</span>)</span>
+<span id="cb10-391"><a href="#cb10-391" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">  watch FIFO: 3 frames -&gt; 9 faults, 4 frames -&gt; 10 faults (the anomaly)"</span>)</span>
+<span id="cb10-392"><a href="#cb10-392" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb10-393"><a href="#cb10-393" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-394"><a href="#cb10-394" aria-hidden="true" tabindex="-1"></a><span class="fu">### Free-Space Allocation Strategies</span></span>
+<span id="cb10-395"><a href="#cb10-395" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-398"><a href="#cb10-398" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb10-399"><a href="#cb10-399" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> allocate(free_list, size, strategy):</span>
+<span id="cb10-400"><a href="#cb10-400" aria-hidden="true" tabindex="-1"></a>    candidates <span class="op">=</span> [i <span class="cf">for</span> i, c <span class="kw">in</span> <span class="bu">enumerate</span>(free_list) <span class="cf">if</span> c <span class="op">&gt;=</span> size]</span>
+<span id="cb10-401"><a href="#cb10-401" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> candidates:</span>
+<span id="cb10-402"><a href="#cb10-402" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb10-403"><a href="#cb10-403" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> strategy <span class="op">==</span> <span class="st">"first"</span>:</span>
+<span id="cb10-404"><a href="#cb10-404" aria-hidden="true" tabindex="-1"></a>        i <span class="op">=</span> candidates[<span class="dv">0</span>]</span>
+<span id="cb10-405"><a href="#cb10-405" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> strategy <span class="op">==</span> <span class="st">"best"</span>:</span>
+<span id="cb10-406"><a href="#cb10-406" aria-hidden="true" tabindex="-1"></a>        i <span class="op">=</span> <span class="bu">min</span>(candidates, key<span class="op">=</span><span class="kw">lambda</span> i: free_list[i])</span>
+<span id="cb10-407"><a href="#cb10-407" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb10-408"><a href="#cb10-408" aria-hidden="true" tabindex="-1"></a>        i <span class="op">=</span> <span class="bu">max</span>(candidates, key<span class="op">=</span><span class="kw">lambda</span> i: free_list[i])</span>
+<span id="cb10-409"><a href="#cb10-409" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i, free_list[i] <span class="op">-</span> size</span>
+<span id="cb10-410"><a href="#cb10-410" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-411"><a href="#cb10-411" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> simulate(strategy, requests, initial<span class="op">=</span><span class="dv">100</span>):</span>
+<span id="cb10-412"><a href="#cb10-412" aria-hidden="true" tabindex="-1"></a>    free <span class="op">=</span> [initial]</span>
+<span id="cb10-413"><a href="#cb10-413" aria-hidden="true" tabindex="-1"></a>    layout <span class="op">=</span> []</span>
+<span id="cb10-414"><a href="#cb10-414" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> req <span class="kw">in</span> requests:</span>
+<span id="cb10-415"><a href="#cb10-415" aria-hidden="true" tabindex="-1"></a>        res <span class="op">=</span> allocate(free, req, strategy)</span>
+<span id="cb10-416"><a href="#cb10-416" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> res <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb10-417"><a href="#cb10-417" aria-hidden="true" tabindex="-1"></a>            layout.append(<span class="ss">f"req </span><span class="sc">{</span>req<span class="sc">:2d}</span><span class="ss">: FAIL"</span>)</span>
+<span id="cb10-418"><a href="#cb10-418" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb10-419"><a href="#cb10-419" aria-hidden="true" tabindex="-1"></a>        i, rem <span class="op">=</span> res</span>
+<span id="cb10-420"><a href="#cb10-420" aria-hidden="true" tabindex="-1"></a>        free.pop(i)</span>
+<span id="cb10-421"><a href="#cb10-421" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> rem <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb10-422"><a href="#cb10-422" aria-hidden="true" tabindex="-1"></a>            free.insert(i, rem)</span>
+<span id="cb10-423"><a href="#cb10-423" aria-hidden="true" tabindex="-1"></a>        layout.append(<span class="ss">f"req </span><span class="sc">{</span>req<span class="sc">:2d}</span><span class="ss">: used chunk #</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">, remainder </span><span class="sc">{</span>rem<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb10-424"><a href="#cb10-424" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> layout, <span class="bu">sum</span>(free), (<span class="bu">max</span>(free) <span class="cf">if</span> free <span class="cf">else</span> <span class="dv">0</span>)</span>
+<span id="cb10-425"><a href="#cb10-425" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-426"><a href="#cb10-426" aria-hidden="true" tabindex="-1"></a>requests <span class="op">=</span> [<span class="dv">20</span>, <span class="dv">15</span>, <span class="dv">30</span>, <span class="dv">10</span>, <span class="dv">25</span>, <span class="dv">5</span>]</span>
+<span id="cb10-427"><a href="#cb10-427" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== FREE-SPACE ALLOCATION (initial 100) ==="</span>)</span>
+<span id="cb10-428"><a href="#cb10-428" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> strat <span class="kw">in</span> [<span class="st">"first"</span>, <span class="st">"best"</span>, <span class="st">"worst"</span>]:</span>
+<span id="cb10-429"><a href="#cb10-429" aria-hidden="true" tabindex="-1"></a>    layout, external, largest <span class="op">=</span> simulate(strat, requests)</span>
+<span id="cb10-430"><a href="#cb10-430" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">  </span><span class="sc">{</span>strat<span class="sc">}</span><span class="ss"> fit:"</span>)</span>
+<span id="cb10-431"><a href="#cb10-431" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> line <span class="kw">in</span> layout:</span>
+<span id="cb10-432"><a href="#cb10-432" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"    "</span> <span class="op">+</span> line)</span>
+<span id="cb10-433"><a href="#cb10-433" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"    -&gt; free regions total </span><span class="sc">{</span>external<span class="sc">}</span><span class="ss">, largest contiguous </span><span class="sc">{</span>largest<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb10-434"><a href="#cb10-434" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">  'best fit' minimizes leftover but fragments; 'first fit' is fastest;"</span>)</span>
+<span id="cb10-435"><a href="#cb10-435" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  segregated free lists avoid the search entirely."</span>)</span>
+<span id="cb10-436"><a href="#cb10-436" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb10-437"><a href="#cb10-437" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-438"><a href="#cb10-438" aria-hidden="true" tabindex="-1"></a>The laboratory shows memory virtualization as a stack of trade-offs: **translation indirection** costs time, so the TLB caches it; **paging** removes external fragmentation, so multi-level tables reduce its metadata cost; and **replacement** policy determines whether locality is exploited or squandered.</span>
+<span id="cb10-439"><a href="#cb10-439" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-440"><a href="#cb10-440" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb10-441"><a href="#cb10-441" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-442"><a href="#cb10-442" aria-hidden="true" tabindex="-1"></a><span class="fu">## Summary</span></span>
+<span id="cb10-443"><a href="#cb10-443" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-444"><a href="#cb10-444" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb10-445"><a href="#cb10-445" aria-hidden="true" tabindex="-1"></a>\begin{aligned}</span>
+<span id="cb10-446"><a href="#cb10-446" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Address space: } &amp;&amp; \text{private virtual memory; goals: transparency, efficiency, protection.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb10-447"><a href="#cb10-447" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{API: } &amp;&amp; \texttt{malloc}/\texttt{free}; \text{ seven deadly errors an OS must expose safely.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb10-448"><a href="#cb10-448" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Translation: } &amp;&amp; \text{base+bounds via the MMU; faults on violation.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb10-449"><a href="#cb10-449" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Segmentation: } &amp;&amp; \text{per-segment base/bounds; external fragmentation.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb10-450"><a href="#cb10-450" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Free space: } &amp;&amp; \text{free lists with splitting/coalescing; first/best/worst fit; segregated lists.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb10-451"><a href="#cb10-451" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Paging: } &amp;&amp; \text{pages/frames, page tables, PTEs; internal fragmentation instead of external.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb10-452"><a href="#cb10-452" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{TLB: } &amp;&amp; \text{caches translations; EAT dominated by hit ratio; ASIDs.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb10-453"><a href="#cb10-453" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Page tables: } &amp;&amp; \text{multi-level; trade time for space.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb10-454"><a href="#cb10-454" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Swapping: } &amp;&amp; \text{present bit, page fault, dirty bit; OPT, FIFO, LRU, clock, Belady's anomaly.}</span>
+<span id="cb10-455"><a href="#cb10-455" aria-hidden="true" tabindex="-1"></a>\end{aligned}</span>
+<span id="cb10-456"><a href="#cb10-456" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb10-457"><a href="#cb10-457" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-458"><a href="#cb10-458" aria-hidden="true" tabindex="-1"></a>Memory virtualization completes the OS's two great illusions. The third piece — **concurrency** — is the subject of <span class="co">[</span><span class="ot">Part 3</span><span class="co">](operating-systems-three-easy-pieces-part-3-concurrency.qmd)</span>, where threads, locks, condition variables, and semaphores let a single process do many things at once.</span>
+<span id="cb10-459"><a href="#cb10-459" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-460"><a href="#cb10-460" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb10-461"><a href="#cb10-461" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-462"><a href="#cb10-462" aria-hidden="true" tabindex="-1"></a><span class="fu">## Curated References and Further Reading</span></span>
+<span id="cb10-463"><a href="#cb10-463" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-464"><a href="#cb10-464" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Arpaci-Dusseau, R. &amp; Arpaci-Dusseau, A. (2018).** *Operating Systems: Three Easy Pieces.* (Primary source: Chapters 13–24.) Free at <span class="in">`pages.cs.wisc.edu/~remzi/OSTEP`</span>.</span>
+<span id="cb10-465"><a href="#cb10-465" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Saltzer, J. &amp; Kaashoek, M. (2009).** *Principles of Computer System Design.* Morgan Kaufmann. (Naming and virtual memory.)</span>
+<span id="cb10-466"><a href="#cb10-466" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Denning, P. (1968).** *The Working Set Model for Program Behavior.* CACM.</span>
+<span id="cb10-467"><a href="#cb10-467" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Belady, L. (1966).** *A Study of Replacement Algorithms for a Virtual-Storage Computer.* IBM Systems Journal.</span>
+<span id="cb10-468"><a href="#cb10-468" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>**Intel (current).** *Intel 64 and IA-32 Architectures Software Developer's Manual, Vol. 3A.* (Paging and TLBs.)</span>
+<span id="cb10-469"><a href="#cb10-469" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>**Love, R. (2010).** *Linux Kernel Development*, 3rd ed. Addison-Wesley. (Page cache, reclaim, and the clock algorithm.)</span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2026 Igor Kan</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
