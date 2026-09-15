@@ -462,6 +462,54 @@ print("  unbiasedness (mean) and min-variance (spread) are exactly the Gauss-Mar
 
 ---
 
+## R Companion
+
+The same calculations in base R (R is not installed in the render environment, so these blocks are displayed rather than executed; copy them into R/RStudio to reproduce every number).
+
+```r
+# --- Persistence study (n = 3): least squares by hand and via lm ---
+X <- c(20, 55, 30)
+Y <- c(5, 12, 10)
+b1 <- sum((X - mean(X)) * (Y - mean(Y))) / sum((X - mean(X))^2)
+b0 <- mean(Y) - b1 * mean(X)
+c(b0 = b0, b1 = b1)          # 2.8077, 0.1769
+
+fit <- lm(Y ~ X)             # the same fit via the formula interface
+coef(fit)                    # b0, b1
+fitted(fit)                  # fitted values
+resid(fit)                   # residuals (sum to ~0)
+sum(resid(fit)^2)            # SSE = Q
+```
+
+```r
+# --- Toluca estimates from the chapter's summary statistics ---
+n <- 25; xbar <- 70; ybar <- 312.28; Sxy <- 70690; Sxx <- 19800
+b1 <- Sxy / Sxx
+b0 <- ybar - b1 * xbar
+c(b0 = b0, b1 = b1)          # 62.37, 3.5702
+```
+
+```r
+# --- A full sample: fit, summary, and the MLE vs unbiased variance ---
+set.seed(7)
+x <- runif(25, 20, 120)
+y <- 62.37 + 3.5702 * x + rnorm(25, 0, 48.8)
+fit <- lm(y ~ x)
+summary(fit)                 # coefficients, SE, t, p, residual SE, R^2, F
+SSE <- sum(resid(fit)^2)
+c(MSE = SSE / (length(x) - 2), sigma2_mle = SSE / length(x))
+predict(fit, data.frame(x = 65), interval = "confidence", level = 0.90)
+```
+
+```r
+# --- Diagnostic plots (four-panel base R) ---
+par(mfrow = c(2, 2))
+plot(fit)                    # residuals vs fitted, Q-Q, scale-location, leverage
+par(mfrow = c(1, 1))
+```
+
+---
+
 ## Summary
 
 $$
