@@ -437,6 +437,35 @@ def IsNewtonian : Prop :=
 
 The value of the exercise is that **you cannot cheat**: any assumption you have been making implicitly becomes a term you must write down, a hypothesis you must assume, or a proof obligation you must discharge. See [Chapter 6](taylor-chapter-6-calculus-of-variations.qmd), [Chapter 7](taylor-chapter-7-lagrange-equations.qmd), and [Chapter 13](taylor-chapter-13-hamiltonian-mechanics.qmd) for the concepts formalized here, each with its own Lean section.
 
+### Existing Lean 4 Libraries and Open-Source Formalizations
+
+Most of the **foundational structures** Taylor's chapters rely on already exist in Lean 4; a dedicated *mechanics* layer on top is what is mostly missing.
+
+| Topic (Taylor chapter) | Lean 4 resource | Status |
+|---|---|---|
+| affine space / torsors (1–2) | `NormedAddTorsor`, `AffineSpace`, `AffineIsometryEquiv` | Mathlib |
+| Euclidean spaces, inner products, frames | `EuclideanSpace`, `InnerProductSpace`, `Basis` | Mathlib |
+| derivatives and smoothness (5–7) | `HasFDerivAt`, `fderiv`, `deriv`, `ContDiff`, `ContMDiff` | Mathlib |
+| manifolds, tangent/cotangent bundles (7, 10, 13) | `ModelWithCorners`, `ChartedSpace`, `TangentSpace`, `TangentBundle`, `CotangentSpace` | Mathlib |
+| ODE existence/uniqueness, Picard–Lindelöf (1, 12) | `IsPicardLindelof`, ODE solution theory | Mathlib |
+| Lie groups and smooth actions (10, 13) | `LieGroup`, `LieAlgebra`, `ContMDiff` | Mathlib; PhysLean |
+| rotations, `SO(3)`, quaternions (10) | `Matrix.SpecialOrthogonalGroup`, quaternions | Mathlib |
+| measure and integration (statistical mechanics, probability) | `MeasureTheory`, `Measure`, `ProbabilityTheory` | Mathlib |
+| Lorentz group and Minkowski space (15) | `LorentzGroup` | Mathlib; PhysLean |
+| quantum mechanics (motivation for 13) | Hilbert spaces, operators, spectral theory | Mathlib; quantum-information projects |
+| **classical mechanics proper (5–13)** | **no comprehensive library** | gap |
+| **variational calculus / Euler–Lagrange operator** | **not available off the shelf** | gap |
+| **symplectic and Poisson geometry (13)** | only the matrix group `SymplecticGroup`; no symplectic *manifold* theory | research-level gap |
+
+**The principal projects.**
+
+- **Mathlib** (`leanprover-community/mathlib4`) is the substrate: affine/torsor geometry, Euclidean and normed spaces, Fréchet calculus, manifolds and bundles, Lie theory, ODE theory, and measure theory all live here. Almost every type in the conversion recipe above is a Mathlib type.
+- **PhysLean** (`github.com/HEPLean/PhysLean`) is the main Lean 4 **physics** formalization project, aiming to formalize fundamental physics (spacetime, classical and quantum fields). It is the natural place from which to extend toward Taylor's material, though its emphasis is modern fundamental physics rather than a textbook course in classical mechanics.
+- **Quantum-information projects** (community Lean 4 libraries formalizing quantum computation and information) build on Mathlib's Hilbert-space and operator theory; these matter for the spectral and phase-space ideas of Chapter 13.
+- **Prior art outside Lean:** HOL Light and Isabelle/HOL (via the Archive of Formal Proofs) have formalized multivariable calculus and some physics/mechanics, and Coq/MathComp has substantial analysis. The Lean 4 ecosystem is the most active current target, but the coverage claims and project names change quickly.
+
+**Practical implication.** Formalizing Taylor Chapters 6–7 means (1) reusing Mathlib's affine/Euclidean/calculus/manifold APIs, (2) **building** the variational-calculus and Euler–Lagrange layer, which is not yet provided, and (3) for Chapter 13 **building** the symplectic/Poisson structure, currently a research-level gap. PhysLean and the quantum-information libraries supply adjacent pieces. In other words, the *assumptions* are formalized already; the *mechanics* built on top of them is the open work.
+
 ---
 
 ## Laboratory: The Assumptions, Made Concrete
