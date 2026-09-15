@@ -532,6 +532,135 @@ print("=== LOG-RADIAL u = ln(r/r0) ===")
 print("  u  :", sp.factor(EL_u), " = 0   ->  m r^2 (u'' + u'^2) = -dU/du")
 ```
 
+### Conservative Forces: $\mathbf F = -\nabla U$ in Curvilinear Coordinates
+
+A conservative force is the negative gradient of a potential, and the gradient takes a scale-factor form in every orthogonal system:
+$$\nabla U = \frac{1}{h_1}\frac{\partial U}{\partial q_1}\hat{\mathbf e}_1 + \frac{1}{h_2}\frac{\partial U}{\partial q_2}\hat{\mathbf e}_2 + \frac{1}{h_3}\frac{\partial U}{\partial q_3}\hat{\mathbf e}_3.$$
+
+| System | Scale factors $h_i$ | $\mathbf F = -\nabla U$ |
+|---|---|---|
+| Cartesian $(x,y,z)$ | $1,1,1$ | $-\big(\partial_xU,\ \partial_yU,\ \partial_zU\big)$ |
+| Polar $(r,\phi)$ | $1,\ r$ | $-\partial_rU\,\hat{\mathbf e}_r - \dfrac{1}{r}\partial_\phi U\,\hat{\mathbf e}_\phi$ |
+| Cylindrical $(\rho,\phi,z)$ | $1,\ \rho,\ 1$ | $-\partial_\rho U\,\hat{\mathbf e}_\rho - \dfrac{1}{\rho}\partial_\phi U\,\hat{\mathbf e}_\phi - \partial_zU\,\hat{\mathbf e}_z$ |
+| Spherical $(r,\theta,\phi)$ | $1,\ r,\ r\sin\theta$ | $-\partial_rU\,\hat{\mathbf e}_r - \dfrac{1}{r}\partial_\theta U\,\hat{\mathbf e}_\theta - \dfrac{1}{r\sin\theta}\partial_\phi U\,\hat{\mathbf e}_\phi$ |
+
+**A crucial subtlety.** In Lagrange's equations the **generalized force** is
+$$Q_i = \frac{\partial\mathcal L}{\partial q_i} = -\frac{\partial U}{\partial q_i},$$
+whereas the **physical force component** along the coordinate direction is
+$$F_{(i)} = \mathbf F\cdot\hat{\mathbf e}_i = -\frac{1}{h_i}\frac{\partial U}{\partial q_i} = \frac{Q_i}{h_i}.$$
+The two differ by the scale factor $h_i$. This is exactly why the radial Lagrange equation involves the *generalized* force $-\partial U/\partial r$ while the force component is also $-\partial U/\partial r$ (here $h_r=1$), but the angular equation involves $-\partial U/\partial\phi$ while the physical azimuthal force is $-\tfrac1r\partial U/\partial\phi$. The power relation $Q_i\dot q_i = F_{(i)}(h_i\dot q_i)=F_{(i)}\cdot(\text{physical displacement})$ keeps the units consistent.
+
+### Worked Example: The Double Pendulum
+
+A second pendulum hangs from the bob of a first. With angles $\theta_1,\theta_2$ from the vertical, masses $m_1,m_2$, and lengths $l_1,l_2$,
+$$T = \tfrac12(m_1+m_2)l_1^2\dot\theta_1^2 + \tfrac12 m_2 l_2^2\dot\theta_2^2 + m_2 l_1l_2\dot\theta_1\dot\theta_2\cos(\theta_1-\theta_2),$$
+$$U = -(m_1+m_2)g l_1\cos\theta_1 - m_2 g l_2\cos\theta_2,\qquad \mathcal L = T-U.$$
+The Euler–Lagrange equations are the two coupled, **nonlinear** equations
+$$(m_1+m_2)l_1\ddot\theta_1 + m_2 l_2\big[\ddot\theta_2\cos(\theta_1-\theta_2)+\dot\theta_2^2\sin(\theta_1-\theta_2)\big] + (m_1+m_2)g\sin\theta_1 = 0,$$
+$$m_2 l_2\ddot\theta_2 + m_2 l_1\big[\ddot\theta_1\cos(\theta_1-\theta_2)-\dot\theta_1^2\sin(\theta_1-\theta_2)\big] + m_2 g\sin\theta_2 = 0.$$
+The kinetic energy has a **cross term** $\propto\dot\theta_1\dot\theta_2$ because the metric $M_{ij}$ is non-diagonal: the two degrees of freedom are coupled by geometry. The double pendulum is the canonical example of a **deterministic chaotic** system — the Lagrangian is simple, but the flow is not integrable.
+
+```{python}
+#| label: fig-double-pendulum
+#| fig-cap: "Double pendulum. Left: θ₁(t) for two initial conditions differing by 10⁻⁶ rad; the trajectories track closely, then diverge completely — the butterfly effect in a conservative mechanical system. Right: the separation on a log scale grows exponentially until it saturates. The Lagrangian dynamics is exact and energy is conserved (drift ~10⁻⁸), yet long-term prediction is impossible."
+
+import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+
+m1 = m2 = l1 = l2 = 1.0
+g = 9.81
+
+def derivs(t, y):
+    th1, w1, th2, w2 = y
+    d = th1 - th2
+    den = 2*m1 + m2 - m2*np.cos(2*d)
+    dw1 = (-g*(2*m1+m2)*np.sin(th1) - m2*g*np.sin(th1-2*th2)
+           - 2*np.sin(d)*m2*(w2**2*l2 + w1**2*l1*np.cos(d))) / (l1*den)
+    dw2 = (2*np.sin(d)*(w1**2*l1*(m1+m2) + g*(m1+m2)*np.cos(th1)
+           + w2**2*l2*m2*np.cos(d))) / (l2*den)
+    return [w1, dw1, w2, dw2]
+
+def energy(y):
+    th1, w1, th2, w2 = y
+    T = (0.5*(m1+m2)*l1**2*w1**2 + 0.5*m2*l2**2*w2**2
+         + m2*l1*l2*w1*w2*np.cos(th1-th2))
+    U = -(m1+m2)*g*l1*np.cos(th1) - m2*g*l2*np.cos(th2)
+    return T + U
+
+t = np.linspace(0, 20, 4000)
+A = solve_ivp(derivs, [0, 20], [np.pi/2, 0, np.pi/2, 0], t_eval=t, rtol=1e-10, atol=1e-12)
+B = solve_ivp(derivs, [0, 20], [np.pi/2 + 1e-6, 0, np.pi/2, 0], t_eval=t, rtol=1e-10, atol=1e-12)
+sep = np.abs(A.y[0] - B.y[0])
+E = np.array([energy(A.y[:, i]) for i in range(A.y.shape[1])])
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.7))
+axes[0].plot(t, A.y[0], color="#2980b9", lw=1, label=r"$\theta_1(0)=\pi/2$")
+axes[0].plot(t, B.y[0], color="#e74c3c", lw=1, label=r"$\theta_1(0)=\pi/2+10^{-6}$")
+axes[0].set_title("Double pendulum: two nearby initial conditions")
+axes[0].set_xlabel("time"); axes[0].set_ylabel(r"$\theta_1$"); axes[0].legend(); axes[0].grid(alpha=0.3)
+axes[1].semilogy(t, np.maximum(sep, 1e-12), color="#8e44ad")
+axes[1].set_title("Exponential divergence (chaos)")
+axes[1].set_xlabel("time"); axes[1].set_ylabel("separation"); axes[1].grid(alpha=0.3, which="both")
+plt.tight_layout(); plt.show()
+
+print("=== DOUBLE PENDULUM ===")
+print(f"  energy drift over 20 s : {E.max() - E.min():.2e}  (conserved)")
+print(f"  separation at t=20 s   : {sep[-1]:.4f} rad from a 1e-6 difference")
+print("  exact, conservative dynamics can still be unpredictable in practice.")
+```
+
+### Worked Example: Pendulum in a Moving Vehicle
+
+A pendulum hangs in a vehicle accelerating horizontally with acceleration $a$. Working in the vehicle's (non-inertial) frame, the fictitious force $-ma\,\hat{\mathbf e}_x$ adds a term to the effective potential. With $\mathbf r=(l\sin\theta,\,-l\cos\theta)$,
+$$U_{\text{eff}} = -mg l\cos\theta + ma l\sin\theta,\qquad
+\mathcal L = \tfrac12 ml^2\dot\theta^2 + mgl\cos\theta - mal\sin\theta.$$
+The equation of motion is
+$$l\ddot\theta = -g\sin\theta - a\cos\theta,$$
+with **equilibrium** $\theta_{\text{eq}} = -\arctan(a/g)$: the pendulum hangs backward, tilted against the acceleration. Equivalently, the effective gravity is
+$$g_{\text{eff}} = \sqrt{g^2+a^2},$$
+tilted by $\arctan(a/g)$ from the vertical — a mechanical illustration of the **equivalence principle** (a uniform acceleration is locally indistinguishable from a gravitational field).
+
+- **Constant $a$:** $\mathcal L$ has no explicit time dependence and the pendulum oscillates about the tilted equilibrium.
+- **Time-dependent $a=a(t)$:** $\mathcal L$ acquires explicit $t$, so by the time-dependence identity ($d\mathcal H/dt = -\partial\mathcal L/\partial t$) the energy is **not** conserved — the vehicle pumps energy into the pendulum. This is the driven-pendulum regime.
+
+```{python}
+#| label: fig-moving-vehicle
+#| fig-cap: "Pendulum in a moving vehicle. Left: the tilted equilibrium angle θ_eq = −arctan(a/g) grows with the vehicle's acceleration; the pendulum hangs backward against the acceleration. Right: for a constant acceleration the pendulum oscillates about the tilted equilibrium, while the effective gravity is g_eff = √(g²+a²). This is the mechanical face of the equivalence principle."
+
+import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+
+g, l = 9.81, 1.0
+accs = np.linspace(0, 20, 200)
+
+def motion(t, y, a):
+    th, w = y
+    return [w, -(g*np.sin(th) + a*np.cos(th)) / l]
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.7))
+axes[0].plot(accs, np.degrees(-np.arctan(accs/g)), color="#2980b9", lw=2)
+axes[0].set_title(r"Equilibrium tilt $\theta_{eq}=-\arctan(a/g)$")
+axes[0].set_xlabel("acceleration a (m/s²)"); axes[0].set_ylabel(r"$\theta_{eq}$ (deg)"); axes[0].grid(alpha=0.3)
+
+a = 5.0
+th_eq = -np.arctan(a/g)
+t = np.linspace(0, 20, 2000)
+sol = solve_ivp(motion, [0, 20], [0.0, 0.0], t_eval=t, args=(a,), rtol=1e-9, atol=1e-11)
+axes[1].plot(t, np.degrees(sol.y[0]), color="#e74c3c", lw=1.2)
+axes[1].axhline(np.degrees(th_eq), ls="--", color="#27ae60", label=r"$\theta_{eq}$")
+axes[1].set_title(f"Oscillation about tilted equilibrium (a={a} m/s²)")
+axes[1].set_xlabel("time (s)"); axes[1].set_ylabel(r"$\theta$ (deg)"); axes[1].legend(); axes[1].grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print("=== PENDULUM IN A MOVING VEHICLE ===")
+print(f"  for a = {a} m/s²: theta_eq = {np.degrees(th_eq):.3f} deg, "
+      f"g_eff = {np.hypot(g, a):.4f} m/s²")
+print("  constant a: oscillations about a tilted equilibrium (energy conserved in the reduced L).")
+print("  a = a(t): explicit t in L -> energy is pumped, not conserved.")
+```
+
 ---
 
 ## 7.4 Proof of Lagrange's Equations with Constraints
