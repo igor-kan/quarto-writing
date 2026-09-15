@@ -1,0 +1,544 @@
+---
+title: "Kutner (Applied Linear Regression Models), Chapters 3–11: An Annotated Outline with R and Python Examples"
+subtitle: "A skeleton for the rest of the course — for each topic: the sub-sections, the key formulas, a commented R example, a commented Python example, and a placeholder for the Kutner textbook content to be inserted later (mapped to the STAC67 timeline)"
+author: "Igor Kan"
+date: "2026-09-14"
+categories: [Statistics, Regression, Multiple Regression, R, Python, Course Notes, Outline]
+description: "An outline, not a finished article, for the remaining chapters of Kutner, Nachtsheim, and Neter's Applied Linear Regression Models (multiple regression, the matrix approach, diagnostics, model building and validation, and remedial measures including weighted least squares, ridge regression, and the LASSO). Each topic lists its sub-sections, key formulas, a ready-to-run R example, a matching Python example, and a clearly marked placeholder where the textbook content will be added. A timeline table maps topics to the STAC67 weeks."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 4
+---
+
+::: {.callout-note appearance="simple"}
+**This is an outline, not a finished article.** It is the scaffold for the remaining Kutner material: for every topic it gives the sub-sections to cover, the core formulas, a commented **R** example (the language of the course), a matching **Python** example, and a marked placeholder where the textbook exposition is to be filled in later.
+
+> **Placeholder convention:** each block marked *Textbook content to be added* is where the derivations, worked examples, and problem discussions from Kutner will go.
+:::
+
+::: {.callout-tip collapse="true"}
+### Companion Reading (finished articles)
+- [Kutner Chapter 1: Simple Linear Regression](kutner-chapter-1-linear-regression-one-predictor-variable.qmd)
+- [Kutner Chapter 2: Inferences in Regression and Correlation Analysis](kutner-chapter-2-inferences-in-regression-and-correlation-analysis.qmd)
+- [Probability Theory and Mathematical Probability](../mathematics/probability-theory-and-mathematical-probability.qmd)
+:::
+
+---
+
+## How to Use This Outline
+
+The course (STAC67) follows Kutner's *Applied Linear Regression Models*. Chapters 1–2 are already written up (links above). What remains runs from model diagnostics, through the matrix formulation and multiple regression, to model building, validation, and remedial/shrinkage methods.
+
+For each topic below, fill the placeholder with the textbook content: definitions, derivations, worked examples, and the matching problems. The R and Python snippets are ready scaffolds — run them, read the output, and connect the output to the formulas.
+
+| Week | Topic | Kutner sections |
+|---|---|---|
+| 1 | What regression is; correlation; the SLR model | 1.1–1.3, 2.11 |
+| 2 | Least squares; Gauss–Markov; inference on parameters | 1.4–1.7, 2.1–2.2 |
+| 3 | Sampling distributions; mean-response and prediction intervals; ANOVA; R² | 2.3–2.6, 2.7–2.9 |
+| 4 | F/t tests; **diagnostics and residual plots**; **matrices and random vectors; SLR in matrix form; hat matrix** | **3.1–3.3**, **5.1–5.10** |
+| 5 | Properties of linear functions of random vectors; estimators, fitted values, residuals, predictions | **5.11–5.13**, **6.1–6.4** |
+| 6 | Geometry of least squares; inference for mean/new observation; quadratic forms; overall F test | **6.5–6.8** |
+| 7 | General linear hypothesis; extra sums of squares; **multicollinearity; qualitative predictors** | **7.1–7.6, 8.3** |
+| 9 | One continuous + one categorical predictor; interactions; case study | **8.3–8.6** |
+| 10 | **Polynomial regression; centring**; variable transformations | **8.1–8.2, 3.9** |
+| 11 | **Model selection and validation**; diagnostics of outliers and leverage | **9.1–9.6, 10.1–10.3** |
+| 12 | Influential observations; multicollinearity diagnostics; **weighted least squares** | **10.4–10.5, 11.1** |
+| 13 | **Shrinkage: bias–variance, ridge, LASSO**; project presentations | 11.2 |
+
+---
+
+## Chapter 3 — Diagnostics and Remedial Measures
+
+### Outline
+- residuals vs fitted values, vs each predictor, vs order of the data;
+- normal probability plot of residuals; tests of normality;
+- **lack-of-fit F test** using replicated observations (pure error vs lack of fit);
+- **transformations** (log, square-root, reciprocal, power) to fix non-linearity and non-constant variance;
+- **Box–Cox** method for choosing a power transformation on $Y$;
+- overview of **weighted least squares** and **robust regression** (details in Chapter 11).
+
+### Key formulas
+- Residuals: $e_i = Y_i - \hat Y_i$; standardized residuals $e_i/s$.
+- Lack-of-fit decomposition (with replicates): $SSE = SSPE + SSLF$.
+- Box–Cox family: $Y^{(\lambda)} = (Y^\lambda-1)/\lambda$ for $\lambda\ne0$, $\log Y$ for $\lambda=0$.
+
+> **Textbook content to be added:** Kutner §3.1–3.3, §3.9 — residual analysis theory, the lack-of-fit test, transformation selection, and worked data analysis.
+
+```r
+# --- Diagnostics and a Box-Cox transformation (R) ---
+fit <- lm(y ~ x)
+par(mfrow = c(2, 2))
+plot(fit)                      # 1: resid vs fitted; 2: Normal Q-Q; 3: scale-location; 4: leverage
+par(mfrow = c(1, 1))
+
+# Lack-of-fit F test when there are replicated x values:
+#   full model uses x as a FACTOR (pure error), reduced model uses x as numeric.
+fit_reduced <- lm(y ~ x)
+fit_full    <- lm(y ~ factor(x))
+anova(fit_reduced, fit_full)   # tests E{Y} = b0 + b1 x against a general mean per x-level
+
+library(MASS)
+boxcox(fit, lambda = seq(-1, 1, 0.1))   # profile the Box-Cox lambda
+```
+
+```python
+# --- Diagnostics and Box-Cox-style power search (Python) ---
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+from scipy import stats
+
+X = x.reshape(-1, 1)
+model = LinearRegression().fit(X, y)
+fitted = model.predict(X)
+resid = y - fitted
+
+fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
+axes[0].scatter(fitted, resid); axes[0].axhline(0, color="k", lw=0.8)
+axes[0].set_title("Residuals vs fitted"); axes[0].set_xlabel("fitted"); axes[0].set_ylabel("residual")
+
+# Normal Q-Q plot of standardized residuals
+stats.probplot(resid / resid.std(ddof=2), plot=axes[1])
+axes[1].set_title("Normal Q-Q of residuals")
+plt.tight_layout(); plt.show()
+
+# Profile a power transformation lambda by the residual sum of squares
+for lam in [1.0, 0.5, 0.0, -0.5, -1.0]:
+    yt = np.log(y) if lam == 0 else (y**lam - 1) / lam
+    m = LinearRegression().fit(X, yt)
+    r = yt - m.predict(X)
+    print(f"lambda={lam:+.1f}:  SSE={np.sum(r**2):.4f}")
+```
+
+---
+
+## Chapter 4 — Simultaneous Inferences and Other Topics
+
+### Outline
+- **simultaneous** confidence intervals: Bonferroni and Working–Hotelling;
+- simultaneous estimation of several mean responses;
+- **simultaneous prediction intervals**;
+- **multiple comparisons** among regression coefficients;
+- **inverse prediction** (estimating $X$ from an observed $Y$).
+
+### Key formulas
+- Bonferroni: use $t(1-\alpha/(2g); n-2)$ for $g$ intervals.
+- Working–Hotelling band: $\hat Y_h \pm W\,s\{\hat Y_h\}$, $W^2 = 2F(1-\alpha;2,n-2)$.
+
+> **Textbook content to be added:** Kutner Chapter 4 — the theory of simultaneous inference, examples, and the familywise error-rate discussion.
+
+```r
+# --- Simultaneous intervals (R) ---
+fit <- lm(y ~ x)
+new <- data.frame(x = c(40, 60, 80))
+
+# Separate 95% intervals (not simultaneous):
+predict(fit, new, interval = "confidence", level = 0.95)
+
+# Bonferroni adjustment for g = 3 simultaneous intervals:
+g <- nrow(new)
+alpha <- 0.05
+t_bonf <- qt(1 - alpha / (2 * g), df.residual(fit))   # wider t multiple
+```
+
+```python
+# --- Bonferroni vs Working-Hotelling multiples (Python) ---
+import numpy as np
+from scipy import stats
+
+n, g = 25, 3
+t_bonf = stats.t.ppf(1 - 0.05 / (2 * g), n - 2)          # Bonferroni
+W = np.sqrt(2 * stats.f.ppf(0.95, 2, n - 2))             # Working-Hotelling
+print(f"Bonferroni t multiple : {t_bonf:.3f}")
+print(f"Working-Hotelling W   : {W:.3f}")
+print("Use the larger multiple when you want all intervals to hold simultaneously.")
+```
+
+---
+
+## Chapter 5 — Matrix Approach to Simple Linear Regression
+
+### Outline
+- matrix definitions and operations; special matrices (identity, symmetric, diagonal);
+- linear dependence and rank; inverse; **random vectors**, mean vector, variance–covariance matrix;
+- **simple linear regression in matrix form**: $\mathbf Y = \mathbf X\boldsymbol\beta + \boldsymbol\varepsilon$;
+- least squares solution $\mathbf b = (\mathbf X'\mathbf X)^{-1}\mathbf X'\mathbf Y$;
+- **hat matrix** $\mathbf H = \mathbf X(\mathbf X'\mathbf X)^{-1}\mathbf X'$; fitted values and residuals;
+- ANOVA, expected mean squares, and sampling distributions in matrix form;
+- quadratic forms; the normal, $\chi^2$, $t$, and $F$ distributions.
+
+### Key formulas
+- $\hat{\mathbf Y} = \mathbf H\mathbf Y$, $\mathbf e = (\mathbf I - \mathbf H)\mathbf Y$.
+- $E\{\mathbf b\}=\boldsymbol\beta$, $\sigma^2\{\mathbf b\}=\sigma^2(\mathbf X'\mathbf X)^{-1}$.
+- $SSE = \mathbf Y'(\mathbf I-\mathbf H)\mathbf Y$.
+
+> **Textbook content to be added:** Kutner §5.1–5.13 — the matrix derivations and distribution theory, with examples.
+
+```r
+# --- SLR in matrix form and the hat matrix (R) ---
+X <- model.matrix(~ x)             # design matrix [1, x]
+Y <- y
+b <- solve(t(X) %*% X) %*% t(X) %*% Y     # least squares coefficients
+H <- X %*% solve(t(X) %*% X) %*% t(X)     # hat matrix
+Yhat <- H %*% Y
+e <- Y - Yhat
+SSE <- as.numeric(t(e) %*% e)
+c(b0 = b[1], b1 = b[2], SSE = SSE)
+
+diag(H)                             # leverages h_ii
+```
+
+```python
+# --- SLR in matrix form and the hat matrix (Python) ---
+import numpy as np
+
+X = np.column_stack([np.ones_like(x), x])     # design matrix
+Y = y
+beta = np.linalg.solve(X.T @ X, X.T @ Y)      # normal equations
+H = X @ np.linalg.inv(X.T @ X) @ X.T          # hat matrix
+Yhat = H @ Y
+e = Y - Yhat
+SSE = float(e @ e)
+print("beta:", np.round(beta, 4), "SSE:", round(SSE, 2))
+print("leverages (diag H) range:", round(np.diag(H).min(), 4), "-", round(np.diag(H).max(), 4))
+```
+
+---
+
+## Chapter 6 — Multiple Regression I
+
+### Outline
+- the multiple regression model and its matrix form;
+- least squares estimation; hat matrix; fitted values and residuals;
+- ANOVA table for multiple regression; $R^2$ and adjusted $R^2$;
+- estimation of $\sigma^2$; inference on a single $\beta_k$;
+- interval estimation of the mean response and prediction of a new observation;
+- the **overall F test** $H_0:\beta_1=\cdots=\beta_{p-1}=0$.
+
+### Key formulas
+- $\hat{\boldsymbol\beta}=(\mathbf X'\mathbf X)^{-1}\mathbf X'\mathbf Y$.
+- $s^2\{\hat\beta_k\} = MSE\,[(\mathbf X'\mathbf X)^{-1}]_{kk}$.
+- $R^2 = SSR/SSTO$; adjusted $R^2_a = 1-(1-R^2)\frac{n-1}{n-p}$.
+
+> **Textbook content to be added:** Kutner §6.1–6.8 — the multiple regression derivations, ANOVA, and inferences with worked examples.
+
+```r
+# --- Multiple regression in R ---
+fit <- lm(y ~ x1 + x2 + x3)
+summary(fit)                 # coefficients, SEs, t, p, R^2, F
+anova(fit)                   # ANOVA table
+confint(fit, level = 0.95)   # confidence intervals for the betas
+new <- data.frame(x1 = 5, x2 = 10, x3 = 2)
+predict(fit, new, interval = "confidence", level = 0.95)  # mean response
+predict(fit, new, interval = "prediction", level = 0.95)  # new observation
+
+# Overall F test is reported at the bottom of summary(fit):
+# F = (SSR/(p-1)) / (SSE/(n-p)).
+```
+
+```python
+# --- Multiple regression in Python ---
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
+
+X = np.column_stack([x1, x2, x3])
+model = LinearRegression().fit(X, y)
+yhat = model.predict(X)
+resid = y - yhat
+n, p = X.shape[0], X.shape[1] + 1          # n, number of parameters (incl. intercept)
+
+SSE = float(resid @ resid)
+SSTO = float(((y - y.mean()) ** 2).sum())
+SSR = SSTO - SSE
+F = (SSR / (p - 1)) / (SSE / (n - p))       # overall F test
+print("intercept:", round(model.intercept_, 4), "coefficients:", np.round(model.coef_, 4))
+print(f"R^2 = {r2_score(y, yhat):.4f}   overall F = {F:.3f}")
+```
+
+---
+
+## Chapter 7 — Multiple Regression II
+
+### Outline
+- **extra sums of squares** and the **general linear test**;
+- extra SS for groups of predictors; testing subsets;
+- **multicollinearity**: causes, effects on estimated coefficients, and diagnostics (**VIF**, tolerance, condition number, variance-decomposition proportions);
+- **qualitative predictors** (indicator/dummy variables); models with a mixture of quantitative and qualitative predictors (ANCOVA).
+
+### Key formulas
+- General linear test: $F^* = \dfrac{[SSE(R)-SSE(F)]/(df_R-df_F)}{SSE(F)/df_F}$.
+- Variance inflation factor: $VIF_k = 1/(1-R_k^2)$, where $R_k^2$ comes from regressing $X_k$ on the others; $\text{var}\{\hat\beta_k\}\propto VIF_k$.
+
+> **Textbook content to be added:** Kutner §7.1–7.6 and §8.3 — extra-sums-of-squares theory, the general linear test, and full multicollinearity and qualitative-predictor examples.
+
+```r
+# --- Extra sums of squares, general linear test, VIF, factors (R) ---
+fit_full    <- lm(y ~ x1 + x2 + x3)
+fit_reduced <- lm(y ~ x1)                 # drop x2 and x3
+anova(fit_reduced, fit_full)              # general linear test (extra SS for x2, x3)
+
+library(car)
+vif(fit_full)                             # variance inflation factors (multicollinearity)
+
+# Qualitative predictor: a factor expands into indicator variables automatically.
+fit_ancova <- lm(y ~ x_num + group)       # one continuous + one categorical predictor
+summary(fit_ancova)
+contrasts(group)                          # shows the coding used for the factor
+```
+
+```python
+# --- VIF and categorical predictors in Python ---
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+
+def vif(df):
+    """VIF for each column of df (excluding the intercept)."""
+    out = {}
+    for col in df.columns:
+        others = df.drop(columns=col)
+        r2 = LinearRegression().fit(others, df[col]).score(others, df[col])
+        out[col] = 1 / (1 - r2)
+    return out
+
+df = pd.DataFrame({"x1": x1, "x2": x2, "x3": x3})
+print("VIFs:", {k: round(v, 2) for k, v in vif(df).items()})
+
+# One-hot encode a categorical predictor and fit an ANCOVA-style model.
+df2 = pd.DataFrame({"x_num": x_num, "group": pd.Categorical(group)})
+X = pd.get_dummies(df2, columns=["group"], drop_first=True).astype(float)
+print(X.head())
+```
+
+---
+
+## Chapter 8 — Building the Regression Model: Selection, Qualitative Predictors, Polynomials, Transformations
+
+### Outline
+- **selection of predictor variables**: all-possible regressions, best subsets, forward/backward/stepwise;
+- **criteria**: $R^2$, adjusted $R^2$, $C_p$, AIC, BIC, **PRESS**;
+- **qualitative predictors** and **interaction models**;
+- **polynomial regression** and **centring** predictors to reduce collinearity;
+- **variable transformations**.
+
+### Key formulas
+- Mallow's $C_p = \dfrac{SSE_p}{MSE_{full}} - (n-2p)$.
+- AIC $= n\log(SSE/n) + 2p$; BIC $= n\log(SSE/n) + p\log n$.
+- $PRESS = \sum_i \big(e_i/(1-h_{ii})\big)^2$.
+
+> **Textbook content to be added:** Kutner §8.1–8.6, §3.9 — selection procedures, criteria, interaction and polynomial models, and transformations, with worked case studies.
+
+```r
+# --- Model selection, polynomial terms, interactions (R) ---
+library(leaps)
+best <- regsubsets(y ~ ., data = dat, nvmax = 5)
+summary(best)                    # best subsets by R^2, adj-R^2, Cp, BIC
+
+fit0 <- lm(y ~ 1, data = dat)
+fit_all <- lm(y ~ ., data = dat)
+step(fit0, scope = formula(fit_all), direction = "both")   # stepwise (AIC)
+
+# Polynomial with centred predictor (reduces collinearity):
+fit_poly <- lm(y ~ poly(x, 2, raw = FALSE))
+# Interaction between a continuous and a categorical predictor:
+fit_int <- lm(y ~ x_num * group)
+```
+
+```python
+# --- Best-subset search and polynomial/interaction features (Python) ---
+import itertools
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
+def best_subset(X, y, names, k):
+    best = None
+    for combo in itertools.combinations(range(X.shape[1]), k):
+        Xi = X[:, combo]
+        m = LinearRegression().fit(Xi, y)
+        sse = float(((y - m.predict(Xi)) ** 2).sum())
+        if best is None or sse < best[0]:
+            best = (sse, combo)
+    return best
+
+sse, combo = best_subset(X, y, ["x1", "x2", "x3"], 2)
+print("best 2-predictor SSE:", round(sse, 3), "using", combo)
+
+# Centred polynomial features reduce collinearity:
+xc = x - x.mean()
+design = np.column_stack([xc, xc**2])
+```
+
+---
+
+## Chapter 9 — Model Validation
+
+### Outline
+- validation of a regression model: what "valid" means;
+- **data splitting** (training/validation/test);
+- **cross-validation**: leave-one-out and $k$-fold; **PRESS**;
+- the **bootstrap** for estimating prediction error and coefficient uncertainty;
+- overfitting and the need for honest, out-of-sample assessment.
+
+> **Textbook content to be added:** Kutner §9.1–9.6 — validation design, cross-validation and bootstrap theory, and examples.
+
+```r
+# --- Cross-validation and the bootstrap (R) ---
+library(caret)
+ctrl <- trainControl(method = "cv", number = 10)
+cv_model <- train(y ~ ., data = dat, method = "lm", trControl = ctrl)
+cv_model$results                     # RMSE, Rsquared by fold
+
+# Leave-one-out PRESS residuals:
+fit <- lm(y ~ ., data = dat)
+h <- hatvalues(fit)
+press <- sum((resid(fit) / (1 - h))^2)
+press
+```
+
+```python
+# --- k-fold cross-validation (Python) ---
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import KFold, cross_val_score
+
+X = np.column_stack([x1, x2, x3])
+cv = KFold(n_splits=10, shuffle=True, random_state=0)
+rmse = -cross_val_score(LinearRegression(), X, y, cv=cv, scoring="neg_root_mean_squared_error")
+print(f"10-fold RMSE: mean={rmse.mean():.3f}, sd={rmse.std():.3f}")
+```
+
+---
+
+## Chapter 10 — Diagnostics: Outliers, Leverage, and Influence
+
+### Outline
+- **outlying $Y$ observations**: studentized residuals, studentized deleted residuals, Bonferroni limits;
+- **leverage** $h_{ii}$ (hat-matrix diagonal) and high-leverage points;
+- **influence measures**: DFFITS, Cook's distance, DFBETAS;
+- joint detection of outlying $X$ and $Y$;
+- **multicollinearity diagnostics** revisited.
+
+### Key formulas
+- Studentized deleted residual: $t_i = e_i\Big/\Big(s_{(i)}\sqrt{1-h_{ii}}\Big)$.
+- DFFITS: $DFFITS_i = \dfrac{\hat Y_i - \hat Y_{i(i)}}{s_{(i)}\sqrt{h_{ii}}}$.
+- Cook's distance: $D_i = \dfrac{e_i^2}{p\,MSE}\cdot\dfrac{h_{ii}}{(1-h_{ii})^2}$.
+
+> **Textbook content to be added:** Kutner §10.1–10.5 — outlier and influence theory, cut-offs, and worked diagnostic analyses.
+
+```r
+# --- Influence measures (R) ---
+fit <- lm(y ~ ., data = dat)
+influence.measures(fit)          # DFFITS, Cook's D, DFBETAS, hat, etc.
+cooks.distance(fit)
+hatvalues(fit)                   # leverage h_ii
+rstudent(fit)                    # studentized deleted residuals
+
+library(car)
+outlierTest(fit)                 # Bonferroni test for outlying Y
+influencePlot(fit)               # bubble plot: leverage, residual, influence
+```
+
+```python
+# --- Leverage, studentized residuals, Cook's distance (Python) ---
+import numpy as np
+
+X = np.column_stack([np.ones_like(x1), x1, x2, x3])
+H = X @ np.linalg.inv(X.T @ X) @ X.T
+h = np.diag(H)                                 # leverages
+beta = np.linalg.solve(X.T @ X, X.T @ y)
+e = y - X @ beta
+n, p = X.shape
+MSE = float(e @ e) / (n - p)
+
+cooks = (e**2 / (p * MSE)) * (h / (1 - h) ** 2)  # Cook's distance
+print("high leverage points (h > 2p/n):", np.where(h > 2 * p / n)[0])
+print("influential points (Cook's D > 1):", np.where(cooks > 1)[0])
+```
+
+---
+
+## Chapter 11 — Remedial Measures and Shrinkage
+
+### Outline
+- **weighted least squares (WLS)** for non-constant variance $\sigma_i^2$;
+- **ridge regression**: adding a penalty $\lambda\sum\beta_k^2$, the bias–variance trade-off, and choosing $\lambda$ by cross-validation;
+- the **LASSO** (and elastic net): $\ell_1$ penalty, variable selection and sparsity;
+- principal-components regression (briefly);
+- robust regression for outlying observations.
+
+### Key formulas
+- WLS: minimize $\sum w_i (Y_i-\mathbf x_i'\boldsymbol\beta)^2$ with $w_i = 1/\sigma_i^2$.
+- Ridge: $\hat{\boldsymbol\beta}^{ridge} = \arg\min\{\lVert\mathbf Y-\mathbf X\boldsymbol\beta\rVert^2 + \lambda\lVert\boldsymbol\beta\rVert_2^2\}$.
+- LASSO: same with $\lVert\boldsymbol\beta\rVert_1$; elastic net mixes $\ell_1$ and $\ell_2$.
+- Bias–variance: $E[(\hat y-y)^2] = \text{Bias}^2 + \text{Variance} + \sigma^2$.
+
+> **Textbook content to be added:** Kutner §11.1–11.2 — weighted least squares theory, and the shrinkage/bias–variance material (ridge, LASSO, elastic net).
+
+```r
+# --- Weighted least squares and shrinkage (R) ---
+# WLS: supply weights (e.g. inverse variance).
+fit_wls <- lm(y ~ x1 + x2, weights = 1 / variance_estimate)
+summary(fit_wls)
+
+# Ridge, LASSO, elastic net via glmnet (alpha = 0 ridge, 1 lasso).
+library(glmnet)
+Xm <- model.matrix(y ~ x1 + x2 + x3)[, -1]
+set.seed(0)
+cvfit <- cv.glmnet(Xm, y, alpha = 1)      # LASSO with CV-chosen lambda
+coef(cvfit, s = "lambda.min")
+plot(cvfit)                                # CV curve and lambda selection
+
+# Ridge:
+cvfit_ridge <- cv.glmnet(Xm, y, alpha = 0)
+coef(cvfit_ridge, s = "lambda.min")
+```
+
+```python
+# --- Ridge, LASSO, and elastic net with cross-validated regularization (Python) ---
+import numpy as np
+from sklearn.linear_model import RidgeCV, LassoCV, ElasticNetCV
+from sklearn.preprocessing import StandardScaler
+
+X = np.column_stack([x1, x2, x3])
+Xs = StandardScaler().fit_transform(X)       # penalise on a common scale
+alphas = np.logspace(-4, 2, 100)
+
+ridge = RidgeCV(alphas=alphas).fit(Xs, y)
+lasso = LassoCV(alphas=alphas, cv=10, random_state=0).fit(Xs, y)
+enet  = ElasticNetCV(l1_ratio=[0.1, 0.5, 0.9], alphas=alphas, cv=10).fit(Xs, y)
+
+print("ridge alpha:", round(ridge.alpha_, 4), "coefs:", np.round(ridge.coef_, 3))
+print("lasso alpha:", round(lasso.alpha_, 4), "coefs:", np.round(lasso.coef_, 3))
+print("elastic net:", round(enet.alpha_, 4), "l1_ratio:", enet.l1_ratio_)
+```
+
+---
+
+## Study Plan and Deliverables
+
+- **Weeks 2–3:** push residual and interval analysis from Chapters 1–2 into diagnostics (Ch. 3) and simultaneous inference (Ch. 4).
+- **Weeks 4–6:** master the **matrix formulation** (Ch. 5) and multiple regression (Ch. 6) — everything afterward is expressed in that language.
+- **Weeks 7–10:** extra sums of squares, multicollinearity, qualitative and polynomial predictors (Ch. 7–8).
+- **Weeks 11–13:** model validation, diagnostics, and remedial/shrinkage methods (Ch. 9–11).
+- **Project:** pre-approved dataset, groups of ≤ 4, checkpoint EDA + research question, R Markdown report, five-minute presentation. The project grade replaces the exam grade only when it is higher.
+
+> **Textbook content to be added (per topic):** for each chapter above, insert Kutner's definitions, theorem statements, derivations, the worked data analyses, and the end-of-chapter problems. Keep the R/Python snippets and connect each output line to the corresponding formula.
+
+---
+
+## Curated References and Further Reading
+
+1. **Kutner, M., Nachtsheim, C. & Neter, J. (2004).** *Applied Linear Regression Models*, 4th ed. McGraw-Hill/Irwin. (Primary source; chapters 3–11.)
+2. **Sheather, S. J. (2009).** *A Modern Approach to Regression with R.* Springer. (R-centred companion.)
+3. **Kutner, M., Nachtsheim, C., Neter, J. & Li, W. (2004).** *Applied Linear Statistical Models*, 5th ed. McGraw-Hill. (Broader companion with the same data sets.)
+4. **Weisberg, S. (2005).** *Applied Linear Regression*, 3rd ed. Wiley.
+5. **Fox, J. & Weisberg, S. (2019).** *An R Companion to Applied Regression*, 3rd ed. SAGE. (`car` package.)
+6. **James, G., Witten, D., Hastie, T. & Tibshirani, R. (2021).** *An Introduction to Statistical Learning*, 2nd ed. Springer. (Ridge, LASSO, cross-validation.)
+7. **Hastie, T., Tibshirani, R. & Friedman, J. (2009).** *The Elements of Statistical Learning*, 2nd ed. Springer. (Bias–variance, shrinkage.)
+8. **Wickham, H. & Grolemund, G. (2023).** *R for Data Science*, 2nd ed. O'Reilly. (`ggplot2`, `dplyr`.)
