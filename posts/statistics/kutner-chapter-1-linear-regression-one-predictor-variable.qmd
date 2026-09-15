@@ -322,6 +322,137 @@ For the normal error model, $b_0,b_1$ are unbiased, minimum-variance-linear, **c
 
 The full workflow — least squares by hand and by linear algebra, the fitted line and residuals, the six properties, $SSE/MSE$, the MLE, and the sampling behaviour of $b_1$ — is easy to reproduce in Python. No external data files are required.
 
+### Relations between Variables: Functional, Statistical, and Curvilinear
+
+```{python}
+#| label: fig-relations
+#| fig-cap: "Three kinds of relation. (a) A functional relation is exact: every observation lies on the line Y = 2X. (b) A statistical relation is a tendency plus scatter: year-end evaluations rise with midyear evaluations on average, but individual points deviate. (c) A curvilinear statistical relation is still statistical, but the regression curve is not a straight line (steroid level rises then levels off with age)."
+
+# =====================================================================
+# 1.1  FUNCTIONAL, STATISTICAL, AND CURVILINEAR RELATIONS
+# ---------------------------------------------------------------------
+# This cell makes the chapter's first distinction concrete.
+#   * Functional relation : an exact formula, every point on the curve.
+#   * Statistical relation: a systematic tendency PLUS random scatter,
+#                           so points do NOT lie on the curve.
+#   * Curvilinear relation: a statistical relation whose curve is bent.
+# =====================================================================
+import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(0)
+
+# ---- (a) Functional relation: dollar sales = $2 x units sold ----
+units = np.array([75, 25, 130])          # three observed numbers of units
+sales = 2.0 * units                      # the EXACT formula Y = 2X
+xline = np.linspace(0, 150, 100)         # a grid for drawing the line
+
+# ---- (b) Statistical relation: midyear vs year-end evaluations ----
+# We simulate 10 employees. Each year-end score is a linear tendency in
+# the midyear score PLUS independent random scatter (the part of Y that
+# the predictor X does not explain).
+midyear = np.arange(60, 100, 4)          # 10 midyear scores, 60..96
+yearend = 0.7 * midyear + 25 + rng.normal(0, 4, size=midyear.size)
+
+# ---- (c) Curvilinear statistical relation: steroid level vs age ----
+# The mean rises quickly at first, then saturates; we add scatter too.
+age = np.linspace(8, 25, 27)             # 27 healthy females, ages 8..25
+steroid = 5 + 28 * (1 - np.exp(-(age - 8) / 6)) + rng.normal(0, 2, size=age.size)
+
+fig, axes = plt.subplots(1, 3, figsize=(16, 4.8))
+
+# panel (a): functional
+axes[0].plot(xline, 2 * xline, color="#2980b9", label="Y = 2X (exact)")
+axes[0].scatter(units, sales, color="#e74c3c", zorder=3)
+axes[0].set_title("(a) Functional: all points on the line")
+axes[0].set_xlabel("Units sold X"); axes[0].set_ylabel("Sales Y"); axes[0].legend()
+
+# panel (b): statistical (linear tendency + scatter)
+axes[1].scatter(midyear, yearend, color="#8e44ad", zorder=3)
+slope, intercept = np.polyfit(midyear, yearend, 1)   # least squares line
+axes[1].plot(midyear, intercept + slope * midyear, color="#e74c3c",
+             label="line of statistical relationship")
+axes[1].set_title("(b) Statistical: tendency + scatter")
+axes[1].set_xlabel("Midyear X"); axes[1].set_ylabel("Year-end Y"); axes[1].legend()
+
+# panel (c): curvilinear statistical
+axes[2].scatter(age, steroid, color="#27ae60", zorder=3)
+xx = np.linspace(age.min(), age.max(), 200)
+c2 = np.polyfit(age, steroid, 2)                     # quadratic curve
+axes[2].plot(xx, np.polyval(c2, xx), color="#e74c3c", label="curvilinear fit")
+axes[2].set_title("(c) Curvilinear statistical relation")
+axes[2].set_xlabel("Age X"); axes[2].set_ylabel("Steroid Y"); axes[2].legend()
+
+for ax in axes:
+    ax.grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+# A numeric check that matters for (a): the points satisfy the formula exactly.
+print("=== FUNCTIONAL RELATION IS EXACT ===")
+for u, s in zip(units, sales):
+    print(f"  X = {u:3d}: Y = 2X = {s:3.0f}  -> residual = {s - 2*u:.1e}")
+print("\n=== STATISTICAL RELATION HAS SCATTER ===")
+resid = yearend - (intercept + slope * midyear)
+print(f"  residuals range from {resid.min():+.2f} to {resid.max():+.2f} (not zero)")
+print(f"  sum of squared residuals = {(resid**2).sum():.2f} > 0")
+```
+
+### Four Ways to Fit the Same Least Squares Line
+
+```{python}
+# =====================================================================
+# 1.6  FOUR WAYS TO FIT THE SAME LEAST SQUARES LINE
+# ---------------------------------------------------------------------
+# All four methods minimise the SAME criterion
+#     Q(b0, b1) = sum_i (Y_i - b0 - b1 X_i)^2
+# so they must return identical estimates. Seeing them together shows
+# what "least squares" really means and why every software package
+# reports the same numbers.
+# =====================================================================
+import numpy as np
+
+X = np.array([20.0, 55.0, 30.0])     # predictor (age in the persistence study)
+Y = np.array([5.0, 12.0, 10.0])      # response (attempts)
+n = len(X)
+
+# ---- Method 1: closed-form (centred) formulas ----
+# b1 = sum((X-Xbar)(Y-Ybar)) / sum((X-Xbar)^2), then b0 = Ybar - b1 Xbar.
+Xbar, Ybar = X.mean(), Y.mean()
+b1 = np.sum((X - Xbar) * (Y - Ybar)) / np.sum((X - Xbar) ** 2)
+b0 = Ybar - b1 * Xbar
+
+# ---- Method 2: solve the normal equations directly ----
+# Build the design matrix M = [1, X] (a column of ones then the X column).
+# The least squares problem minimises ||Y - M b||^2; the normal equations
+# are (M'M) b = M'Y, which we solve with np.linalg.solve.
+M = np.column_stack([np.ones(n), X])         # n x 2 design matrix
+b_normal = np.linalg.solve(M.T @ M, M.T @ Y)
+
+# ---- Method 3: least squares via QR/SVD ----
+# np.linalg.lstsq uses a QR decomposition (or SVD) and is numerically the
+# most stable; it never squares the conditioning of the problem.
+b_lstsq, *_ = np.linalg.lstsq(M, Y, rcond=None)
+
+# ---- Method 4: gradient descent on Q (numerical optimisation) ----
+# We parametrise Y = c + m (X - Xbar) for better conditioning, then
+# translate back: b0 = c - m*Xbar, b1 = m.
+# Gradients: dQ/dc = -2 sum(resid), dQ/dm = -2 sum((X-Xbar) resid).
+xc = X - Xbar
+c, m, lr = 0.0, 0.0, 1e-3
+for _ in range(200000):
+    resid = Y - (c + m * xc)                  # current residuals
+    c -= lr * (-2 * resid.sum())              # step c downhill
+    m -= lr * (-2 * (xc * resid).sum())       # step m downhill
+b_gd = np.array([c - m * Xbar, m])
+
+print("=== FOUR METHODS FOR THE SAME LEAST SQUARES FIT ===")
+print(f"  1. closed form       : b0 = {b0:.4f}, b1 = {b1:.4f}")
+print(f"  2. normal equations  : b0 = {b_normal[0]:.4f}, b1 = {b_normal[1]:.4f}")
+print(f"  3. lstsq (QR/SVD)    : b0 = {b_lstsq[0]:.4f}, b1 = {b_lstsq[1]:.4f}")
+print(f"  4. gradient descent  : b0 = {b_gd[0]:.4f}, b1 = {b_gd[1]:.4f}")
+print(f"  all four minimise Q  = {np.sum((Y - (b0 + b1*X))**2):.4f}")
+```
+
 ### Least Squares, Fitted Values, and Residuals
 
 ```{python}
@@ -465,6 +596,74 @@ print("  unbiasedness (mean) and min-variance (spread) are exactly the Gauss-Mar
 ## R Companion
 
 The same calculations in base R (R is not installed in the render environment, so these blocks are displayed rather than executed; copy them into R/RStudio to reproduce every number).
+
+```r
+# =====================================================================
+# 1.1  FUNCTIONAL, STATISTICAL, AND CURVILINEAR RELATIONS (base R)
+# ---------------------------------------------------------------------
+# Same three ideas as the Python figure, drawn with base graphics.
+# =====================================================================
+set.seed(0)
+
+# (a) Functional relation: every point satisfies Y = 2X exactly.
+units <- c(75, 25, 130)
+sales <- 2 * units
+plot(units, sales, pch = 19, col = "red", xlim = c(0, 150), ylim = c(0, 300),
+     xlab = "Units sold X", ylab = "Sales Y",
+     main = "(a) Functional: all points on the line")
+abline(a = 0, b = 2, col = "steelblue", lwd = 2)      # the exact line Y = 2X
+
+# (b) Statistical relation: a linear tendency plus random scatter.
+midyear <- seq(60, 96, by = 4)                        # 10 midyear scores
+yearend <- 0.7 * midyear + 25 + rnorm(length(midyear), 0, 4)  # tendency + noise
+plot(midyear, yearend, pch = 19, col = "purple",
+     xlab = "Midyear X", ylab = "Year-end Y",
+     main = "(b) Statistical: tendency + scatter")
+abline(lm(yearend ~ midyear), col = "red", lwd = 2)   # least squares line
+
+# (c) Curvilinear statistical relation: rises then levels off.
+age     <- seq(8, 25, length.out = 27)
+steroid <- 5 + 28 * (1 - exp(-(age - 8) / 6)) + rnorm(length(age), 0, 2)
+plot(age, steroid, pch = 19, col = "darkgreen",
+     xlab = "Age X", ylab = "Steroid Y",
+     main = "(c) Curvilinear statistical relation")
+lines(age, predict(lm(steroid ~ poly(age, 2))), col = "red", lwd = 2)
+```
+
+```r
+# =====================================================================
+# 1.6  FOUR WAYS TO FIT THE SAME LEAST SQUARES LINE (base R)
+# ---------------------------------------------------------------------
+# All four minimise Q(b0, b1) = sum (Y - b0 - b1 X)^2 and must agree.
+# =====================================================================
+X <- c(20, 55, 30)
+Y <- c(5, 12, 10)
+
+# 1. Closed-form (centred) formulas.
+b1 <- sum((X - mean(X)) * (Y - mean(Y))) / sum((X - mean(X))^2)
+b0 <- mean(Y) - b1 * mean(X)
+
+# 2. Solve the normal equations directly: (M'M) b = M'Y.
+M <- cbind(1, X)                        # design matrix with a column of 1s
+b_normal <- solve(t(M) %*% M, t(M) %*% Y)
+
+# 3. lm(), which uses a QR decomposition internally.
+b_lm <- coef(lm(Y ~ X))
+
+# 4. Gradient descent on Q, in a centred parametrisation for conditioning.
+xc <- X - mean(X); c0 <- 0; m <- 0; lr <- 1e-3
+for (i in 1:200000) {
+  resid <- Y - (c0 + m * xc)           # residuals at the current values
+  c0 <- c0 - lr * (-2 * sum(resid))    # step the intercept downhill
+  m  <- m  - lr * (-2 * sum(xc * resid))  # step the slope downhill
+}
+b_gd <- c(b0 = c0 - m * mean(X), b1 = m)
+
+rbind(closed_form = c(b0, b1),
+      normal_eqns = b_normal,
+      lm          = b_lm,
+      grad_descent = b_gd)             # all four rows are identical
+```
 
 ```r
 # --- Persistence study (n = 3): least squares by hand and via lm ---

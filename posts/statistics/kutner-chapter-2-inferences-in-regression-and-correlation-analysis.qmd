@@ -304,6 +304,54 @@ print(f"\n=== POWER (beta1 = 1.5, sigma^2 plan = 2500) ===")
 print(f"  se{{b1}} = {se_plan:.4f}, noncentrality delta = {delta:.2f}, power = {power:.4f}")
 ```
 
+### Coverage of the Interval Procedures
+
+```{python}
+# =====================================================================
+# 2.1/2.3  COVERAGE OF THE 95% CONFIDENCE INTERVAL FOR beta1
+# ---------------------------------------------------------------------
+# "Confidence coefficient .95" is a FREQUENTIST statement: if we draw new
+# data repeatedly with the SAME X levels and form b1 +/- t(.975;n-2) s{b1}
+# every time, then 95% of those intervals contain the true beta1.
+# This simulation verifies that interpretation directly.
+# =====================================================================
+import numpy as np
+from scipy import stats
+
+rng = np.random.default_rng(1)
+
+# Fixed X levels: the model treats X as known constants, held fixed across
+# the repeated samples to which the confidence coefficient refers.
+x = rng.uniform(20, 120, 25)
+Sxx = np.sum((x - x.mean()) ** 2)          # sum of squared deviations of X
+
+# TRUE parameters, used only to generate data. The analyst never knows them.
+beta0_true, beta1_true, sigma = 62.37, 3.5702, 48.8
+
+tcrit = stats.t.ppf(0.975, len(x) - 2)     # t multiple: t(.975; 23) = 2.069
+n_sim, covered = 3000, 0
+
+for _ in range(n_sim):
+    # 1. generate a new response vector from the true model
+    y = beta0_true + beta1_true * x + rng.normal(0, sigma, size=len(x))
+    # 2. fit by least squares
+    M = np.column_stack([np.ones_like(x), x])
+    b = np.linalg.lstsq(M, y, rcond=None)[0]
+    # 3. estimate the slope's standard error s{b1} = sqrt(MSE / Sxx)
+    resid = y - M @ b
+    s2 = resid @ resid / (len(x) - 2)      # MSE
+    se_b1 = np.sqrt(s2 / Sxx)
+    # 4. build the interval and record whether it captured the truth
+    lo, hi = b[1] - tcrit * se_b1, b[1] + tcrit * se_b1
+    covered += (lo <= beta1_true <= hi)
+
+print("=== COVERAGE OF THE 95% CI FOR beta1 ===")
+print(f"  simulations: {n_sim}")
+print(f"  intervals containing beta1: {covered}  ({covered/n_sim:.3f})")
+print("  empirical coverage ~ 0.95, exactly the frequentist meaning of the")
+print("  confidence coefficient: repeated samples, X levels held fixed.")
+```
+
 ### Mean-Response, Prediction, and Working–Hotelling Bands
 
 ```{python}
@@ -343,6 +391,55 @@ for xh in [65, 100]:
 sp3 = np.sqrt(MSE/3 + MSE*(1/n + (100-xbar)**2/Sxx))
 print(f"x=100, mean of m=3: 90% PI = ({419.4-1.714*sp3:.1f}, {419.4+1.714*sp3:.1f})")
 print(f"Working-Hotelling W = {W:.3f} (vs t = 1.714 for the single-level CI)")
+```
+
+### ANOVA from Raw Data and $F = t^2$
+
+```{python}
+# =====================================================================
+# 2.7  ANOVA DECOMPOSITION FROM RAW DATA, AND F = t^2
+# ---------------------------------------------------------------------
+# Build a dataset, then compute SSTO, SSR, SSE, MSR, MSE and F straight
+# from their definitions, and verify that the ANOVA F statistic equals
+# the square of the slope t statistic. This makes the ANOVA table and
+# the F = t^2 equivalence concrete rather than magical.
+# =====================================================================
+import numpy as np
+from scipy import stats
+
+rng = np.random.default_rng(3)
+x = rng.uniform(20, 120, 25)
+y = 62.37 + 3.5702 * x + rng.normal(0, 48.8, len(x))
+n = len(x)
+
+# ---- Fit the model ----
+M = np.column_stack([np.ones_like(x), x])   # design matrix [1, X]
+b = np.linalg.lstsq(M, y, rcond=None)[0]    # coefficients
+yhat = M @ b                                 # fitted values
+ybar = y.mean()
+
+# ---- Sums of squares straight from the definitions ----
+SSTO = np.sum((y - ybar) ** 2)               # total variation about the mean
+SSE  = np.sum((y - yhat) ** 2)               # variation around the fitted line
+SSR  = np.sum((yhat - ybar) ** 2)            # variation explained by the line
+
+# ---- Degrees of freedom and mean squares ----
+df_reg, df_err = 1, n - 2
+MSR, MSE = SSR / df_reg, SSE / df_err
+F = MSR / MSE
+
+# ---- The slope t statistic from the same fit ----
+se_b1 = np.sqrt(MSE / np.sum((x - x.mean()) ** 2))
+tstat = b[1] / se_b1
+
+print("=== ANOVA TABLE (computed from raw data) ===")
+print(f"  SSTO = SSR + SSE ? {SSTO:.3f} = {SSR:.3f} + {SSE:.3f} "
+      f"(difference {SSTO - SSR - SSE:.1e})")
+print(f"  MSR = {MSR:,.1f},  MSE = {MSE:,.1f},  F* = {F:.3f}")
+print(f"  slope t* = {tstat:.3f},  t*^2 = {tstat**2:.3f}")
+print(f"  F* == t*^2 ? {np.isclose(F, tstat**2)}")
+print(f"  R^2 = SSR/SSTO = {SSR/SSTO:.4f}")
+print(f"  p-value (upper-tail F test) = {1 - stats.f.cdf(F, 1, n-2):.3e}")
 ```
 
 ### The F Distribution and the Correlation Model
@@ -392,11 +489,100 @@ print(f"  Fisher z' = {z:.4f}, 95% CI for zeta = [{lo:.3f}, {hi:.3f}]")
 print(f"  back-transformed 95% CI for rho = [{back(lo):.2f}, {back(hi):.2f}]")
 ```
 
+### Bivariate Normal: Conditional Distributions and Correlation Inference
+
+```{python}
+# =====================================================================
+# 2.11  BIVARIATE NORMAL: CONDITIONAL DISTRIBUTIONS AND CORRELATION
+# ---------------------------------------------------------------------
+# When (Y1, Y2) are jointly normal with correlation rho, the conditional
+# distribution of Y1 given Y2 is normal with a LINEAR mean and CONSTANT
+# variance -- i.e. exactly the normal error regression model. We verify
+# that by simulation, then test rho = 0 and build a Fisher z interval.
+# =====================================================================
+import numpy as np
+from scipy import stats
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(5)
+mu = np.array([0.0, 0.0])           # marginal means
+sigma = np.array([1.0, 1.0])        # marginal standard deviations
+rho = 0.6                           # true correlation
+cov = np.array([[sigma[0]**2, rho*sigma[0]*sigma[1]],
+                [rho*sigma[0]*sigma[1], sigma[1]**2]])
+Y = rng.multivariate_normal(mu, cov, size=20000)      # draws of (Y1, Y2)
+
+# Empirical conditional mean/sd of Y1 within thin vertical bands of Y2.
+bands = np.linspace(-2.5, 2.5, 11)
+centers, means, sds = [], [], []
+for i in range(len(bands) - 1):
+    sel = (Y[:, 1] >= bands[i]) & (Y[:, 1] < bands[i + 1])   # a Y2 slice
+    if sel.sum() > 30:
+        centers.append((bands[i] + bands[i + 1]) / 2)
+        means.append(Y[sel, 0].mean())       # conditional mean of Y1
+        sds.append(Y[sel, 0].std())          # conditional sd of Y1
+
+fig, ax = plt.subplots(figsize=(7.5, 6))
+ax.scatter(Y[:3000, 1], Y[:3000, 0], s=4, alpha=0.3, color="#95a5a6", label="samples")
+yy = np.linspace(-3, 3, 100)
+ax.plot(yy, rho * yy, color="#e74c3c", lw=2, label=r"theory: $E[Y_1\mid Y_2]=\rho Y_2$")
+ax.plot(centers, means, "o-", color="#2980b9", label="empirical conditional means")
+ax.set_title("Bivariate normal: conditional means are linear")
+ax.set_xlabel("Y2"); ax.set_ylabel("Y1"); ax.legend(); ax.grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print("=== CONDITIONAL DISTRIBUTIONS: LINEAR MEAN, CONSTANT VARIANCE ===")
+print(f"  theoretical slope = rho = {rho}; conditional sd = sqrt(1-rho^2) = {np.sqrt(1-rho**2):.3f}")
+print(f"  empirical conditional sds across Y2 slices: {np.round(sds, 3).tolist()}")
+
+# ---- Inference on rho from a single sample of n = 25 ----
+x1, x2 = Y[:25, 0], Y[:25, 1]
+r, p = stats.pearsonr(x1, x2)
+print("\n=== CORRELATION INFERENCE (n = 25) ===")
+print(f"  Pearson r = {r:.3f},  t* = {r*np.sqrt(23)/np.sqrt(1-r**2):.3f},  p = {p:.3f}")
+print(f"  Spearman rs = {stats.spearmanr(x1, x2).statistic:.3f}")
+```
+
 ---
 
 ## R Companion
 
 Base R reproduces every inferential result of the chapter (R is not installed here, so these blocks are displayed, not executed).
+
+```r
+# =====================================================================
+# 2.1/2.7  COVERAGE AND THE ANOVA DECOMPOSITION, FROM RAW DATA (base R)
+# =====================================================================
+set.seed(1)
+x   <- runif(25, 20, 120)
+Sxx <- sum((x - mean(x))^2)
+beta0 <- 62.37; beta1 <- 3.5702; sigma <- 48.8   # true (unknown) values
+tcrit <- qt(0.975, 23)                            # t(.975; 23) = 2.069
+
+# (a) Coverage of the 95% CI for beta1 over 3000 repeated samples.
+covered <- 0
+for (i in 1:3000) {
+  y    <- beta0 + beta1 * x + rnorm(25, 0, sigma) # new data, same X levels
+  fit  <- lm(y ~ x)                               # least squares fit
+  ci   <- confint(fit, "x", level = 0.95)         # 95% CI for the slope
+  covered <- covered + (ci[1] <= beta1 && beta1 <= ci[2])
+}
+covered / 3000                                     # ~0.95 (frequentist meaning)
+
+# (b) ANOVA decomposition straight from the raw data.
+y    <- beta0 + beta1 * x + rnorm(25, 0, sigma)    # a fresh sample
+fit  <- lm(y ~ x)
+yhat <- fitted(fit); ybar <- mean(y)
+SSTO <- sum((y - ybar)^2)      # total variation about the mean
+SSE  <- sum((y - yhat)^2)      # error (residual) variation
+SSR  <- sum((yhat - ybar)^2)   # regression (explained) variation
+c(SSTO = SSTO, SSR = SSR, SSE = SSE, check = SSTO - SSR - SSE)
+
+aov_tab <- anova(fit)          # Df, Sum Sq, Mean Sq, F value, Pr(>F)
+aov_tab
+t_stat <- summary(fit)$coefficients["x", "t value"]
+c(F_from_anova = aov_tab["x", "F value"], t_squared = t_stat^2)  # equal
+```
 
 ```r
 # --- Inference for the Toluca slope and intercept from summary results ---
