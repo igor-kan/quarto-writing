@@ -1,0 +1,384 @@
+---
+title: "Limits: The Complete Picture — ε-δ, Topological, Multivariable, and Vector Calculus"
+subtitle: "From Berkeley's 'ghosts of departed quantities' to metric and topological limits, nets and filters, path-dependent multivariable limits, gradient/divergence/curl, and the integral theorems — the single idea that unifies real analysis, topology, and vector calculus"
+author: "Igor Kan"
+date: "2026-09-14"
+categories: [Mathematics, Analysis, Limits, Topology, Multivariable Calculus, Vector Calculus, Real Analysis]
+description: "A comprehensive treatment of the limit concept. It develops the epsilon-delta definition for sequences and functions, the sequential (Heine) criterion, limits in metric and general topological spaces with neighborhoods, limit points, closure, and Hausdorff uniqueness, the generalization to nets and filters, multivariable limits in R^n with path dependence and polar coordinates, iterated versus simultaneous limits, differentiability and the Frechet derivative, partial derivatives, the Jacobian, gradient, divergence, and curl, the integral theorems of Green, Stokes, and the divergence theorem, uniform versus pointwise limits, and interchanging limits, with an executable Python laboratory that visualizes epsilon-delta neighborhoods, path-dependent two-variable limits, and vector fields."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 4
+    number-sections: true
+jupyter: python3
+toc: true
+toc-depth: 4
+number-sections: true
+---
+
+::: {.callout-note appearance="simple"}
+*"And what are these Fluxions? The Velocities of evanescent Increments? … they are neither finite Quantities nor Quantities infinitely small, nor yet nothing. May we not call them the Ghosts of departed Quantities?"* — **George Berkeley, 1734**
+
+Berkeley's attack on Newton's and Leibniz's calculus was fair: the founders manipulated quantities that were "not zero" and then "zero." The limit concept was invented to make that manipulation rigorous — and, generalized, it became the foundation of topology, multivariable calculus, vector calculus, and functional analysis.
+:::
+
+::: {.callout-tip collapse="true"}
+### Companion Treatises in this Series
+- [Cauchy Sequences, Completeness, Weierstrass, and the Convergence of Series](cauchy-completeness-weierstrass-and-series-convergence.qmd)
+- [Infinite-Dimensional Algebra: Spaces of Sequences and Functions](infinite-dimensional-algebra-sequence-and-function-spaces.qmd)
+- [Sequences, Series, and Convergence Tests](sequences-series-and-convergence-tests.qmd)
+- [The Rational Line: Density, Enumeration, Metric Spaces, and Topology](rationals-density-enumeration-metric-spaces-and-topology.qmd)
+- [The Hierarchy of Algebraic Structures and Spaces](hierarchy-of-algebraic-structures-and-spaces.qmd)
+:::
+
+---
+
+## The Idea of a Limit
+
+Informally, $\lim_{x\to a} f(x) = L$ means: *as $x$ gets close to $a$, $f(x)$ gets arbitrarily close to $L$.* Every appearance of "close" hides a quantifier, and the rigor lives in choosing the right quantifiers.
+
+### Why Informality Fails
+
+- $f(x) = (x^2-1)/(x-1)$ is undefined at $x=1$, yet "approaches 2."
+- $g(x)=\sin(1/x)$ as $x\to 0$ never settles.
+- $h(x)=x\sin(1/x)$ as $x\to 0$ gets squeezed to 0 despite infinite oscillation.
+
+Deciding these cases requires a definition that does not mention motion or time.
+
+---
+
+## Limits of Sequences
+
+A **sequence** is a function $a : \mathbb{N} \to \mathbb{R}$, written $(a_n)$. It **converges** to $L$ if for every $\varepsilon > 0$ there is an $N$ such that
+
+$$
+n > N \implies |a_n - L| < \varepsilon.
+$$
+
+We write $a_n \to L$ or $\lim_{n\to\infty} a_n = L$. The order of quantifiers is everything: "for every $\varepsilon$ there exists $N$" is convergence; "there exists $N$ for every $\varepsilon$" is a much stronger (and usually false) claim.
+
+**Basic facts:**
+
+- The limit, if it exists, is **unique** (in $\mathbb{R}$).
+- Limits respect $+,\times,\div$ (when denominators are nonzero).
+- **Squeeze theorem:** if $a_n \le b_n \le c_n$ and $a_n,c_n \to L$, then $b_n \to L$.
+- Every convergent sequence is **bounded**; the converse fails ($(-1)^n$).
+
+### Monotone and Cauchy
+
+A bounded monotone sequence always converges (the **monotone convergence theorem**) — a completeness result. A sequence is **Cauchy** if for every $\varepsilon>0$ there is $N$ with $m,n>N \implies |a_m-a_n|<\varepsilon$. In $\mathbb{R}$, Cauchy $\iff$ convergent; in $\mathbb{Q}$ they differ. This distinction is the subject of the [companion article on completeness](cauchy-completeness-weierstrass-and-series-convergence.qmd).
+
+---
+
+## Limits of Functions: ε-δ
+
+For $f$ defined near (but not necessarily at) $a$:
+
+$$
+\lim_{x\to a} f(x) = L \quad\stackrel{\text{def}}{\iff}\quad
+\forall \varepsilon>0\ \exists \delta>0:\ 0<|x-a|<\delta \implies |f(x)-L|<\varepsilon.
+$$
+
+The condition $0<|x-a|$ excludes $a$ itself, which is why the limit can exist when $f(a)$ is undefined or different — the essence of a **removable discontinuity**.
+
+**Equivalent sequential (Heine) criterion:**
+
+$$
+\lim_{x\to a} f(x)=L \iff \text{for every sequence } x_n\to a \text{ with } x_n\ne a,\ f(x_n)\to L.
+$$
+
+This equivalence is powerful: any pair of sequences approaching $a$ that give different limits proves the limit does not exist (used to show $\sin(1/x)$ has no limit at 0).
+
+**One-sided limits** restrict $x$ to $x>a$ or $x<a$; the two-sided limit exists iff both sides exist and agree.
+
+---
+
+## From Metric to Topological Limits
+
+The $\varepsilon$-$\delta$ definition secretly uses a **distance**. Replacing distance with "nearness" gives the topological definition.
+
+### Metric Spaces
+
+A **metric space** $(X,d)$ replaces $|\cdot|$ with a distance $d$. Then $x_n\to x$ iff $d(x_n,x)\to 0$, and $\lim_{x\to a} f(x)=L$ iff
+
+$$
+\forall \varepsilon>0\ \exists \delta>0:\ 0<d(x,a)<\delta \implies d(f(x),L)<\varepsilon.
+$$
+
+### Topological Spaces
+
+A **topological space** is a set $X$ with a collection of **open sets** satisfying: $\varnothing$ and $X$ are open; arbitrary unions of open sets are open; finite intersections of open sets are open. A **neighborhood** of $p$ is any set containing an open set around $p$. Then:
+
+$$
+\lim_{x\to a} f(x) = L \quad\iff\quad \text{for every neighborhood } V \text{ of } L,\ f^{-1}(V) \text{ contains a punctured neighborhood of } a.
+$$
+
+For sequences: $x_n \to x$ iff every neighborhood of $x$ contains all but finitely many $x_n$.
+
+### Limit Points, Closure, and Continuity
+
+- $p$ is a **limit point** of $S$ if every punctured neighborhood of $p$ meets $S$.
+- The **closure** $\overline{S}$ is $S$ together with its limit points.
+- $f$ is **continuous** at $a$ iff $\lim_{x\to a}f(x)=f(a)$, equivalently iff $f^{-1}(V)$ is open for every open $V$ (the **topological definition of continuity**).
+
+### Uniqueness Requires Hausdorff
+
+Limits are unique in **Hausdorff** spaces: any two points have disjoint neighborhoods. In a non-Hausdorff space, a sequence can converge to two different points. (The Zariski topology of algebraic geometry is famously non-Hausdorff, so this is not merely pathology.)
+
+### Beyond Sequences: Nets and Filters
+
+Sequences are inadequate in general topological spaces, because a topology may not be "first-countable." Two equivalent generalizations recover the full theory:
+
+- **Nets** replace $\mathbb{N}$ with any **directed set** $(D,\le)$ — an index set where any two elements have an upper bound.
+- **Filters** are families of sets closed under supersets and finite intersections. A **filter converges** to $x$ if it contains every neighborhood of $x$.
+
+Both make "limit" meaningful in *any* topological space and underlie the most general definitions of continuity, compactness, and convergence. In **uniform spaces** — where we keep a notion of "uniform closeness" without a metric — the Cauchy condition is best defined via **Cauchy filters** and **Cauchy nets**, which is why completeness is fundamentally a uniform notion.
+
+---
+
+## Multivariable Limits
+
+In $\mathbb{R}^n$, the definitions survive verbatim once we use the Euclidean norm $\lVert x\rVert$:
+
+$$
+\lim_{x\to a} f(x)=L \iff \forall\varepsilon>0\ \exists\delta>0:\ 0<\lVert x-a\rVert<\delta \implies |f(x)-L|<\varepsilon.
+$$
+
+But the geometry changes drastically: **in $\mathbb{R}^n$ there are infinitely many directions and paths to a point.** A limit exists only if $f$ approaches the same value along **every** path.
+
+### Path Dependence
+
+The canonical example: $f(x,y)=\dfrac{xy}{x^2+y^2}$ near the origin. Along a line $y=mx$,
+
+$$
+f(x,mx)=\frac{mx^2}{x^2+m^2x^2}=\frac{m}{1+m^2},
+$$
+
+which depends on $m$. Along the $x$-axis it is $0$, along $y=x$ it is $1/2$. Hence **the limit does not exist** — even though iterated limits may agree.
+
+### Iterated vs Simultaneous Limits
+
+The **iterated limits** $\lim_{x\to0}\lim_{y\to0} f$ and $\lim_{y\to0}\lim_{x\to0} f$ can exist and be equal while the **simultaneous limit** $\lim_{(x,y)\to(0,0)} f$ does not. The simultaneous limit is the real object; iterated limits are strictly weaker.
+
+A useful sufficient tool is **polar coordinates**: write $(x,y)=r(\cos\theta,\sin\theta)$ and ask whether $f$ tends to $L$ as $r\to0$ **uniformly in $\theta$**. If $f = g(r)\,h(\theta)$ with $h$ bounded and $g(r)\to0$, the limit is $0$. If the $\theta$-dependence fails to vanish, the limit fails to exist.
+
+### Continuity in $\mathbb{R}^n$
+
+Operations (sums, products, compositions) preserve continuity; the topological characterization (preimages of open sets are open) is unchanged. Compactness yields the **extreme value theorem** and uniform continuity in $\mathbb{R}^n$ just as in $\mathbb{R}$.
+
+---
+
+## Vector Calculus as Limits
+
+Vector calculus is the study of how scalar and vector fields change, built entirely from limits.
+
+### Derivatives
+
+- **Partial derivative:** $\partial f/\partial x_i$ differentiates along one axis.
+- **Directional derivative:** $D_u f(a) = \lim_{t\to0}\frac{f(a+tu)-f(a)}{t}$.
+- **Differentiability:** $f$ is differentiable at $a$ if there is a linear map $A$ (the **Fréchet derivative**, the Jacobian matrix $Df(a)$) with
+
+$$
+\lim_{h\to0}\frac{\lVert f(a+h)-f(a)-A h\rVert}{\lVert h\rVert}=0.
+$$
+
+Existence of all partial derivatives does **not** imply differentiability; existence of **continuous** partials does.
+
+- **Gradient:** $\nabla f$ — the direction of steepest ascent; $D_u f=\nabla f\cdot u$.
+- **Jacobian:** the matrix of first partials; the chain rule becomes matrix multiplication.
+
+### The Differential Operators
+
+For $F=(P,Q,R)$ and scalar $f$:
+
+$$
+\nabla f = \left(\partial_x f,\ \partial_y f,\ \partial_z f\right),\qquad
+\nabla\cdot F = \partial_x P+\partial_y Q+\partial_z R,\qquad
+\nabla\times F = \det\begin{pmatrix}\hat i&\hat j&\hat k\\ \partial_x&\partial_y&\partial_z\\ P&Q&R\end{pmatrix}.
+$$
+
+Every one of these is a limit: divergence is a limit of flux per unit volume, curl is a limit of circulation per unit area:
+
+$$
+\nabla\cdot F(p)=\lim_{V\to p}\frac{1}{\operatorname{vol}(V)}\oint_{\partial V}F\cdot n\,dS,\qquad
+(\nabla\times F)(p)\cdot n=\lim_{A\to p}\frac{1}{\operatorname{area}(A)}\oint_{\partial A}F\cdot dr.
+$$
+
+### The Integral Theorems
+
+These limit-based local operators globalize into the three great theorems:
+
+- **Green's theorem** (plane): $\oint_{\partial D}(P\,dx+Q\,dy)=\iint_D(\partial_x Q-\partial_y P)\,dA$.
+- **Stokes' theorem:** $\oint_{\partial S}F\cdot dr=\iint_S(\nabla\times F)\cdot n\,dS$.
+- **Divergence theorem:** $\oint_{\partial V}F\cdot n\,dS=\iiint_V(\nabla\cdot F)\,dV$.
+
+All three are special cases of the **generalized Stokes theorem** $\int_M d\omega=\int_{\partial M}\omega$ on manifolds, in which the fundamental theorem of calculus, Green, Stokes, and the divergence theorem are one statement. See [differential forms and generalized Stokes](analysis-16-differential-forms-generalized-stokes.qmd).
+
+---
+
+## Uniform vs Pointwise Limits
+
+For sequences of functions $f_n$, there are two notions:
+
+- **Pointwise:** for each fixed $x$, $f_n(x)\to f(x)$.
+- **Uniform:** $\sup_x |f_n(x)-f(x)|\to0$ — the **same** $N$ works for all $x$.
+
+Uniform convergence preserves continuity, integrability, and (under conditions) differentiability; pointwise convergence does not. The example $f_n(x)=x^n$ on $[0,1]$ converges pointwise to a discontinuous limit (0 for $x<1$, 1 at $x=1$) — showing pointwise limits can break continuity — but converges uniformly on every $[0,1-\varepsilon]$. **Interchanging limits** ($\lim\int=\int\lim$, $\lim f_n'=(\lim f_n)'$) requires uniform hypotheses, a theme developed with the Weierstrass M-test in the [completeness article](cauchy-completeness-weierstrass-and-series-convergence.qmd).
+
+---
+
+## Laboratory: Visualizing Limits
+
+### ε-δ and Removable Singularity
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0.5, 1.5, 400)
+f = (x**2 - 1) / (x - 1)
+
+fig, ax = plt.subplots(figsize=(8.5, 5))
+ax.plot(x, f, color="#2980b9", label=r"$f(x)=(x^2-1)/(x-1)$")
+ax.plot([1], [2], "o", mfc="white", mec="#e74c3c", mew=2, label="hole at (1, 2)")
+for eps, col in [(0.4, "#27ae60"), (0.2, "#e67e22")]:
+    ax.axhspan(2 - eps, 2 + eps, color=col, alpha=0.10)
+    ax.annotate(f"ε={eps}", (0.55, 2 + eps), color=col, fontsize=9)
+ax.axvline(1, color="#888", ls="--", lw=0.8)
+ax.set_title(r"$\lim_{x\to1}(x^2-1)/(x-1)=2$ despite a hole")
+ax.set_xlabel("x"); ax.set_ylabel("f(x)"); ax.legend(); ax.grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print("=== EPSILON-DELTA AT a=1, L=2 ===")
+for eps in [0.5, 0.2, 0.1, 0.05]:
+    # for this f, |f-2|=|x-1|, so delta = eps works
+    delta = eps
+    print(f"  eps={eps:>5}: delta={delta:.3f} works (|f(x)-2| = |x-1|)")
+```
+
+### Path-Dependent Multivariable Limit
+
+```{python}
+#| label: fig-paths
+#| fig-cap: "Path dependence in R^2. Left: the surface f(x,y)=xy/(x^2+y^2), which is constant along each ray y=mx but takes a different value for every slope m. Right: slices along rays of different slope all approach different limits as r→0, so the simultaneous limit at the origin does not exist — even though both iterated limits are 0."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+n = 400
+xs = np.linspace(-1, 1, n)
+X, Y = np.meshgrid(xs, xs)
+R2 = X**2 + Y**2
+Z = np.divide(X * Y, R2, out=np.zeros_like(X), where=R2 > 1e-12)
+
+im = axes[0].imshow(Z, extent=[-1, 1, -1, 1], origin="lower", cmap="RdBu_r", vmin=-0.5, vmax=0.5)
+axes[0].set_title(r"$f(x,y)=xy/(x^2+y^2)$")
+axes[0].set_xlabel("x"); axes[0].set_ylabel("y")
+plt.colorbar(im, ax=axes[0], fraction=0.046)
+
+r = np.linspace(1e-4, 1.0, 200)
+for m, col in [(0, "#27ae60"), (0.5, "#2980b9"), (1, "#e74c3c"), (2, "#8e44ad")]:
+    axes[1].plot(r, m / (1 + m**2) * np.ones_like(r), color=col, label=f"y={m}x → {m/(1+m**2):.2f}")
+axes[1].set_title("Value along ray y=mx (constant, depends on m)")
+axes[1].set_xlabel("r → 0"); axes[1].set_ylabel("f"); axes[1].legend(); axes[1].grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+```
+
+### Vector Fields: Gradient, Divergence, Curl
+
+```{python}
+#| label: fig-vectorfields
+#| fig-cap: "Two vector fields and their differential operators. Left: F=(−y, x) is a pure rotation — divergence 0 (incompressible) and curl 2 (constant vorticity). Right: F=(x, y) is a pure source — divergence 2 and curl 0. Divergence and curl are the limits of flux and circulation per unit area, and they measure the two independent ways a field can vary."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+g = np.linspace(-2, 2, 17)
+X, Y = np.meshgrid(g, g)
+
+fig, axes = plt.subplots(1, 2, figsize=(12.5, 5.5))
+fields = [(-Y, X, r"$F=(-y,\;x)$:  div=0, curl=2"),
+          (X, Y, r"$F=(x,\;y)$:  div=2, curl=0")]
+for ax, (U, V, title) in zip(axes, fields):
+    speed = np.hypot(U, V)
+    ax.quiver(X, Y, U, V, speed, cmap="viridis", pivot="mid")
+    ax.set_title(title); ax.set_aspect("equal"); ax.grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+def numerical_div(p, q, x, y, h=1e-4):
+    return (p(x + h, y) - p(x - h, y)) / (2 * h) + (q(x, y + h) - q(x, y - h)) / (2 * h)
+
+def numerical_curl(p, q, x, y, h=1e-4):
+    return (q(x + h, y) - q(x - h, y)) / (2 * h) - (p(x, y + h) - p(x, y - h)) / (2 * h)
+
+print("=== NUMERICAL DIVERGENCE AND CURL AT (1, 0.5) ===")
+for name, (p, q, exact_div, exact_curl) in {
+    "F=(-y, x)": (lambda x, y: -y, lambda x, y: x, 0, 2),
+    "F=(x, y)": (lambda x, y: x, lambda x, y: y, 2, 0),
+}.items():
+    d = numerical_div(p, q, 1.0, 0.5)
+    c = numerical_curl(p, q, 1.0, 0.5)
+    print(f"  {name:12s}: div≈{d:+.3f} (exact {exact_div}),  curl≈{c:+.3f} (exact {exact_curl})")
+```
+
+### Pointwise vs Uniform Convergence
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, 1, 500)
+fig, ax = plt.subplots(figsize=(9, 5))
+for n, col in [(1, "#bdc3c7"), (2, "#95a5a6"), (5, "#3498db"), (20, "#2980b9"), (100, "#e74c3c")]:
+    ax.plot(x, x**n, color=col, label=f"n={n}")
+ax.axhline(0, color="k", lw=0.8)
+ax.plot([1], [1], "ko")
+ax.set_title(r"$f_n(x)=x^n$: pointwise limit is discontinuous, uniform only on $[0,1-\varepsilon]$")
+ax.set_xlabel("x"); ax.set_ylabel(r"$x^n$"); ax.legend(); ax.grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print("=== sup |f_n(x) - 0| on [0, 1-eps] ===")
+for eps in [0.1, 0.01]:
+    for n in [10, 50, 200]:
+        print(f"  eps={eps:<5} n={n:>3}: sup = {(1-eps)**n:.3e}")
+    print()
+print("  on [0,1] the sup is 1 for every n -> no uniform convergence to 0;")
+print("  the pointwise limit at x=1 is 1, so the limit function is discontinuous.")
+```
+
+The laboratory shows the three faces of the same idea: a **local** approximation (ε-δ), a **geometric** notion of nearness (topology), and the **operators** that measure how fields change. In every case, the content of "limit" is a quantifier statement about what happens near, not at, a point.
+
+---
+
+## Summary
+
+$$
+\begin{aligned}
+&\textbf{Sequence: } && a_n\to L \iff \forall\varepsilon>0\ \exists N:\ n>N \Rightarrow |a_n-L|<\varepsilon. \\[3pt]
+&\textbf{Function: } && \lim_{x\to a}f(x)=L \iff \forall\varepsilon\ \exists\delta:\ 0<|x-a|<\delta \Rightarrow |f(x)-L|<\varepsilon. \\[3pt]
+&\textbf{Topology: } && x_n\to x \iff \text{every neighborhood of } x \text{ contains a tail; Hausdorff} \Rightarrow \text{unique.} \\[3pt]
+&\textbf{General: } && \text{nets and filters; Cauchy is a uniform notion.} \\[3pt]
+&\textbf{Multivariable: } && \text{limits must agree along every path; iterated} \ne \text{simultaneous.} \\[3pt]
+&\textbf{Vector calculus: } && \nabla f,\ \nabla\cdot F,\ \nabla\times F \text{ are flux/circulation limits; Green, Stokes, divergence.} \\[3pt]
+&\textbf{Uniform: } && \text{uniform convergence preserves continuity/integrals; pointwise does not.}
+\end{aligned}
+$$
+
+The limit is the atom of analysis. Its sibling — the Cauchy criterion, which detects convergence without knowing the limit — is the subject of [the next article](cauchy-completeness-weierstrass-and-series-convergence.qmd), where we see why it succeeds in $\mathbb{R}$ but fails in $\mathbb{Q}$, and what that means for series, for $1/2^n$, and for Zeno.
+
+---
+
+## Curated References and Further Reading
+
+1. **Rudin, Walter (1976).** *Principles of Mathematical Analysis*, 3rd ed. McGraw-Hill.
+2. **Munkres, James (2000).** *Topology*, 2nd ed. Prentice Hall.
+3. **Spivak, Michael (2008).** *Calculus*, 4th ed. Publish or Perish. (Vector calculus and limits.)
+4. **Stewart, James (2020).** *Calculus: Early Transcendentals*, 9th ed. Cengage.
+5. **Marsden, J. & Tromba, A. (2011).** *Vector Calculus*, 6th ed. W. H. Freeman.
+6. **Kelley, J. L. (1975).** *General Topology.* Springer. (Nets.)
+7. **Willard, Stephen (2004).** *General Topology.* Dover. (Filters and convergence.)
+8. **Abbott, Stephen (2015).** *Understanding Analysis*, 2nd ed. Springer.

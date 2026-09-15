@@ -1,0 +1,394 @@
+---
+title: "Cauchy Sequences, Completeness, Weierstrass, and the Convergence of Series"
+subtitle: "Why Cauchy sequences converge in R but not in Q, alternative Cauchy conditions beyond successive differences, why the harmonic series diverges while its terms vanish, Weierstrass's theorems from Bolzano–Weierstrass to the nowhere-differentiable function, and Zeno's paradox, 1/2^n, and the philosophy of completed infinity"
+author: "Igor Kan"
+date: "2026-09-14"
+categories: [Mathematics, Analysis, Real Analysis, Series, Topology, Completeness, Philosophy of Mathematics]
+description: "A comprehensive treatment of Cauchy sequences and completeness. It defines the Cauchy criterion, contrasts it with the weaker successive-difference condition, examines behavior in the real numbers versus the rationals, metric spaces, complete spaces, p-adic numbers, Banach and Hilbert spaces, and weak convergence, surveys alternative Cauchy notions (Cauchy filters and nets, Cauchy in measure and in L^p, uniform Cauchy, dyadic Cauchy, ultrametric Cauchy), proves the Cauchy criterion for series, explains why terms going to zero does not imply convergence using the harmonic series and its logarithmic partial sums, develops conditional convergence and the Riemann rearrangement theorem, collects the Weierstrass theorems (Bolzano–Weierstrass, extreme value, M-test, approximation, Stone–Weierstrass, and the continuous nowhere-differentiable function), and treats Zeno's paradox through the convergent geometric series 1/2^n with its philosophical interpretations, with an executable Python laboratory."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 4
+    number-sections: true
+jupyter: python3
+toc: true
+toc-depth: 4
+number-sections: true
+---
+
+::: {.callout-note appearance="simple"}
+*"A sequence is Cauchy if its terms get arbitrarily close to one another." This criterion lets us detect convergence from the inside, without knowing the limit in advance. Its power — and its limits — depend entirely on where the sequence lives.*
+
+The distinction between **Cauchy** and **convergent** is the distinction between $\mathbb{Q}$ and $\mathbb{R}$, between a space with holes and one without. It is also the key to understanding series: the harmonic series fails not because its terms are too large, but because its partial sums are not Cauchy.
+:::
+
+::: {.callout-tip collapse="true"}
+### Companion Treatises in this Series
+- [Limits: ε-δ, Topological, Multivariable, and Vector Calculus](limits-topological-multivariable-and-vector-calculus.qmd)
+- [Infinite-Dimensional Algebra: Spaces of Sequences and Functions](infinite-dimensional-algebra-sequence-and-function-spaces.qmd)
+- [Sequences, Series, and Convergence Tests](sequences-series-and-convergence-tests.qmd)
+- [The Rational Line: Density, Enumeration, Cauchy Sequences, Dedekind Cuts, Metric Spaces, and Topology](rationals-density-enumeration-metric-spaces-and-topology.qmd)
+- [Uncountable Infinities: Diagonal Argument and the Cantor Set](uncountable-infinities-diagonal-argument-and-cantor-set-fractals.qmd)
+:::
+
+---
+
+## The Cauchy Criterion
+
+A sequence $(a_n)$ in a metric space $(X,d)$ is **Cauchy** if
+
+$$
+\forall \varepsilon>0\ \exists N:\quad m,n>N \implies d(a_m,a_n)<\varepsilon.
+$$
+
+The definition says the terms **cluster together**: beyond some index, any two of them are within $\varepsilon$. It never mentions a limit.
+
+### Cauchy vs Convergent
+
+- **Convergent $\Rightarrow$ Cauchy:** if $a_n\to L$, then $d(a_m,a_n)\le d(a_m,L)+d(L,a_n)<\varepsilon$ for large $m,n$ (the triangle inequality).
+- **Cauchy $\Rightarrow$ convergent** requires **completeness**. It is *not* true in general.
+
+The gap between the two is where all the interesting analysis lives.
+
+### The Consecutive-Terms Trap
+
+A common and fatal weakening is:
+
+$$
+|a_{n+1}-a_n|\to 0 \quad (\text{successive differences shrink}).
+$$
+
+This is **strictly weaker** than Cauchy. Let $a_n=\ln n$: consecutive differences $\ln(n+1)-\ln n=\ln(1+1/n)\to0$, yet $a_n$ diverges and is not Cauchy. Likewise the harmonic partial sums $H_n=\sum_{k=1}^n 1/k$ have $H_{n+1}-H_n=1/(n+1)\to0$ but are not Cauchy:
+
+$$
+H_{2n}-H_n=\sum_{k=n+1}^{2n}\frac1k \;\ge\; n\cdot\frac{1}{2n}=\frac12.
+$$
+
+Infinitely many pairs stay at least $1/2$ apart, so the sequence is not Cauchy. **Vanishing increments do not imply clustering.** This is the precise reason the harmonic series diverges despite terms tending to zero (developed below).
+
+---
+
+## Behavior in Different Spaces
+
+### The Real Numbers Are Complete
+
+**Theorem.** In $\mathbb{R}$ (with the usual metric), every Cauchy sequence converges.
+
+Three equivalent routes: (i) Cauchy $\Rightarrow$ bounded, then **Bolzano–Weierstrass** gives a convergent subsequence, and a Cauchy sequence with a convergent subsequence converges to the same limit; (ii) nested intervals / the least-upper-bound property; (iii) construction of $\mathbb{R}$ as Cauchy-completion of $\mathbb{Q}$.
+
+### The Rationals Are Not
+
+In $\mathbb{Q}$, take the decimal (or continued-fraction) approximations to $\sqrt2$: $1, 1.4, 1.41, 1.414, \ldots$ This is Cauchy in $\mathbb{Q}$ (consecutive terms get small; more strongly, it is Cauchy) but its limit $\sqrt2\notin\mathbb{Q}$. So **Cauchy does not imply convergent in $\mathbb{Q}$**: the space has a hole.
+
+Other incomplete examples:
+
+- $(0,1)$ with the usual metric: $a_n=1/n$ is Cauchy but its would-be limit $0$ is not in the space.
+- $\mathbb{Q}$ under $d(x,y)=|x-y|$ — incomplete.
+- The set of finite decimal expansions — incomplete.
+
+### Compactness Implies Completeness
+
+A **compact** metric space is complete (and every sequence has a convergent subsequence). The converse fails ($\mathbb{R}$ is complete but not compact). In $\mathbb{R}^n$, **complete $\iff$ closed and bounded** (Heine–Borel makes closed+bounded $=$ compact, hence complete).
+
+### Complete Spaces Catalogue
+
+| Space | Complete? | Note |
+|---|---|---|
+| $\mathbb{R}$, $\mathbb{R}^n$, $\mathbb{C}$ | yes | the standard complete spaces |
+| $\mathbb{Q}$ | no | $\sqrt2$ hole |
+| open interval $(0,1)$ | no | endpoints missing |
+| closed interval $[0,1]$ | yes | compact |
+| $\ell^p$, $L^p$ ($1\le p\le\infty$) | yes | Banach spaces |
+| $C[a,b]$ with sup norm | yes | uniform limits of continuous are continuous |
+| $C[a,b]$ with $L^1$ norm | no | integral-norm limits need not be continuous |
+| $C^\infty$, polynomials | no | limits may leave the class |
+| $\mathbb{Q}_p$ (p-adic) | yes | complete, **non-Archimedean** |
+
+The last row is striking: in the **p-adic** numbers, the strong triangle inequality $|x+y|\le\max(|x|,|y|)$ holds, so a series converges **iff its terms tend to 0** — no harmonic-style subtleties exist. In a **non-Archimedean** (ultrametric) space, the general Cauchy condition collapses to the consecutive-term condition. This shows how much the geometry of the space, not the definition, controls the theory.
+
+### Topological Vector Spaces, Uniform Spaces, Weak Convergence
+
+Cauchy is not a topological notion but a **uniform** one: it needs a notion of "same closeness at every point." In a general topological vector space one defines it via **Cauchy filters** and **Cauchy nets**. In a **Banach space** (complete normed space), norm-Cauchy $\Rightarrow$ norm-convergent. But there is also **weak convergence**: $x_n\rightharpoonup x$ if every continuous linear functional converges. A **weakly Cauchy** sequence need not be norm-Cauchy, and weakly convergent need not be norm-convergent (though in a **reflexive** space, bounded + weakly convergent has consequences). The gap between strong and weak is one more face of "Cauchy depends on which distance you use."
+
+---
+
+## Alternative Forms of Cauchy
+
+The user's instinct is right: the metric form is not the only one, and "subtract successive terms" is not even the metric form. Alternatives include:
+
+1. **General metric Cauchy:** $d(a_m,a_n)\to0$ for **all** $m,n\to\infty$ (not just consecutive). The correct baseline.
+2. **Cauchy filter:** a filter $\mathcal{F}$ such that every entourage $U$ contains a set $F\in\mathcal{F}$ with $F\times F\subseteq U$. The most general uniform notion; works with no metric.
+3. **Cauchy net:** a net $(x_d)_{d\in D}$ over a directed set with the same clustering property. Recovers convergence theory in arbitrary topological spaces.
+4. **Uniform Cauchy:** for a sequence of functions, $\sup_x |f_m(x)-f_n(x)|\to0$. This is Cauchy in the sup metric, and its completeness is exactly what makes $C[a,b]$ a Banach space.
+5. **Cauchy in measure / in probability:** $f_n$ is Cauchy in measure if $\mu\{|f_m-f_n|>\varepsilon\}\to0$; the limit is convergence in measure/probability, not pointwise.
+6. **Cauchy in $L^p$ (Cauchy in mean):** $\lVert f_m-f_n\rVert_p\to0$; completeness is the **Riesz–Fischer theorem**.
+7. **Cauchy almost everywhere / in distribution:** weaker modes used in probability and PDE.
+8. **Dyadic (condensation) Cauchy:** it suffices to check $\varepsilon=2^{-k}$ or to control **blocks** of terms. This yields the **Cauchy condensation test** and the dyadic-block proof of the harmonic divergence.
+9. **Cauchy product:** a convergence notion for $\sum a_n b_n$ requiring absolute convergence, distinct from termwiseCauchy.
+10. **Ultrametric Cauchy:** in a non-Archimedean space, checking $d(a_{n+1},a_n)\to0$ *is* enough.
+
+The lesson: "Cauchy" names a family of conditions unified by *internal* convergence; which variant is correct depends on the structure (metric, uniform, measure, norm, weak topology).
+
+---
+
+## Series and the Cauchy Criterion
+
+For a series $\sum_{n=1}^\infty a_n$, the **partial sums** are $S_N=\sum_{n=1}^N a_n$. The series **converges** to $S$ iff $S_N\to S$.
+
+**Cauchy criterion for series:** $\sum a_n$ converges iff for every $\varepsilon>0$ there is $N$ with
+
+$$
+\left|\sum_{k=m+1}^{n} a_k\right|<\varepsilon \quad\text{for all } n>m>N,
+$$
+
+i.e. iff the partial sums are Cauchy. Equivalently, the **tails** can be made uniformly small.
+
+**Necessary condition:** if $\sum a_n$ converges then $a_n\to0$ (since $a_n=S_n-S_{n-1}$). The converse is **false** — and this is the central subtlety.
+
+### Why the Harmonic Series Diverges
+
+For $a_n=1/n$, we have $a_n\to0$ (successive differences vanish), yet the partial sums are **not Cauchy**. Three proofs:
+
+**Grouping (Oresme, 14th century):**
+
+$$
+1+\tfrac12+\left(\tfrac13+\tfrac14\right)+\left(\tfrac15+\cdots+\tfrac18\right)+\cdots
+\;\ge\; 1+\tfrac12+\tfrac12+\tfrac12+\cdots=\infty.
+$$
+
+**Integral comparison:** $\displaystyle\int_1^n \frac{dx}{x}\le H_n \le 1+\int_1^n\frac{dx}{x}$, so $H_n=\ln n+\gamma+o(1)$ with $\gamma\approx0.5772$ (Euler–Mascheroni). Divergence is logarithmic — the partial sums grow without bound, so they cannot be Cauchy.
+
+**Dyadic blocks:** $H_{2^k}\ge1+k/2\to\infty$.
+
+The moral: **terms going to zero is not enough; the sum of terms over an arbitrarily long tail must go to zero, and for $1/n$ it does not.**
+
+### Where Cauchy Partial Sums Do and Do Not Certify Convergence
+
+- In a **complete** space ($\mathbb{R}$, $\mathbb{R}^n$, $\ell^p$, $L^p$), Cauchy partial sums $\iff$ convergence. This is the usual statement for real series.
+- In an **incomplete** space, partial sums can be Cauchy with no limit in the space. In $\mathbb{Q}$, the series $1 + \frac{1}{10} + \frac{4}{100}+\frac{1}{1000}+\cdots$ (digits of $\sqrt2$) has Cauchy partial sums, but the sum $\sqrt2\notin\mathbb{Q}$. So the guarantee really does rely on completeness.
+- Conversely, the harmonic series is a case where partial sums are *not* Cauchy, so divergence is detected *by* the criterion (in the negative direction).
+
+Thus the precise statement is: *partial sums being Cauchy guarantees convergence exactly when the ambient space is complete; a non-countably-convergent series has non-Cauchy partial sums.*
+
+### The Geometric Series and Zeno
+
+For $0<r<1$, $S_N=\sum_{n=0}^{N-1} r^n=\dfrac{1-r^N}{1-r}\to\dfrac{1}{1-r}$. With $r=1/2$, $S_N = 1-2^{-N}\to 1$: the partial sums form a Cauchy sequence converging to 1. This is the mathematical content of **Zeno's dichotomy paradox** (below).
+
+### Conditional Convergence and Riemann's Rearrangement Theorem
+
+The alternating harmonic series $\sum (-1)^{n+1}/n$ converges (Leibniz) to $\ln 2$, but not absolutely ($\sum1/n$ diverges). **Riemann's rearrangement theorem:** a conditionally convergent real series can be rearranged to converge to **any** prescribed real number, or to $\pm\infty$. Absolute convergence is immune to reordering; conditional convergence is not. This is another sign that "convergence" in the incomplete sense of "blocks of terms" is subtle.
+
+---
+
+## The Weierstrass Theorems
+
+Karl Weierstrass turned the informal limit into the rigorous machine that underlies all of the above. The results bearing his name are, remarkably, about limits at every scale.
+
+1. **Bolzano–Weierstrass theorem.** Every bounded sequence in $\mathbb{R}^n$ has a convergent subsequence. It is equivalent to completeness + local compactness and is the engine behind the proof that Cauchy $\Rightarrow$ convergent in $\mathbb{R}$.
+2. **Weierstrass extreme value theorem.** A continuous real function on a compact set attains its maximum and minimum. Compactness means every sequence has a convergent subsequence, i.e. a completeness-type property.
+3. **Weierstrass M-test.** If $|f_n(x)|\le M_n$ for all $x$ and $\sum M_n<\infty$, then $\sum f_n$ converges **uniformly** (and absolutely). It certifies **uniform** Cauchy behavior and thereby continuity/integrability/differentiability of the limit — the tool that makes power series and Fourier series rigorous. This is a series **whose partial sums are uniformly Cauchy**.
+4. **Weierstrass approximation theorem.** Every continuous function on $[a,b]$ is a uniform limit of polynomials. Its generalization, **Stone–Weierstrass**, works for any compact Hausdorff space with a separating algebra of functions.
+5. **Weierstrass function.** $W(x)=\sum_{k=0}^\infty a^k\cos(b^k\pi x)$ with $0<a<1$, $b$ an odd integer, and $ab>1+3\pi/2$ is **continuous everywhere but differentiable nowhere**. It is a uniformly convergent series (M-test) whose limit breaks differentiability: uniform convergence does **not** preserve derivatives.
+6. **Weierstrass preparation and factorization theorems** (complex analysis): local structure of analytic functions and representation of entire functions as products — limits in the complex-analytic category.
+7. **Weierstrass elliptic functions** and the Weierstrass $\wp$-function: the elliptic-function limit theory used in number theory and mathematical physics.
+8. **Weierstrass substitution** $t=\tan(x/2)$: a rationalizing change of variables, a small but ubiquitous computational device.
+
+Taken together they say: **limits behave beautifully under uniform hypotheses, and pathologically without them.**
+
+---
+
+## Zeno's Paradox, 1/2^n, and Philosophy
+
+Zeno of Elea (c. 450 BCE) argued that motion is impossible:
+
+- **Dichotomy:** to travel from A to B, you must first reach the midpoint; to reach the midpoint, its midpoint; and so on forever. Hence infinitely many tasks, so no motion.
+- **Achilles and the tortoise:** the fast runner can never overtake the slow tortoise, because whenever he reaches the tortoise's former position, the tortoise has advanced.
+- **The arrow:** a flying arrow is at rest at each instant, so it never moves.
+
+### The Mathematical Resolution
+
+The dichotomy's list of distances is $\frac12, \frac14, \frac18,\ldots$, a geometric series with sum
+
+$$
+\sum_{n=1}^\infty \frac{1}{2^n}=\frac{1/2}{1-1/2}=1.
+$$
+
+The partial sums $S_N=1-2^{-N}$ form a **Cauchy sequence** converging to 1. In a complete space, the infinite process has a finite limit: infinitely many stages can have a finite sum. Achilles' cumulative gaps likewise sum to a finite time. The calculus of limits (made rigorous by Cauchy and Weierstrass) dissolves the *mathematical* puzzle.
+
+### The Philosophical Residue
+
+The mathematics resolves the *arithmetic*, but philosophers note that it trades one puzzle for others:
+
+- **Potential vs actual infinity (Aristotle).** Aristotle denied completed infinity: the series exists only potentially, always in progress. The modern limit treats the infinite sum as a completed object (an **actual** infinity), which is exactly what [Cantor's set theory](uncountable-infinities-diagonal-argument-and-cantor-set-fractals.qmd) makes formal.
+- **Supertasks.** If infinitely many tasks can complete in finite time, what about "Thomson's lamp," switched on and off ever faster and asked to be on or off at the end? There is no consistent answer, showing that "infinitely many steps then a result" is not automatically well defined.
+- **The limit is not the process.** The standard solution defines the *sum* to be the *limit* of partial sums; it does not claim to have performed infinitely many additions. Whether that fully captures the metaphysics of motion (the **at-at theory** of motion, Russell's resolution) remains debated.
+
+Crucially, convergence is a special feature, not a guarantee. Replace $\frac{1}{2^n}$ by $\frac1n$ and the same "infinite approaching" story diverges: the harmonic partial sums do not converge, precisely because they are not Cauchy. Zeno's argument survives **because** the geometric series is Cauchy; a superficially similar process need not resolve.
+
+---
+
+## Laboratory: Cauchy, Divergence, Zeno, and Weierstrass
+
+### Successive Differences vs Cauchy
+
+```{python}
+import numpy as np
+
+def is_cauchy(seq, tol=1e-3):
+    # check max |a_m - a_n| for m,n beyond a large index
+    n = len(seq)
+    tail = seq[n//2:]
+    return np.max(np.abs(np.subtract.outer(tail, tail))) < tol
+
+N = 20000
+lnseq = np.log(np.arange(1, N + 1))          # a_n = ln n
+harm = np.cumsum(1 / np.arange(1, N + 1))    # harmonic partial sums
+
+print("=== SUCCESSIVE DIFFERENCES vs CAUCHY ===")
+for name, seq in [("ln n", lnseq), ("harmonic H_n", harm)]:
+    d = seq[-1] - seq[-2]
+    spread = np.max(seq[N//2:] - seq[N//2])
+    print(f"  {name:14s}: last successive diff = {d:.6f}  "
+          f"(->0) but tail spread = {spread:.3f} (not Cauchy)")
+
+geo = np.cumsum(1 / 2.0 ** np.arange(1, 60))  # Zeno partial sums
+print(f"  Zeno 1/2^n    : last successive diff = {geo[-1]-geo[-2]:.3e}, "
+      f"tail spread = {geo[-1]-geo[-2]:.3e}  (Cauchy)")
+```
+
+### Harmonic Divergence vs Logarithm, and Zeno Convergence
+
+```{python}
+#| label: fig-cauchy
+#| fig-cap: "Left: the harmonic partial sums H_n grow like ln n + γ and do not converge, even though the terms 1/n → 0. The tail H_{2n}−H_n stays above ln 2, so the partial sums are not Cauchy — the precise reason the series diverges. Right: Zeno's geometric partial sums 1−2^−n are Cauchy and converge to 1, resolving the dichotomy paradox in a complete space."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+n = np.arange(1, 100001)
+H = np.cumsum(1 / n)
+gamma = 0.5772156649015329
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.8))
+axes[0].plot(n, H, color="#e74c3c", lw=1.2, label=r"$H_n=\sum 1/k$")
+axes[0].plot(n, np.log(n) + gamma, "k--", lw=1, label=r"$\ln n+\gamma$")
+axes[0].set_xscale("log")
+axes[0].set_title("Harmonic partial sums: not Cauchy, diverges")
+axes[0].set_xlabel("n (log scale)"); axes[0].set_ylabel(r"$H_n$")
+axes[0].legend(); axes[0].grid(alpha=0.3)
+
+k = np.arange(0, 40)
+axes[1].plot(k, np.cumsum(1 / 2.0 ** (k + 1)), "o-", color="#2980b9",
+             label=r"$S_N=1-2^{-N}$")
+axes[1].axhline(1, color="#27ae60", ls="--", label="limit = 1")
+axes[1].set_title("Zeno: geometric partial sums are Cauchy -> 1")
+axes[1].set_xlabel("N"); axes[1].set_ylabel(r"$S_N$")
+axes[1].legend(); axes[1].grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print("=== TAIL SUMS THAT PROVE NON-CAUCHYNESS ===")
+for k in [10, 12, 14, 16]:
+    nn = 2 ** k
+    tail = H[nn - 1] - H[nn // 2 - 1]
+    print(f"  H_{{2^{k}}} - H_{{2^{k-1}}} = {tail:.4f}   (lower bound ln 2 = {np.log(2):.4f})")
+```
+
+### Conditional Convergence and Riemann's Rearrangement
+
+```{python}
+print("=== ALTERNATING HARMONIC: REARRANGEMENT CHANGES THE SUM ===")
+
+def positives():
+    k = 1
+    while True:
+        yield 1 / k; k += 2      # 1, 1/3, 1/5, ...
+
+def negatives():
+    k = 2
+    while True:
+        yield 1 / k; k += 2      # 1/2, 1/4, 1/6, ...
+
+def rearrange(target, steps=200_000):
+    s = 0.0
+    p, n = positives(), negatives()
+    next_pos, next_neg = next(p), next(n)
+    for _ in range(steps):
+        if s <= target:                      # add positives until we exceed target
+            s += next_pos; next_pos = next(p)
+        else:                                # subtract negatives until we fall below
+            s -= next_neg; next_neg = next(n)
+    return s
+
+hn = 100_000
+natural = sum(1/k for k in range(1, hn, 2)) - sum(1/k for k in range(2, hn, 2))
+print(f"  natural order (first {hn} terms) -> {natural:.4f}  (ln 2 = {np.log(2):.4f})")
+for t in [0.5, 1.0, 1.5, 2.0]:
+    print(f"  rearranged to target             -> {rearrange(t):.4f}  (requested {t})")
+print("\n  Riemann: a conditionally convergent series can be rearranged to any sum.")
+print("  Each excursion overshoots by at most the current term, which -> 0.")
+```
+
+### The Weierstrass Function (Continuous, Nowhere Differentiable)
+
+```{python}
+#| label: fig-weierstrass
+#| fig-cap: "Partial sums of the Weierstrass function W(x)=Σ 0.5^k cos(13^k π x). Each partial sum is smooth, and the series converges uniformly (Weierstrass M-test), yet the limit is continuous everywhere and differentiable nowhere: the fractal-like roughness persists at every scale because the derivative terms do not converge. Uniform convergence does not preserve differentiability."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def W_partial(x, K, a=0.5, b=13):
+    return sum((a ** k) * np.cos((b ** k) * np.pi * x) for k in range(K))
+
+x = np.linspace(0, 2, 4000)
+fig, ax = plt.subplots(figsize=(11, 5))
+for K, col in [(1, "#bdc3c7"), (2, "#95a5a6"), (5, "#2980b9"), (12, "#e74c3c")]:
+    ax.plot(x, W_partial(x, K), color=col, lw=0.9, label=f"K={K}")
+ax.set_title(r"Weierstrass function partial sums ($a=0.5$, $b=13$)")
+ax.set_xlabel("x"); ax.set_ylabel("W(x)"); ax.legend(ncol=4, fontsize=9); ax.grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+# numerical evidence of non-differentiability: divided differences grow
+for x0 in [0.3, 0.7]:
+    slopes = []
+    for h in [1e-1, 1e-2, 1e-3, 1e-4]:
+        slopes.append((W_partial(np.array([x0 + h]), 40) - W_partial(np.array([x0]), 40))[0] / h)
+    print(f"  x0={x0}: divided differences {['%.2f' % s for s in slopes]}  (no finite limit)")
+```
+
+The laboratory makes four points concrete: (1) Cauchy is strictly stronger than vanishing increments; (2) the harmonic series' partial sums fail Cauchy and diverge logarithmically; (3) Zeno's geometric series is Cauchy and converges, resolving the paradox mathematically; and (4) uniform convergence of a series (M-test) still does not tame derivatives — Weierstrass's roughness.
+
+---
+
+## Summary
+
+$$
+\begin{aligned}
+&\textbf{Cauchy: } && \forall\varepsilon\ \exists N:\ m,n>N \Rightarrow d(a_m,a_n)<\varepsilon;\ \text{internal convergence.} \\[3pt]
+&\textbf{Completeness: } && \text{Cauchy} \Rightarrow \text{convergent in } \mathbb{R},\mathbb{R}^n,\ell^p,L^p;\ \text{fails in } \mathbb{Q},(0,1). \\[3pt]
+&\textbf{Trap: } && |a_{n+1}-a_n|\to0 \not\Rightarrow \text{Cauchy (harmonic partial sums).} \\[3pt]
+&\textbf{Alternatives: } && \text{Cauchy filters/nets, in measure, in } L^p,\text{ uniform, dyadic, ultrametric.} \\[3pt]
+&\textbf{Series: } && \text{converges} \iff \text{partial sums Cauchy (in a complete space); } a_n\to0 \text{ is necessary, not sufficient.} \\[3pt]
+&\textbf{Weierstrass: } && \text{Bolzano–Weierstrass, extreme value, M-test, approximation, nowhere-differentiable } W. \\[3pt]
+&\textbf{Zeno: } && \sum 1/2^n=1 \text{ via Cauchy partial sums; actual vs potential infinity remains philosophical.}
+\end{aligned}
+$$
+
+Completeness is what lets us name limits we cannot construct. The same idea, lifted to spaces whose "vectors" are sequences or functions, produces the Banach and Hilbert spaces of [the next article](infinite-dimensional-algebra-sequence-and-function-spaces.qmd).
+
+---
+
+## Curated References and Further Reading
+
+1. **Rudin, Walter (1976).** *Principles of Mathematical Analysis*, 3rd ed. McGraw-Hill.
+2. **Abbott, Stephen (2015).** *Understanding Analysis*, 2nd ed. Springer.
+3. **Cauchy, A.-L. (1821).** *Cours d'analyse de l'École Royale Polytechnique.*
+4. **Weierstrass, K. (1872).** *Über continuirliche Functionen eines reellen Arguments, die für keinen Werth des letzteren einen bestimmten Differentialquotienten besitzen.*
+5. **Knopp, Konrad (1956).** *Infinite Sequences and Series.* Dover.
+6. **Sainsbury, R. M. (2009).** *Paradoxes*, 3rd ed. Cambridge University Press. (Zeno and supertasks.)
+7. **Russell, Bertrand (1903).** *The Principles of Mathematics.* (At-at theory of motion.)
+8. **Reed, M. & Simon, B. (1980).** *Methods of Modern Mathematical Physics I: Functional Analysis.* (Riesz–Fischer; completeness in $L^p$.)
+9. **Koblitz, Neal (1984).** *p-adic Numbers, p-adic Analysis, and Zeta-Functions*, 2nd ed. Springer. (Non-Archimedean Cauchy.)

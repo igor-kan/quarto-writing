@@ -1,0 +1,612 @@
+---
+title: "Logarithms, Log Scales, Log-Log Graphs, and the Lost Art of the Slide Rule"
+subtitle: "How Log Rules Turned Multiplication into Addition, How to Read Every Kind of Logarithmic Graph, and a Complete Mini-Guide to Slide-Rule Computation — from 2×3 to LL3 Powers and Roots"
+author: "Igor Kan"
+date: "2026-09-14"
+categories: [Mathematics, Analysis, History of Mathematics, Computation, Data Visualization, Engineering]
+description: "A complete treatment of logarithms as a computational technology: the product, quotient, power, root, and change-of-base rules with worked large-number examples, logarithmic scales, semi-log and log-log plots with Python/matplotlib examples for exponential growth, radioactive decay, power laws, decibels, pH and the Richter scale, the analogy with decibels and information theory, an embedded interactive slide-rule demo, the YouTube slide-rule video, a step-by-step mini-guide to multiplication, division, squaring, square roots, cubes, reciprocals, chaining and trigonometry, and advanced modes including folded, inverted, log-log (LL0–LL3), Pythagorean and hyperbolic scales."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 4
+    number-sections: true
+jupyter: python3
+toc: true
+toc-depth: 4
+number-sections: true
+---
+
+::: {.callout-note appearance="simple"}
+*"By shortening the labours, [logarithms] doubled the life of the astronomer."*  
+— **Pierre-Simon Laplace**
+
+Before electronic computers, every multiplication of two seven-digit numbers was a minor ordeal, and computing a cube root was a specialist's trade. The **logarithm** — invented by John Napier in 1614 — converted multiplication into addition, division into subtraction, powers into products, and roots into division. For three centuries it was the single most important computational tool in science, and its physical incarnation, the **slide rule**, was the badge of the engineer.
+:::
+
+::: {.callout-tip collapse="true"}
+### Companion Treatises in this Series
+- [The Great Constants: φ, e, π, and τ](the-great-constants-golden-ratio-e-pi-tau-and-the-transcendental-fabric.qmd)
+- [Axiomatic Set Theory, ZFC, Ordinals, Cardinals, and Paradoxes](axiomatic-set-theory-zfc-ordinals-cardinals-and-paradoxes.qmd)
+- [Real Numbers, Dedekind Cuts, and Topological Completeness](analysis-01-real-numbers-completeness.qmd)
+- [The Deep Structure of Numbers: Primes, Radicals, and the Riemann Hypothesis](foundations-of-arithmetic-primes-radicals-and-the-riemann-hypothesis.qmd)
+:::
+
+---
+
+## 1. Introduction: The Computational Revolution of 1614
+
+In 1614, the Scottish laird **John Napier** published *Mirifici Logarithmorum Canonis Descriptio* ("Description of the Marvellous Rule of Logarithms"). His goal was not abstract: it was to remove the drudgery of multiplication from spherical trigonometry, the workhorse of navigation and astronomy. Henry Briggs soon recast Napier's tables into **base 10**, and for the next 350 years every scientist owned a book of logarithms.
+
+The central idea is astonishingly simple. Because
+$$
+\log_b(xy) = \log_b x + \log_b y,
+$$
+a machine (or a table) that can **add** can also **multiply**, provided it can convert numbers into their logarithms and back. Logarithms are a change of coordinates on the multiplicative world that turns it into the additive world.
+
+This essay covers the full arc: the rules, their use in large computations, the geometry of log scales, the grammar of log-log and semi-log graphs (with executable Python figures), the many places the rule resurfaces in science, and a complete operating manual for the slide rule — including the advanced log-log scales that compute arbitrary powers and roots.
+
+---
+
+## 2. The Rules of Logarithms
+
+::: {#def-log-rules}
+#### Definition 2.1 (Logarithm and Its Laws)
+For base $b > 0$, $b \neq 1$, and positive reals $x, y$:
+$$
+\begin{aligned}
+\log_b(xy) &= \log_b x + \log_b y && \text{(product rule)}\\
+\log_b\!\left(\frac{x}{y}\right) &= \log_b x - \log_b y && \text{(quotient rule)}\\
+\log_b(x^{p}) &= p\,\log_b x && \text{(power rule)}\\
+\log_b\!\left(\sqrt[n]{x}\right) &= \frac{1}{n}\log_b x && \text{(root rule)}\\
+\log_b 1 &= 0, \qquad \log_b b = 1,\\
+b^{\log_b x} &= x, \qquad \log_b(b^{x}) = x && \text{(inverses)}\\
+\log_c x &= \frac{\log_b x}{\log_b c} && \text{(change of base)}
+\end{aligned}
+$$
+:::
+
+Each rule is an instance of the same theorem: the map $x \mapsto \log_b x$ is the unique continuous isomorphism $((0,\infty), \times) \to (\mathbb{R}, +)$ with $\log_b b = 1$.
+
+**Why the product rule holds.** Since $b^{u+v} = b^u b^v$, if $u = \log_b x$ and $v = \log_b y$, then $b^{u+v} = xy$, so $\log_b(xy) = u + v$. Every other rule follows from the corresponding exponent law.
+
+### 2.1 Simplifying Large Calculations
+
+The historical workflow was: **convert → add/subtract → convert back**. Consider the classic tasks.
+
+::: {.callout-tip}
+#### Worked Example 2.1: Multiplying huge numbers
+Compute $N = 98\,765 \times 43\,210$.
+
+1. Write each number in scientific notation: $9.8765 \times 10^4$ and $4.3210 \times 10^4$.
+2. Look up the *mantissas* in a log table (base 10): $\log_{10} 9.8765 \approx 0.99460$, $\log_{10} 4.3210 \approx 0.63559$.
+3. Add the logarithms: $0.99460 + 0.63559 = 1.63019$.
+4. Add the exponents of 10: $4 + 4 = 8$.
+5. Convert back: the mantissa $1.63019$ has fractional part $0.63019$, whose antilog is $\approx 4.2678$. So
+$$
+N \approx 4.2678 \times 10^{9} = 4\,267\,800\,000.
+$$
+(Exact: $4\,267\,734\,650$. The table gives ~5 significant figures.)
+:::
+
+::: {.callout-tip}
+#### Worked Example 2.2: Powers and roots
+Compute $\sqrt[5]{32\,000}$ and $1.07^{30}$.
+
+$$
+\log_{10}\sqrt[5]{32\,000} = \tfrac15 \log_{10}(3.2\times10^{4}) = \tfrac15(4.50515) = 0.90103 \;\Rightarrow\; 10^{0.90103}\approx 7.963.
+$$
+$$
+\log_{10}\bigl(1.07^{30}\bigr) = 30\log_{10}1.07 = 30(0.02938) = 0.88147 \;\Rightarrow\; 1.07^{30}\approx 7.612.
+$$
+A power becomes a single multiplication, and a root a single division. This is why compound-interest and annuity tables were computed logarithmically.
+:::
+
+### 2.2 Beyond the Books: The Same Rule Everywhere
+
+The product rule is not only a numerical trick; it is a structural statement that reappears whenever a quantity is multiplicative:
+
+| Context | Multiplicative quantity | Logarithmic transform | Unit |
+| :--- | :--- | :--- | :--- |
+| Acoustics | Power ratio $P/P_0$ | $10\log_{10}(P/P_0)$ | decibel (dB) |
+| Acoustics (amplitude) | $A/A_0$ | $20\log_{10}(A/A_0)$ | dB (amplitude) |
+| Chemistry | $[\mathrm{H}^+]$ | $-\log_{10}[\mathrm{H}^+]$ | pH |
+| Seismology | Amplitude $A$ | $\log_{10} A$ (+ correction) | Richter |
+| Astronomy | Brightness ratio | $-2.5\log_{10}(F/F_0)$ | magnitude |
+| Information | Number of messages | $\log_2 N$ | bit |
+| Statistical mechanics | Microstates $\Omega$ | $k_B \ln \Omega$ | entropy (J/K) |
+| Music | Frequency ratio | $1200\log_2(f/f_0)$ | cent |
+
+Because each of these quantities grows over many orders of magnitude, converting to a logarithmic scale makes them linear and human-scale. This is the same reason we graph them on log axes (Section 4).
+
+---
+
+## 3. Logarithmic Scales and the Number Line
+
+A **logarithmic scale** places a number $x$ at a distance proportional to $\log x$ from the origin, rather than at a distance proportional to $x$. Equal *ratios* become equal *distances*. On a base-10 log scale, the interval from $1$ to $10$ has the same length as $10$ to $100$, or $100$ to $1000$.
+
+```{python}
+#| label: fig-number-line
+#| fig-cap: "Linear versus logarithmic placement of the integers 1–10. On the log scale, equal ratios (1→2, 2→4, 4→8) occupy equal distances, and the space between successive integers shrinks as the numbers grow."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+vals = np.arange(1, 11)
+fig, axes = plt.subplots(2, 1, figsize=(10, 4.2))
+
+# Linear number line
+axes[0].hlines(0, 0, 10, color='#333', lw=2)
+for v in vals:
+    axes[0].vlines(v, -0.12, 0.12, color='#2ecc71', lw=2)
+    axes[0].text(v, 0.22, str(v), ha='center', va='bottom', fontsize=9)
+axes[0].set_xlim(-0.3, 10.8); axes[0].set_yticks([])
+axes[0].set_title("Linear scale: equal spacing", fontsize=11)
+
+# Logarithmic number line
+axes[1].hlines(0, 0, 1, color='#333', lw=2)
+for v in vals:
+    frac = np.log10(v)
+    axes[1].vlines(frac, -0.12, 0.12, color='#3498db', lw=2)
+    axes[1].text(frac, 0.22, str(v), ha='center', va='bottom', fontsize=9)
+axes[1].set_xlim(-0.02, 1.05); axes[1].set_yticks([])
+axes[1].set_xticks([0, np.log10(2), np.log10(4), np.log10(8), 1])
+axes[1].set_xticklabels(['1', '2', '4', '8', '10'])
+axes[1].set_title("Log scale: equal distances = equal ratios", fontsize=11)
+
+plt.tight_layout()
+plt.show()
+```
+
+The crucial property: on a log scale, **adding a distance multiplies the number**. Placing the log-ruler for $x$ next to the log-ruler for $y$ and adding lengths yields $\log x + \log y = \log(xy)$. This single geometric fact is the entire slide rule (Section 6).
+
+---
+
+## 4. Reading Every Kind of Logarithmic Graph
+
+Logarithmic axes come in three flavours. Choosing the right one is what makes a scientific plot "straight".
+
+| Axis pair | Name | A straight line means | Slope encodes |
+| :--- | :--- | :--- | :--- |
+| linear–linear | ordinary | $y = mx + c$ (linear) | slope $m$ |
+| linear–log | **semi-log** (log on $y$) | $y = y_0 e^{kx}$ (exponential) | growth rate $k$ |
+| log–log | **log-log** | $y = C x^{a}$ (power law) | exponent $a$ |
+| log–linear (x) | semi-log (log on $x$) | $y = a\log x + b$ (logarithmic) | — |
+
+### 4.1 Semi-Log Plots: Exponentials Become Straight Lines
+
+An exponential $y = y_0 e^{kx}$ has $\ln y = \ln y_0 + kx$: a **line in $(\text{linear } x,\ \log y)$ space**. Its slope on a base-10 semi-log plot is $k/\ln 10$.
+
+```{python}
+#| label: fig-semilog
+#| fig-cap: "The same exponential growth $y = 3e^{0.45x}$ shown on linear (left), semi-log base-10 (center), and log-log (right) axes. Only the semi-log plot linearizes an exponential; the log-log plot does not."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, 10, 200)
+y0, k = 3.0, 0.45
+y = y0 * np.exp(k * x)
+
+fig, axes = plt.subplots(1, 3, figsize=(13, 3.8))
+axes[0].plot(x, y, color='#e74c3c', lw=2)
+axes[0].set_title("Linear y-axis: exponential curve"); axes[0].set_xlabel("x"); axes[0].set_ylabel("y")
+
+axes[1].semilogy(x, y, color='#e74c3c', lw=2)
+axes[1].set_title("Semi-log: straight line"); axes[1].set_xlabel("x"); axes[1].set_ylabel("log y")
+
+axes[2].loglog(x, y, color='#e74c3c', lw=2)
+axes[2].set_title("Log-log: still curved"); axes[2].set_xlabel("log x"); axes[2].set_ylabel("log y")
+
+for ax in axes:
+    ax.grid(True, which='both', alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-note}
+**Reading the growth rate from a semi-log slope.** If $y$ rises from $y_1$ to $y_2$ over $\Delta x$, then $k = \ln(y_2/y_1)/\Delta x$. A doubling every $T$ units corresponds to $k = \ln 2 / T \approx 0.693/T$. This is exactly how doubling times are extracted for populations, early epidemics, and investments.
+:::
+
+### 4.2 Log-Log Plots: Power Laws Become Straight Lines
+
+A power law $y = C x^{a}$ has $\log y = \log C + a \log x$: a **line in $(\log x, \log y)$ space**, with **slope $a$** and intercept $\log C$. Power laws are everywhere in nature and engineering.
+
+```{python}
+#| label: fig-loglog
+#| fig-cap: "Power laws on log-log axes. All become straight lines whose slopes equal the exponent $a$: an inverse-square law (a = −2), a square-root law (a = 0.5), a cubic law (a = 3) and a linear law (a = 1)."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.logspace(-1, 2, 200)  # 0.1 .. 100
+specs = [
+    (1.0,  1.0,  "linear      $y=x^{1}$"),
+    (-2.0, 1.0,  "inverse-square  $y=x^{-2}$"),
+    (0.5,  2.0,  "square-root $y=2x^{0.5}$"),
+    (3.0,  0.2,  "cubic      $y=0.2x^{3}$"),
+]
+fig, ax = plt.subplots(figsize=(8, 6))
+colors = ['#2ecc71', '#e74c3c', '#3498db', '#9b59b6']
+for (a, C, lab), col in zip(specs, colors):
+    ax.loglog(x, C * x**a, color=col, lw=2, label=f"{lab}  (slope {a:+.1f})")
+ax.set_xlabel("log x"); ax.set_ylabel("log y")
+ax.set_title("Power laws are straight on log-log axes")
+ax.grid(True, which='both', alpha=0.3); ax.legend(fontsize=8)
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-tip}
+#### Worked Example 4.1: Extracting an exponent empirically
+Plotting planetary orbital periods $T$ against semi-major axes $R$ on log-log axes gives a line. Measuring two points, $(R_1,T_1)=(1,1)$ for Earth and $(R_2,T_2)=(9.54,29.46)$ for Saturn,
+$$
+a = \frac{\log(T_2/T_1)}{\log(R_2/R_1)}
+  = \frac{\log 29.46}{\log 9.54}
+  \approx \frac{1.469}{0.980} \approx 1.499 \approx \tfrac32,
+$$
+which is **Kepler's third law** $T \propto R^{3/2}$. A ruler on a log-log plot discovers a physical law.
+:::
+
+### 4.3 Real-World Log and Semi-Log Data
+
+```{python}
+#| label: fig-real-world
+#| fig-cap: "Two real uses of log axes. Left: Kirchhoff-style radioactive/RC decay $N=N_0 e^{-\\lambda t}$ on a semi-log plot is a straight line, so the half-life is the constant horizontal distance between halvings. Right: sound intensity in dB (logarithmic) and a power-law spectrum on a log-log plot."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4))
+
+# Left: exponential decay, semi-log
+t = np.linspace(0, 10, 300)
+half_life = 1.7
+N = 1000 * 0.5**(t / half_life)
+axes[0].semilogy(t, N, color='#e67e22', lw=2)
+for h in range(0, 7):
+    axes[0].plot([h*half_life, h*half_life], [1, N.max()], color='#999', ls=':', lw=1)
+axes[0].set_title("Semi-log: exponential decay (half-life spacing)")
+axes[0].set_xlabel("time"); axes[0].set_ylabel("counts (log)")
+axes[0].grid(True, which='both', alpha=0.3)
+
+# Right: log-log power-law spectrum
+f = np.logspace(-1, 2, 200)
+spectrum = 4.0 * f**(-5/3)   # Kolmogorov-like
+axes[1].loglog(f, spectrum, color='#3498db', lw=2)
+axes[1].set_title("Log-log: power-law spectrum (slope −5/3)")
+axes[1].set_xlabel("frequency"); axes[1].set_ylabel("power (log)")
+axes[1].grid(True, which='both', alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+**When *not* to use log axes.** If values can be zero or negative, $\log$ is undefined (a log axis cannot show $0$). If the data spans less than about one order of magnitude, a log axis distorts rather than clarifies. And a log-log "straight line" only means a power law over *that range*; over many decades most "laws" have broken slopes.
+
+---
+
+## 5. The Slide Rule: Logarithms You Can Hold
+
+### 5.1 The Principle
+
+Print a ruler whose tick marks sit at positions proportional to $\log x$. Then the distance from the index $1$ to a mark $x$ equals $\log x$. Slide two such rulers together and add the lengths:
+
+```text
+              THE SLIDE RULE PRINCIPLE
+   C scale (slides):   1     2     3   4  5 6 7 8 9 10
+                       |-----|-----|--|--|--|--|--|
+                       |<-log 2=.301->|<-log 3=.477->|
+
+   D scale (fixed):    1     2     3   4  5 6 7 8 9 10
+                       |-----|-----|--|--|--|--|--|
+
+   2 × 3:  align C's "1" with D's "2";
+           read D under C's "3"  →  D=6
+           because log2 + log3 = .301+.477 = .778 = log6.
+```
+
+Everything the slide rule does is this one picture, dressed with extra scales.
+
+### 5.2 Rendering the Scales
+
+```{python}
+#| label: fig-slide-rule
+#| fig-cap: "A computer rendering of the C and D log scales aligned to compute 2 × 3. The C scale (blue) has been slid right so its left index '1' sits over '2' on the fixed D scale (green). The cursor (red) marks '3' on C, whose D reading is 6 — because log 2 + log 3 = log 6."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def draw_scale(ax, y, shift, color, label, values=None):
+    if values is None:
+        values = [1,2,3,4,5,6,7,8,9,10]
+    ax.hlines(y, shift, shift + 1, color=color, lw=3)
+    for v in values:
+        p = shift + np.log10(v)
+        ax.vlines(p, y, y + 0.08, color=color, lw=2)
+        ax.text(p, y + 0.12, str(v), ha='center', va='bottom', fontsize=9)
+    # minor ticks
+    for decade in [1]:
+        for i in range(11, 100):
+            v = i / 10
+            if v in values: continue
+            p = shift + np.log10(v)
+            ax.vlines(p, y, y + 0.035, color=color, lw=0.6, alpha=0.6)
+    ax.text(shift - 0.02, y + 0.02, label, ha='right', va='center', fontsize=11, color=color)
+
+fig, ax = plt.subplots(figsize=(13, 3.6))
+offset = np.log10(2)          # slide C so its "1" is at "2" on D
+
+draw_scale(ax, 0.55, 0.0,   '#2ecc71', 'D')
+draw_scale(ax, 0.15, offset,'#3498db', 'C')
+
+# cursor at "3" on C
+cursor_pos = offset + np.log10(3)
+ax.vlines(cursor_pos, 0.05, 0.75, color='#e74c3c', lw=2)
+ax.text(cursor_pos, 0.78, "cursor @ 3 on C", ha='center', va='bottom', fontsize=9, color='#e74c3c')
+
+# read D under cursor
+result = 10**cursor_pos
+ax.plot([cursor_pos], [0.55], 'o', color='#e74c3c', ms=7)
+ax.text(cursor_pos + 0.02, 0.60, f"reads 6", ha='left', va='center', fontsize=10, color='#e74c3c')
+
+ax.set_xlim(-0.18, 1.25); ax.set_ylim(0.0, 0.95)
+ax.set_yticks([]); ax.set_xticks([])
+for s in ['top', 'right', 'left']:
+    ax.spines[s].set_visible(False)
+ax.set_title("Slide-rule multiplication: 2 × 3 = 6  (log 2 + log 3 = log 6)")
+plt.tight_layout()
+plt.show()
+```
+
+### 5.3 Mini-Guide: Calculations You Can Do
+
+| Operation | What to do | Worked example |
+| :--- | :--- | :--- |
+| **Multiply** $a\times b$ | Put C's left index on $a$ (D); cursor on $b$ (C); read D | $2\times3=6$ |
+| **Multiply (overflow)** | If $b$ runs past the scale, use C's *right* index ($10$); track one decade | $7\times8$: use right index → 56 |
+| **Divide** $a\div b$ | Put $b$ (C) over $a$ (D); read D under C's index $1$ | $6\div2=3$ |
+| **Square** $a^2$ | Cursor on $a$ (D); read under cursor on A | $3^2=9$ |
+| **Square root** $\sqrt a$ | Cursor on $a$ (A); read on D | $\sqrt{9}=3$ |
+| **Cube / cube root** | Use the K scale (three decades) | $2^3=8$ |
+| **Reciprocal** $1/a$ | Read across from C to CI (inverted scale) | $1/4=0.25$ |
+| **Chain** $a\times b\times c$ | Leave the result on D, reset cursor, continue | $2\times3\times4=24$ |
+| **Proportion** | Align $a\!:\!b$ on C:D and read the pair for $c$ | solve $a/x = c/d$ |
+| **Trig** $a\sin\theta$ | On S scale, align, multiply on C/D | $3\sin40^\circ\approx1.93$ |
+| **Powers** $a^p$ | Use the log-log (LL) scales | $2^{3.5}\approx11.31$ |
+| **Natural log** $\ln a$ | Read from D to the LL/ Ln scales | $\ln 2\approx0.693$ |
+| **$e^x$** | Use LL scales in reverse | $e^{1.5}\approx4.48$ |
+
+::: {.callout-note}
+**The decimal point is your job.** The slide rule returns only the *digits* (the significand). You supply the exponent by estimating the magnitude of the answer. This is why slide-rule users became skilled at **order-of-magnitude reasoning** — arguably a more valuable skill than arithmetic itself.
+:::
+
+### 5.4 Embedded Interactive Slide-Rule Demo
+
+The widget below is a live, linear slide rule. It aligns the blue **C** scale over the green **D** scale to compute $a \times b$. Adjust the sliders (or type values) and watch the cursor move; the readout computes $10^{\log_{10}a+\log_{10}b}$.
+
+```{=html}
+<div id="sr-demo" style="font-family: ui-monospace, Menlo, monospace; border:1px solid #bbb; border-radius:10px; padding:16px; max-width:860px; background:#fafafa; color:#222;">
+  <div style="display:flex; gap:18px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+    <label>a = <input id="sr-a" type="range" min="1" max="9.9" step="0.1" value="2" style="vertical-align:middle; width:160px;"></label>
+    <span id="sr-a-val" style="display:inline-block; width:40px;">2.0</span>
+    <label>b = <input id="sr-b" type="range" min="1" max="9.9" step="0.1" value="3" style="vertical-align:middle; width:160px;"></label>
+    <span id="sr-b-val" style="display:inline-block; width:40px;">3.0</span>
+    <span>Result a × b = <strong id="sr-res" style="color:#c0392b;">6.00</strong></span>
+  </div>
+  <svg id="sr-svg" width="840" height="180" viewBox="0 0 840 180" style="max-width:100%;"></svg>
+</div>
+<script>
+(function () {
+  const svg = document.getElementById('sr-svg');
+  const aIn = document.getElementById('sr-a'), bIn = document.getElementById('sr-b');
+  const aVal = document.getElementById('sr-a-val'), bVal = document.getElementById('sr-b-val');
+  const res  = document.getElementById('sr-res');
+  const W = 840, padL = 30, padR = 30, span = W - padL - padR;
+  const NS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function px(logv) { return padL + span * logv; }  // logv in [0,1]
+
+  function drawScale(y, offset, color, label, withLabels) {
+    const g = el('g', {});
+    g.appendChild(el('line', {x1:px(0)+offset*span, x2:px(1)+offset*span, y1:y, y2:y, stroke:color, 'stroke-width':3}));
+    for (let i = 1; i <= 9; i++) {
+      const x = px(Math.log10(i)) + offset*span;
+      g.appendChild(el('line', {x1:x, x2:x, y1:y, y2:y-10, stroke:color, 'stroke-width':2}));
+      if (withLabels) {
+        const t = el('text', {x:x, y:y-14, 'font-size':11, fill:color, 'text-anchor':'middle'});
+        t.textContent = i; g.appendChild(t);
+      }
+      for (let j = 1; j < 10; j++) {
+        const v = i + j/10;
+        if (v >= 10) continue;
+        const xx = px(Math.log10(v)) + offset*span;
+        g.appendChild(el('line', {x1:xx, x2:xx, y1:y, y2:y-5, stroke:color, 'stroke-width':0.8, opacity:0.6}));
+      }
+    }
+    const x10 = px(1) + offset*span;
+    g.appendChild(el('line', {x1:x10, x2:x10, y1:y, y2:y-10, stroke:color, 'stroke-width':2}));
+    if (withLabels) { const t = el('text', {x:x10, y:y-14, 'font-size':11, fill:color, 'text-anchor':'middle'}); t.textContent='10'; g.appendChild(t); }
+    const lab = el('text', {x:6, y:y+4, 'font-size':13, fill:color, 'font-weight':'bold'});
+    lab.textContent = label; g.appendChild(lab);
+    return g;
+  }
+
+  function render() {
+    const a = parseFloat(aIn.value), b = parseFloat(bIn.value);
+    aVal.textContent = a.toFixed(1); bVal.textContent = b.toFixed(1);
+    const offset = Math.log10(a);          // shift C so its "1" is over a on D
+    const cursorLog = offset + Math.log10(b);  // absolute log position of b on C
+    svg.innerHTML = '';
+    svg.appendChild(drawScale(120, 0, '#27ae60', 'D', true));      // fixed D
+    svg.appendChild(drawScale(60,  offset, '#2980b9', 'C', true)); // sliding C
+    // cursor
+    const xc = px(cursorLog);
+    svg.appendChild(el('line', {x1:xc, x2:xc, y1:30, y2:140, stroke:'#c0392b', 'stroke-width':2}));
+    svg.appendChild(el('circle', {cx:xc, cy:120, r:5, fill:'#c0392b'}));
+    const prod = a * b;
+    res.textContent = prod.toFixed(2);
+    const note = el('text', {x:xc+6, y:24, 'font-size':12, fill:'#c0392b'});
+    note.textContent = 'cursor @ ' + b.toFixed(1) + ' on C';
+    svg.appendChild(note);
+    const rd = el('text', {x:Math.min(xc+6, W-90), y:136, 'font-size':12, fill:'#c0392b'});
+    rd.textContent = 'D reads ' + (prod <= 10 ? prod.toFixed(2) : prod.toFixed(2) + ' (÷10, carry decade)');
+    svg.appendChild(rd);
+  }
+  aIn.addEventListener('input', render);
+  bIn.addEventListener('input', render);
+  render();
+})();
+</script>
+```
+
+::: {.callout-tip}
+#### Video: How to Use a Slide Rule
+A clear walkthrough of slide-rule operation and reading:
+
+{{< video https://www.youtube.com/watch?v=qhDD5Q17jTc >}}
+:::
+
+---
+
+## 6. Advanced Slide-Rule Modes
+
+Beyond the basic four scales lies a rich instrument. High-end rules (K&E Log Log Decitrig, Aristo 0972, Pickett N4) carried a dozen scales.
+
+### 6.1 The Log-Log (LL) Scales: Arbitrary Powers and Roots
+
+The **LL scales** give the logarithm of the logarithm, placing $e^x$ directly on the rule. On a rule with scales LL0, LL1, LL2, LL3 (covering $e^{0.001}\!\to e^{1}$, $e^{1}\!\to e^{10}$, $e^{10}\!\to e^{100}$, $e^{100}\!\to e^{1000}$):
+
+- **$a^p$ for any real $p$:** align the index of C with $a$ on an LL scale; read the LL value under $p$ on C.
+- **$\ln a$ and $e^x$:** direct read-off, no interpolation tables.
+- **Roots** $a^{1/n}$: use $1/n$ on C.
+- **Compound interest / radioactive decay** with fractional exponents.
+
+::: {.callout-tip}
+#### Worked Example 6.1: $2^{3.5}$ and $5^{1/7}$
+Set the cursor to $2$ on the appropriate LL scale (LL2 handles $e^1\!-\!e^{10}$). Slide C so that its index meets that point, then move the cursor to $3.5$ on C and read the LL scale:
+$$
+2^{3.5} = 11.31\ldots
+$$
+For the seventh root of 5, read under $1/7 \approx 0.1429$ on C: $5^{1/7} = 1.2585\ldots$
+:::
+
+### 6.2 Folded, Inverted, and Special Scales
+
+| Scale | Name | Purpose |
+| :--- | :--- | :--- |
+| **CF, DF** | folded (starts at $\pi$) | avoids resetting when crossing a decade; multiplies by $\pi$ directly |
+| **CIF, DIF** | folded inverted | chained division without end-switching |
+| **CI, DI** | inverted | one-move reciprocals; fast division |
+| **A, B** | two-decade | squares and square roots |
+| **K** | three-decade | cubes and cube roots |
+| **LL0–LL3** | log-log | arbitrary powers, roots, $e^x$, $\ln x$ |
+| **L** | linear (mantissa) | base-10 logarithms |
+| **S, T, ST** | trig | sines, tangents, small angles |
+| **Sh, Sh2, Th** | hyperbolic | $\sinh$, $\cosh$, $\tanh$ for transmission-line and catenary problems |
+| **P / Pythagorean** | — | solves right triangles from two sides |
+| **Gauge marks** | $\pi$, $\rho$, $c$, $g$, $R$ | constants and unit conversions |
+
+### 6.3 Techniques of the Trade
+
+- **Chaining without rereading.** Keep the result on D and move only the cursor, so intermediate round-off never enters.
+- **Proportion chains.** For $a/b = c/d = e/f$, align once and sweep the cursor; each scale pair is a different ratio.
+- **Reciprocal trick.** To divide by $b$ quickly, multiply by $1/b$ read from CI, avoiding a reset.
+- **Vector/trig composite.** Multiply a length by $\sin\theta$ by setting S to the cursor and reading D.
+- **The Fuller cylindrical rule.** A spiral scale on a cylinder delivered ~4–5 significant figures, used for ballistics and surveying.
+- **Circular rules.** Compact pocket rules with the same scale logic wrapped around a disc.
+
+The slide rule's real gift was not precision but **proportion sense**: an engineer could feel how the answer scaled with each input because the lengths literally added.
+
+---
+
+## 7. Computational Laboratory
+
+The lab below (a) numerically verifies the log rules on large numbers, (b) simulates a slide rule as "log-add then exponentiate", and (c) reproduces the square/root/cube and arbitrary-power computations used above.
+
+```{python}
+import math
+
+print("=== 1. LOG RULES ON LARGE NUMBERS ===")
+x, y = 98765, 43210
+print(f"log10({x}) + log10({y}) = {math.log10(x) + math.log10(y):.10f}")
+print(f"log10({x}*{y})          = {math.log10(x * y):.10f}")
+print(f"product via 10^(sum)    = {10 ** (math.log10(x) + math.log10(y)):.6e}")
+print(f"direct product          = {x * y:.6e}")
+
+print("\n=== 2. POWER AND ROOT RULES ===")
+print(f"32000^(1/5) via logs = {10 ** (math.log10(32000) / 5):.6f}  (true {32000 ** 0.2:.6f})")
+print(f"1.07^30 via logs     = {10 ** (30 * math.log10(1.07)):.6f}  (true {1.07 ** 30:.6f})")
+
+print("\n=== 3. SLIDE-RULE SIMULATOR (log-add engine) ===")
+def slide_multiply(a, b):
+    """Slide rule: add log lengths, exponentiate, carry the decade."""
+    logsum = math.log10(a) + math.log10(b)
+    decade = math.floor(logsum)
+    mantissa = 10 ** (logsum - decade)
+    return mantissa, decade
+
+for a, b in [(2, 3), (7, 8), (1.5, 4), (9.9, 9.9)]:
+    m, d = slide_multiply(a, b)
+    print(f"{a} x {b}: significand {m:.5f} x 10^{d} = {m * 10 ** d:.6g}  (exact {a * b:.6g})")
+
+print("\n=== 4. DIVISION AND RECIPROCAL VIA LOGS ===")
+print(f"6 / 2 = 10^(log10 6 - log10 2) = {10 ** (math.log10(6) - math.log10(2)):.6f}")
+print(f"1 / 4 = 10^(-log10 4)          = {10 ** (-math.log10(4)):.6f}")
+
+print("\n=== 5. SQUARES / ROOTS / CUBES (A and K scales) ===")
+for v in [3, 7, 2.5]:
+    print(f"{v}: square (A) = {10 ** (2 * math.log10(v)):.6f},  sqrt (D) = {10 ** (math.log10(v) / 2):.6f}")
+print(f"2^3 (K) = {10 ** (3 * math.log10(2)):.6f},  cbrt(8) = {10 ** (math.log10(8) / 3):.6f}")
+
+print("\n=== 6. ARBITRARY POWERS AND ROOTS (LL scales) ===")
+print(f"2^3.5   = {10 ** (3.5 * math.log10(2)):.6f}  (true {2 ** 3.5:.6f})")
+print(f"5^(1/7) = {10 ** (math.log10(5) / 7):.6f}  (true {5 ** (1 / 7):.6f})")
+print(f"ln 2    = {math.log(2):.10f}")
+print(f"e^1.5   = {math.exp(1.5):.10f}")
+
+print("\n=== 7. SEMI-LOG GROWTH-RATE EXTRACTION ===")
+def growth_rate(x1, y1, x2, y2):
+    return math.log(y2 / y1) / (x2 - x1)
+
+k = growth_rate(0, 100, 6, 100 * math.exp(0.45 * 6))
+print(f"recovered k = {k:.6f} (planted 0.45)")
+print(f"doubling time = {math.log(2) / k:.4f} (true {math.log(2) / 0.45:.4f})")
+```
+
+---
+
+## 8. Summary
+
+$$
+\begin{aligned}
+&\textbf{Conversion: } && \log_b(xy)=\log_b x+\log_b y,\quad \log_b(x/y)=\log_b x-\log_b y,\\
+& && \log_b(x^p)=p\log_b x,\quad \log_b x=\log_c x/\log_c b.\\[4pt]
+&\textbf{Scales: } && \text{equal ratios} \to \text{equal distances; addition of lengths} = \text{multiplication}.\\[4pt]
+&\textbf{Graphs: } && \text{semi-log linearizes } y=Ce^{kx};\quad \text{log-log linearizes } y=Cx^{a}.\\[4pt]
+&\textbf{Slide rule: } && \text{C/D multiply; A squares; K cubes; CI reciprocals; LL powers/roots.}
+\end{aligned}
+$$
+
+Logarithms were the first great "analog computer": a coordinate change that let the hand perform, in three seconds, what would otherwise take a page. The slide rule is gone, but its grammar survives in every logarithmic axis, decibel, pH reading, and order-of-magnitude argument we make today.
+
+---
+
+## 9. Curated References and Primary Sources
+
+1. **Napier, John (1614)**. *Mirifici Logarithmorum Canonis Descriptio*. Edinburgh.
+2. **Briggs, Henry (1624)**. *Arithmetica Logarithmica*. London.
+3. **Oughtred, William (1631)**. *Circles of Proportion and the Horizontal Instrument*.
+4. **Cajori, Florian (1909)**. *A History of the Logarithmic Slide Rule and Allied Instruments*. Engineering News Publishing.
+5. **Hamming, R. W. (1973)**. *Numerical Methods for Scientists and Engineers*, 2nd ed. Dover. (On log scales and error.)
+6. **Tufte, Edward (1983)**. *The Visual Display of Quantitative Information*. Graphics Press.
+7. **Newman, John (1960)**. *"A Slide Rule Bibliography"*. Journal of the Oughtred Society (modern reprints).
+8. **Clauset, A., Shalizi, C., Newman, M. (2009)**. *"Power-law distributions in empirical data"*. SIAM Review, 51(4): 661–703.
+9. **Bagnall, Philip M. (2010)**. *The Slide Rule: A Comprehensive Guide*. (Modern reference for scale layouts.)
+10. **IEEE / NIST**. *Guide for the Use of the International System of Units (SI)* — logarithmic ratio units (dB, Np).

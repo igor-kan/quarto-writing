@@ -1,0 +1,423 @@
+---
+title: "The Hierarchy of Algebraic Structures and Spaces"
+subtitle: "From Magmas and Semigroups to Monoids, Groups, Rings, Fields, Modules, Vector Spaces, Lattices, Categories and Monads — and the Parallel Ascent from Sets to Topological, Metric, Normed, Hilbert, Measure, and Probability Spaces"
+author: "Igor Kan"
+date: "2026-09-14"
+categories: [Mathematics, Abstract Algebra, Topology, Category Theory, Analysis]
+description: "A comprehensive map of the structures of mathematics: the algebraic ladder from magma and semigroup through monoid, group, abelian group, ring, integral domain, UFD, PID, Euclidean domain and field to modules, vector spaces and algebras; the order-theoretic ladder to lattices, Boolean and Heyting algebras; the category-theoretic world of functors, natural transformations, monads and adjunctions; the spatial ladder from sets to topological, metric, normed, inner-product, Hilbert, Banach, measure and probability spaces; the hybrid structures (topological groups, Lie groups, topological vector spaces, C*-algebras); a giant Mermaid flowchart connecting them all; axiom-dropping counterexamples; and a Python laboratory that verifies the axioms of finite groups, fields, vector spaces, lattices, Boolean algebras, small categories, and the list monad."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 4
+    number-sections: true
+jupyter: python3
+toc: true
+toc-depth: 4
+number-sections: true
+---
+
+::: {.callout-note appearance="simple"}
+*"Mathematics is the study of structures, and mathematical structures form a hierarchy ordered by the axioms they satisfy."*  
+— **A structuralist motto**
+
+Every branch of mathematics studies **sets equipped with structure**. Add a binary operation, get a magma; add associativity, a semigroup; add an identity, a monoid; add inverses, a group; add a second operation, a ring; add inverses to the second operation, a field. In parallel, add "closeness," get a topology; add a distance, a metric space; add a norm, a normed space; add an inner product, a Hilbert space. This essay draws the **complete map**, with a single all-encompassing flowchart, and verifies the axioms computationally.
+:::
+
+::: {.callout-tip collapse="true"}
+### Companion Treatises in this Series
+- [Probability Theory and Mathematical Probability](probability-theory-and-mathematical-probability.qmd)
+- [Sequences, Series, and Convergence Tests](sequences-series-and-convergence-tests.qmd)
+- [Axiomatic Set Theory, ZFC, Ordinals, Cardinals, and Paradoxes](axiomatic-set-theory-zfc-ordinals-cardinals-and-paradoxes.qmd)
+- [The Rational Line: Density, Enumeration, Cauchy Sequences, Dedekind Cuts, Metric Spaces, and Topology](rationals-density-enumeration-metric-spaces-and-topology.qmd)
+:::
+
+---
+
+## 1. Structures as Signatures Plus Axioms
+
+::: {#def-structure}
+#### Definition 1.1 (Mathematical structure)
+A **structure** is a tuple $(X, \sigma_1, \sigma_2, \dots)$ where $X$ is a set (or class) and the $\sigma_i$ are operations, relations, or distinguished elements, subject to **axioms** expressed in first-order logic. A structure is **weaker** than another if it satisfies fewer axioms; the collection of structures of a given signature ordered this way forms a lattice.
+:::
+
+The method of the whole subject: **start minimal, add one axiom at a time**, and watch the theory become richer. The diagrams below are the result.
+
+---
+
+## 2. The Algebraic Ladder
+
+### 2.1 Magmas Through Groups
+
+| Structure | Signature | Axioms | Canonical example |
+| :--- | :--- | :--- | :--- |
+| **Magma** (groupoid) | $({}\cdot{})$ | closure only | $(\mathbb{Z},-)$ |
+| **Semigroup** | $({}\cdot{})$ | associative | positive integers under $+$ |
+| **Monoid** | $({}\cdot{},e)$ | assoc. + identity | $(\mathbb{N},+,0)$ |
+| **Group** | $({}\cdot,{}^{-1},e)$ | monoid + inverses | $(\mathbb{Z},+)$, $S_n$ |
+| **Abelian group** | same | group + commutative | $(\mathbb{Z},+)$, $(\mathbb{Q},+)$ |
+| **Quasigroup** | $({}\cdot,/, \backslash)$ | division defined | loop theory |
+| **Loop** | quasigroup + $e$ | + identity | non-associative groups |
+
+Dropping commutativity of addition moves from abelian groups to general groups (e.g. the quaternion group $Q_8$, symmetric groups $S_n$ for $n\ge3$).
+
+### 2.2 Rings Through Fields
+
+| Structure | Extra axiom | Example |
+| :--- | :--- | :--- |
+| **Ring (rng)** | two operations, distributive | $2\mathbb{Z}$ (no $1$) |
+| **Ring with unity** | multiplicative identity $1$ | $\mathbb{Z}$ |
+| **Commutative ring** | $ab=ba$ | $\mathbb{Z}[x]$ |
+| **Integral domain** | no zero divisors | $\mathbb{Z}$, $\mathbb{Z}[i]$ |
+| **UFD** | unique factorization into irreducibles | $\mathbb{Z}[x]$ |
+| **PID** | every ideal is principal | $\mathbb{Z}$, $k[x]$ |
+| **Euclidean domain** | division algorithm | $\mathbb{Z}$, $\mathbb{Z}[i]$ |
+| **Field** | every nonzero element invertible | $\mathbb{Q},\mathbb{R},\mathbb{C},\mathbb{F}_p$ |
+
+The chain is strict:
+$$
+\text{fields} \subsetneq \text{Euclidean domains} \subsetneq \text{PIDs} \subsetneq \text{UFDs} \subsetneq \text{integral domains} \subsetneq \text{commutative rings}.
+$$
+For example $\mathbb{Z}[\sqrt{-5}]$ is an integral domain but not a UFD ($6=2\cdot3=(1+\sqrt{-5})(1-\sqrt{-5})$).
+
+### 2.3 Modules, Vector Spaces, and Algebras
+
+- **Module over a ring $R$:** an abelian group $M$ with a scalar action $R\times M\to M$ satisfying the module axioms. $R=\mathbb{Z}$ recovers abelian groups; $R$ a field gives a **vector space**.
+- **Vector space over a field $k$:** a module over a field; every vector space has a **basis** (uses the Axiom of Choice in general), with a well-defined dimension.
+- **Algebra over a ring:** a ring that is also a module, with a compatible multiplication (e.g. matrix algebras, group algebras, Lie algebras).
+
+### 2.4 Lattices and Boolean Algebras
+
+| Structure | Axioms | Example |
+| :--- | :--- | :--- |
+| **Partial order** | reflexive, antisym., transitive | $(\mathcal{P}(S),\subseteq)$ |
+| **Lattice** | every pair has meet $\wedge$ and join $\vee$ | divisors of $n$ under gcd/lcm |
+| **Distributive lattice** | $a\wedge(b\vee c)=(a\wedge b)\vee(a\wedge c)$ | Boolean algebras |
+| **Boolean algebra** | distributive + complements | $\mathcal{P}(S)$ with $\cap,\cup,{}^c$ |
+| **Heyting algebra** | distributive + relative pseudo-complement | open sets of a topology |
+
+Boolean algebras model propositional logic and digital circuits; Heyting algebras model **intuitionistic** logic (dropping the law of excluded middle — connecting to the [constructivist discussion](uncountable-infinities-diagonal-argument-and-cantor-set-fractals.qmd)).
+
+---
+
+## 3. Categories, Functors, and Monads
+
+::: {#def-category}
+#### Definition 3.1 (Category)
+A **category** $\mathcal{C}$ consists of objects $\operatorname{ob}\mathcal{C}$, morphisms $\hom(A,B)$ for each pair, a composition $\circ:\hom(B,C)\times\hom(A,B)\to\hom(A,C)$, and identity morphisms $\mathrm{id}_A$, satisfying:
+$$
+(h\circ g)\circ f=h\circ(g\circ f),\qquad \mathrm{id}_B\circ f=f=f\circ \mathrm{id}_A.
+$$
+:::
+
+- A **monoid is exactly a one-object category** (elements = morphisms, $e=\mathrm{id}$).
+- A **groupoid** is a category in which every morphism is invertible (a group is a one-object groupoid).
+- A **functor** preserves objects, morphisms, identities, and composition.
+- A **natural transformation** compares functors.
+- A **monad** is an endofunctor $T$ with natural transformations $\eta:\mathrm{Id}\to T$ (**unit**) and $\mu:T^2\to T$ (**join**) satisfying the monad laws ($\mu\circ T\mu=\mu\circ\mu T$, $\mu\circ \eta T=\mathrm{id}=\mu\circ T\eta$). Monads are the categorical theory of **effects** (nondeterminism, state, exceptions, IO), central to functional programming (Haskell) and to algebraic theories (Eilenberg–Moore algebras).
+
+This is the precise sense in which the user's chain "magmas … monads" lives on **two axes at once**: algebraic (groups, rings, fields) and categorical (monoid = one-object category; monad = monoid in the category of endofunctors).
+
+---
+
+## 4. The Spatial Ladder
+
+::: {#def-spaces}
+#### Ladders of Spaces
+$$
+\begin{aligned}
+&\textbf{Set} \to \textbf{Topological space} \to \textbf{Metric space} \to \textbf{Normed space} \to \textbf{Inner product space} \to \textbf{Hilbert space},\\
+&\textbf{Metric space} \to \textbf{Uniform space} \to \textbf{Topological space} \quad(\text{reversed}),\\
+&\textbf{Measurable space} \to \textbf{Measure space} \to \textbf{Probability space},\\
+&\textbf{Topological manifold} \to \textbf{Smooth manifold} \to \textbf{Riemannian manifold} \to \textbf{Lorentzian manifold}.
+\end{aligned}
+$$
+:::
+
+| Space | Added structure | Key theorem |
+| :--- | :--- | :--- |
+| **Set** | none | cardinality |
+| **Topological space** | open sets | continuity, compactness, connectedness |
+| **Metric space** | distance | completion, Baire, Heine–Borel |
+| **Normed space** | norm $\lVert x\rVert$ | triangle inequality, metric from norm |
+| **Inner product space** | $\langle x,y\rangle$ | Cauchy–Schwarz, orthogonality, projections |
+| **Hilbert space** | complete inner product | Riesz representation, spectral theorem |
+| **Banach space** | complete normed | Banach fixed point, open mapping |
+| **Measurable space** | $\sigma$-algebra | measurability |
+| **Measure space** | measure $\mu$ | Lebesgue integration, monotone/Fatou/dominated convergence |
+| **Probability space** | measure with $\mu(\Omega)=1$ | LLN, CLT |
+| **Manifold** | locally Euclidean topology | charts, tangent spaces, Stokes' theorem |
+
+Every normed space is metric ($d(x,y)=\lVert x-y\rVert$); every inner product space is normed ($\lVert x\rVert=\sqrt{\langle x,x\rangle}$); every metric space is topological (open balls); not conversely — the cofinite topology is non-metrizable, and $\ell^p$ for $0<p<1$ is a metric space that is not normable.
+
+---
+
+## 5. Hybrid Structures (Intersections)
+
+| Structure | Combines | Examples |
+| :--- | :--- | :--- |
+| **Topological group** | group + topology | $\mathbb{R}^n$, matrix groups |
+| **Lie group** | group + smooth manifold | $GL_n(\mathbb{R})$, $SO(3)$, $SU(2)$ |
+| **Topological vector space** | vector space + topology | spaces of functions |
+| **Banach algebra** | Banach space + algebra | $C([0,1])$, operator algebras |
+| **C*-algebra** | Banach $*$-algebra | $\mathcal{B}(H)$, quantum observables |
+| **Measure algebra** | Boolean algebra + measure | probability event algebra |
+| **Riemannian manifold** | smooth manifold + metric tensor | general relativity |
+| **Scheme** | topological space + sheaf of rings | algebraic geometry |
+| **Banach/Hilbert manifold** | manifold modeled on Banach/Hilbert space | PDE, infinite-dimensional geometry |
+
+Physics lives almost entirely in the hybrid column: Lie groups are symmetries, Hilbert spaces are state spaces, C*-algebras are observables, Lorentzian manifolds are spacetime.
+
+---
+
+## 6. The Complete Hierarchy (All-in-One Flowchart)
+
+```{mermaid}
+flowchart TD
+  subgraph ALG["Algebraic structures (add axioms downward)"]
+    M["Magma<br/>set + binary op"] --> SG["Semigroup<br/>+ associativity"]
+    SG --> MO["Monoid<br/>+ identity e"]
+    MO --> GR["Group<br/>+ inverses"]
+    GR --> AG["Abelian group<br/>+ commutativity"]
+    QG["Quasigroup<br/>+ division"] --> LP["Loop<br/>+ identity"]
+    LP --> GR
+    AG --> RING["Ring<br/>+ second operation"]
+    RING --> CRING["Commutative ring<br/>+ abelian ×"]
+    CRING --> ID["Integral domain<br/>+ no zero divisors"]
+    ID --> UFD["UFD<br/>+ unique factorization"]
+    UFD --> PID["PID<br/>+ ideals principal"]
+    PID --> ED["Euclidean domain<br/>+ division algorithm"]
+    ED --> FLD["Field<br/>+ inverses for ×"]
+    AG --> MOD["Module over a ring"]
+    FLD --> VS["Vector space<br/>= module over field"]
+    FLD --> ALGOV["Algebra over a field"]
+    subgraph ORD["Order structures"]
+      PO["Partial order"] --> LAT["Lattice<br/>+ meet & join"]
+      LAT --> DLAT["Distributive lattice"]
+      DLAT --> BA["Boolean algebra<br/>+ complements"]
+      DLAT --> HEY["Heyting algebra<br/>+ pseudo-complement"]
+    end
+  end
+  subgraph CAT["Category-theoretic structures"]
+    CAT["Category<br/>objects + morphisms"] --> FUN["Functor"]
+    CAT --> GPD["Groupoid<br/>all arrows invertible"]
+    CAT --> MON1["Monoid = one-object category"]
+    CAT --> NAT["Natural transformation"]
+    FUN --> MONAD["Monad<br/>endofunctor + unit + join"]
+    NAT --> MONAD
+    MONAD --> ADJ["Adjunction"]
+    MONAD --> EM["Eilenberg–Moore algebras"]
+    CAT --> INF["Higher / ∞-categories"]
+  end
+  subgraph SPC["Spaces (add structure downward)"]
+    SET["Set"] --> TOP["Topological space<br/>open sets"]
+    TOP --> MET["Metric space<br/>distance d"]
+    MET --> NORM["Normed space<br/>norm ‖·‖"]
+    NORM --> IPS["Inner product space<br/>〈·,·〉"]
+    IPS --> HIL["Hilbert space<br/>+ completeness"]
+    NORM --> BAN["Banach space<br/>+ completeness"]
+    SET --> MEA["Measurable space<br/>σ-algebra"]
+    MEA --> MEAS["Measure space<br/>+ measure μ"]
+    MEAS --> PROB["Probability space<br/>μ(Ω)=1"]
+    TOP --> MAN["Topological manifold"]
+    MAN --> SMAN["Smooth manifold"]
+    SMAN --> RMAN["Riemannian manifold"]
+  end
+  subgraph HYB["Hybrid structures (intersections)"]
+    TOP --> TGRP["Topological group"]
+    GR --> TGRP
+    TGRP --> LIE["Lie group"]
+    SMAN --> LIE
+    TOP --> TVS["Topological vector space"]
+    VS --> TVS
+    TVS --> BALG["Banach algebra"]
+    BALG --> CSTAR["C*-algebra"]
+    MEAS --> MALG["Measure algebra"]
+    RMAN --> GR
+  end
+  style FLD fill:#d4efdf,stroke:#27ae60
+  style HIL fill:#d6eaf8,stroke:#2980b9
+  style MONAD fill:#fdebd0,stroke:#e67e22
+  style CSTAR fill:#fadbd8,stroke:#c0392b
+```
+
+**Reading the chart.** Downward edges **add** structure (axioms or operations). The green node is the algebraic summit (fields); the blue node is the analytic summit (Hilbert spaces); the orange node is the categorical summit (monads); the red node is the physics workhorse (C*-algebras). The hybrid subgraph shows where different ladders **meet**.
+
+---
+
+## 7. Why Each Axiom Matters (Counterexamples)
+
+| Weaker structure | What fails | Witness |
+| :--- | :--- | :--- |
+| Magma not semigroup | associativity | $(\mathbb{Z},-)$ |
+| Semigroup not monoid | identity | $(\{1,2,3,\dots\},+)$ |
+| Monoid not group | inverses | $(\mathbb{N},+,0)$ |
+| Group not abelian | commutativity | $S_3$, $Q_8$ |
+| Ring not commutative | $ab=ba$ | matrix ring $M_2(\mathbb{R})$ |
+| Commutative ring not domain | zero divisors | $\mathbb{Z}/6\mathbb{Z}$ |
+| Domain not UFD | unique factorization | $\mathbb{Z}[\sqrt{-5}]$ |
+| UFD not PID | principal ideals | $\mathbb{Z}[x]$ |
+| PID not Euclidean | division algorithm | some $O_K$ |
+| Topological not metric | distance | cofinite topology |
+| Metric not normed | homogeneity of norm | $\ell^p$, $0<p<1$ |
+| Normed not inner product | parallelogram law | $\ell^\infty$, $L^p$, $p\ne2$ |
+| Inner product not Hilbert | completeness | $C([0,1])$ with $L^2$ |
+| Groupoid not group (categorical) | one object | equivalence relation groupoid |
+
+The **parallelogram law** $\lVert x+y\rVert^2+\lVert x-y\rVert^2=2\lVert x\rVert^2+2\lVert y\rVert^2$ characterizes inner-product norms (Jordan–von Neumann).
+
+---
+
+## 8. Computational Laboratory
+
+The lab verifies the axioms of finite groups, monoids, rings, fields, vector spaces, lattices, Boolean algebras, a small category, and the list monad.
+
+```{python}
+import itertools
+from functools import reduce
+
+print("=== 1. FINITE GROUP: (Z_n, +) AND (Z_p*, ×) ===")
+def check_group(elements, op, e):
+    S = set(elements)
+    closed = all(op(a, b) in S for a in S for b in S)
+    assoc = all(op(op(a, b), c) == op(a, op(b, c)) for a in S for b in S for c in S)
+    ident = all(op(a, e) == a and op(e, a) == a for a in S)
+    invs = all(any(op(a, b) == e and op(b, a) == e for b in S) for a in S)
+    return closed, assoc, ident, invs
+
+for n in [4, 5, 6]:
+    Z = list(range(n))
+    print(f"  (Z_{n}, +):  closed={check_group(Z, lambda a,b:(a+b)%n, 0)}")
+
+print("\n  (Z_p*, ×) is a group iff p prime:")
+for p in [5, 6, 7]:
+    Zp = [a for a in range(1, p)]
+    print(f"    p={p}: {check_group(Zp, lambda a,b:(a*b)%p, 1)}  (field iff all inverses)")
+
+print("\n=== 2. MONOID vs GROUP ===")
+N = list(range(0, 6))
+print("  (N, +, 0) monoid axioms:",
+      "assoc", all((a+b)+c == a+(b+c) for a in N for b in N for c in N),
+      "| identity", all(0+a == a for a in N),
+      "| inverses for all?", all(any(a+b == 0 for b in N) for a in N), "(false => not a group)")
+
+print("\n=== 3. RING vs FIELD: Z_n UNDER + AND × ===")
+def is_field(n):
+    if n < 2: return False
+    S = list(range(n))
+    add_closed = all((a+b) % n in S for a in S for b in S)
+    mul_assoc = all((a*b)*c % n == a*(b*c) % n for a in S for b in S for c in S)
+    distrib = all(a*(b+c) % n == (a*b + a*c) % n for a in S for b in S for c in S)
+    inv = all(any((a*b) % n == 1 for b in S) for a in S if a != 0)
+    return add_closed and mul_assoc and distrib and inv
+for n in [4, 5, 6, 7, 11]:
+    print(f"  Z_{n} is a field: {is_field(n)}  (prime => True)")
+
+print("\n=== 4. VECTOR SPACE AXIOMS IN R^2 ===")
+import random
+random.seed(0)
+def add(u, v): return (u[0]+v[0], u[1]+v[1])
+def smul(c, u): return (c*u[0], c*u[1])
+vecs = [(random.randint(-9, 9), random.randint(-9, 9)) for _ in range(50)]
+scalars = [random.randint(-5, 5) for _ in range(20)]   # integers => exact arithmetic
+assoc_add = all(add(add(u,v),w) == add(u,add(v,w)) for u in vecs for v in vecs for w in vecs)
+comm_add = all(add(u,v) == add(v,u) for u in vecs for v in vecs)
+zero = (0,0)
+ident = all(add(u, zero) == u for u in vecs)
+distrib1 = all(smul(c, add(u,v)) == add(smul(c,u), smul(c,v)) for c in scalars for u in vecs for v in vecs)
+distrib2 = all(smul(c+d, u) == add(smul(c,u), smul(d,u)) for c in scalars for d in scalars for u in vecs)
+print(f"  associativity={assoc_add}, commutativity={comm_add}, zero={ident}, distributivity={distrib1 and distrib2}")
+
+print("\n=== 5. LATTICE: DIVISORS OF 12 UNDER gcd/lcm ===")
+from math import gcd
+def lcm(a, b): return a*b // gcd(a, b)
+divs = [d for d in range(1, 13) if 12 % d == 0]
+meet_join = all(gcd(a,b) in divs and lcm(a,b) in divs for a in divs for b in divs)
+distrib = all(gcd(a, lcm(b,c)) == lcm(gcd(a,b), gcd(a,c)) for a in divs for b in divs for c in divs)
+print(f"  divisors={divs}; closed under meet/join={meet_join}; distributive={distrib}")
+
+print("\n=== 6. BOOLEAN ALGEBRA: POWER SET OF {1,2,3} ===")
+U = {1,2,3}
+Power = [frozenset(s) for r in range(4) for s in itertools.combinations(U, r)]
+def comp(A): return frozenset(U - A)
+distrib = all((A & (B | C)) == ((A & B) | (A & C)) for A in Power for B in Power for C in Power)
+complement = all((A | comp(A)) == frozenset(U) and (A & comp(A)) == frozenset() for A in Power)
+print(f"  |P(U)|={len(Power)}; distributive={distrib}; complements={complement}")
+
+print("\n=== 7. SMALL CATEGORY: IDENTITY AND ASSOCIATIVITY ===")
+# Objects A, B; morphisms idA, idB, f: A -> B.  Represent a morphism by (domain, codomain).
+morph = {'idA': ('A', 'A'), 'idB': ('B', 'B'), 'f': ('A', 'B')}
+
+def compose(g, h):
+    """Return g ∘ h (apply h first): h: X->Y, g: Y->Z."""
+    if h[1] != g[0]:
+        return None
+    if h in (morph['idA'], morph['idB']):
+        return g
+    if g in (morph['idA'], morph['idB']):
+        return h
+    return (h[0], g[1])
+
+ids_ok = True
+for name, (X, Y) in morph.items():
+    idX = ('A', 'A') if X == 'A' else ('B', 'B')
+    idY = ('A', 'A') if Y == 'A' else ('B', 'B')
+    left = compose(idY, morph[name])    # id_Y ∘ m
+    right = compose(morph[name], idX)   # m ∘ id_X
+    print(f"  {name} ({X}->{Y}): id_Y∘{name}={left}, {name}∘id_X={right}")
+    if left != morph[name] or right != morph[name]:
+        ids_ok = False
+print(f"  identity laws hold: {ids_ok}")
+print(f"  composition f ∘ idA = {compose(morph['f'], morph['idA'])}")
+
+print("\n=== 8. THE LIST MONAD: UNIT AND BIND LAWS ===")
+unit = lambda x: [x]
+def bind(xs, f): return [y for x in xs for y in f(x)]
+f = lambda x: [x, x+1]
+g = lambda x: [x*10]
+m = [1, 2, 3]
+left_id  = bind(unit(7), f) == f(7)
+right_id = bind(m, unit) == m
+assoc    = bind(bind(m, f), g) == bind(m, lambda x: bind(f(x), g))
+print(f"  left identity  (unit a >>= f = f a): {left_id}")
+print(f"  right identity (m >>= unit = m):     {right_id}")
+print(f"  associativity  (m >>= f) >>= g:      {assoc}")
+print("  => List is a monad: the categorical structure behind nondeterminism.")
+```
+
+---
+
+## 9. Summary
+
+$$
+\begin{aligned}
+&\textbf{Algebra: } && \text{magma}\to\text{semigroup}\to\text{monoid}\to\text{group}\to\text{ring}\to\text{field};\\
+& && \text{module}\to\text{vector space};\ \text{partial order}\to\text{lattice}\to\text{Boolean algebra}.\\[3pt]
+&\textbf{Categories: } && \text{monoid}=\text{one-object category};\ \text{group}=\text{one-object groupoid};\ \text{monad}=\text{monoid of endofunctors}.\\[3pt]
+&\textbf{Spaces: } && \text{Set}\to\text{Top}\to\text{Metric}\to\text{Normed}\to\text{Inner}\to\text{Hilbert};\ \ \text{Measure}\to\text{Probability}.\\[3pt]
+&\textbf{Hybrids: } && \text{topological/Lie groups, Banach/C*-algebras, Riemannian manifolds.}
+\end{aligned}
+$$
+
+The hierarchy is the periodic table of mathematics: each structure is a setting in which certain theorems become true, and the functors between them translate results from one setting to another.
+
+---
+
+## 10. Curated References and Primary Sources
+
+1. **Bourbaki, Nicolas (1939–)**. *Éléments de mathématique*. (The structuralist program.)
+2. **Mac Lane, Saunders (1998)**. *Categories for the Working Mathematician*, 2nd ed. Springer.
+3. **Awodey, Steve (2010)**. *Category Theory*, 2nd ed. Oxford.
+4. **Dummit, D. & Foote, R. (2003)**. *Abstract Algebra*, 3rd ed. Wiley.
+5. **Lang, Serge (2002)**. *Algebra*, 3rd ed. Springer.
+6. **Hungerford, Thomas (1974)**. *Algebra*. Springer. (Includes the field/UFD/PID/Euclidean chain.)
+7. **Munkres, James (2000)**. *Topology*, 2nd ed. Prentice Hall.
+8. **Rudin, Walter (1991)**. *Functional Analysis*, 2nd ed. McGraw-Hill. (Banach, Hilbert, C*.)
+9. **Reed, M. & Simon, B. (1980)**. *Methods of Modern Mathematical Physics I: Functional Analysis*. Academic Press.
+10. **Davey, B. A. & Priestley, H. A. (2002)**. *Introduction to Lattices and Order*, 2nd ed. Cambridge.
+11. **Moggi, Eugenio (1991)**. *"Notions of computation and monads"*. Information and Computation, 93(1): 55–92.
+12. **Wadler, Philip (1992)**. *"The essence of functional programming"*. POPL.
+13. **Lawvere, F. W. & Schanuel, S. (2009)**. *Conceptual Mathematics*, 2nd ed. Cambridge.
+14. **Geroch, Robert (1985)**. *Mathematical Physics*. University of Chicago Press.

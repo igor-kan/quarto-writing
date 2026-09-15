@@ -1,0 +1,827 @@
+---
+title: "Axiomatic Set Theory: ZFC, Ordinals, Cardinals, Relations, and Paradoxes"
+subtitle: "Russell's Paradox and the Foundations of Mathematics, All Nine ZFC Axioms and the Axiom of Choice, Order and Relation Types, Ordinal and Cardinal Arithmetic, the von Neumann Universe, and the Paradoxes of Set Theory and Theoretical Computer Science"
+author: "Igor Kan"
+date: "2026-09-14"
+categories: [Mathematics, Set Theory, Logic & Foundations, Abstract Algebra, Theoretical Computer Science, Philosophy]
+description: "A rigorous first-principles tour of axiomatic set theory: why naive comprehension fails (Russell, Cantor, Burali-Forti), all nine ZFC axioms with formal statements and the axiom of choice with its equivalents and independence, the theory of relations and orders (partial, linear, well-order, order types), von Neumann ordinals and transfinite arithmetic, cardinals, alephs, the continuum hypothesis, cardinal and ordinal arithmetic, constructions and products, the von Neumann cumulative hierarchy V, the constructible universe L, and a catalogue of paradoxes and limitative theorems in logic, set theory, and computer science (halting problem, Rice's theorem, Gödel, Kolmogorov/Chaitin), with a Python laboratory implementing ordinals below ω^ω, Cantor pairing, diagonalization, and the von Neumann ordinals."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 4
+    number-sections: true
+jupyter: python3
+toc: true
+toc-depth: 4
+number-sections: true
+---
+
+::: {.callout-note appearance="simple"}
+*"No one shall expel us from the Paradise that Cantor has created for us."*  
+— **David Hilbert**
+
+Modern mathematics rests on **set theory**. Every number, function, space, and structure is ultimately a set. But the naive notion of a set — "any collection of objects satisfying a property" — is **inconsistent**: it generates Russell's paradox. The response, forged in the early twentieth century, was **Zermelo–Fraenkel set theory with Choice (ZFC)**: nine axioms that tame comprehension while preserving Cantor's paradise. This essay develops that foundation, its ordinals and cardinals, the algebra of relations and orders, the von Neumann universe, and the paradoxes that mark the limits of formal reasoning.
+:::
+
+::: {.callout-tip collapse="true"}
+### Companion Treatises in this Series
+- [Logarithms, Log Scales, and the Slide Rule](logarithms-log-scales-and-the-slide-rule.qmd)
+- [The Great Constants: φ, e, π, and τ](the-great-constants-golden-ratio-e-pi-tau-and-the-transcendental-fabric.qmd)
+- [Real Numbers, Dedekind Cuts, and Topological Completeness](analysis-01-real-numbers-completeness.qmd)
+- [The Rational Line: Density, Enumeration, Cauchy Sequences, Dedekind Cuts, Metric Spaces, and Topology](rationals-density-enumeration-metric-spaces-and-topology.qmd)
+- [The Uncountable Infinite: Cantor's Diagonal Argument, Cantor Set, and Fractals](uncountable-infinities-diagonal-argument-and-cantor-set-fractals.qmd)
+- [Gödel's Completeness and Incompleteness Theorems](godel-completeness-and-incompleteness-theorems.qmd)
+- [Probability Theory and Mathematical Probability](probability-theory-and-mathematical-probability.qmd)
+- [Sequences, Series, and Convergence Tests](sequences-series-and-convergence-tests.qmd)
+- [The Hierarchy of Algebraic Structures and Spaces](hierarchy-of-algebraic-structures-and-spaces.qmd)
+- [The Architecture of Number Systems: Cayley–Dickson and Recursion](the-architecture-of-number-systems-constructions-cayley-dickson-and-recursion.qmd)
+- [Philosophy of Mathematics: Platonism, Formalism, and Gödel](../philosophy/philosophy-of-mathematics-platonism-formalism-infinity-godel.qmd)
+:::
+
+---
+
+## 1. Introduction: Why Axiomatize the Infinite?
+
+The nineteenth century discovered that infinity comes in **sizes**. Cantor showed that the real numbers cannot be enumerated, that there are *more* reals than rationals, and that the algebra of infinite collections obeys surprising laws. Set theory was to be the universal language of mathematics: from it, one could build $\mathbb{N}$, $\mathbb{Z}$, $\mathbb{Q}$, $\mathbb{R}$, $\mathbb{C}$, functions, relations, and all of analysis.
+
+**Naive set theory** assumed the **unrestricted comprehension schema**:
+$$
+\forall \bar{w}\ \exists B\ \forall x\ \bigl(x \in B \leftrightarrow \varphi(x, \bar{w})\bigr).
+$$
+"Every property determines a set." This is fatal. The axiomatic reform restricts comprehension (you may only carve out subsets of sets that already exist) and replaces the missing power with carefully chosen existence axioms.
+
+```text
+        FROM NAIVE SETS TO ZFC
+
+   Naive comprehension        →   Russell's paradox
+   { x : x ∉ x }              →   R ∈ R ↔ R ∉ R
+        │
+        ▼
+   Axiomatic restriction      =   Specification / Separation
+   (comprehension only inside an existing set)
+        │
+        ▼
+   Zermelo (1908) + Fraenkel + Skolem (Replacement)
+        │
+        ▼
+   ZFC  =  ZF + Axiom of Choice
+```
+
+---
+
+## 2. The Paradoxes That Forced Axiomatization
+
+### 2.1 Russell's Paradox (1901)
+
+::: {#thm-russell}
+#### Theorem 2.1 (There is no set of all sets that are not members of themselves)
+Let
+$$
+R = \{\, x : x \notin x \,\}.
+$$
+Then $R$ cannot exist.
+:::
+
+*Proof.* Suppose $R$ exists. Ask: is $R \in R$?
+- If $R \in R$, then by definition of $R$, $R \notin R$.
+- If $R \notin R$, then $R$ satisfies the defining property $x \notin x$, so $R \in R$.
+
+Either way, $R \in R \leftrightarrow R \notin R$, a contradiction. Hence no such $R$ exists. $\blacksquare$
+
+The culprit is **unrestricted comprehension**, which lets us speak of $\{x : \varphi(x)\}$ for *any* property, including self-referential ones.
+
+### 2.2 Cantor's Paradox
+
+Let $V$ be "the set of all sets." Every subset of $V$ is a set, so $\mathcal{P}(V) \subseteq V$, whence $|\mathcal{P}(V)| \le |V|$. But **Cantor's theorem** (Theorem 6.3) says $|\mathcal{P}(V)| > |V|$ for every set. Contradiction. Therefore **there is no set of all sets** — the universe is a **proper class**.
+
+### 2.3 Burali-Forti's Paradox
+
+The collection $\mathrm{Ord}$ of all ordinals, ordered by $\in$, is transitive and well-ordered. If it were a set, then by the von Neumann definition (Section 5) it would itself be an ordinal, hence a member of itself: $\mathrm{Ord} \in \mathrm{Ord}$, contradicting that no ordinal is a member of itself. So $\mathrm{Ord}$ is a proper class. "The sequence of ordinals" has no end.
+
+These three paradoxes share a structure: **unbounded self-reference**. The fix is not to ban self-reference but to forbid the *sets* built from it.
+
+---
+
+## 3. Relations and Their Types
+
+### 3.1 Ordered Pairs and Cartesian Products
+
+::: {#def-ordered-pair}
+#### Definition 3.1 (Kuratowski ordered pair)
+$$
+(a, b) := \{\, \{a\},\ \{a, b\}\,\}.
+$$
+It satisfies the characteristic property $(a,b)=(c,d) \iff a=c \text{ and } b=d$.
+:::
+
+The **Cartesian product** is
+$$
+A \times B := \{\, (a,b) : a \in A,\ b \in B \,\}.
+$$
+A **binary relation** from $A$ to $B$ is any subset $R \subseteq A \times B$; a relation on $A$ is $R \subseteq A \times A$. We write $aRb$ for $(a,b)\in R$.
+
+### 3.2 Properties of Relations
+
+| Property | Formal condition | Informal reading |
+| :--- | :--- | :--- |
+| **Reflexive** | $\forall a,\ aRa$ | everything relates to itself |
+| **Irreflexive** | $\forall a,\ \neg(aRa)$ | nothing relates to itself |
+| **Symmetric** | $aRb \Rightarrow bRa$ | mutual relation |
+| **Antisymmetric** | $aRb \wedge bRa \Rightarrow a=b$ | mutual only for equals |
+| **Asymmetric** | $aRb \Rightarrow \neg(bRa)$ | never mutual |
+| **Transitive** | $aRb \wedge bRc \Rightarrow aRc$ | chains collapse |
+| **Total / connected** | $\forall a\neq b,\ aRb \vee bRa$ | every pair comparable |
+| **Trichotomous** | exactly one of $aRb,\ a=b,\ bRa$ | strict total order |
+| **Well-founded** | every nonempty subset has an $R$-minimal element | no infinite descent |
+| **Dense** | $aRb \Rightarrow \exists c,\ aRc \wedge cRb$ | no gaps |
+
+### 3.3 Canonical Relation Types
+
+$$
+\begin{aligned}
+\textbf{Equivalence} &= \text{reflexive} + \text{symmetric} + \text{transitive},\\
+\textbf{Preorder} &= \text{reflexive} + \text{transitive},\\
+\textbf{Partial order} &= \text{reflexive} + \text{antisymmetric} + \text{transitive},\\
+\textbf{Strict partial order} &= \text{irreflexive} + \text{transitive},\\
+\textbf{Total (linear) order} &= \text{partial} + \text{total},\\
+\textbf{Well-order} &= \text{total} + \text{well-founded},\\
+\textbf{Strict well-order} &= \text{total} + \text{irreflexive} + \text{well-founded}.
+\end{aligned}
+$$
+
+**Examples.**
+
+| Relation | Domain | Type | Notes |
+| :--- | :--- | :--- | :--- |
+| $=$ | any $A$ | equivalence | the finest equivalence |
+| $\equiv \pmod n$ | $\mathbb{Z}$ | equivalence | classes $\overline{0},\dots,\overline{n-1}$ |
+| "same cardinality" | sets | equivalence | the definition of cardinality |
+| "same age" | people | equivalence | non-mathematical |
+| $\le$ | $\mathbb{R}$ | total order | dense, not well-founded |
+| $<$ | $\mathbb{R}$ | strict total order | — |
+| $\mid$ (divisibility) | $\mathbb{N}^{+}$ | partial order | $2\mid 4$ but $2\nmid 3$ |
+| $\subseteq$ | $\mathcal{P}(S)$ | partial order | a Boolean lattice |
+| $\in$ | $\mathrm{Ord}$ | strict well-order | the ordinal order |
+| reachability | graph $G$ | preorder | not antisymmetric |
+| refinement | partitions | partial order | coarser vs. finer |
+
+### 3.4 Equivalence Classes and Quotients
+
+If $\sim$ is an equivalence relation on $A$, the **equivalence class** of $a$ is $[a] = \{x \in A : x \sim a\}$. Equivalence classes **partition** $A$ into disjoint blocks, and there is a canonical bijection between equivalence relations on $A$ and partitions of $A$. The **quotient**
+$$
+A/{\sim} := \{\, [a] : a \in A \,\}
+$$
+is the set of blocks. This construction yields $\mathbb{Z} = \mathbb{N}^2/{\sim}$ (differences), $\mathbb{Q} = \mathbb{Z}\times\mathbb{Z}^{+}/{\sim}$ (ratios), and $\mathbb{R}$ (Cauchy sequences or Dedekind cuts modulo equivalence).
+
+**Closures.** The **reflexive-transitive closure** $R^{*}$, the **symmetric closure**, and the **transitive closure** are the smallest relations of the given type containing $R$. Reachability in a directed graph is exactly the transitive closure of the edge relation.
+
+---
+
+## 4. Orders and Order Types
+
+### 4.1 Partial Orders and Hasse Diagrams
+
+A **partial order** is a pair $(P, \le)$ where $\le$ is reflexive, antisymmetric, and transitive. Elements $a, b$ are **comparable** if $a\le b$ or $b\le a$; otherwise **incomparable**. Substructures:
+
+- **Chain**: a totally ordered subset.
+- **Antichain**: a subset with no comparable pairs.
+- **Upper/lower bound**, **supremum** ($\sup$), **infimum** ($\inf$).
+- **Maximal/minimal**: no element strictly above/below.
+- **Maximum/minimum**: greatest/smallest element of the whole poset.
+- **Lattice**: every pair has a meet ($\wedge$) and join ($\vee$).
+- **Complete lattice**: every subset has a sup and inf.
+
+```text
+   HASSE DIAGRAM: divisibility on {1,2,3,4,6,12}
+
+                12
+               /  \
+              4    6
+              |   / \
+              2  3   ...
+               \ |
+                1
+   (edges = cover relations: a < b with nothing between)
+```
+
+### 4.2 Order Type and Order-Isomorphism
+
+Two ordered sets $(A,<_A)$ and $(B,<_B)$ have the same **order type** if there is a bijection $f: A\to B$ that preserves and reflects the order:
+$$
+a <_A a' \iff f(a) <_B f(a').
+$$
+Then $f$ is an **order isomorphism**. Order type is finer than cardinality: $(\mathbb{N},<)$, $(\mathbb{Z},<)$, and $(\mathbb{Q},<)$ all have cardinality $\aleph_0$ but **four different order types** (add $(\mathbb{Q},<)$ vs $(\mathbb{N},<)$: the former is dense, the latter discrete). The order types of well-orders are precisely the **ordinals** (Section 5).
+
+### 4.3 Dense and Complete Orders
+
+- $(\mathbb{Q}, <)$ is a **dense linear order without endpoints**; it is the unique countable such order (Cantor's back-and-forth theorem). Any two countable dense linear orders without endpoints are order-isomorphic.
+- $(\mathbb{R}, <)$ is **Dedekind-complete**: every nonempty subset bounded above has a least upper bound. It is the order-completion of $\mathbb{Q}$.
+- **Well-orders** are the strictest: every nonempty subset has a least element. $\mathbb{N}$ is well-ordered; $\mathbb{Z}$, $\mathbb{Q}$, and $\mathbb{R}$ (with the usual $<$) are not.
+
+---
+
+## 5. Ordinal Numbers
+
+### 5.1 The von Neumann Ordinals
+
+::: {#def-ordinal}
+#### Definition 5.1 (von Neumann ordinal)
+A set $\alpha$ is an **ordinal** if it is
+1. **transitive**: every element of $\alpha$ is a subset of $\alpha$ ($x\in\alpha \Rightarrow x\subseteq\alpha$), and
+2. **well-ordered by $\in$**: $\in$ restricted to $\alpha$ is a strict well-order.
+:::
+
+Every well-ordered set is order-isomorphic to a **unique** ordinal (the **order type**). Concretely, each ordinal *is* the set of all smaller ordinals:
+$$
+0 = \varnothing,\quad 1 = \{0\},\quad 2 = \{0,1\},\quad 3 = \{0,1,2\},\ \ldots
+$$
+The **successor** of $\alpha$ is $\alpha + 1 := \alpha \cup \{\alpha\}$. A nonzero ordinal is a:
+- **successor ordinal** if $\alpha = \beta + 1$ for some $\beta$;
+- **limit ordinal** otherwise (e.g. $\omega = \{0,1,2,\dots\}$).
+
+$$
+\omega := \{\, 0, 1, 2, 3, \ldots \,\},\qquad \omega+1 = \omega \cup \{\omega\},\qquad \omega\cdot 2 = \omega + \omega.
+$$
+
+### 5.2 Transfinite Induction and Recursion
+
+::: {#thm-transfinite-induction}
+#### Theorem 5.1 (Transfinite Induction)
+If for every ordinal $\alpha$,
+$$
+\bigl(\forall \beta < \alpha,\ P(\beta)\bigr) \Rightarrow P(\alpha),
+$$
+then $P(\alpha)$ holds for all ordinals $\alpha$.
+:::
+
+::: {#thm-transfinite-recursion}
+#### Theorem 5.2 (Transfinite Recursion)
+Given a rule $G$, there is a unique function $F$ on $\mathrm{Ord}$ with
+$$
+F(\alpha) = G\bigl(F\!\restriction_{\alpha}\bigr),
+$$
+where $F\!\restriction_\alpha$ is the restriction of $F$ to $\{\beta : \beta<\alpha\}$.
+:::
+
+Transfinite recursion is how ordinal arithmetic, the von Neumann universe $V_\alpha$, and the Borel hierarchy are all built.
+
+### 5.3 Ordinal Arithmetic
+
+Addition, multiplication, and exponentiation are defined by transfinite recursion:
+$$
+\begin{aligned}
+\alpha + 0 &= \alpha, & \alpha + (\beta+1) &= (\alpha+\beta)+1, & \alpha+\lambda &= \sup_{\beta<\lambda}(\alpha+\beta),\\
+\alpha \cdot 0 &= 0, & \alpha\cdot(\beta+1) &= \alpha\cdot\beta + \alpha, & \alpha\cdot\lambda &= \sup_{\beta<\lambda}(\alpha\cdot\beta),\\
+\alpha^0 &= 1, & \alpha^{\beta+1} &= \alpha^{\beta}\cdot\alpha, & \alpha^{\lambda} &= \sup_{\beta<\lambda}\alpha^{\beta}.
+\end{aligned}
+$$
+
+**Ordinal arithmetic is not commutative.** The classic witnesses:
+$$
+1 + \omega = \omega \neq \omega + 1, \qquad 2\cdot\omega = \omega \neq \omega\cdot 2, \qquad (\omega+1)\cdot\omega = \omega^2 \neq \omega^2+\omega = \omega\cdot(\omega+1).
+$$
+It is **left-distributive** but not right-distributive: $\alpha\cdot(\beta+\gamma) = \alpha\cdot\beta + \alpha\cdot\gamma$, while $(\alpha+\beta)\cdot\gamma \neq \alpha\cdot\gamma+\beta\cdot\gamma$ in general. Both $+$ and $\cdot$ are associative.
+
+### 5.4 Cantor Normal Form
+
+Every ordinal $\alpha > 0$ can be written uniquely as
+$$
+\alpha = \omega^{\beta_1}\cdot c_1 + \omega^{\beta_2}\cdot c_2 + \cdots + \omega^{\beta_k}\cdot c_k,
+$$
+with $\beta_1 > \beta_2 > \cdots > \beta_k$ ordinals and $c_i \in \mathbb{N}_{>0}$. This is the ordinal analogue of a polynomial expansion. The first limit, $\omega$, and the smallest ordinal closed under $+$ and $\cdot$ but not exponentiation is $\omega^\omega$. The first ordinal closed under **all** of $+,\cdot,{}^{}$ is
+$$
+\varepsilon_0 = \sup\{\, \omega,\ \omega^{\omega},\ \omega^{\omega^{\omega}},\ \ldots \,\},
+$$
+which is the proof-theoretic ordinal of Peano arithmetic (Gentzen, 1936): $\mathrm{PA}$ cannot prove $\varepsilon_0$'s well-foundedness, and adding transfinite induction up to $\varepsilon_0$ proves $\mathrm{PA}$'s consistency.
+
+---
+
+## 6. Cardinal Numbers and Cardinality
+
+### 6.1 Equipotence
+
+Two sets have the **same cardinality**, $|A| = |B|$, if there is a bijection $A \to B$. Cardinality is the equivalence type under "there exists a bijection". A set is:
+
+- **finite** if $|A| = n$ for some natural $n$;
+- **infinite** if not finite;
+- **Dedekind-infinite** if it is in bijection with a proper subset of itself;
+- **countable** if finite or $|A| = |\mathbb{N}| =: \aleph_0$;
+- **uncountable** otherwise.
+
+(In ZFC with the Axiom of Choice, infinite $\Leftrightarrow$ Dedekind-infinite. Without AC, there can be infinite Dedekind-finite sets.)
+
+### 6.2 Cantor's Theorem and Diagonalization
+
+::: {#thm-cantor}
+#### Theorem 6.1 (Cantor, 1891)
+For every set $A$, there is no surjection $A \to \mathcal{P}(A)$; hence
+$$
+|A| < |\mathcal{P}(A)| = 2^{|A|}.
+$$
+:::
+
+*Proof.* Let $f: A \to \mathcal{P}(A)$ be any function. Define the **diagonal** set
+$$
+D = \{\, a \in A : a \notin f(a) \,\} \in \mathcal{P}(A).
+$$
+If $f$ were surjective, $D = f(a_0)$ for some $a_0$. Then
+$$
+a_0 \in D \iff a_0 \notin f(a_0) = D,
+$$
+a contradiction. So $f$ is not surjective. $\blacksquare$
+
+Setting $A = \mathbb{N}$ gives $|\mathbb{R}| = |\mathcal{P}(\mathbb{N})| = 2^{\aleph_0} > \aleph_0$.
+
+### 6.3 The Schröder–Bernstein Theorem
+
+::: {#thm-schroder}
+#### Theorem 6.2 (Cantor–Schröder–Bernstein)
+If there are injections $A \hookrightarrow B$ and $B \hookrightarrow A$, then there is a bijection $A \to B$. In cardinal terms: $|A|\le|B|$ and $|B|\le|A|$ imply $|A|=|B|$.
+:::
+
+This is a **ZF-theorem** (no Choice needed) and is indispensable: it lets one prove equipotence by exhibiting two injections instead of constructing a bijection.
+
+### 6.4 Alephs and the Continuum Hypothesis
+
+The infinite cardinals are well-ordered into **alephs**:
+$$
+\aleph_0 < \aleph_1 < \aleph_2 < \cdots < \aleph_\alpha < \cdots \qquad (\alpha \in \mathrm{Ord}).
+$$
+$\aleph_0 = |\mathbb{N}|$; $\aleph_1$ is the least uncountable cardinal; the cardinality of the reals is
+$$
+\mathfrak{c} := |\mathbb{R}| = 2^{\aleph_0}.
+$$
+
+::: {#def-ch}
+#### The Continuum Hypothesis (CH)
+$$
+\mathfrak{c} = \aleph_1 \quad\Longleftrightarrow\quad 2^{\aleph_0} = \aleph_1.
+$$
+The **Generalized Continuum Hypothesis (GCH)** is $2^{\aleph_\alpha} = \aleph_{\alpha+1}$ for all $\alpha$.
+:::
+
+**CH is independent of ZFC**: Gödel (1938) showed $\mathrm{ZFC} + \mathrm{GCH}$ is consistent (via the constructible universe $L$), and Cohen (1963) showed $\mathrm{ZFC} + \neg\mathrm{CH}$ is consistent (via forcing). So CH can be neither proved nor disproved from the standard axioms.
+
+### 6.5 Cardinal Arithmetic
+
+For infinite cardinals $\kappa, \lambda$ (with AC):
+$$
+\kappa + \lambda = \kappa \cdot \lambda = \max(\kappa,\lambda),\qquad \kappa^{n} = \kappa\ (n\ge 1 \text{ finite}).
+$$
+But exponentiation is wild:
+$$
+2^{\kappa} > \kappa,\qquad \kappa^{\mathrm{cf}\,\kappa} > \kappa \ \ (\text{König's theorem}).
+$$
+Since $\kappa^{<\kappa} \cdot \kappa = \kappa$ for suitable $\kappa$, the map $\kappa \mapsto 2^\kappa$ is strictly increasing but its exact values are largely undecidable.
+
+**Examples:**
+$$
+|\mathbb{Q}| = \aleph_0,\quad |\mathbb{R}| = \mathfrak{c},\quad |\mathbb{R}^2| = \mathfrak{c},\quad |\mathbb{R}^n| = \mathfrak{c},\quad |\mathcal{P}(\mathbb{N})| = \mathfrak{c},\quad |\mathbb{R}^{\mathbb{R}}| = 2^{\mathfrak{c}} > \mathfrak{c}.
+$$
+
+### 6.6 Cardinality in Practice: Subsets, Unions, Products
+
+| Statement | Result | Reason |
+| :--- | :--- | :--- |
+| Subset of a countable set | countable | inject into $\mathbb{N}$; a subset of $\mathbb{N}$ is countable |
+| Finite product of countable sets | countable | Cantor pairing $\mathbb{N}^2 \to \mathbb{N}$ |
+| Countable union of countable sets | countable | snake enumeration (uses countable choice) |
+| $\mathbb{N}^k$, $\mathbb{Z}^k$, $\mathbb{Q}^k$ | countable | iterate pairing |
+| Set of finite strings over a finite alphabet | countable | encode as integers |
+| Set of algebraic numbers | countable | finitely many roots per polynomial; countably many polynomials |
+| Set of computable reals | countable | countably many programs |
+| $\mathbb{R}$, any interval, the Cantor set | uncountable | Cantor's diagonal / measure |
+| $\mathcal{P}(\mathbb{N})$, $2^{\mathbb{N}}$, $\mathbb{R}^{\mathbb{N}}$ | uncountable ($2^{\aleph_0}$) | Cantor's theorem |
+| $\mathbb{R}\setminus\mathbb{Q}$ (irrationals) | uncountable ($\mathfrak{c}$) | complement of a countable set in an uncountable one |
+| Transcendental numbers | uncountable ($\mathfrak{c}$) | algebraic numbers are countable |
+
+::: {.callout-tip}
+**The Cantor pairing function.** A bijection $\pi: \mathbb{N}\times\mathbb{N}\to\mathbb{N}$ is
+$$
+\pi(a,b) = \frac{(a+b)(a+b+1)}{2} + b.
+$$
+Iterating it shows $\mathbb{N}^k$ is countable, hence $\mathbb{Q}$ is countable (each rational $p/q$ is a pair), even though $\mathbb{Q}$ is **dense** in $\mathbb{R}$.
+:::
+
+---
+
+## 7. ZFC: The Nine Axioms
+
+ZFC is a first-order theory in the language $\{\in\}$. Below are the axioms (with $A,B,x,y,\dots$ ranging over sets and $\varphi$ any first-order formula; Specification and Replacement are **schemas**, one axiom per formula).
+
+### 7.1 The Axioms of ZF
+
+::: {#ax-ext}
+#### Axiom 1 — Extensionality
+$$
+\forall A\,\forall B\ \bigl(\forall x\,(x\in A \leftrightarrow x\in B) \rightarrow A=B\bigr).
+$$
+**Reading:** sets are determined by their elements. There is only one empty set, one $\{1,2,3\}$, etc.
+:::
+
+::: {#ax-found}
+#### Axiom 2 — Regularity (Foundation)
+$$
+\forall A\ \bigl(A \neq \varnothing \rightarrow \exists x \in A\ (x \cap A = \varnothing)\bigr).
+$$
+**Reading:** every nonempty set has an $\in$-minimal element. This forbids $x\in x$, infinite descending chains $\cdots\in x_2 \in x_1 \in x_0$, and cycles. It underlies the **cumulative hierarchy** (Section 9).
+:::
+
+::: {#ax-spec}
+#### Axiom 3 — Specification (Separation) Schema
+For each formula $\varphi(x,\bar{w})$,
+$$
+\forall \bar{w}\,\forall A\,\exists B\,\forall x\ \bigl(x\in B \leftrightarrow (x\in A \wedge \varphi(x,\bar{w}))\bigr).
+$$
+**Reading:** subsets defined by properties exist. This blocks Russell's paradox: $\{x \in A : x\notin x\}$ is a legitimate set, but it is only defined *relative to $A$*, so no $R$ containing all sets arises.
+:::
+
+::: {#ax-pair}
+#### Axiom 4 — Pairing
+$$
+\forall x\,\forall y\,\exists Z\,\forall z\ \bigl(z\in Z \leftrightarrow (z=x \vee z=y)\bigr).
+$$
+**Reading:** unordered pairs $\{x,y\}$ exist. Combining with Specification yields singletons $\{x\}$ and the Kuratowski ordered pair.
+:::
+
+::: {#ax-union}
+#### Axiom 5 — Union
+$$
+\forall F\,\exists A\,\forall Y\,\forall x\ \bigl((x\in Y \wedge Y\in F) \rightarrow x\in A\bigr).
+$$
+**Reading:** the union $\bigcup F$ of a family $F$ exists. Together with Pairing this gives binary unions and, with Infinity, the cumulative hierarchy.
+:::
+
+::: {#ax-repl}
+#### Axiom 6 — Replacement Schema
+For each formula $\varphi(x,y,\bar{w})$,
+$$
+\forall \bar{w}\,\forall A\ \Bigl(\forall x\in A\ \exists! y\ \varphi(x,y,\bar{w}) \rightarrow \exists B\ \forall x\in A\ \exists y\in B\ \varphi(x,y,\bar{w})\Bigr).
+$$
+**Reading:** the image of a set under a definable function is a set. Replacement (Fraenkel, Skolem) is what makes the ordinals go arbitrarily far and powers the hierarchy $V_\alpha$.
+:::
+
+::: {#ax-inf}
+#### Axiom 7 — Infinity
+$$
+\exists I\ \bigl(\varnothing \in I \wedge \forall x \in I\ (x\cup\{x\} \in I)\bigr).
+$$
+**Reading:** there is an **inductive set**; the smallest one is $\omega = \{0,1,2,\dots\}$. This axiom gives us $\mathbb{N}$ and all infinite sets.
+:::
+
+::: {#ax-power}
+#### Axiom 8 — Power Set
+$$
+\forall x\,\exists y\,\forall z\ \bigl(z\in y \leftrightarrow z\subseteq x\bigr).
+$$
+**Reading:** the set $\mathcal{P}(x)$ of all subsets of $x$ exists. This is the engine of Cantor's theorem and of the uncountable.
+:::
+
+### 7.2 The Axiom of Choice
+
+::: {#ax-choice}
+#### Axiom 9 — Choice (AC)
+Every family of nonempty sets admits a **choice function**:
+$$
+\forall X\ \Bigl(\varnothing \notin X \rightarrow \exists f: X \to \bigcup X\ \forall A \in X\ \bigl(f(A) \in A\bigr)\Bigr).
+$$
+**Reading:** from each member of a family of nonempty sets, one may simultaneously select an element — even when no *rule* selects it.
+:::
+
+**Equivalent formulations** (each provable in ZF from AC and vice versa):
+
+| Form | Statement |
+| :--- | :--- |
+| Well-ordering theorem | every set can be well-ordered |
+| Zorn's lemma | a poset in which every chain has an upper bound has a maximal element |
+| Hausdorff maximal principle | every chain extends to a maximal chain |
+| Tychonoff's theorem | products of compact spaces are compact |
+| Cardinal comparability | for any two sets, one injects into the other |
+| Surjections split | every surjection has a right inverse |
+| Products nonempty | $\prod_i A_i \neq \varnothing$ when all $A_i\neq\varnothing$ |
+| Vector spaces | every vector space has a basis |
+| Fields | every field has an algebraic closure |
+| Infinite sets | every infinite set is Dedekind-infinite |
+
+**Independence.** AC is independent of ZF: Gödel (1938) built $L \models \mathrm{ZFC}$ (so AC is consistent with ZF), and Cohen (1963) invented **forcing** to build models of $\mathrm{ZF} + \neg\mathrm{AC}$. Many non-constructive results (non-measurable sets, the Banach–Tarski paradox) use AC essentially. Without AC, even $|\mathbb{R}|$ and $\aleph_1$ can be incomparable.
+
+---
+
+## 8. The von Neumann Universe
+
+::: {#def-v}
+#### Definition 8.1 (Cumulative hierarchy)
+By transfinite recursion on the ordinals:
+$$
+V_0 = \varnothing,\qquad V_{\alpha+1} = \mathcal{P}(V_\alpha),\qquad V_\lambda = \bigcup_{\beta<\lambda} V_\beta \quad (\lambda \text{ limit}),
+$$
+and the **von Neumann universe**
+$$
+V = \bigcup_{\alpha \in \mathrm{Ord}} V_\alpha.
+$$
+:::
+
+Each set has a **rank**: $\operatorname{rank}(x) = $ the least $\alpha$ with $x \in V_{\alpha+1}$. Then $V_\alpha$ is the class of sets of rank $< \alpha$, and:
+
+$$
+V_0 = \varnothing,\quad V_1 = \{\varnothing\},\quad V_2 = \{\varnothing, \{\varnothing\}\},\quad V_\omega = \text{hereditarily finite sets}.
+$$
+
+::: {#thm-foundation-v}
+#### Theorem 8.1 (Foundation $\Leftrightarrow$ $V = \bigcup_\alpha V_\alpha$)
+In ZF, the Axiom of Regularity is equivalent to the statement that every set belongs to some $V_\alpha$.
+:::
+
+```text
+        THE VON NEUMANN HIERARCHY
+   V0  ∅
+   V1  {∅}
+   V2  {∅, {∅}}
+   ...
+   Vω  hereditarily finite sets
+   Vω+1 = P(Vω)
+   ...
+   Vλ = ∪{Vβ : β<λ}
+   V  = ∪{Vα : α ∈ Ord}   ← proper class (not a set)
+```
+
+**Proper classes.** $V$, $\mathrm{Ord}$, and the class of all cardinals are **proper classes** — definable collections that are "too big" to be sets. Class theories such as **NBG** (von Neumann–Bernays–Gödel, a conservative extension of ZFC) and **MK** (Morse–Kelley, stronger) formalize classes directly.
+
+**The constructible universe $L$ (Gödel, 1938).**
+$$
+L_0 = \varnothing,\qquad L_{\alpha+1} = \mathrm{Def}(L_\alpha),\qquad L = \bigcup_{\alpha\in\mathrm{Ord}} L_\alpha,
+$$
+where $\mathrm{Def}$ adjoins all subsets definable with parameters. Then $L \models \mathrm{ZFC} + \mathrm{GCH}$. The hypothesis $V = L$ ("every set is constructible") settles CH affirmatively but is independent of ZFC.
+
+**Reflection.** For any finite set of first-order sentences true in $V$, there is a $V_\alpha$ in which they are also true: the universe is reflected by its stages. This is the technical heart of Gödel's construction of $L$.
+
+---
+
+## 9. Paradoxes of Foundations and Computer Science
+
+The paradoxes are not curiosities; each marks a genuine boundary of formal reasoning.
+
+| Paradox / Theorem | Core content | Consequence |
+| :--- | :--- | :--- |
+| **Russell's paradox** | $R = \{x : x\notin x\}$ | no unrestricted comprehension |
+| **Cantor's paradox** | no set of all sets | $V$ is a proper class |
+| **Burali-Forti** | no set of all ordinals | $\mathrm{Ord}$ is a proper class |
+| **Skolem's paradox** | ZFC has a countable model yet proves uncountable sets exist | countability is not absolute |
+| **Banach–Tarski** | a ball splits into finitely many pieces reassembled into two balls | uses AC; non-measurable pieces |
+| **Richard's paradox** | diagonalize over "all reals definable in English" | definability is not expressible |
+| **Berry's paradox** | "smallest integer not nameable in < 20 words" | nameability is not expressible |
+| **Grelling–Nelson** | is "heterological" heterological? | semantic self-reference |
+| **Curry's paradox** | a self-referential conditional proves anything | motivates linear logic / types |
+| **Liar / Epimenides** | "this sentence is false" | no consistent truth predicate |
+| **Löb's theorem** | if PA proves "if provable, then true", it proves it | self-reference in provability logic |
+| **Gödel I** | any consistent effective theory extending PA has an undecidable sentence | incompleteness |
+| **Gödel II** | such a theory cannot prove its own consistency | no self-justification |
+| **Tarski** | truth in a language is not definable in that language | hierarchies of truth |
+| **Halting problem** | no total computable function decides halting | undecidability (Turing 1936) |
+| **Rice's theorem** | every nontrivial semantic property of programs is undecidable | extensional analysis impossible |
+| **Entscheidungsproblem** | no algorithm decides validity in FOL | Church–Turing 1936 |
+| **Busy Beaver** | $\Sigma(n)$ grows faster than any computable function | noncomputability |
+| **Kolmogorov / Chaitin** | almost all strings are incompressible; $\Omega$ is random | algorithmic information limits |
+| **Time/space hierarchy** | strictly more resources $\Rightarrow$ strictly more languages | diagonalization in complexity |
+| **FLP / Two Generals** | no deterministic async consensus with one crash | distributed impossibility |
+| **CAP** | cannot have consistency + availability + partition tolerance | systems tradeoff |
+
+### 9.1 The Halting Problem (Turing, 1936)
+
+::: {#thm-halting}
+#### Theorem 9.1 (Undecidability of Halting)
+There is no total program $H(P, I)$ that returns true iff program $P$ halts on input $I$.
+:::
+
+*Proof.* Suppose such $H$ exists. Define the "contrary" program $D$:
+$$
+D(P) = \begin{cases} \text{loop forever} & \text{if } H(P,P) = \texttt{true},\\ \text{halt} & \text{if } H(P,P) = \texttt{false}. \end{cases}
+$$
+Run $D$ on itself. If $H(D,D) = \texttt{true}$ then $D(D)$ loops, so it does not halt, contradiction. If $H(D,D) = \texttt{false}$ then $D(D)$ halts, contradiction. Hence $H$ cannot exist. $\blacksquare$
+
+The proof is **Cantor's diagonal argument** in computational dress: $D$ is the diagonal element that differs from every row of the "halting table".
+
+### 9.2 Rice's Theorem and the Limits of Program Analysis
+
+::: {#thm-rice}
+#### Theorem 9.2 (Rice, 1953)
+Let $\mathcal{P}$ be any nontrivial property of the *function computed* by a program (a semantic property), i.e. $\mathcal{P}$ depends only on the input–output behaviour. Then the set of programs whose computed function has $\mathcal{P}$ is undecidable.
+:::
+
+Consequences: whether a program computes the constant zero function, is total, is equivalent to another program, or has any specified output on some input are all undecidable. This is why static analysis must be **sound-but-incomplete** or **complete-but-unsound**, and why real analyzers either over-approximate or fail to terminate. The modern theory of **abstract interpretation** (Cousot) is the principled response.
+
+### 9.3 Incompleteness, Complexity, and Randomness
+
+- **Gödel's first incompleteness theorem**: any consistent, effectively axiomatized theory extending PA has a sentence $G$ with neither $G$ nor $\neg G$ provable. $G$ encodes "I am not provable" — the **Liar paradox** formalized.
+- **Gödel's second theorem**: the theory cannot prove $\mathrm{Con}(T)$. This is why Hilbert's program failed and why Gentzen needed $\varepsilon_0$-induction to prove PA's consistency.
+- **Kolmogorov complexity** $K(s)$ is the length of the shortest program outputting string $s$. A **Berry paradox** shows $K$ is uncomputable: "the shortest program longer than any in this sentence" has no computable length. **Chaitin's $\Omega$** (the halting probability) is a specific real whose bits are algorithmically random ($\Omega$ is transcendental and noncomputable).
+- **Busy Beaver** $\Sigma(n)$ (max steps a halting $n$-state Turing machine runs) is uncomputable and eventually dominates every computable function — a concrete bridge between computability and growth rates.
+- **Hierarchy theorems**: diagonalization proves $\mathrm{DTIME}(n^k) \subsetneq \mathrm{DTIME}(n^{k+1})$ and the space analogue, showing resource-bounded classes are strict. (Whether $\mathrm{P} = \mathrm{NP}$ remains the great open diagonalization-resistant problem.)
+
+---
+
+## 10. Computational Laboratory
+
+The following standard-library Python lab implements von Neumann ordinals, ordinal arithmetic below $\omega^\omega$ via Cantor normal form, the Cantor pairing function, diagonalization, and demonstrations of Russell's paradox and Cantor's theorem.
+
+```{python}
+import itertools
+
+# ---------------------------------------------------------------
+# 1. VON NEUMANN ORDINALS AS SETS
+# ---------------------------------------------------------------
+def succ(s):
+    return frozenset(set(s) | {s})
+
+ordinals = [frozenset()]
+for _ in range(6):
+    ordinals.append(succ(ordinals[-1]))
+print("=== 1. VON NEUMANN ORDINALS (rank = |set|) ===")
+for n, o in enumerate(ordinals):
+    print(f"  {n} = {sorted(len(x) for x in o)}   (has {len(o)} elements)")
+
+# ---------------------------------------------------------------
+# 2. ORDINAL ARITHMETIC BELOW omega^omega (Cantor normal form)
+#    Represent an ordinal as a dict {exponent: coefficient},
+#    e.g. omega = {1:1}, omega+1 = {1:1, 0:1}, omega*2 = {1:2}.
+# ---------------------------------------------------------------
+def norm(d):
+    return {e: c for e, c in d.items() if c != 0}
+
+def add(a, b):
+    a, b = norm(a), norm(b)
+    if not a: return dict(b)
+    if not b: return dict(a)
+    ea, eb = max(a), max(b)
+    if ea > eb:
+        lead = {ea: a[ea]}
+        tail = {e: c for e, c in a.items() if e < ea}
+        return norm({**lead, **add(tail, b)})
+    if ea < eb:
+        return dict(b)
+    r = dict(b); r[ea] = a[ea] + b[eb]
+    return norm(r)
+
+def mul(alpha, beta):
+    alpha, beta = norm(alpha), norm(beta)
+    if not alpha or not beta: return {}
+    result = {}
+    for e in sorted(beta, reverse=True):
+        n = beta[e]
+        if e == 0:
+            t = dict(alpha)
+        elif max(alpha) == 0:          # finite x omega^e = omega^e
+            t = {e: 1}
+        else:                          # (omega^a * m + A) * omega^e
+            a = max(alpha); m = alpha[a]
+            t = {a + e: m}
+        result = add(result, {e2: c2 * n for e2, c2 in t.items()})
+    return norm(result)
+
+def lt(a, b):
+    a, b = norm(a), norm(b)
+    for e in sorted(set(a) | set(b), reverse=True):
+        ca, cb = a.get(e, 0), b.get(e, 0)
+        if ca != cb: return ca < cb
+    return False
+
+def to_str(a):
+    a = norm(a)
+    if not a: return "0"
+    parts = []
+    for e in sorted(a, reverse=True):
+        c = a[e]
+        if e == 0:      parts.append(str(c))
+        elif e == 1:    parts.append("ω" if c == 1 else f"ω·{c}")
+        else:           parts.append(f"ω^{e}" if c == 1 else f"ω^{e}·{c}")
+    return " + ".join(parts)
+
+one, two, omega = {0: 1}, {0: 2}, {1: 1}
+print("\n=== 2. ORDINAL ARITHMETIC (below ω^ω) ===")
+for label, o in [
+    ("ω + 1", add(omega, one)),
+    ("1 + ω", add(one, omega)),
+    ("ω · 2", mul(omega, two)),
+    ("2 · ω", mul(two, omega)),
+    ("(ω+1)·ω", mul(add(omega, one), omega)),
+    ("ω·(ω+1)", mul(omega, add(omega, one))),
+    ("ω · ω", mul(omega, omega)),
+    ("(ω+1)·2", mul(add(omega, one), two)),
+]:
+    print(f"  {label:10s} = {to_str(o)}")
+print("  non-commutative: 1+ω =", to_str(add(one, omega)), " but ω+1 =", to_str(add(omega, one)))
+
+# ---------------------------------------------------------------
+# 3. CANTOR PAIRING: N x N -> N (countability of Q)
+# ---------------------------------------------------------------
+def cantor_pair(a, b):
+    return (a + b) * (a + b + 1) // 2 + b
+
+def cantor_unpair(z):
+    w = (int((8 * z + 1) ** 0.5) - 1) // 2
+    t = (w * w + w) // 2
+    return w - (z - t), z - t
+
+print("\n=== 3. CANTOR PAIRING (N x N is countable) ===")
+pairs = [(0, 0), (1, 0), (0, 1), (1, 1), (2, 3)]
+for a, b in pairs:
+    z = cantor_pair(a, b)
+    print(f"  pair({a},{b}) = {z}   inverse -> {cantor_unpair(z)}")
+print("  Hence Q can be enumerated: emit p/q for each paired (p,q), skipping q=0.")
+
+# ---------------------------------------------------------------
+# 4. DIAGONALIZATION (Cantor)
+# ---------------------------------------------------------------
+def diagonal(rows):
+    return "".join("1" if rows[i][1][i] == "0" else "0" for i in range(len(rows)))
+
+rows = [("s1", "0101"), ("s2", "1010"), ("s3", "1111"), ("s4", "0000")]
+d = diagonal(rows)
+print("\n=== 4. DIAGONALIZATION ===")
+for name, s in rows:
+    print(f"  {name} = {s}")
+print(f"  diagonal = {d}  (differs from each row at its own index)")
+
+# ---------------------------------------------------------------
+# 5. CANTOR'S THEOREM (finite case): |P(A)| = 2^|A| > |A|
+# ---------------------------------------------------------------
+print("\n=== 5. CANTOR'S THEOREM (finite power set) ===")
+for n in range(1, 7):
+    A = list(range(n))
+    ps = list(itertools.chain.from_iterable(itertools.combinations(A, k) for k in range(n + 1)))
+    print(f"  |A| = {n}, |P(A)| = {len(ps)} = 2^{n} > {n}")
+
+# ---------------------------------------------------------------
+# 6. RUSSELL'S PARADOX
+# ---------------------------------------------------------------
+print("\n=== 6. RUSSELL'S PARADOX (structural) ===")
+
+class Set:
+    def __init__(self, name, contains_self=None):
+        self.name = name
+        self.contains_self = contains_self   # None = undefined / not a set
+
+R = Set("R", contains_self=None)
+# R = { x : x is not an element of itself } would need R in R
+# self-referential dependency: R.contains_self = not R.contains_self
+try:
+    for _ in range(3):
+        R.contains_self = not R.contains_self      # oscillates
+        print(f"  iteration: R in R = {R.contains_self}")
+    print("  → R ∈ R  iff  R ∉ R. No consistent assignment exists.")
+except RecursionError:
+    print("  → self-reference is inconsistent: no such set R exists.")
+
+# ---------------------------------------------------------------
+# 7. HALTING PROBLEM (diagonal argument, structural)
+# ---------------------------------------------------------------
+print("\n=== 7. HALTING PROBLEM (diagonal) ===")
+print("  Assume a total decider H(P, I). Define D(P): if H(P,P) then loop else halt.")
+print("  Then D(D) halts  iff  H(D,D)=false  iff  D(D) does not halt. Contradiction.")
+print("  The same diagonal that defeats a surjection N -> P(N) defeats a halting decider.")
+```
+
+---
+
+## 11. Summary Matrix
+
+| Notion | Definition sketch | Key facts |
+| :--- | :--- | :--- |
+| **ZFC** | 8 ZF axioms/schemas + Choice | first-order; consistent (if ZF is) |
+| **Relation** | $R \subseteq A\times A$ | types: equivalence, preorder, partial/total/well-order |
+| **Order type** | isomorphism class of ordered sets | well-order types $=$ ordinals |
+| **Ordinal** | transitive set well-ordered by $\in$ | $0,1,\dots,\omega,\omega+1,\dots,\varepsilon_0$; non-commutative arithmetic |
+| **Cardinal** | bijection class $|A|$ | $\aleph_0 < \aleph_1 < \cdots$; $\mathfrak{c}=2^{\aleph_0}$ |
+| **Cantor's theorem** | — | $|A| < |\mathcal{P}(A)|$; diagonalization |
+| **CH** | $2^{\aleph_0}=\aleph_1$ | independent of ZFC (Gödel + Cohen) |
+| **AC** | choice functions exist | equivalent to well-ordering, Zorn; independent of ZF |
+| **$V$** | $\bigcup_\alpha V_\alpha$ | proper class; Foundation $\Leftrightarrow$ $V=\bigcup V_\alpha$ |
+| **$L$** | constructible universe | $L \models \mathrm{ZFC} + \mathrm{GCH}$; $V=L$ independent |
+| **Paradoxes** | Russell, Cantor, Burali-Forti, Skolem, Banach–Tarski | limit comprehension, definability, choice |
+| **CS limitative** | halting, Rice, Gödel, Chaitin | undecidability, incompleteness, randomness |
+
+---
+
+## 12. Curated References and Primary Sources
+
+1. **Zermelo, Ernst (1908)**. *"Untersuchungen über die Grundlagen der Mengenlehre I"*. Mathematische Annalen, 65: 261–281.
+2. **Fraenkel, Abraham (1922)**. *"Zu den Grundlagen der Cantor–Zermeloschen Mengenlehre"*. Mathematische Annalen, 86: 230–237.
+3. **Russell, Bertrand (1903)**. *The Principles of Mathematics*. Cambridge University Press.
+4. **Hausdorff, Felix (1914)**. *Grundzüge der Mengenlehre*. Veit & Comp.
+5. **von Neumann, John (1923)**. *"Zur Einführung der transfiniten Zahlen"*. Acta Litterarum ac Scientiarum, 1: 199–208.
+6. **Gödel, Kurt (1938)**. *"The Consistency of the Axiom of Choice and of the Generalized Continuum-Hypothesis"*. PNAS, 24(12): 556–557.
+7. **Gödel, Kurt (1940)**. *The Consistency of the Continuum Hypothesis*. Annals of Mathematics Studies 3, Princeton.
+8. **Cohen, Paul (1963–64)**. *"The Independence of the Continuum Hypothesis"*. PNAS, 50(6): 1143–1148 and 51(1): 105–110.
+9. **Turing, Alan (1936)**. *"On Computable Numbers, with an Application to the Entscheidungsproblem"*. Proc. London Math. Soc., s2-42(1): 230–265.
+10. **Rice, Henry (1953)**. *"Classes of Recursively Enumerable Sets and Their Decision Problems"*. Trans. AMS, 74: 358–366.
+11. **Enderton, Herbert (1977)**. *Elements of Set Theory*. Academic Press.
+12. **Jech, Thomas (2003)**. *Set Theory*. Springer Monographs in Mathematics, 3rd millennium ed.
+13. **Kunen, Kenneth (1980)**. *Set Theory: An Introduction to Independence Proofs*. North-Holland.
+14. **Hrbacek, K. & Jech, T. (1999)**. *Introduction to Set Theory*, 3rd ed. CRC Press.
+15. **Suppes, Patrick (1960)**. *Axiomatic Set Theory*. Dover.
+16. **Sipser, Michael (2012)**. *Introduction to the Theory of Computation*, 3rd ed. Cengage.
+17. **Chaitin, Gregory (1987)**. *Algorithmic Information Theory*. Cambridge University Press.
+18. **Barwise, J. & Etchemendy, J. (1993)**. *The Language of First-Order Logic*. CSLI.

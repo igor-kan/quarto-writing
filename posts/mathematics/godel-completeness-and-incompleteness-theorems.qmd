@@ -1,0 +1,444 @@
+---
+title: "Gödel's Completeness and Incompleteness Theorems"
+subtitle: "Why First-Order Logic Is Complete but Arithmetic Is Not: Henkin's Model Construction, Gödel Numbering, the Diagonal Lemma, the Self-Referential Sentence, Rosser's Refinement, the Second Theorem, and the Implications for Hilbert's Program, Minds, and the Limits of Formal Proof"
+author: "Igor Kan"
+date: "2026-09-14"
+categories: [Mathematics, Logic & Foundations, Set Theory, Theoretical Computer Science, Philosophy]
+description: "A careful development of Gödel's two great theorems: the completeness theorem of first-order logic (validity = provability, Henkin's construction, compactness, Löwenheim–Skolem) and the incompleteness theorems (Gödel numbering, arithmetization of syntax, representability, the diagonal/fixed-point lemma, the Gödel sentence 'I am not provable', Rosser's trick, the second incompleteness theorem, Löb's theorem, and how the proofs were discovered and later reproved via computability and Kolmogorov complexity), together with the implications for Hilbert's program, decidability, independence, and the Lucas–Penrose argument, plus an executable Python laboratory implementing Gödel numbering, a quine (the computational diagonal lemma), a resolution prover demonstrating completeness against truth tables, and the halting-problem diagonal."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 4
+    number-sections: true
+jupyter: python3
+toc: true
+toc-depth: 4
+number-sections: true
+---
+
+::: {.callout-note appearance="simple"}
+*"This statement is not provable."*
+
+Gödel's **completeness** theorem (1929) is the good news: for first-order logic, **truth and proof coincide**. Gödel's **incompleteness** theorems (1931) are the boundary: no consistent, effectively given theory of arithmetic can prove every truth about the natural numbers — and none can prove its own consistency. Together they are the twin pillars of mathematical logic. This essay explains both, sketches how they were proved, and untangles their implications.
+:::
+
+::: {.callout-tip collapse="true"}
+### Companion Treatises in this Series
+- [The Uncountable Infinite: Cantor's Diagonal Argument, Cantor Set, and Fractals](uncountable-infinities-diagonal-argument-and-cantor-set-fractals.qmd)
+- [Axiomatic Set Theory, ZFC, Ordinals, Cardinals, and Paradoxes](axiomatic-set-theory-zfc-ordinals-cardinals-and-paradoxes.qmd)
+- [The Rational Line: Density, Enumeration, Cauchy Sequences, Dedekind Cuts, Metric Spaces, and Topology](rationals-density-enumeration-metric-spaces-and-topology.qmd)
+- [Philosophy of Mathematics: Platonism, Formalism, and Gödel](../philosophy/philosophy-of-mathematics-platonism-formalism-infinity-godel.qmd)
+:::
+
+---
+
+## 1. Introduction: Two Theorems, Often Confused
+
+The words *complete* and *incomplete* refer to **different notions**, which is why the two theorems seem to contradict each other at first glance.
+
+| Theorem | Year | Statement | Refers to |
+| :--- | :--- | :--- | :--- |
+| **Completeness** | 1929 | logical validity $\iff$ provability in FOL | the *proof system* of logic |
+| **Incompleteness** | 1931 | arithmetic truth $\not\subseteq$ provability | the *theory* of arithmetic |
+
+Completeness says the **deductive apparatus of first-order logic is strong enough** to derive every logically valid sentence. Incompleteness says that **any particular first-order theory rich enough to describe arithmetic is too weak** to capture all truths of its intended subject matter. There is no contradiction: the validities of logic form a manageable class; the truths of arithmetic do not.
+
+We proceed: formal preliminaries (Section 2), completeness (Section 3), incompleteness (Section 4), how the proofs work (Section 5), implications (Section 6), and a computational laboratory (Section 7).
+
+---
+
+## 2. Formal Systems: The Vocabulary
+
+::: {#def-formal}
+#### Definition 2.1 (Formal theory)
+A **formal theory** $T$ consists of:
+- a **language** $\mathcal{L}$: a (usually countable) set of symbols with syntactic rules forming **terms** and **formulas**;
+- a decidable set of **axioms** (logical and non-logical);
+- **inference rules** (e.g. modus ponens, generalization).
+
+A **proof** is a finite sequence of formulas, each an axiom or following from earlier ones by a rule. $T\vdash\varphi$ means "$\varphi$ is provable in $T$."
+:::
+
+**Semantics.** A **structure** (or model) $\mathcal{M}$ gives the symbols meaning; $\mathcal{M}\models\varphi$ means "$\varphi$ is true in $\mathcal{M}$." A formula is:
+- **satisfiable** if true in some model;
+- **valid** if true in every model;
+- a **semantic consequence** of $T$ ($T\models\varphi$) if every model of $T$ satisfies $\varphi$.
+
+Key metalogical properties:
+
+| Property | Meaning |
+| :--- | :--- |
+| **Soundness** | $T\vdash\varphi \Rightarrow T\models\varphi$ (proofs yield truth) |
+| **Completeness** | $T\models\varphi \Rightarrow T\vdash\varphi$ (truth is provable) |
+| **Consistency** | $T\nvdash\bot$ (no contradiction derivable) |
+| **Decidability** | there is an algorithm deciding $T\vdash\varphi$ |
+| **Recursive axiomatizability** | the axiom set is decidable |
+
+**Robinson arithmetic (Q)** and **Peano arithmetic (PA)** are the standard theories of the natural numbers. PA has axioms for $0$, successor $S$, $+$, $\times$, induction; Q keeps the arithmetic axioms but drops the induction schema.
+
+---
+
+## 3. The Completeness Theorem (1929)
+
+::: {#thm-completeness}
+#### Theorem 3.1 (Gödel's Completeness Theorem)
+For any first-order theory $T$ and sentence $\varphi$:
+$$
+T\models\varphi \iff T\vdash\varphi.
+$$
+Equivalently, every consistent first-order theory has a model.
+:::
+
+This was Gödel's doctoral dissertation. It turned the semantic notion of "truth in all models" into the syntactic notion of "derivable," giving logic a usable proof theory.
+
+### 3.1 Henkin's Proof Sketch
+
+Leon Henkin (1949) gave the clean modern proof:
+
+1. **Consistency expansion.** Given consistent $T$ in a countable language, extend it to a **maximal consistent** theory $T^*$: for every sentence $\varphi$, add either $\varphi$ or $\neg\varphi$, preserving consistency.
+2. **Witnesses.** Enlarge the language with new constants $c_\varphi$ for each existential sentence $\exists x\,\varphi(x)$, and add **Henkin axioms** $\exists x\,\varphi(x)\to\varphi(c_\varphi)$, so that every existential claim has a named witness.
+3. **Term model.** Build the **canonical model** whose elements are equivalence classes of closed terms (via $t\sim s$ iff $T^*\vdash t=s$), interpreting function and relation symbols syntactically.
+4. **Truth lemma.** Prove by induction on formulas that $T^*\vdash\varphi \iff \mathcal{M}\models\varphi$. Hence $\mathcal{M}\models T^*\supseteq T$.
+
+If $T$ is consistent, $T^*$ exists and has a model, so $T$ is satisfiable. Contrapositively, if $T$ has no model then $T\vdash\bot$. For sentences, this yields completeness: if $T\not\vdash\varphi$, then $T\cup\{\neg\varphi\}$ is consistent (syntactically), hence satisfiable (Theorem 3.1), so $T\not\models\varphi$.
+
+### 3.2 Corollaries
+
+::: {#cor-compactness}
+#### Corollary 3.1 (Compactness)
+If every finite subset of $T$ has a model, then $T$ has a model.
+:::
+
+*Proof.* If $T$ had no model, by completeness $T\vdash\bot$; a proof is finite, so some finite $T_0\subseteq T$ proves $\bot$, contradicting that $T_0$ has a model. $\blacksquare$
+
+Compactness yields **nonstandard models** of arithmetic (add a constant $c$ and axioms $c>0, c>1, c>2,\dots$; each finite subset is satisfiable, so a model exists with an infinite element) and **nonstandard analysis**.
+
+::: {#cor-ls}
+#### Corollary 3.2 (Löwenheim–Skolem)
+If a countable theory has an infinite model, it has models of every infinite cardinality; in particular, if ZFC has a model it has a countable one.
+:::
+
+This is the source of **Skolem's paradox** (see the [uncountable article](uncountable-infinities-diagonal-argument-and-cantor-set-fractals.qmd)): a countable model of ZFC containing a set it "thinks" is uncountable.
+
+---
+
+## 4. The Incompleteness Theorems (1931)
+
+### 4.1 The Setup: Arithmetization
+
+::: {#def-godel-numbering}
+#### Definition 4.1 (Gödel numbering)
+Assign to each symbol of the language a natural number. Encode a sequence of symbols $(s_1,\dots,s_n)$ by
+$$
+\ulcorner s_1\cdots s_n \urcorner \;=\; p_1^{c(s_1)}\cdots p_n^{c(s_n)},
+$$
+where $p_i$ is the $i$-th prime and $c(s_i)$ the code of $s_i$. By unique factorization, this is injective, and decoding is algorithmic.
+:::
+
+Syntax becomes arithmetic: "$\varphi$ is a formula," "$\pi$ is a proof of $\varphi$," and "$\varphi$ is provable" are all **decidable/recursive** predicates on natural numbers.
+
+Crucially, PA can **represent** recursive predicates and functions: for every recursive relation $R$, there is a formula $\rho$ such that $R(\bar n)\Rightarrow \mathrm{PA}\vdash\rho(\bar n)$ and $\neg R(\bar n)\Rightarrow \mathrm{PA}\vdash\neg\rho(\bar n)$ (the formalized version of "the proof checker can be written in arithmetic").
+
+### 4.2 The Diagonal Lemma
+
+::: {#lem-diagonal}
+#### Lemma 4.1 (Diagonal / fixed-point lemma)
+For every formula $\varphi(x)$ with one free variable, there is a sentence $\psi$ such that
+$$
+\mathrm{PA}\vdash \psi \leftrightarrow \varphi(\ulcorner\psi\urcorner).
+$$
+:::
+
+*Proof sketch.* Define the **substitution** function on codes, which is primitive recursive and hence representable by a formula $\mathrm{sub}(x,y,z)$ computing "the code of the formula obtained by substituting the numeral $y$ for the variable with code $x$ in the formula with code $z$." Given $\varphi(x)$, let $\theta(z) := \varphi(\mathrm{sub}(x,z,z))$ and let $k=\ulcorner\theta\urcorner$. Set
+$$
+\psi := \theta(\bar k) = \varphi\bigl(\mathrm{sub}(\bar x,\bar k,\bar k)\bigr),
+$$
+so $\psi$'s code is the result of substituting $k$ into $\theta$; provably, $\mathrm{sub}(x,k,k)$ equals $\ulcorner\psi\urcorner$. Hence $\mathrm{PA}\vdash\psi\leftrightarrow\varphi(\ulcorner\psi\urcorner)$. $\blacksquare$
+
+This is the logical form of the diagonal argument: **a sentence that refers to its own code**.
+
+### 4.3 The First Incompleteness Theorem
+
+Let $\mathrm{Prov}_T(x)$ be the formula expressing "the formula with code $x$ is provable in $T$." Apply the diagonal lemma to $\varphi(x)=\neg\mathrm{Prov}_T(x)$, obtaining the **Gödel sentence** $G$ with
+$$
+\mathrm{PA}\vdash G \;\leftrightarrow\; \neg\,\mathrm{Prov}_T(\ulcorner G\urcorner),
+$$
+i.e. "$G$ is not provable in $T$."
+
+::: {#thm-incompleteness-1}
+#### Theorem 4.1 (Gödel's First Incompleteness Theorem)
+Let $T$ be a consistent, recursively axiomatizable theory that interprets a sufficient fragment of arithmetic (e.g. $Q$ or PA). Then $T$ is **incomplete**: there is a sentence $G$ with
+$$
+T\nvdash G \quad\text{and}\quad T\nvdash\neg G.
+$$
+:::
+
+*Proof sketch.* By the diagonal lemma take $G\leftrightarrow\neg\mathrm{Prov}_T(\ulcorner G\urcorner)$.
+- If $T\vdash G$, then a proof of $G$ exists; by **provable $\Sigma$-completeness** (the proof checker is representable), $T\vdash\mathrm{Prov}_T(\ulcorner G\urcorner)$, hence $T\vdash\neg G$ by the fixed point — contradicting consistency. So $T\nvdash G$.
+- If $T\vdash\neg G$, then by the fixed point $T\vdash\mathrm{Prov}_T(\ulcorner G\urcorner)$. In the standard model this asserts the existence of a proof of $G$; under the stronger hypothesis of **$\omega$-consistency** (Gödel's original) this forces $T\vdash G$, contradiction. So $T\nvdash\neg G$.
+
+Hence $G$ is independent of $T$. $\blacksquare$
+
+Moreover, $G$ is **true in the standard model** $\mathbb{N}$: it says (correctly) that $G$ has no proof. So "true but unprovable" is literal.
+
+::: {#thm-rosser}
+#### Theorem 4.2 (Rosser, 1936)
+The first incompleteness theorem holds under **mere consistency** (no $\omega$-consistency needed), using the **Rosser sentence**
+$$
+R:\quad \text{"for every proof of } R \text{ there is a smaller proof of } \neg R\text{."}
+$$
+:::
+
+Rosser's trick compares lengths of hypothetical proofs and is the standard modern statement.
+
+### 4.4 The Second Incompleteness Theorem
+
+Let $\mathrm{Con}(T) := \neg\,\mathrm{Prov}_T(\ulcorner\bot\urcorner)$ express "$T$ is consistent."
+
+::: {#thm-incompleteness-2}
+#### Theorem 4.3 (Gödel's Second Incompleteness Theorem)
+If $T$ is consistent (and recursively axiomatizable, interpreting arithmetic), then
+$$
+T \nvdash \mathrm{Con}(T).
+$$
+:::
+
+*Proof sketch.* Formalize the first incompleteness argument inside $T$: one proves
+$$
+T \vdash \mathrm{Con}(T)\;\to\;G.
+$$
+(A contradiction implies everything, so consistency entails that $G$ is unprovable — the fixed point then gives $G$.) Since the first theorem shows $T\nvdash G$, it follows that $T\nvdash\mathrm{Con}(T)$. $\blacksquare$
+
+**Löb's theorem** generalizes this: if $T\vdash \mathrm{Prov}_T(\ulcorner\varphi\urcorner)\to\varphi$, then $T\vdash\varphi$. Taking $\varphi=\bot$ recovers the second theorem: $T$ cannot prove "provable implies true" for its own proofs, on pain of inconsistency.
+
+---
+
+## 5. How the Proofs Work (a Rough Summary)
+
+### 5.1 The Mechanism
+
+The engine has four moving parts:
+
+1. **Arithmetization.** Encode syntax as numbers; proof checking becomes a primitive recursive relation $\mathrm{Proof}(p,\ulcorner\varphi\urcorner)$.
+2. **Representability.** PA proves the correct facts about recursive relations; in particular, it proves $\Sigma_1$ truths (provable $\Sigma_1$-completeness).
+3. **Diagonal lemma.** Manufacture a sentence asserting its own unprovability.
+4. **Derivability conditions** (Hilbert–Bernays–Löb): for $\Box\varphi := \mathrm{Prov}(\ulcorner\varphi\urcorner)$,
+$$
+\text{(D1) } T\vdash\varphi \Rightarrow T\vdash\Box\varphi,\quad
+\text{(D2) } T\vdash\Box(\varphi\to\psi)\to(\Box\varphi\to\Box\psi),\quad
+\text{(D3) } T\vdash\Box\varphi\to\Box\Box\varphi.
+$$
+These are exactly the properties a formalized provability predicate can be *proved* (inside $T$) to satisfy, and they suffice to derive both incompleteness theorems and Löb's theorem.
+
+### 5.2 Gödel's Original Proof (1931)
+
+Gödel's paper defined 45 primitive recursive functions and relations ("is an axiom," "is an immediate consequence," etc.), proved each representable, constructed the sentence, and established incompleteness assuming $\omega$-consistency. It was a tour de force of arithmetization. Gödel also announced the second theorem and proved it in outline.
+
+### 5.3 Later and Alternative Proofs
+
+| Method | Author(s) | Idea |
+| :--- | :--- | :--- |
+| Rosser sentence | Rosser (1936) | replace $\omega$-consistency by consistency |
+| Recursion theory | Kleene (1936) | the recursion theorem; halting problem adjacency |
+| Consistency via ordinals | Gentzen (1936) | PA's consistency follows from $\varepsilon_0$-induction |
+| Diophantine | Matiyasevich (1970), MRDP | every r.e. set is Diophantine; a specific equation has no solutions, unprovably so |
+| Information-theoretic | Chaitin (1970s) | a theory of complexity $c$ proves finitely many strings of complexity $>c$ |
+| Abstract fixed points | Lawvere (1969) | a categorical diagonal theorem; incompleteness as a fixed-point phenomenon |
+
+**Gentzen's theorem** is especially important: it shows $\mathrm{Con(PA)}$ *is* provable — but in a stronger system (PA + transfinite induction to $\varepsilon_0$). Incompleteness does not forbid consistency proofs; it forbids them **inside the same system**.
+
+### 5.4 The Abstract Diagonal (Lawvere)
+
+Lawvere observed that self-reference is a special case of a **fixed-point theorem** in cartesian closed categories: if there is a surjection $A\to B^A$, then every $f:B\to B$ has a fixed point. Cantor's theorem, Russell's paradox, Gödel's lemma, and the recursion theorem are all instances of "there is no surjection onto a function space." Incompleteness is a geometric/structural fact, not an accident of arithmetic.
+
+---
+
+## 6. Implications
+
+### 6.1 Hilbert's Program
+
+Hilbert sought a **finitary consistency proof** for all of mathematics and a decision procedure for validity. Both fail:
+- **Second theorem:** consistency cannot be certified within the theory itself.
+- **Church–Turing + incompleteness:** validity in FOL is undecidable (no decision procedure).
+
+However, **relative consistency** and **ordinal analysis** succeeded on their own terms, and proof theory flourishes.
+
+### 6.2 Truth, Provability, and Independence
+
+- **Truth outruns provability.** For any reasonable $T$, there are true $\Pi_1$ sentences (like $G$) it cannot prove.
+- **Independence is real but mundane.** $\mathrm{Con(ZFC)}$, CH, the existence of large cardinals, Goodstein's theorem (unprovable in PA), and the Paris–Harrington statement are all independent of their base theories.
+- **Consistency strength** is a well-ordering of theories by "what they can prove consistent"; large cardinals are a linear hierarchy of strength.
+
+### 6.3 Computability and Decidability
+
+Incompleteness is the logical twin of undecidability:
+
+$$
+\text{undecidability of halting} \;\leftrightarrow\; \text{undecidability of provability} \;\leftrightarrow\; \text{incompleteness.}
+$$
+If arithmetic were complete and decidable, the halting problem would be solvable (search for a proof). Rice's theorem, the Entscheidungsproblem, and the unprovability of consistency are facets of one diagonal.
+
+### 6.4 The Lucas–Penrose Argument and Its Critics
+
+Lucas and Penrose argue: since a human can "see" that $G$ is true while a machine formalizing $T$ cannot, minds exceed machines. Standard responses:
+- To "see" $G$ and treat it as true, one must know $T$ is consistent — which one cannot establish by finitary means (second theorem).
+- The argument assumes humans have access to a single, fixed, consistent formal system; human reasoning may be inconsistent, evolving, or non-algorithmic in ways the argument does not capture.
+- The conclusion "minds are not machines" does not follow from a proof about a specific formal system.
+
+The debate remains philosophically alive but is not regarded as mathematically decisive.
+
+### 6.5 Common Misconceptions
+
+| Misconception | Correction |
+| :--- | :--- |
+| "Gödel proved mathematics is inconsistent." | He assumed consistency and derived incompleteness. |
+| "Gödel's sentence is neither true nor false." | It is true in $\mathbb{N}$, unprovable in $T$. |
+| "A strong enough system avoids incompleteness." | The second theorem applies to it too. |
+| "Incompleteness applies to any theory." | Only consistent, r.e. theories interpreting enough arithmetic. |
+| "Consistency can never be proved." | It can, in a stronger system (Gentzen). |
+| "Incompleteness = inconsistency." | They are different notions; consistency is a hypothesis. |
+| "Logic is therefore useless." | Completeness makes FOL proof search possible; only full arithmetic is undecidable. |
+
+---
+
+## 7. Computational Laboratory
+
+The lab implements Gödel numbering, the quine (the computational diagonal lemma), the diagonal set, an empirical demonstration of resolution's soundness **and completeness** against truth tables, and the halting diagonal.
+
+```{python}
+import itertools, random
+
+print("=== 1. GODEL NUMBERING BY PRIME POWERS ===")
+syms = ['0', 'S', '+', '*', '=', '(', ')', 'not', 'forall', 'x', 'y', '<']
+primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37]
+
+def godel(seq):
+    n = 1
+    for s, p in zip(seq, primes):
+        n *= p ** (syms.index(s) + 1)
+    return n
+
+def decode(n):
+    out = []
+    for p in primes:
+        k = 0
+        while n % p == 0:
+            n //= p; k += 1
+        if k > 0:
+            out.append(syms[k - 1])
+    return out
+
+formula = ['forall', 'x', '(', 'x', '+', '0', '=', 'x', ')']
+g = godel(formula)
+print("  formula:", " ".join(formula))
+print("  Godel number:", g)
+print("  decoded:", " ".join(decode(g)))
+print("  syntax -> arithmetic is injective by unique factorization.")
+
+print("\n=== 2. QUINE: THE COMPUTATIONAL DIAGONAL LEMMA ===")
+s = 's = %r\nprint(s %% s)'
+print("  A program that prints its own source (a fixed point of 'print'):")
+print("  " + "\n  ".join((s % s).splitlines()))
+print("  The diagonal lemma builds a sentence asserting a property OF ITSELF")
+print("  exactly as this program reproduces its own code.")
+
+print("\n=== 3. THE DIAGONAL SET: NOT ON ANY LIST ===")
+def diagonal_bits(rows):
+    return [1 - rows[i][i] for i in range(len(rows))]
+rows = [[0, 1, 0, 1], [1, 0, 1, 0], [1, 1, 1, 1], [0, 0, 0, 0]]
+d = diagonal_bits(rows)
+print("  rows:", rows)
+print("  diagonal:", d)
+print("  differs from row i at position i:", all(d[i] != rows[i][i] for i in range(len(rows))))
+
+print("\n=== 4. COMPLETENESS IN ACTION: RESOLUTION PROOF vs TRUTH TABLE ===")
+def resolve(c1, c2):
+    for lit in c1:
+        if (lit[0], 1 - lit[1]) in c2:
+            return frozenset((c1 | c2) - {lit, (lit[0], 1 - lit[1])})
+    return None
+
+def is_tautology(cl):
+    return any((v, 0) in cl and (v, 1) in cl for (v, _) in cl)
+
+def resolution_unsat(clauses, limit=50000):
+    clauses = set(c for c in clauses if not is_tautology(c))
+    changed, steps = True, 0
+    while changed and steps < limit:
+        changed = False
+        cur = list(clauses)
+        for i in range(len(cur)):
+            for j in range(i + 1, len(cur)):
+                r = resolve(cur[i], cur[j])
+                if r is not None and not is_tautology(r) and r not in clauses:
+                    clauses.add(r); changed = True; steps += 1
+                    if len(r) == 0:
+                        return True
+    return frozenset() in clauses
+
+def satisfiable(clauses, nvars):
+    for bits in itertools.product([False, True], repeat=nvars):
+        asn = {v + 1: bits[v] for v in range(nvars)}
+        if all(any((asn[v] if sg == 1 else not asn[v]) for (v, sg) in cl) for cl in clauses):
+            return True
+    return False
+
+random.seed(1)
+def rand_cnf(nvars, nclauses):
+    return [frozenset((v, random.choice([0, 1])) for v in random.sample(range(1, nvars + 1), 3))
+            for _ in range(nclauses)]
+
+agree = 0; total = 60
+for _ in range(total):
+    cnf = rand_cnf(4, 5)
+    if satisfiable(cnf, 4) == (not resolution_unsat(cnf)):
+        agree += 1
+print(f"  proof (resolution) and semantics (truth tables) agree on {agree}/{total} random 3-CNFs.")
+print("  This is the completeness theorem (valid <=> provable) in miniature.")
+
+print("\n=== 5. THE HALTING PROBLEM: THE SAME DIAGONAL ===")
+print("  Assume a total decider H(P, I). Define D(P): if H(P, P) then loop else halt.")
+print("  Then D(D) halts  iff  H(D, D) says false  iff  D(D) does not halt. Contradiction.")
+print("  If arithmetic were complete/decidable, we could decide D by searching for proofs —")
+print("  so incompleteness and undecidability are two faces of one diagonal.")
+```
+
+---
+
+## 8. Summary Matrix
+
+| | Completeness (1929) | Incompleteness (1931) |
+| :--- | :--- | :--- |
+| **Subject** | first-order logic (the proof system) | theories of arithmetic |
+| **Statement** | valid $\iff$ provable; consistent $\iff$ satisfiable | some sentence undecided; $\nvdash\mathrm{Con}(T)$ |
+| **Key tool** | Henkin model construction | Gödel numbering + diagonal lemma |
+| **Consequence** | compactness, Löwenheim–Skolem | Hilbert's program fails; independence |
+| **Proof style** | build a canonical model | build a self-referential sentence |
+| **Extra hypothesis** | none | consistency (+ r.e. axioms, interpret arithmetic) |
+| **Limit** | FOL is not decidable (Church–Turing) | no complete r.e. arithmetic |
+
+**The unity.** Cantor's diagonal, Russell's paradox, the halting problem, Gödel's incompleteness, Tarski's undefinability, and Chaitin's randomness are one theorem wearing many costumes: **there is no surjection from a set onto its own function space / powerset.**
+
+---
+
+## 9. Curated References and Primary Sources
+
+1. **Gödel, Kurt (1929)**. *Über die Vollständigkeit des Logikkalküls*. Doctoral dissertation, University of Vienna. (Completeness.)
+2. **Gödel, Kurt (1931)**. *"Über formal unentscheidbare Sätze der Principia Mathematica und verwandter Systeme I"*. Monatshefte für Mathematik und Physik, 38: 173–198. (Incompleteness.)
+3. **Henkin, Leon (1949)**. *"The completeness of the first-order functional calculus"*. J. Symbolic Logic, 14(3): 159–166.
+4. **Rosser, J. Barkley (1936)**. *"Extensions of some theorems of Gödel and Church"*. J. Symbolic Logic, 1(3): 87–91.
+5. **Gentzen, Gerhard (1936)**. *"Die Widerspruchsfreiheit der reinen Zahlentheorie"*. Math. Annalen, 112: 493–565.
+6. **Löb, Martin (1955)**. *"Solution of a problem of Leon Henkin"*. J. Symbolic Logic, 20(2): 115–118.
+7. **Kleene, Stephen (1936)**. *"General recursive functions of natural numbers"*. Math. Annalen, 112: 727–742.
+8. **Turing, Alan (1936)**. *"On computable numbers, with an application to the Entscheidungsproblem"*. Proc. London Math. Soc., s2-42(1): 230–265.
+9. **Matiyasevich, Yuri (1970)**. *"Enumerable sets are Diophantine"*. Doklady AN SSSR, 191: 279–282.
+10. **Chaitin, Gregory (1974)**. *"Information-theoretic limitations of formal systems"*. J. ACM, 21(3): 403–424.
+11. **Lawvere, F. William (1969)**. *"Diagonal arguments and cartesian closed categories"*. Lecture Notes in Mathematics, 92: 134–145.
+12. **Smullyan, Raymond (1992)**. *Gödel's Incompleteness Theorems*. Oxford Logic Guides.
+13. **Boolos, G., Burgess, J., Jeffrey, R. (2007)**. *Computability and Logic*, 5th ed. Cambridge University Press.
+14. **Enderton, Herbert (2001)**. *A Mathematical Introduction to Logic*, 2nd ed. Academic Press.
+15. **Franzén, Torkel (2005)**. *Gödel's Theorem: An Incomplete Guide to Its Use and Abuse*. A K Peters.
+16. **Hofstadter, Douglas (1979)**. *Gödel, Escher, Bach: An Eternal Golden Braid*. Basic Books.
