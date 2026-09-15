@@ -444,9 +444,118 @@ plt.tight_layout(); plt.show()
 
 ---
 
+## Lagrange's Equations in Curvilinear Coordinates
+
+With $T$ written in curvilinear coordinates, the Euler–Lagrange equations reproduce the correct physics automatically — the inertial terms are *not* inserted by hand.
+
+### 2D Polar Coordinates
+
+$$T = \tfrac12 m\big(\dot r^2 + r^2\dot\phi^2\big),\qquad \mathcal L = T - U(r,\phi).$$
+The generalized momenta are $p_r = \partial\mathcal L/\partial\dot r = m\dot r$ and $p_\phi = \partial\mathcal L/\partial\dot\phi = mr^2\dot\phi$ (angular momentum).
+
+**Radial equation.** $\dfrac{\partial\mathcal L}{\partial r} - \dfrac{d}{dt}\dfrac{\partial\mathcal L}{\partial\dot r} = 0$ gives
+$$m r\dot\phi^2 - \frac{\partial U}{\partial r} - m\ddot r = 0
+\qquad\Longrightarrow\qquad
+\boxed{\,m\ddot r = m r\dot\phi^2 - \frac{\partial U}{\partial r}\,}$$
+Equivalently, since the radial component of acceleration is $a_r = \ddot r - r\dot\phi^2$,
+$$F_r \equiv -\frac{\partial U}{\partial r} = m\big(\ddot r - r\dot\phi^2\big) = m\,a_r.$$
+The $-\,mr\dot\phi^2$ term is the **centripetal** contribution: it appears with no applied force because we are describing motion in coordinates that rotate with the particle.
+
+**Azimuthal equation.** $\dfrac{\partial\mathcal L}{\partial\phi} - \dfrac{d}{dt}\dfrac{\partial\mathcal L}{\partial\dot\phi} = 0$ gives
+$$-\frac{\partial U}{\partial\phi} - \frac{d}{dt}\big(mr^2\dot\phi\big) = 0
+\qquad\Longrightarrow\qquad
+\frac{d}{dt}\big(mr^2\dot\phi\big) = -\frac{\partial U}{\partial\phi}=\text{torque}.$$
+In components this is $m(r\ddot\phi + 2\dot r\dot\phi) = F_\phi$, the **azimuthal** force, with $2\dot r\dot\phi$ the Coriolis term.
+
+### Cylindrical Coordinates $(\rho,\phi,z)$
+
+$$T = \tfrac12 m\big(\dot\rho^2 + \rho^2\dot\phi^2 + \dot z^2\big).$$
+The Euler–Lagrange equations are
+$$m\ddot\rho = m\rho\dot\phi^2 - \frac{\partial U}{\partial\rho},\qquad
+\frac{d}{dt}\big(m\rho^2\dot\phi\big) = -\frac{\partial U}{\partial\phi},\qquad
+m\ddot z = -\frac{\partial U}{\partial z}.$$
+
+### Spherical Polar Coordinates $(r,\theta,\phi)$
+
+$$T = \tfrac12 m\big(\dot r^2 + r^2\dot\theta^2 + r^2\sin^2\theta\,\dot\phi^2\big).$$
+The equations become
+$$m\ddot r = m r\dot\theta^2 + m r\sin^2\theta\,\dot\phi^2 - \frac{\partial U}{\partial r}
+\quad\Longleftrightarrow\quad
+F_r = m\big(\ddot r - r\dot\theta^2 - r\sin^2\theta\,\dot\phi^2\big),$$
+$$\frac{d}{dt}\big(mr^2\dot\theta\big) - mr^2\sin\theta\cos\theta\,\dot\phi^2 = -\frac{\partial U}{\partial\theta},\qquad
+\frac{d}{dt}\big(mr^2\sin^2\theta\,\dot\phi\big) = -\frac{\partial U}{\partial\phi}.$$
+
+### General Curvilinear and "Distance-Dependent" Coordinates
+
+For **natural** coordinates with metric $M_{ij}(q)$ (so $T=\tfrac12 M_{ij}\dot q_i\dot q_j$), the Euler–Lagrange equations are the **geodesic equation** on configuration space with a forcing term:
+$$M_{ij}\ddot q_j + \Gamma_{i,jk}\,\dot q_j\dot q_k = Q_i,\qquad
+Q_i = -\frac{\partial U}{\partial q_i},$$
+where $\Gamma_{i,jk}=\tfrac12\big(\partial_{q_k}M_{ij}+\partial_{q_j}M_{ik}-\partial_{q_i}M_{jk}\big)$ are the Christoffel symbols. Raising indices,
+$$\ddot q^{\,i} + \Gamma^{i}_{\,jk}\dot q^{\,j}\dot q^{\,k} = (M^{-1})^{il}Q_l.$$
+The connection terms $\Gamma$ are precisely the **inertial / fictitious terms** of an arbitrary coordinate system. For **orthogonal** coordinates they reduce to the familiar combination of scale factors $h_i$.
+
+**A genuinely non-standard, distance-dependent coordinate.** Let $u=\ln(r/r_0)$, so $r=r_0e^u$ and $\dot r = r\dot u$. Then
+$$T = \tfrac12 m\dot r^2 = \tfrac12 m\,r_0^2 e^{2u}\dot u^2,$$
+and the Euler–Lagrange equation is
+$$m r^2\big(\ddot u + \dot u^2\big) = -\frac{\partial U}{\partial u}=Q_u.$$
+The extra $m r^2\dot u^2$ term is the connection term $u_{jk}\dot q^j\dot q^k$ — proof that "$\mathbf F = m\mathbf a$" is coordinate-dependent while the Euler–Lagrange form is universal. Any coordinate $q=f(\mathbf r)$ (log-distance in astronomy, conformal time in cosmology, scaled radial coordinates) is handled by the same general formulas.
+
+```{python}
+import sympy as sp
+
+t, m = sp.symbols("t m", positive=True)
+U = sp.Function("U")
+
+# --- 2D polar ---
+r = sp.Function("r")(t); ph = sp.Function("phi")(t)
+L_polar = sp.Rational(1, 2) * m * (sp.diff(r, t)**2 + r**2 * sp.diff(ph, t)**2) - U(r, ph)
+EL_r = sp.simplify(sp.diff(L_polar, r) - sp.diff(sp.diff(L_polar, sp.diff(r, t)), t))
+EL_ph = sp.simplify(sp.diff(L_polar, ph) - sp.diff(sp.diff(L_polar, sp.diff(ph, t)), t))
+print("=== POLAR ===")
+print("  r  :", EL_r, " = 0   ->  m r'' = m r phi'^2 - dU/dr")
+print("  phi:", EL_ph, " = 0   ->  d/dt(m r^2 phi') = -dU/dphi")
+
+# --- spherical ---
+R = sp.Function("R")(t); Th = sp.Function("Theta")(t); Ph = sp.Function("Phi")(t)
+L_sph = (sp.Rational(1, 2) * m * (sp.diff(R, t)**2 + R**2 * sp.diff(Th, t)**2
+         + R**2 * sp.sin(Th)**2 * sp.diff(Ph, t)**2) - U(R, Th, Ph))
+EL_R = sp.simplify(sp.diff(L_sph, R) - sp.diff(sp.diff(L_sph, sp.diff(R, t)), t))
+print("=== SPHERICAL (radial) ===")
+print("  r  :", EL_R, " = 0")
+
+# --- distance-dependent coordinate u = ln(r/r0) ---
+u = sp.Function("u")(t); r0 = sp.symbols("r0", positive=True)
+T_log = sp.Rational(1, 2) * m * (r0 * sp.exp(u))**2 * sp.diff(u, t)**2
+L_log = T_log - U(r0 * sp.exp(u))
+EL_u = sp.simplify(sp.diff(L_log, u) - sp.diff(sp.diff(L_log, sp.diff(u, t)), t))
+print("=== LOG-RADIAL u = ln(r/r0) ===")
+print("  u  :", sp.factor(EL_u), " = 0   ->  m r^2 (u'' + u'^2) = -dU/du")
+```
+
+---
+
 ## 7.4 Proof of Lagrange's Equations with Constraints
 
 *(See Problems 7.12-7.13)*
+
+### Deriving Lagrange's Equations from Hamilton's Principle
+
+Take generalized coordinates $q_i(t)$ and the action $S[q]=\int_{t_1}^{t_2}\mathcal L(q,\dot q,t)\,dt$. Vary each coordinate,
+$$q_i(t)\to q_i(t)+\varepsilon\,\eta_i(t),\qquad \eta_i(t_1)=\eta_i(t_2)=0,$$
+and require the first variation to vanish at $\varepsilon=0$:
+$$0=\left.\frac{dS}{d\varepsilon}\right|_{\varepsilon=0}
+=\int_{t_1}^{t_2}\sum_i\left(\frac{\partial \mathcal L}{\partial q_i}\,\eta_i+\frac{\partial \mathcal L}{\partial \dot q_i}\,\dot\eta_i\right)dt.$$
+Integrate the second term by parts,
+$$\int_{t_1}^{t_2}\frac{\partial \mathcal L}{\partial \dot q_i}\,\dot\eta_i\,dt
+=\Big[\frac{\partial \mathcal L}{\partial \dot q_i}\,\eta_i\Big]_{t_1}^{t_2}
+-\int_{t_1}^{t_2}\frac{d}{dt}\frac{\partial \mathcal L}{\partial \dot q_i}\,\eta_i\,dt,$$
+and the boundary term vanishes because $\eta_i(t_1)=\eta_i(t_2)=0$. Hence
+$$0=\int_{t_1}^{t_2}\sum_i\left[\frac{\partial \mathcal L}{\partial q_i}-\frac{d}{dt}\frac{\partial \mathcal L}{\partial \dot q_i}\right]\eta_i\,dt.$$
+Since the variations $\eta_i$ are **arbitrary** (smooth, vanishing at the endpoints), the **fundamental lemma of the calculus of variations** forces each bracket to vanish:
+$$\boxed{\ \frac{d}{dt}\frac{\partial \mathcal L}{\partial \dot q_i}-\frac{\partial \mathcal L}{\partial q_i}=0,\qquad i=1,\dots,n.\ }$$
+These are **Lagrange's equations**. The argument rests on three assumptions that must be made explicit: (i) $\mathcal L$ is differentiable in its arguments, (ii) the endpoints are fixed, and (iii) the variations are arbitrary and smooth. Reversing the integration by parts shows the converse, giving the equivalence with the stationary-action statement of the previous section.
+
+### What the Constraint Assumption Buys
 
 For a particle constrained to a surface (e.g., a bead on a wire), the total force is $\mathbf{F}_{tot} = \mathbf{F}_{cstr} + \mathbf{F}$. 
 The constraint force $\mathbf{F}_{cstr}$ acts normal to the surface, and any virtual displacement $\epsilon$ consistent with the constraint lies within the surface. Thus, $\mathbf{F}_{cstr} \cdot \epsilon = 0$.
@@ -649,3 +758,59 @@ We introduce a **Lagrange multiplier** $\lambda(t)$ to scale the constraint equa
 $$ \frac{\partial \mathcal{L}}{\partial q_i} - \frac{d}{dt}\frac{\partial \mathcal{L}}{\partial \dot{q}_i} + \lambda \frac{\partial f}{\partial q_i} = 0 $$
 
 The extra term $\lambda \frac{\partial f}{\partial q_i}$ is precisely the $i$-th component of the **force of constraint**. Solving this system of differential algebraic equations (DAEs) yields both the trajectory $q_i(t)$ and the dynamic magnitude of the constraint force via $\lambda(t)$.
+
+---
+
+## Lean 4 Formalization of Lagrange's Equations
+
+A full formalization of Lagrangian mechanics turns each concept above into a type, a definition, or a theorem. (See the conversion recipe in [The Hidden Assumptions of Classical Mechanics](assumptions-of-classical-mechanics-spaces-coordinates-and-frames.qmd#a-short-guide-converting-any-cm-problem-into-lean-4).)
+
+```lean
+import Mathlib
+
+-- configuration space: here a free particle in 3D; replace Q by any manifold
+abbrev Q := EuclideanSpace ℝ (Fin 3)
+
+variable (m : ℝ) (U : Q → ℝ) (hU : ContDiff ℝ 2 U)
+
+-- the Lagrangian: a scalar function of position and velocity
+noncomputable def L (x v : Q) : ℝ := (m / 2) * ‖v‖ ^ 2 - U x
+
+-- a trajectory and its smoothness hypothesis
+variable (γ : ℝ → Q) (hγ : ContDiff ℝ 2 γ)
+
+-- the equations of motion: the Euler-Lagrange predicate (schematic)
+def IsEL : Prop :=
+  ∀ t, fderiv ℝ (fun x => L x (deriv γ t)) (γ t) 1
+       = deriv (fun s => fderiv ℝ (fun v => L (γ s) v) (deriv γ s)) t
+
+-- Newton's law in inertial Cartesian coordinates
+def IsNewtonian : Prop :=
+  ∀ t, m • deriv (deriv γ) t = - gradient U (γ t)
+
+-- the theorem the formalization would prove:
+--   hγ → (IsEL L γ ↔ IsNewtonian m U γ)
+```
+
+**How each concept of this chapter is written in Lean:**
+
+| Concept | Lean / Mathlib encoding |
+|---|---|
+| generalized coordinates | a chart `PartialHomeomorph Q E`, or `chartAt H x` on a manifold |
+| trajectory | a term `γ : ℝ → Q` with `ContDiff ℝ n γ` |
+| Lagrangian | `L : Q → Q → ℝ` locally, `L : TangentBundle I Q → ℝ` globally |
+| equations of motion | a predicate `IsEL L γ : Prop` (the Euler–Lagrange equations) |
+| kinetic-energy metric | `M_ij := ∑_a m_a ⟪∂r/∂q_i, ∂r/∂q_j⟫`, a Riemannian metric on `Q` |
+| canonical momentum | `p := fderiv ℝ (fun v => L x v)`, a continuous linear functional |
+| Legendre transform | a bijection (hypothesis: `PosDef (∂²L/∂v²)`, i.e. convexity in `v`) |
+| gauge freedom | an equivalence `L ~ L + dF/dt` under which `IsEL` is invariant |
+| constraint / multipliers | `S : Set Q`, `IsSubmanifold`; `λ` an extra variable |
+| Noether charge | invariance of `L` under a `G`-action ⇒ a conserved quantity |
+
+**What the formalization forces you to confront:**
+
+- **Generalized coordinates are charts.** The mass matrix is the **pullback metric** of the chart; "non-inertial but legitimate" is simply "the chart is not an isometry."
+- **The equivalence chain is a sequence of `↔` theorems**, not prose: `IsEL ↔ δS = 0 ↔ IsNewtonian` (the last only under the inertial-Cartesian hypothesis, which is *not* encoded in the type of `L`).
+- **Canonical momentum is a Fréchet derivative,** so `p = ∂L/∂v` is meaningful only once `v` ranges over a normed space.
+- **Conservation is algebraic.** A symmetry with generator `G` and `{G, L} = 0` yields a conserved quantity — the same argument as in [the Hamiltonian chapter](taylor-chapter-13-hamiltonian-mechanics.qmd).
+- **Gaps.** Mathlib has the analysis and manifold infrastructure but lacks a ready-made variational/mechanics library, so the `IsEL` operator, the Legendre transform, and the symplectic form must be constructed. Building them *is* the honest statement of the assumptions.

@@ -330,6 +330,68 @@ The **configuration space** is a `ChartedSpace` / manifold, the **state space** 
 
 *Caveat: Mathlib's API evolves between releases; the names above are illustrative of the current design rather than a guarantee for a particular version.*
 
+### A Short Guide: Converting Any CM Problem into Lean 4
+
+Formalizing a classical-mechanics problem follows a fixed recipe. The steps *are* the assumptions, made explicit.
+
+**Step 1 — Choose the configuration space as a type.**
+| Physical system | Lean type |
+|---|---|
+| point in $\mathbb{R}^n$ | `EuclideanSpace ℝ (Fin n)` |
+| pendulum (angle) | `ℝ` (or `Circle` for angles mod $2\pi$) |
+| rigid body | `EuclideanSpace ℝ (Fin 3) × SO (Fin 3)` |
+| bead on a surface | `Submanifold` / a manifold `M` with `[ChartedSpace H M]` |
+| $N$ particles with constraints | a manifold, or `Q` with a `Submanifold` |
+
+**Step 2 — Declare the configuration variable.** A state is a term `q : Q`; a chart `φ : PartialHomeomorph M E` supplies the coordinates.
+
+**Step 3 — Declare the trajectory and its smoothness.** `γ : ℝ → Q` with `ContDiff ℝ 2 γ` (or `ContMDiff ℝ I n γ` on a manifold). Differentiability is a *hypothesis*, not a default.
+
+**Step 4 — Define the Lagrangian.** Locally `L : Q → Q → ℝ` (position, velocity), globally `L : TangentBundle I Q → ℝ`. The standard choice is `L x v = (m / 2) * ‖v‖ ^ 2 - U x`.
+
+**Step 5 — Write the equations of motion as a predicate.** The Euler–Lagrange condition is a `Prop`; in a chart it reads schematically
+$$\texttt{IsEL}\ L\ \gamma \iff \forall t,\ \frac{\partial L}{\partial x}(\gamma t, \dot\gamma t) = \frac{d}{dt}\frac{\partial L}{\partial v}(\gamma t, \dot\gamma t).$$
+
+**Step 6 — State the theorem** you care about (existence, uniqueness, conservation, Newton equivalence) and supply the hypotheses it needs: `ContDiff`, `LipschitzWith`, positivity of the mass matrix, convexity of `U`, etc.
+
+**Step 7 — Connect to the variational principle.** Prove or assume that `IsEL L γ` is equivalent to stationarity of the action `S γ = ∫ t, L (γ t) (deriv γ t)`, using `HasFDerivAt` for the first variation.
+
+A skeleton template (names illustrative):
+
+```lean
+import Mathlib
+
+-- Step 1–2: configuration space and the Lagrangian
+abbrev Q := EuclideanSpace ℝ (Fin 1)
+variable (m : ℝ) (U : Q → ℝ) (hU : ContDiff ℝ 2 U)
+
+noncomputable def L (x v : Q) : ℝ := (m / 2) * ‖v‖ ^ 2 - U x
+
+-- Step 3: trajectory and smoothness
+variable (γ : ℝ → Q) (hγ : ContDiff ℝ 2 γ)
+
+-- Step 5: the equations of motion (schematic Euler-Lagrange predicate)
+def IsEL : Prop :=
+  ∀ t, fderiv ℝ (fun x => L x (deriv γ t)) (γ t) 1
+       = deriv (fun s => fderiv ℝ (fun v => L (γ s) v) (deriv γ s)) t
+
+-- Step 6: the theorem you would state (Newton's law in inertial coordinates)
+def IsNewtonian : Prop :=
+  ∀ t, m • deriv (deriv γ) t = - gradient U (γ t)
+
+-- Step 7: for the harmonic case, IsEL γ ↔ IsNewtonian γ (to be proved)
+```
+
+**Checklist — what you must supply at each step:**
+- [ ] Configuration type and, if constrained, the constraint as a `Submanifold`.
+- [ ] The coordinate chart(s) and their domains (watch for coordinate singularities).
+- [ ] A smooth trajectory (`ContDiff ℝ n γ`).
+- [ ] The Lagrangian (and, for rheonomic constraints, its explicit `t`).
+- [ ] The equations of motion as a predicate.
+- [ ] Every hypothesis the theorem needs (Lipschitz, positivity, boundary conditions).
+
+The value of the exercise is that **you cannot cheat**: any assumption you have been making implicitly becomes a term you must write down, a hypothesis you must assume, or a proof obligation you must discharge. See [Chapter 6](taylor-chapter-6-calculus-of-variations.qmd), [Chapter 7](taylor-chapter-7-lagrange-equations.qmd), and [Chapter 13](taylor-chapter-13-hamiltonian-mechanics.qmd) for the concepts formalized here, each with its own Lean section.
+
 ---
 
 ## Laboratory: The Assumptions, Made Concrete

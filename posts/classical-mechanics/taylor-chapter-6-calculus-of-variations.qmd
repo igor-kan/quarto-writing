@@ -372,6 +372,43 @@ This extension is crucial for Lagrangian mechanics in 3D space, where we have co
 
 *(See Problem 6.22)*
 
+## Lean 4 Formalization of the Calculus of Variations
+
+The calculus of variations is where formalization pays off most, because the "variation" $\delta S$ is literally a **Fréchet derivative** of a functional in the direction of a variation.
+
+### Functionals and Their First Variation
+
+A functional is a function on a function space, `S : (ℝ → E) → ℝ`. Its derivative at a curve `γ` is a **continuous linear map** `fderiv ℝ S γ`, and the first variation in direction `η` is `fderiv ℝ S γ η`.
+
+```lean
+import Mathlib
+
+-- a functional: a curve on [0,1] to a real number
+variable (S : (ℝ → ℝ) → ℝ) (γ : ℝ → ℝ)
+
+-- differentiability of the functional at the curve, and the first variation
+#check HasFDerivAt S (fderiv ℝ S γ) γ       -- S is differentiable at γ
+#check fderiv ℝ S γ                          -- the first variation: a continuous linear map
+
+-- the fundamental lemma in type form: stationarity kills the first variation
+def IsStationary : Prop :=
+  ∀ η : ℝ → ℝ, η 0 = 0 → η 1 = 0 → fderiv ℝ S γ η = 0
+
+-- for S γ = ∫₀¹ L (γ t) (deriv γ t) dt, the chain rule and integration by parts
+-- turn IsStationary into the Euler-Lagrange condition
+--   ∀ t, ∂L/∂x (γ t) (deriv γ t) = deriv (fun s => ∂L/∂v (γ s) (deriv γ s)) t
+```
+
+### What the Formalization Exposes
+
+- **Smoothness is a hypothesis.** `HasFDerivAt` / `ContDiff` must be supplied; the physics "assumes" it silently.
+- **Fixed endpoints are hypotheses too.** The condition `η 0 = 0 ∧ η 1 = 0` is what removes the boundary term in the integration by parts; without it the statement changes.
+- **The action is a scalar-valued functional.** `S : (ℝ → E) → ℝ` makes the "action is a number attached to a whole path" point a matter of types.
+- **The equivalence E-L ⟺ stationary action** is the pair of theorems `IsStationary ↔ EulerLagrange`, using the fundamental lemma of the calculus of variations (that a continuous function orthogonal to all test functions vanishes).
+- **Second variation and conjugate points** (the min/saddle discussion of §6.3) become the study of the sign of the second derivative of `S` in the function space — an infinite-dimensional Hessian, formally a self-adjoint operator on variations.
+
+This mirrors the general conversion recipe in [The Hidden Assumptions of Classical Mechanics](../classical-mechanics/assumptions-of-classical-mechanics-spaces-coordinates-and-frames.qmd#a-short-guide-converting-any-cm-problem-into-lean-4), applied to variational problems.
+
 ## Summary
 
 The calculus of variations allows us to find stationary paths for functionals. The fundamental tool is the Euler-Lagrange equation, which converts a global variational problem into a local differential equation. This mathematical foundation is what allows us to formulate Lagrangian mechanics based on Hamilton's Principle of stationary action.
