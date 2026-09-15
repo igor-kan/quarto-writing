@@ -368,6 +368,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#creating-personal-google-cloud-credentials" id="toc-creating-personal-google-cloud-credentials" class="nav-link" data-scroll-target="#creating-personal-google-cloud-credentials">Creating Personal Google Cloud Credentials</a></li>
   <li><a href="#running-the-wizard" id="toc-running-the-wizard" class="nav-link" data-scroll-target="#running-the-wizard">Running the Wizard</a></li>
+  <li><a href="#what-you-will-see-at-each-step-sanitized" id="toc-what-you-will-see-at-each-step-sanitized" class="nav-link" data-scroll-target="#what-you-will-see-at-each-step-sanitized">What You Will See at Each Step (sanitized)</a></li>
   </ul></li>
   <li><a href="#step-5-construct-the-rclone-vfs-systemd-service" id="toc-step-5-construct-the-rclone-vfs-systemd-service" class="nav-link" data-scroll-target="#step-5-construct-the-rclone-vfs-systemd-service">Step 5: Construct the Rclone VFS Systemd Service</a>
   <ul class="collapse">
@@ -668,56 +669,207 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Press <code>n</code> for <strong>New remote</strong>.</li>
 <li>Name: <code>gdrive</code>.</li>
 <li>Storage Type: <code>drive</code> (Google Drive).</li>
-<li>Paste your <strong>Client ID</strong> and <strong>Client Secret</strong>.</li>
-<li>Scope: Select <code>1</code> (<code>drive</code> - full access).</li>
-<li>When prompted to <code>Use web browser to automatically authenticate?</code>, choose <code>y</code>.
+<li>Paste your <strong>Client ID</strong> and <strong>Client Secret</strong> (from the section above).</li>
+<li><strong>Scope:</strong> select <code>1</code> (<code>drive</code> — full access). See the scope notes below if you want least privilege.</li>
+<li>When prompted to authenticate, choose <code>y</code> for <strong>auto config</strong>.
 <ul>
-<li>WSL2 will automatically forward the authentication URL to your default Windows web browser.</li>
-<li>Log into your Google account and grant permissions.</li>
+<li>WSL2 forwards the authentication URL to your default Windows web browser.</li>
+<li>Log into your Google account and grant permissions; rclone then reports <code>Got code</code>.</li>
 </ul></li>
-<li>Confirm the remote and quit (<code>q</code>).</li>
+<li>Confirm the remote (<code>y</code>) and quit the menu (<code>q</code>).</li>
 </ol>
+</section>
+<section id="what-you-will-see-at-each-step-sanitized" class="level3">
+<h3 class="anchored" data-anchor-id="what-you-will-see-at-each-step-sanitized">What You Will See at Each Step (sanitized)</h3>
+<p>The interactive wizard prints a lot, and the prompts come in a fixed order. Below is a <strong>redacted</strong> transcript so you know exactly what to expect. Every secret (<code>state</code>, <code>access_token</code>, <code>refresh_token</code>, and your own <code>client_id</code> / <code>client_secret</code>) has been replaced with a placeholder — never publish these values.</p>
+<pre class="text"><code>$ rclone config
+No remotes found, make a new one?
+n) New remote
+s) Set configuration password
+q) Quit config
+n/s/q&gt; n
+
+Enter name for new remote.
+name&gt; gdrive
+
+Option Storage.
+Type of storage to configure.
+Choose a number from below, or type in your own value.
+ 1 / 1Fichier
+   \ (fichier)
+ ...
+XX / Google Drive
+   \ (drive)
+Storage&gt; drive
+
+Option client_id.
+OAuth Client Id.
+Leave blank normally.
+Enter a value. Press Enter to leave empty.
+client_id&gt; 1234567890-EXAMPLE.apps.googleusercontent.com
+
+Option client_secret.
+OAuth Client Secret.
+Leave blank normally.
+Enter a value. Press Enter to leave empty.
+client_secret&gt; GOCSPX-EXAMPLE-REDACTED
+
+Option scope.
+Scope that rclone should use when requesting access from drive.
+Choose a number from below, or type in your own value.
+ 1 / Full access all files, excluding Application Data Folder.
+   \ (drive)
+ 2 / Read-only access to file metadata and file contents.
+   \ (drive.readonly)
+   / Access to files created by rclone only.
+ 3 | These are visible in the drive website.
+   | File authorization is revoked when the user deauthorizes the app.
+   \ (drive.file)
+   / Allows read and write access to the Application Data folder.
+ 4 | This is not visible in the drive website.
+   \ (drive.appfolder)
+   / Allows read-only access to file metadata but
+ 5 | does not allow any access to read or download file content.
+   \ (drive.metadata.readonly)
+scope&gt; 1
+
+Option service_account_file.
+Service Account Credentials JSON file path.
+Leave blank normally.
+Needed only if you want use SA instead of interactive login.
+Leading `~` will be expanded in the file name as will environment variables such as `${RCLONE_CONFIG_DIR}`.
+Enter a value. Press Enter to leave empty.
+service_account_file&gt;
+
+Edit advanced config?
+y) Yes
+n) No (default)
+y/n&gt; n
+
+Use auto config?
+ * Say Y if not sure
+ * Say N if you are working on a remote or headless machine
+
+y) Yes (default)
+n) No
+y/n&gt; y
+
+2026/09/15 18:50:36 NOTICE: If your browser doesn't open automatically go to the following link: http://127.0.0.1:53682/auth?state=EXAMPLE-REDACTED
+2026/09/15 18:50:36 NOTICE: Log in and authorize rclone for access
+2026/09/15 18:50:36 NOTICE: Waiting for code...
+2026/09/15 18:50:51 NOTICE: Got code
+Configure this as a Shared Drive (Team Drive)?
+
+y) Yes
+n) No (default)
+y/n&gt; n
+
+Configuration complete.
+Options:
+- type: drive
+- scope: drive
+- token: {"access_token":"ya29.EXAMPLE-REDACTED","token_type":"Bearer","refresh_token":"1//EXAMPLE-REDACTED","expiry":"2026-09-15T19:50:50-04:00"}
+- team_drive:
+Keep this "gdrive" remote?
+y) Yes this is OK (default)
+e) Edit this remote
+d) Delete this remote
+y/e/d&gt; y
+
+Current remotes:
+
+Name                 Type
+====                 ====
+gdrive               drive
+
+e) Edit existing remote
+n) New remote
+d) Delete remote
+r) Rename remote
+c) Copy remote
+s) Set configuration password
+q) Quit config
+e/n/d/r/c/s/q&gt; q</code></pre>
+<p><strong>Reading the prompts:</strong></p>
+<ul>
+<li><strong><code>Storage&gt; drive</code></strong> — the Google Drive backend.</li>
+<li><strong><code>client_id</code> / <code>client_secret</code></strong> — your own OAuth app (recommended to avoid the shared rclone ID being rate-limited). Leave blank to use rclone’s built-in ID.</li>
+<li><strong><code>scope&gt; 1</code></strong> — the access level. The five choices are:
+<ul>
+<li><code>1</code> <strong>drive</strong> — full read/write to everything (simplest; what this guide uses).</li>
+<li><code>2</code> <strong>drive.readonly</strong> — read-only; safe for mounting media or backups you will never write to.</li>
+<li><code>3</code> <strong>drive.file</strong> — rclone only sees files <strong>it created</strong>; the upload is <em>not</em> revocable selectively, and authorization is revoked when you deauthorize the app.</li>
+<li><code>4</code> <strong>drive.appfolder</strong> — read/write only the hidden Application Data folder (not visible on the Drive website).</li>
+<li><code>5</code> <strong>drive.metadata.readonly</strong> — metadata only; <strong>cannot read or download content</strong>.</li>
+</ul></li>
+<li><strong><code>service_account_file&gt;</code></strong> — leave blank for an interactive personal login. Only needed for a Google Cloud <strong>service account</strong> (headless servers).</li>
+<li><strong>Edit advanced config? <code>n</code></strong> — defaults are fine.</li>
+<li><strong>Use auto config? <code>y</code></strong> — in WSL2 this opens the browser via the local callback <code>http://127.0.0.1:53682/auth?state=...</code>. On a headless machine choose <code>n</code> and paste the code manually.</li>
+<li><strong>Shared Drive? <code>n</code></strong> — choose <code>y</code> only for a Google Workspace <strong>Team/Shared Drive</strong>.</li>
+<li><strong><code>token: {...}</code></strong> — the OAuth credential (see the security note below).</li>
+<li><strong>Keep this remote? <code>y</code></strong>, then <strong><code>q</code></strong> to quit.</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Security: the token in <code>rclone.conf</code> is a live credential
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The config file stores an <code>access_token</code> and a long-lived <code>refresh_token</code>. Anyone who obtains them can access your Google Drive <strong>until the authorization is revoked</strong>, even without your password. Therefore:</p>
+<ul>
+<li><strong>Never</strong> commit <code>rclone.conf</code> to Git, paste it into an issue/forum/AI chat, or include it in screenshots. The transcript above is <strong>redacted</strong> for exactly this reason.</li>
+<li>The file lives at <code>~/.config/rclone/rclone.conf</code> in WSL (and <code>%APPDATA%\rclone\rclone.conf</code> on Windows). Restrict it: <code>chmod 600 ~/.config/rclone/rclone.conf</code>.</li>
+<li>Encrypt it at rest with a configuration password: run <code>rclone config</code> and choose <strong><code>s) Set configuration password</code></strong>.</li>
+<li><strong>Revoke</strong> at any time at <a href="https://myaccount.google.com/permissions" class="uri">https://myaccount.google.com/permissions</a> (Google account → third-party access), or in <code>rclone config</code> via <strong><code>d) Delete remote</code></strong>. Revoking invalidates the <code>refresh_token</code>.</li>
+<li>For least privilege, use scope <code>2</code> (read-only), <code>3</code> (<code>drive.file</code>), or a dedicated folder instead of scope <code>1</code> when you do not need full access.</li>
+</ul>
+</div>
+</div>
 <p>Verify connectivity:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rclone</span> lsd gdrive:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rclone</span> lsd gdrive:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
 </section>
 <section id="step-5-construct-the-rclone-vfs-systemd-service" class="level2">
 <h2 class="anchored" data-anchor-id="step-5-construct-the-rclone-vfs-systemd-service">Step 5: Construct the Rclone VFS Systemd Service</h2>
 <p>Create a dedicated mount directory in your WSL home folder:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/gdrive</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/gdrive</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Next, establish a systemd user unit that mounts the drive automatically on boot:</p>
 <ol type="1">
 <li><p>Create the user service directory:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/.config/systemd/user</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/.config/systemd/user</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p>Create <code>~/.config/systemd/user/rclone-gdrive.service</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> ~/.config/systemd/user/rclone-gdrive.service</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> ~/.config/systemd/user/rclone-gdrive.service</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p>Insert the production-tuned service configuration:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[Unit]</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Description</span><span class="ot">=</span><span class="st">Rclone Google Drive VFS Mount</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="dt">Documentation</span><span class="ot">=</span><span class="st">https://rclone.org/commands/rclone_mount/</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="dt">After</span><span class="ot">=</span><span class="st">network-online.target</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="dt">Wants</span><span class="ot">=</span><span class="st">network-online.target</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="kw">[Service]</span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="dt">Type</span><span class="ot">=</span><span class="st">notify</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStart</span><span class="ot">=</span><span class="st">/usr/bin/rclone mount gdrive: %h/gdrive \</span></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="dt">  --config %h/.config/rclone/rclone.conf \</span></span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-mode full \</span></span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-max-size 10G \</span></span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-max-age 24h \</span></span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-write-back 5s \</span></span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="dt">  --dir-cache-time 24h \</span></span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="dt">  --poll-interval 1m \</span></span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="dt">  --drive-chunk-size 64M \</span></span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="dt">  --umask 022 \</span></span>
-<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="dt">  --allow-other</span></span>
-<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStop</span><span class="ot">=</span><span class="st">/bin/fusermount -u %h/gdrive</span></span>
-<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="dt">Restart</span><span class="ot">=</span><span class="st">on-failure</span></span>
-<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="dt">RestartSec</span><span class="ot">=</span><span class="dv">10</span></span>
-<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a><span class="kw">[Install]</span></span>
-<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="dt">WantedBy</span><span class="ot">=</span><span class="st">default.target</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[Unit]</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Description</span><span class="ot">=</span><span class="st">Rclone Google Drive VFS Mount</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="dt">Documentation</span><span class="ot">=</span><span class="st">https://rclone.org/commands/rclone_mount/</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="dt">After</span><span class="ot">=</span><span class="st">network-online.target</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="dt">Wants</span><span class="ot">=</span><span class="st">network-online.target</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="kw">[Service]</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="dt">Type</span><span class="ot">=</span><span class="st">notify</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStart</span><span class="ot">=</span><span class="st">/usr/bin/rclone mount gdrive: %h/gdrive \</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="dt">  --config %h/.config/rclone/rclone.conf \</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-mode full \</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-max-size 10G \</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-cache-max-age 24h \</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a><span class="dt">  --vfs-write-back 5s \</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="dt">  --dir-cache-time 24h \</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="dt">  --poll-interval 1m \</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a><span class="dt">  --drive-chunk-size 64M \</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a><span class="dt">  --umask 022 \</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a><span class="dt">  --allow-other</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStop</span><span class="ot">=</span><span class="st">/bin/fusermount -u %h/gdrive</span></span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a><span class="dt">Restart</span><span class="ot">=</span><span class="st">on-failure</span></span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a><span class="dt">RestartSec</span><span class="ot">=</span><span class="dv">10</span></span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a><span class="kw">[Install]</span></span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a><span class="dt">WantedBy</span><span class="ot">=</span><span class="st">default.target</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 </ol>
 <section id="vfs-flag-reference" class="level3">
 <h3 class="anchored" data-anchor-id="vfs-flag-reference">VFS Flag Reference</h3>
@@ -750,11 +902,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="step-6-enable-and-start-the-service" class="level2">
 <h2 class="anchored" data-anchor-id="step-6-enable-and-start-the-service">Step 6: Enable and Start the Service</h2>
 <p>Reload the user daemon, enable the service, and turn on session lingering:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> daemon-reload</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> enable <span class="at">--now</span> rclone-gdrive.service</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> loginctl enable-linger <span class="va">$USER</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> daemon-reload</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> enable <span class="at">--now</span> rclone-gdrive.service</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> loginctl enable-linger <span class="va">$USER</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Check the active status:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> status rclone-gdrive.service</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> status rclone-gdrive.service</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>You should see an active status with <code>Mounted gdrive: at /home/&lt;user&gt;/gdrive</code>.</p>
 <hr>
 </section>
