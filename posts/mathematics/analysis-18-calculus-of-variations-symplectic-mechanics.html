@@ -395,6 +395,7 @@ window.Quarto = {
   <li><a href="#algorithmic-verification-cross-language-consistency" id="toc-algorithmic-verification-cross-language-consistency" class="nav-link" data-scroll-target="#algorithmic-verification-cross-language-consistency">Algorithmic Verification &amp; Cross-Language Consistency</a></li>
   </ul></li>
   <li><a href="#curated-primary-literature-canonical-syllabi" id="toc-curated-primary-literature-canonical-syllabi" class="nav-link" data-scroll-target="#curated-primary-literature-canonical-syllabi">8. Curated Primary Literature &amp; Canonical Syllabi</a></li>
+  <li><a href="#appendix-computational-check-symplectic-energy-conservation" id="toc-appendix-computational-check-symplectic-energy-conservation" class="nav-link" data-scroll-target="#appendix-computational-check-symplectic-energy-conservation">Appendix: Computational Check — Symplectic Energy Conservation</a></li>
   </ul>
 </nav>
     </div>
@@ -741,6 +742,28 @@ theorem symplectic_det_one :
 </ul>
 <div style="text-align: center; color: #888; font-size: 0.9em;">
 <p>© 2026 Igor Kan</p>
+</div>
+</section>
+<section id="appendix-computational-check-symplectic-energy-conservation" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-computational-check-symplectic-energy-conservation">Appendix: Computational Check — Symplectic Energy Conservation</h2>
+<div id="863ea7e3" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>g, L, dt, T <span class="op">=</span> <span class="fl">9.81</span>, <span class="fl">1.0</span>, <span class="fl">0.01</span>, <span class="fl">10.0</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>th, om <span class="op">=</span> <span class="fl">0.5</span>, <span class="fl">0.0</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>E <span class="op">=</span> []</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">int</span>(T <span class="op">/</span> dt)):</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    om <span class="op">-=</span> (g <span class="op">/</span> L) <span class="op">*</span> np.sin(th) <span class="op">*</span> dt      <span class="co"># symplectic (semi-implicit) Euler</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    th <span class="op">+=</span> om <span class="op">*</span> dt</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    E.append(<span class="fl">0.5</span> <span class="op">*</span> om<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> (g <span class="op">/</span> L) <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> np.cos(th)))</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>E <span class="op">=</span> np.array(E)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== PENDULUM ENERGY UNDER SYMPLECTIC EULER ==="</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  energy drift over </span><span class="sc">{</span>T<span class="sc">}</span><span class="ss">s = </span><span class="sc">{</span>E<span class="sc">.</span><span class="bu">max</span>() <span class="op">-</span> E<span class="sc">.</span><span class="bu">min</span>()<span class="sc">:.3e}</span><span class="ss">  (bounded, no secular growth)"</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  symplectic integrators preserve the geometric structure of Hamilton's equations."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== PENDULUM ENERGY UNDER SYMPLECTIC EULER ===
+  energy drift over 10.0s = 3.705e-02  (bounded, no secular growth)
+  symplectic integrators preserve the geometric structure of Hamilton's equations.</code></pre>
+</div>
 </div>
 
 

@@ -394,6 +394,7 @@ window.Quarto = {
   <li><a href="#algorithmic-verification-cross-language-consistency" id="toc-algorithmic-verification-cross-language-consistency" class="nav-link" data-scroll-target="#algorithmic-verification-cross-language-consistency">Algorithmic Verification &amp; Cross-Language Consistency</a></li>
   </ul></li>
   <li><a href="#curated-primary-literature-canonical-syllabi" id="toc-curated-primary-literature-canonical-syllabi" class="nav-link" data-scroll-target="#curated-primary-literature-canonical-syllabi">8. Curated Primary Literature &amp; Canonical Syllabi</a></li>
+  <li><a href="#appendix-computational-check-outer-measure-and-fubini" id="toc-appendix-computational-check-outer-measure-and-fubini" class="nav-link" data-scroll-target="#appendix-computational-check-outer-measure-and-fubini">Appendix: Computational Check — Outer Measure and Fubini</a></li>
   </ul>
 </nav>
     </div>
@@ -731,6 +732,34 @@ theorem fubini_theorem {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
 </ul>
 <div style="text-align: center; color: #888; font-size: 0.9em;">
 <p>© 2026 Igor Kan</p>
+</div>
+</section>
+<section id="appendix-computational-check-outer-measure-and-fubini" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-computational-check-outer-measure-and-fubini">Appendix: Computational Check — Outer Measure and Fubini</h2>
+<div id="6e0072d5" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> union_measure(ivs):</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    ivs <span class="op">=</span> <span class="bu">sorted</span>(ivs)<span class="op">;</span> total <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span> l, r <span class="op">=</span> ivs[<span class="dv">0</span>]</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> a, b <span class="kw">in</span> ivs[<span class="dv">1</span>:]:</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> a <span class="op">&lt;=</span> r: r <span class="op">=</span> <span class="bu">max</span>(r, b)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>: total <span class="op">+=</span> r <span class="op">-</span> l<span class="op">;</span> l, r <span class="op">=</span> a, b</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> total <span class="op">+</span> (r <span class="op">-</span> l)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== OUTER MEASURE OF A UNION ==="</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  measure = </span><span class="sc">{</span>union_measure([(<span class="dv">0</span>,<span class="dv">1</span>),(<span class="fl">0.5</span>,<span class="fl">1.5</span>),(<span class="dv">2</span>,<span class="dv">3</span>)])<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>xx <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">400</span>)<span class="op">;</span> yy <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">400</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>inner <span class="op">=</span> np.trapz(xx[<span class="va">None</span>, :] <span class="op">*</span> yy[:, <span class="va">None</span>], xx, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"=== FUBINI: integral of x*y over [0,1]^2 = </span><span class="sc">{</span>np<span class="sc">.</span>trapz(inner, yy)<span class="sc">:.10f}</span><span class="ss"> (exact 0.25)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== OUTER MEASURE OF A UNION ===
+  measure = 2.5000
+=== FUBINI: integral of x*y over [0,1]^2 = 0.2500000000 (exact 0.25)</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/tmp/ipykernel_690750/313329654.py:11: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  inner = np.trapz(xx[None, :] * yy[:, None], xx, axis=1)
+/tmp/ipykernel_690750/313329654.py:12: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  print(f"=== FUBINI: integral of x*y over [0,1]^2 = {np.trapz(inner, yy):.10f} (exact 0.25)")</code></pre>
+</div>
 </div>
 
 

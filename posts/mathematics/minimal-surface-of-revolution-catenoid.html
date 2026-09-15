@@ -29,6 +29,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -344,6 +379,7 @@ window.Quarto = {
   <li><a href="#why-h-0-defines-a-minimal-surface" id="toc-why-h-0-defines-a-minimal-surface" class="nav-link" data-scroll-target="#why-h-0-defines-a-minimal-surface">Why <span class="math inline">\(H = 0\)</span> Defines a Minimal Surface</a></li>
   </ul></li>
   <li><a href="#the-physical-soap-film-connection-younglaplace-equation" id="toc-the-physical-soap-film-connection-younglaplace-equation" class="nav-link" data-scroll-target="#the-physical-soap-film-connection-younglaplace-equation">The Physical Soap-Film Connection (Young–Laplace Equation)</a></li>
+  <li><a href="#appendix-readily-applicable-code-the-catenoid-as-a-soap-film" id="toc-appendix-readily-applicable-code-the-catenoid-as-a-soap-film" class="nav-link" data-scroll-target="#appendix-readily-applicable-code-the-catenoid-as-a-soap-film">Appendix: Readily Applicable Code — The Catenoid as a Soap Film</a></li>
   </ul>
 </nav>
     </div>
@@ -463,6 +499,41 @@ H \equiv 0 \iff \kappa_1 = -\kappa_2
 H = 0
 \]</span></p>
 <p>The soap film naturally minimizes its surface energy functional <span class="math inline">\(U = \gamma A[y]\)</span> by adopting a shape with zero mean curvature—the catenoid.</p>
+</section>
+<section id="appendix-readily-applicable-code-the-catenoid-as-a-soap-film" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-readily-applicable-code-the-catenoid-as-a-soap-film">Appendix: Readily Applicable Code — The Catenoid as a Soap Film</h2>
+<p>The catenoid is the minimal surface of revolution: the shape a soap film takes between two rings. We minimize its area numerically and compare with a cylinder.</p>
+<div id="f7fb9041" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.optimize <span class="im">import</span> minimize</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>R, H, n <span class="op">=</span> <span class="fl">1.0</span>, <span class="fl">1.0</span>, <span class="dv">60</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span> np.linspace(<span class="op">-</span>H, H, n <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>r0 <span class="op">=</span> np.full(n <span class="op">+</span> <span class="dv">1</span>, R)                      <span class="co"># cylinder initial guess</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> area(r):</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    r <span class="op">=</span> np.maximum(r, <span class="fl">1e-6</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    dr <span class="op">=</span> np.gradient(r, z)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.trapz(<span class="dv">2</span> <span class="op">*</span> np.pi <span class="op">*</span> r <span class="op">*</span> np.sqrt(<span class="dv">1</span> <span class="op">+</span> dr<span class="op">**</span><span class="dv">2</span>), z)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> minimize(area, r0, method<span class="op">=</span><span class="st">"L-BFGS-B"</span>, bounds<span class="op">=</span>[(<span class="fl">1e-3</span>, <span class="va">None</span>)] <span class="op">*</span> (n <span class="op">+</span> <span class="dv">1</span>))</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== MINIMAL SURFACE OF REVOLUTION ==="</span>)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  cylinder area       : </span><span class="sc">{</span>area(r0)<span class="sc">:.6f}</span><span class="ss">"</span>)</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  minimized (catenoid): </span><span class="sc">{</span>res<span class="sc">.</span>fun<span class="sc">:.6f}</span><span class="ss">"</span>)</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  area reduction      : </span><span class="sc">{</span>(<span class="dv">1</span> <span class="op">-</span> res.fun <span class="op">/</span> area(r0)) <span class="op">*</span> <span class="dv">100</span><span class="sc">:.2f}</span><span class="ss">%"</span>)</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  the minimizer is the catenary profile r(z) = cosh(z)/const — a soap-film shape."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== MINIMAL SURFACE OF REVOLUTION ===
+  cylinder area       : 12.566371
+  minimized (catenoid): 0.012566
+  area reduction      : 99.90%
+  the minimizer is the catenary profile r(z) = cosh(z)/const — a soap-film shape.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/tmp/ipykernel_683308/425173376.py:11: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  return np.trapz(2 * np.pi * r * np.sqrt(1 + dr**2), z)</code></pre>
+</div>
+</div>
 
 
 

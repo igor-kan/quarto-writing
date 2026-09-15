@@ -404,6 +404,7 @@ window.Quarto = {
   </ul></li>
   <li><a href="#curated-sources-further-reading" id="toc-curated-sources-further-reading" class="nav-link" data-scroll-target="#curated-sources-further-reading">9. Curated Sources &amp; Further Reading</a></li>
   <li><a href="#related-articles-in-this-trilogy" id="toc-related-articles-in-this-trilogy" class="nav-link" data-scroll-target="#related-articles-in-this-trilogy">Related Articles in this Trilogy</a></li>
+  <li><a href="#appendix-readily-applicable-code-the-brachistochrone-numerically" id="toc-appendix-readily-applicable-code-the-brachistochrone-numerically" class="nav-link" data-scroll-target="#appendix-readily-applicable-code-the-brachistochrone-numerically">Appendix: Readily Applicable Code — The Brachistochrone Numerically</a></li>
   </ul>
 </nav>
     </div>
@@ -1025,6 +1026,44 @@ def IsROFStationary (f : ℝ → ℝ) (λ_reg : ℝ) (u : ℝ → ℝ) : Prop :=
 <p><br> <br></p>
 <div style="text-align: center; color: #888; font-size: 0.9em;">
 <p>© 2026 Igor Kan</p>
+</div>
+</section>
+<section id="appendix-readily-applicable-code-the-brachistochrone-numerically" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-readily-applicable-code-the-brachistochrone-numerically">Appendix: Readily Applicable Code — The Brachistochrone Numerically</h2>
+<p>The classic application of the calculus of variations is the curve of fastest descent. Rather than solving the Euler–Lagrange equation by hand, we discretize the path and minimize the descent time directly — the strategy behind optimal control and trajectory optimization.</p>
+<div id="f165ce75" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.optimize <span class="im">import</span> minimize</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>g, y1, n <span class="op">=</span> <span class="fl">9.81</span>, <span class="fl">1.0</span>, <span class="dv">40</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, n <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>y0 <span class="op">=</span> np.linspace(<span class="dv">0</span>, y1, n <span class="op">+</span> <span class="dv">1</span>)          <span class="co"># straight-line initial guess</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> descent_time(y_int):</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> np.concatenate([[<span class="fl">0.0</span>], y_int, [y1]])</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    dydx <span class="op">=</span> np.gradient(y, x)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    integrand <span class="op">=</span> np.sqrt((<span class="dv">1</span> <span class="op">+</span> dydx<span class="op">**</span><span class="dv">2</span>) <span class="op">/</span> (<span class="dv">2</span> <span class="op">*</span> g <span class="op">*</span> np.maximum(y, <span class="fl">1e-6</span>)))</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.trapz(integrand, x)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> minimize(descent_time, y0[<span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>], method<span class="op">=</span><span class="st">"L-BFGS-B"</span>,</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>               bounds<span class="op">=</span>[(<span class="fl">1e-4</span>, <span class="va">None</span>)] <span class="op">*</span> (n <span class="op">-</span> <span class="dv">1</span>), options<span class="op">=</span>{<span class="st">"maxiter"</span>: <span class="dv">1000</span>})</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== BRACHISTOCHRONE (curve of fastest descent) ==="</span>)</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  straight-line time : </span><span class="sc">{</span>descent_time(y0[<span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>])<span class="sc">:.6f}</span><span class="ss"> s"</span>)</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  optimized time     : </span><span class="sc">{</span>res<span class="sc">.</span>fun<span class="sc">:.6f}</span><span class="ss"> s"</span>)</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  improvement        : </span><span class="sc">{</span>(<span class="dv">1</span> <span class="op">-</span> res.fun <span class="op">/</span> descent_time(y0[<span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>])) <span class="op">*</span> <span class="dv">100</span><span class="sc">:.2f}</span><span class="ss">%"</span>)</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  the optimal curve is a cycloid, found here by direct minimization."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/tmp/ipykernel_687446/1529695884.py:12: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  return np.trapz(integrand, x)</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== BRACHISTOCHRONE (curve of fastest descent) ===
+  straight-line time : 4.555764 s
+  optimized time     : 3.483421 s
+  improvement        : 23.54%
+  the optimal curve is a cycloid, found here by direct minimization.</code></pre>
+</div>
 </div>
 
 

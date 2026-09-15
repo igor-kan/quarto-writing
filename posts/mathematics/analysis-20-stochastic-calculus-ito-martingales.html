@@ -395,6 +395,7 @@ window.Quarto = {
   <li><a href="#algorithmic-verification-cross-language-consistency" id="toc-algorithmic-verification-cross-language-consistency" class="nav-link" data-scroll-target="#algorithmic-verification-cross-language-consistency">Algorithmic Verification &amp; Cross-Language Consistency</a></li>
   </ul></li>
   <li><a href="#curated-primary-literature-canonical-syllabi" id="toc-curated-primary-literature-canonical-syllabi" class="nav-link" data-scroll-target="#curated-primary-literature-canonical-syllabi">8. Curated Primary Literature &amp; Canonical Syllabi</a></li>
+  <li><a href="#appendix-computational-check-brownian-motion-and-the-ito-integral" id="toc-appendix-computational-check-brownian-motion-and-the-ito-integral" class="nav-link" data-scroll-target="#appendix-computational-check-brownian-motion-and-the-ito-integral">Appendix: Computational Check — Brownian Motion and the Ito Integral</a></li>
   </ul>
 </nav>
     </div>
@@ -699,6 +700,31 @@ def IsMartingaleProcess {Ω : Type*} [MeasureSpace Ω] (X : ℝ → Ω → ℝ) 
 </ul>
 <div style="text-align: center; color: #888; font-size: 0.9em;">
 <p>© 2026 Igor Kan</p>
+</div>
+</section>
+<section id="appendix-computational-check-brownian-motion-and-the-ito-integral" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-computational-check-brownian-motion-and-the-ito-integral">Appendix: Computational Check — Brownian Motion and the Ito Integral</h2>
+<div id="22888c3b" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">2</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">1_000_000</span><span class="op">;</span> T <span class="op">=</span> <span class="fl">1.0</span><span class="op">;</span> dt <span class="op">=</span> T <span class="op">/</span> n</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>dW <span class="op">=</span> rng.normal(<span class="dv">0</span>, np.sqrt(dt), n)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>W <span class="op">=</span> np.concatenate([[<span class="dv">0</span>], np.cumsum(dW)])</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== BROWNIAN MOTION ==="</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  B_T = </span><span class="sc">{</span>W[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.4f}</span><span class="ss"> (a martingale: E[B_T]=0)"</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  quadratic variation sum dW^2 = </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">sum</span>(dW<span class="op">**</span><span class="dv">2</span>)<span class="sc">:.4f}</span><span class="ss">  (-&gt; T = 1)"</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>ito <span class="op">=</span> np.<span class="bu">sum</span>(W[:<span class="op">-</span><span class="dv">1</span>] <span class="op">*</span> dW)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Ito integral int B dB = </span><span class="sc">{</span>ito<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Ito formula: 0.5(B_T^2 - T) = </span><span class="sc">{</span><span class="fl">0.5</span><span class="op">*</span>(W[<span class="op">-</span><span class="dv">1</span>]<span class="op">**</span><span class="dv">2</span> <span class="op">-</span> T)<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  the extra -T/2 term is the Ito correction."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== BROWNIAN MOTION ===
+  B_T = 1.0070 (a martingale: E[B_T]=0)
+  quadratic variation sum dW^2 = 0.9999  (-&gt; T = 1)
+  Ito integral int B dB = 0.0071
+  Ito formula: 0.5(B_T^2 - T) = 0.0071
+  the extra -T/2 term is the Ito correction.</code></pre>
+</div>
 </div>
 
 

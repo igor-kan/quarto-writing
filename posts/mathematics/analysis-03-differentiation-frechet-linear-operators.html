@@ -396,6 +396,7 @@ window.Quarto = {
   <li><a href="#algorithmic-verification-cross-language-consistency" id="toc-algorithmic-verification-cross-language-consistency" class="nav-link" data-scroll-target="#algorithmic-verification-cross-language-consistency">Algorithmic Verification &amp; Cross-Language Consistency</a></li>
   </ul></li>
   <li><a href="#curated-sources-further-reading" id="toc-curated-sources-further-reading" class="nav-link" data-scroll-target="#curated-sources-further-reading">7. Curated Sources &amp; Further Reading</a></li>
+  <li><a href="#appendix-computational-check-the-frechet-derivative" id="toc-appendix-computational-check-the-frechet-derivative" class="nav-link" data-scroll-target="#appendix-computational-check-the-frechet-derivative">Appendix: Computational Check — The Frechet Derivative</a></li>
   </ul>
 </nav>
     </div>
@@ -711,6 +712,27 @@ theorem frechet_chain_rule {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G
 </ul>
 <div style="text-align: center; color: #888; font-size: 0.9em;">
 <p>© 2026 Igor Kan</p>
+</div>
+</section>
+<section id="appendix-computational-check-the-frechet-derivative" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-computational-check-the-frechet-derivative">Appendix: Computational Check — The Frechet Derivative</h2>
+<div id="ae19e4f9" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> f(v):</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    x, y <span class="op">=</span> v</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array([x<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> y, x <span class="op">*</span> y])</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>v0 <span class="op">=</span> np.array([<span class="fl">1.0</span>, <span class="fl">2.0</span>])</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>J <span class="op">=</span> np.array([[<span class="dv">2</span> <span class="op">*</span> v0[<span class="dv">0</span>], <span class="fl">1.0</span>], [v0[<span class="dv">1</span>], v0[<span class="dv">0</span>]]])      <span class="co"># analytic Jacobian</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>h <span class="op">=</span> <span class="fl">1e-6</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>Jn <span class="op">=</span> np.column_stack([(f(v0 <span class="op">+</span> h <span class="op">*</span> np.eye(<span class="dv">2</span>)[i]) <span class="op">-</span> f(v0)) <span class="op">/</span> h <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>)])</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== FRECHET DERIVATIVE (Jacobian) ==="</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  analytic:"</span>, J.tolist())</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  numeric :"</span>, np.<span class="bu">round</span>(Jn, <span class="dv">4</span>).tolist(), <span class="st">" match:"</span>, np.allclose(J, Jn, atol<span class="op">=</span><span class="fl">1e-4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== FRECHET DERIVATIVE (Jacobian) ===
+  analytic: [[2.0, 1.0], [2.0, 1.0]]
+  numeric : [[2.0, 1.0], [2.0, 1.0]]  match: True</code></pre>
+</div>
 </div>
 
 

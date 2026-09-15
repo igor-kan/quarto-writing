@@ -395,6 +395,7 @@ window.Quarto = {
   <li><a href="#algorithmic-verification-cross-language-consistency" id="toc-algorithmic-verification-cross-language-consistency" class="nav-link" data-scroll-target="#algorithmic-verification-cross-language-consistency">Algorithmic Verification &amp; Cross-Language Consistency</a></li>
   </ul></li>
   <li><a href="#curated-primary-literature-canonical-syllabi" id="toc-curated-primary-literature-canonical-syllabi" class="nav-link" data-scroll-target="#curated-primary-literature-canonical-syllabi">8. Curated Primary Literature &amp; Canonical Syllabi</a></li>
+  <li><a href="#appendix-computational-check-curvature-and-torsion" id="toc-appendix-computational-check-curvature-and-torsion" class="nav-link" data-scroll-target="#appendix-computational-check-curvature-and-torsion">Appendix: Computational Check — Curvature and Torsion</a></li>
   </ul>
 </nav>
     </div>
@@ -761,6 +762,29 @@ theorem frenet_matrix_trace_zero (κ τ : ℝ) :
 </ul>
 <div style="text-align: center; color: #888; font-size: 0.9em;">
 <p>© 2026 Igor Kan</p>
+</div>
+</section>
+<section id="appendix-computational-check-curvature-and-torsion" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-computational-check-curvature-and-torsion">Appendix: Computational Check — Curvature and Torsion</h2>
+<div id="a833e684" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">4</span> <span class="op">*</span> np.pi, <span class="dv">400001</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> np.stack([np.cos(t), np.sin(t), t], axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> <span class="kw">lambda</span> f: np.gradient(f, t, axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>r1, r2, r3 <span class="op">=</span> d(r), d(d(r)), d(d(d(r)))</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>cross <span class="op">=</span> np.cross(r1, r2)<span class="op">;</span> speed <span class="op">=</span> np.linalg.norm(r1, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>kappa <span class="op">=</span> np.linalg.norm(cross, axis<span class="op">=</span><span class="dv">1</span>) <span class="op">/</span> speed<span class="op">**</span><span class="dv">3</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>tau <span class="op">=</span> np.einsum(<span class="st">"ij,ij-&gt;i"</span>, cross, r3) <span class="op">/</span> np.linalg.norm(cross, axis<span class="op">=</span><span class="dv">1</span>) <span class="op">**</span> <span class="dv">2</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== HELIX r(t)=(cos t, sin t, t) ==="</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  mean curvature = </span><span class="sc">{</span>np<span class="sc">.</span>mean(kappa)<span class="sc">:.4f}</span><span class="ss">   (theory 0.5)"</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  mean torsion   = </span><span class="sc">{</span>np<span class="sc">.</span>mean(tau)<span class="sc">:.4f}</span><span class="ss">   (theory 0.5)"</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  curvature and torsion determine a space curve up to rigid motion."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== HELIX r(t)=(cos t, sin t, t) ===
+  mean curvature = 0.5000   (theory 0.5)
+  mean torsion   = 0.5000   (theory 0.5)
+  curvature and torsion determine a space curve up to rigid motion.</code></pre>
+</div>
 </div>
 
 

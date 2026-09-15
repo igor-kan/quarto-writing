@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Igor Kan">
+<meta name="dcterms.date" content="2026-09-14">
+<meta name="description" content="A comprehensive treatment of topology and surfaces with practical algorithms. It begins with Euler’s solution to the Seven Bridges of Konigsberg, defining graphs, degrees, connectedness, and Eulerian paths and circuits with the parity criterion, and shows how the same idea powers route inspection, garbage and snowplow routing, and genome assembly via de Bruijn graphs. It develops homeomorphism, topological invariants, and the classification of closed surfaces by orientability and genus through the Euler characteristic, treats the Mobius strip (one side, one edge, non-orientable) and the Klein bottle (a closed non-orientable surface that cannot embed in three-space without self-intersection), and surveys applications from topological data analysis and robotics to mesh repair, knot theory, and materials. It includes an executable Python laboratory implementing Hierholzer’s Eulerian-circuit algorithm, a working de Bruijn genome assembler, mesh Euler-characteristic and genus computation, and three-dimensional renderings of the Mobius strip and Klein bottle.">
+
+<title>Topology and Surfaces: Königsberg, Möbius, and the Klein Bottle – My Writings</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-a515e054079012129989d5397ee3c9c1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-3e9b1289f5f353c49b617ce48ad2bc38.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">My Writings</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../literature/index.html"> 
+<span class="menu-text">Literature</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../chapters/index.html"> 
+<span class="menu-text">Chapters</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../tutorials/index.html"> 
+<span class="menu-text">Tutorials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-seven-bridges-of-königsberg" id="toc-the-seven-bridges-of-königsberg" class="nav-link active" data-scroll-target="#the-seven-bridges-of-königsberg"><span class="header-section-number">1</span> The Seven Bridges of Königsberg</a>
+  <ul>
+  <li><a href="#degrees-connectivity-and-eulers-formula-for-planar-graphs" id="toc-degrees-connectivity-and-eulers-formula-for-planar-graphs" class="nav-link" data-scroll-target="#degrees-connectivity-and-eulers-formula-for-planar-graphs"><span class="header-section-number">1.1</span> Degrees, Connectivity, and Euler’s Formula for Planar Graphs</a></li>
+  </ul></li>
+  <li><a href="#readily-applicable-eulerian-algorithms" id="toc-readily-applicable-eulerian-algorithms" class="nav-link" data-scroll-target="#readily-applicable-eulerian-algorithms"><span class="header-section-number">2</span> Readily Applicable: Eulerian Algorithms</a></li>
+  <li><a href="#topology-shape-without-distance" id="toc-topology-shape-without-distance" class="nav-link" data-scroll-target="#topology-shape-without-distance"><span class="header-section-number">3</span> Topology: Shape Without Distance</a></li>
+  <li><a href="#surfaces-and-their-classification" id="toc-surfaces-and-their-classification" class="nav-link" data-scroll-target="#surfaces-and-their-classification"><span class="header-section-number">4</span> Surfaces and Their Classification</a>
+  <ul>
+  <li><a href="#the-möbius-strip" id="toc-the-möbius-strip" class="nav-link" data-scroll-target="#the-möbius-strip"><span class="header-section-number">4.1</span> The Möbius Strip</a></li>
+  <li><a href="#the-klein-bottle" id="toc-the-klein-bottle" class="nav-link" data-scroll-target="#the-klein-bottle"><span class="header-section-number">4.2</span> The Klein Bottle</a></li>
+  <li><a href="#connected-sums" id="toc-connected-sums" class="nav-link" data-scroll-target="#connected-sums"><span class="header-section-number">4.3</span> Connected Sums</a></li>
+  </ul></li>
+  <li><a href="#applications-of-topology" id="toc-applications-of-topology" class="nav-link" data-scroll-target="#applications-of-topology"><span class="header-section-number">5</span> Applications of Topology</a></li>
+  <li><a href="#laboratory-graphs-surfaces-and-applicable-algorithms" id="toc-laboratory-graphs-surfaces-and-applicable-algorithms" class="nav-link" data-scroll-target="#laboratory-graphs-surfaces-and-applicable-algorithms"><span class="header-section-number">6</span> Laboratory: Graphs, Surfaces, and Applicable Algorithms</a>
+  <ul>
+  <li><a href="#hierholzers-eulerian-circuit" id="toc-hierholzers-eulerian-circuit" class="nav-link" data-scroll-target="#hierholzers-eulerian-circuit"><span class="header-section-number">6.1</span> Hierholzer’s Eulerian Circuit</a></li>
+  <li><a href="#genome-assembly-via-de-bruijn-graph" id="toc-genome-assembly-via-de-bruijn-graph" class="nav-link" data-scroll-target="#genome-assembly-via-de-bruijn-graph"><span class="header-section-number">6.2</span> Genome Assembly via de Bruijn Graph</a></li>
+  <li><a href="#euler-characteristic-and-genus-of-meshes" id="toc-euler-characteristic-and-genus-of-meshes" class="nav-link" data-scroll-target="#euler-characteristic-and-genus-of-meshes"><span class="header-section-number">6.3</span> Euler Characteristic and Genus of Meshes</a></li>
+  <li><a href="#the-möbius-strip-and-klein-bottle" id="toc-the-möbius-strip-and-klein-bottle" class="nav-link" data-scroll-target="#the-möbius-strip-and-klein-bottle"><span class="header-section-number">6.4</span> The Möbius Strip and Klein Bottle</a></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary"><span class="header-section-number">7</span> Summary</a></li>
+  <li><a href="#curated-references-and-further-reading" id="toc-curated-references-and-further-reading" class="nav-link" data-scroll-target="#curated-references-and-further-reading"><span class="header-section-number">8</span> Curated References and Further Reading</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title">Topology and Surfaces: Königsberg, Möbius, and the Klein Bottle</h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
+<p class="subtitle lead">Euler’s graph solution to the Seven Bridges, Eulerian paths and their use in route inspection and genome assembly, homeomorphism and topological invariants, the Euler characteristic and genus, one-sided surfaces from the Möbius strip to the Klein bottle, and the classification of closed surfaces — with readily applicable code</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Mathematics</div>
+    <div class="quarto-category">Topology</div>
+    <div class="quarto-category">Graph Theory</div>
+    <div class="quarto-category">Surfaces</div>
+    <div class="quarto-category">Geometry</div>
+    <div class="quarto-category">Applications</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    A comprehensive treatment of topology and surfaces with practical algorithms. It begins with Euler’s solution to the Seven Bridges of Konigsberg, defining graphs, degrees, connectedness, and Eulerian paths and circuits with the parity criterion, and shows how the same idea powers route inspection, garbage and snowplow routing, and genome assembly via de Bruijn graphs. It develops homeomorphism, topological invariants, and the classification of closed surfaces by orientability and genus through the Euler characteristic, treats the Mobius strip (one side, one edge, non-orientable) and the Klein bottle (a closed non-orientable surface that cannot embed in three-space without self-intersection), and surveys applications from topological data analysis and robotics to mesh repair, knot theory, and materials. It includes an executable Python laboratory implementing Hierholzer’s Eulerian-circuit algorithm, a working de Bruijn genome assembler, mesh Euler-characteristic and genus computation, and three-dimensional renderings of the Mobius strip and Klein bottle.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Igor Kan </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 14, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><em>In 1736 Euler solved the Seven Bridges of Königsberg not by measuring distances but by ignoring them: only the connections mattered. That decision founded graph theory and, ultimately, <strong>topology</strong> — the geometry of shape up to continuous deformation, where a coffee cup and a donut are the same object.</em></p>
+<p>This article follows that thread from a puzzle about bridges to one-sided surfaces and the classification of all closed surfaces — with algorithms you can run.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Companion Treatises in this Series
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li><a href="../../posts/mathematics/geometry-after-euclid-axioms-and-non-geometric-uses.html">Geometry After Euclid: Axioms, Non-Euclidean Geometry, and Non-Geometric Uses</a></li>
+<li><a href="../../posts/mathematics/the-geometry-of-triangles-centers-similarity-congruence-and-fractals.html">The Geometry of Triangles: Centers, Similarity, Congruence, and Fractals</a></li>
+<li><a href="../../posts/mathematics/measure-theory-and-lebesgue-measure.html">Measure Theory and the Lebesgue Measure</a></li>
+<li><a href="../../posts/mathematics/infinite-dimensional-algebra-sequence-and-function-spaces.html">Infinite-Dimensional Algebra: Spaces of Sequences and Functions</a></li>
+<li><a href="../../posts/mathematics/foundations-of-arithmetic-primes-radicals-and-the-riemann-hypothesis.html">Foundations of Arithmetic: Primes, Radicals, and the Riemann Hypothesis</a></li>
+</ul>
+</div>
+</div>
+</div>
+<hr>
+<section id="the-seven-bridges-of-königsberg" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="the-seven-bridges-of-königsberg"><span class="header-section-number">1</span> The Seven Bridges of Königsberg</h2>
+<p>The city of Königsberg (now Kaliningrad) sat on both banks of the Pregel River and two islands, connected by <strong>seven bridges</strong>. The puzzle: walk through the city crossing <strong>each bridge exactly once</strong> and return to the start.</p>
+<p><strong>Euler’s insight (1736):</strong> replace landmasses by <strong>vertices</strong> and bridges by <strong>edges</strong> — the first <strong>graph</strong>. The question becomes whether the graph has a closed trail using every edge exactly once (an <strong>Eulerian circuit</strong>).</p>
+<p><strong>Euler’s theorem.</strong> A connected graph has an Eulerian circuit iff <strong>every vertex has even degree</strong>. It has an Eulerian <strong>path</strong> (open trail) iff <strong>exactly zero or two vertices have odd degree</strong> (the odd-degree vertices are the endpoints).</p>
+<p>Königsberg had four vertices of <strong>odd</strong> degree (3, 3, 3, 5), so no such walk exists. The distances and shapes were irrelevant; only the <strong>parity of degrees</strong> mattered. This is the birth of both graph theory and topological thinking: an invariant (degree parity) decides a question that geometry alone could not.</p>
+<section id="degrees-connectivity-and-eulers-formula-for-planar-graphs" class="level3" data-number="1.1">
+<h3 data-number="1.1" class="anchored" data-anchor-id="degrees-connectivity-and-eulers-formula-for-planar-graphs"><span class="header-section-number">1.1</span> Degrees, Connectivity, and Euler’s Formula for Planar Graphs</h3>
+<ul>
+<li><strong>Degree</strong> of a vertex: number of incident edges (loops count twice).</li>
+<li><strong>Connected:</strong> any two vertices joined by a path.</li>
+<li><strong>Handshake lemma:</strong> the sum of degrees is twice the number of edges, so the number of odd-degree vertices is even.</li>
+<li><strong>Planar graph:</strong> drawable with no edge crossings; Euler’s formula for a connected planar graph with <span class="math inline">\(V\)</span> vertices, <span class="math inline">\(E\)</span> edges, and <span class="math inline">\(F\)</span> faces (including the outer face): <span class="math display">\[
+V-E+F=2.
+\]</span> This is the same Euler characteristic that governs polyhedra — and it generalizes to surfaces.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="readily-applicable-eulerian-algorithms" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="readily-applicable-eulerian-algorithms"><span class="header-section-number">2</span> Readily Applicable: Eulerian Algorithms</h2>
+<p>The parity criterion turns into fast algorithms with immediate uses:</p>
+<ul>
+<li><strong>Hierholzer’s algorithm</strong> builds an Eulerian circuit in <span class="math inline">\(O(E)\)</span> time by following unused edges until stuck and splicing cycles.</li>
+<li><strong>Route inspection (the Chinese Postman problem):</strong> a postal worker or snowplow must traverse every street; if the graph has odd-degree vertices, the optimal route pairs them with shortest paths and reuses those edges. Euler’s parity theorem is the starting point.</li>
+<li><strong>Genome assembly:</strong> reads are <span class="math inline">\(k\)</span>-mers; build a <strong>de Bruijn graph</strong> whose edges are <span class="math inline">\((k{+}1)\)</span>-mers; a genome corresponds to an <strong>Eulerian path</strong> through the graph. This is the algorithm behind many real assemblers (Euler, Velvet, SPAdes).</li>
+<li><strong>Circuit design and robotics:</strong> traversing every wire or every configuration edge exactly once.</li>
+</ul>
+<p>The laboratory implements Hierholzer and a working mini-assembler.</p>
+<hr>
+</section>
+<section id="topology-shape-without-distance" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="topology-shape-without-distance"><span class="header-section-number">3</span> Topology: Shape Without Distance</h2>
+<p><strong>Topology</strong> studies properties preserved under <strong>homeomorphism</strong>: a continuous bijection with continuous inverse (“continuous deformations,” no cutting or gluing). A coffee cup and a donut are homeomorphic (both have one hole).</p>
+<p><strong>Invariants</strong> distinguish spaces:</p>
+<ul>
+<li><strong>Connectivity</strong> (connected components).</li>
+<li><strong>Compactness</strong> and <strong>closedness</strong>.</li>
+<li><strong>Genus</strong> (number of holes/handles).</li>
+<li><strong>Orientability</strong> (two-sided vs one-sided).</li>
+<li><strong>Euler characteristic</strong> <span class="math inline">\(\chi\)</span>.</li>
+<li><strong>Fundamental group</strong> <span class="math inline">\(\pi_1\)</span> and <strong>homology</strong> (algebraic invariants).</li>
+</ul>
+<p>A donut (torus) and a sphere differ in genus and Euler characteristic; no amount of bending changes that.</p>
+<hr>
+</section>
+<section id="surfaces-and-their-classification" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="surfaces-and-their-classification"><span class="header-section-number">4</span> Surfaces and Their Classification</h2>
+<p>A <strong>surface</strong> is a space locally like the plane. <strong>Closed</strong> surfaces are compact and without boundary. The <strong>classification theorem</strong> says every closed surface is determined by two invariants:</p>
+<ol type="1">
+<li><strong>Orientability</strong> (two-sided or one-sided).</li>
+<li><strong>Genus</strong> <span class="math inline">\(g\)</span> (number of handles).</li>
+</ol>
+<p>For a connected closed orientable surface of genus <span class="math inline">\(g\)</span>, the Euler characteristic is <span class="math display">\[
+\chi = V-E+F = 2-2g.
+\]</span></p>
+<ul>
+<li><strong>Sphere:</strong> <span class="math inline">\(g=0\)</span>, <span class="math inline">\(\chi=2\)</span>.</li>
+<li><strong>Torus:</strong> <span class="math inline">\(g=1\)</span>, <span class="math inline">\(\chi=0\)</span>.</li>
+<li><strong>Double torus:</strong> <span class="math inline">\(g=2\)</span>, <span class="math inline">\(\chi=-2\)</span>, and so on.</li>
+</ul>
+<p>Non-orientable closed surfaces are built from <strong>projective planes</strong> or one <strong>Klein bottle</strong>; a sphere with <span class="math inline">\(k\)</span> Möbius bands has <span class="math inline">\(\chi=2-k\)</span>.</p>
+<section id="the-möbius-strip" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="the-möbius-strip"><span class="header-section-number">4.1</span> The Möbius Strip</h3>
+<p>Take a strip of paper, give it a <strong>half twist</strong>, and glue the ends. The result is the <strong>Möbius strip</strong>:</p>
+<ul>
+<li>It has <strong>one side</strong> and <strong>one edge</strong> (a single closed curve).</li>
+<li>It is <strong>non-orientable</strong>: there is no consistent choice of “up.”</li>
+<li>Cutting it down the middle does <strong>not</strong> separate it — it produces one longer, thinner two-sided band.</li>
+</ul>
+<p>Applications: conveyor belts and drive belts that wear evenly (each “side” becomes both sides), Möbius resistor designs, continuous-loop tapes, and mathematical art (Escher’s <em>Möbius Strip II</em>). Bach’s <em>Musical Offering</em> crab canon has a Möbius-like structure.</p>
+</section>
+<section id="the-klein-bottle" class="level3" data-number="4.2">
+<h3 data-number="4.2" class="anchored" data-anchor-id="the-klein-bottle"><span class="header-section-number">4.2</span> The Klein Bottle</h3>
+<p>Glue two Möbius strips along their boundary and you get the <strong>Klein bottle</strong>, a closed non-orientable surface with <span class="math inline">\(\chi=0\)</span>. It has:</p>
+<ul>
+<li><strong>No inside or outside</strong> (non-orientable).</li>
+<li><strong>No boundary</strong> (closed).</li>
+<li><strong>Cannot be embedded in <span class="math inline">\(\mathbb{R}^3\)</span></strong> without self-intersection; an immersion with a passage through itself is the usual glass-model picture. It embeds in <span class="math inline">\(\mathbb{R}^4\)</span>.</li>
+</ul>
+<p>The <strong>projective plane</strong> (<span class="math inline">\(\chi=1\)</span>) is the other basic non-orientable surface; the Klein bottle is the connected sum of two projective planes.</p>
+</section>
+<section id="connected-sums" class="level3" data-number="4.3">
+<h3 data-number="4.3" class="anchored" data-anchor-id="connected-sums"><span class="header-section-number">4.3</span> Connected Sums</h3>
+<p>Gluing two surfaces by removing a disk from each and joining the boundaries yields the <strong>connected sum</strong>. The sphere is the identity; the torus is the connected sum of two; the Klein bottle is the connected sum of two projective planes. This operation generates the whole classification table.</p>
+<hr>
+</section>
+</section>
+<section id="applications-of-topology" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="applications-of-topology"><span class="header-section-number">5</span> Applications of Topology</h2>
+<p>Topology is not merely abstract; its invariants and ideas are used widely:</p>
+<ul>
+<li><strong>Topological data analysis (TDA):</strong> <strong>persistent homology</strong> tracks holes across scales in point-cloud data, used in biology, materials, and finance.</li>
+<li><strong>Robotics and motion planning:</strong> <strong>configuration spaces</strong> of a robot are manifolds or graphs; connectivity and homotopy decide reachability.</li>
+<li><strong>Computer graphics and 3D printing:</strong> <strong>genus</strong> and Euler characteristic detect and repair mesh defects (holes, non-manifold edges); a watertight mesh has a well-defined genus.</li>
+<li><strong>Knot theory:</strong> DNA topology and polymer physics; the trefoil is a chiral knot; knot invariants (Jones polynomial) classify entanglement.</li>
+<li><strong>Network routing:</strong> graph connectivity, planarity, and Eulerian/Hamiltonian traversal drive GPS routing, internet topology, and circuit layout.</li>
+<li><strong>Materials and physics:</strong> topological insulators, anyons, and topological quantum computing rely on global invariants robust to local perturbation.</li>
+<li><strong>Differential geometry’s global half:</strong> Gauss–Bonnet links curvature to <span class="math inline">\(\chi\)</span> — local geometry determines global topology.</li>
+</ul>
+<p><strong>The recurring lesson:</strong> the invariants that do not change under deformation are the ones that carry robust information.</p>
+<hr>
+</section>
+<section id="laboratory-graphs-surfaces-and-applicable-algorithms" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="laboratory-graphs-surfaces-and-applicable-algorithms"><span class="header-section-number">6</span> Laboratory: Graphs, Surfaces, and Applicable Algorithms</h2>
+<section id="hierholzers-eulerian-circuit" class="level3" data-number="6.1">
+<h3 data-number="6.1" class="anchored" data-anchor-id="hierholzers-eulerian-circuit"><span class="header-section-number">6.1</span> Hierholzer’s Eulerian Circuit</h3>
+<div id="3658f52d" class="cell" data-execution_count="1">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> collections <span class="im">import</span> defaultdict</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> eulerian_circuit(edges):</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    graph <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    degree <span class="op">=</span> defaultdict(<span class="bu">int</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> u, v <span class="kw">in</span> edges:</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        graph[u].append(v)<span class="op">;</span> graph[v].append(u)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        degree[u] <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span> degree[v] <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    odd <span class="op">=</span> [v <span class="cf">for</span> v, d <span class="kw">in</span> degree.items() <span class="cf">if</span> d <span class="op">%</span> <span class="dv">2</span>]</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> odd:</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span>, odd</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Hierholzer</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    stack, circuit <span class="op">=</span> [<span class="bu">next</span>(<span class="bu">iter</span>(graph))], []</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    local <span class="op">=</span> {u: <span class="bu">list</span>(vs) <span class="cf">for</span> u, vs <span class="kw">in</span> graph.items()}</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> stack:</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        u <span class="op">=</span> stack[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> local.get(u):</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>            v <span class="op">=</span> local[u].pop()<span class="op">;</span> local[v].remove(u)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>            stack.append(v)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>            circuit.append(stack.pop())</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> circuit[::<span class="op">-</span><span class="dv">1</span>], []</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>konigsberg <span class="op">=</span> [(<span class="st">"A"</span>,<span class="st">"B"</span>),(<span class="st">"A"</span>,<span class="st">"C"</span>),(<span class="st">"A"</span>,<span class="st">"D"</span>),(<span class="st">"B"</span>,<span class="st">"D"</span>),(<span class="st">"B"</span>,<span class="st">"D"</span>),(<span class="st">"C"</span>,<span class="st">"D"</span>),(<span class="st">"C"</span>,<span class="st">"D"</span>)]</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>eulerian <span class="op">=</span> [(<span class="st">"A"</span>,<span class="st">"B"</span>),(<span class="st">"B"</span>,<span class="st">"C"</span>),(<span class="st">"C"</span>,<span class="st">"A"</span>),(<span class="st">"C"</span>,<span class="st">"D"</span>),(<span class="st">"D"</span>,<span class="st">"E"</span>),(<span class="st">"E"</span>,<span class="st">"C"</span>)]</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== KÖNIGSBERG (Seven Bridges) ==="</span>)</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>circ, odd <span class="op">=</span> eulerian_circuit(konigsberg)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Eulerian circuit exists? </span><span class="sc">{</span>circ <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span><span class="sc">}</span><span class="ss">; odd-degree vertices: </span><span class="sc">{</span><span class="bu">sorted</span>(odd)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  -&gt; no walk crosses every bridge exactly once (Euler, 1736)."</span>)</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== A SOLVABLE GRAPH ==="</span>)</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>circ, odd <span class="op">=</span> eulerian_circuit(eulerian)</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  circuit: </span><span class="sc">{</span><span class="st">' -&gt; '</span><span class="sc">.</span>join(circ)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== ROUTE INSPECTION (Chinese Postman) ==="</span>)</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> odd_vertices(edges):</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    deg <span class="op">=</span> defaultdict(<span class="bu">int</span>)</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> u, v <span class="kw">in</span> edges: deg[u] <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span> deg[v] <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [v <span class="cf">for</span> v, d <span class="kw">in</span> deg.items() <span class="cf">if</span> d <span class="op">%</span> <span class="dv">2</span>]</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  odd-degree vertices needing pairing: </span><span class="sc">{</span>odd_vertices(konigsberg)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  the optimal route pairs them by shortest paths and reuses those edges."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== KÖNIGSBERG (Seven Bridges) ===
+  Eulerian circuit exists? False; odd-degree vertices: ['A', 'B', 'C', 'D']
+  -&gt; no walk crosses every bridge exactly once (Euler, 1736).
+
+=== A SOLVABLE GRAPH ===
+  circuit: A -&gt; C -&gt; E -&gt; D -&gt; C -&gt; B -&gt; A
+
+=== ROUTE INSPECTION (Chinese Postman) ===
+  odd-degree vertices needing pairing: ['A', 'B', 'C', 'D']
+  the optimal route pairs them by shortest paths and reuses those edges.</code></pre>
+</div>
+</div>
+</section>
+<section id="genome-assembly-via-de-bruijn-graph" class="level3" data-number="6.2">
+<h3 data-number="6.2" class="anchored" data-anchor-id="genome-assembly-via-de-bruijn-graph"><span class="header-section-number">6.2</span> Genome Assembly via de Bruijn Graph</h3>
+<div id="57fa98ea" class="cell" data-execution_count="2">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> assemble(reads, k):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># de Bruijn: nodes are (k-1)-mers, edges are k-mers</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    graph <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    indeg <span class="op">=</span> defaultdict(<span class="bu">int</span>)<span class="op">;</span> outdeg <span class="op">=</span> defaultdict(<span class="bu">int</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> r <span class="kw">in</span> reads:</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(r) <span class="op">-</span> k <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>            kmer <span class="op">=</span> r[i:i<span class="op">+</span>k]</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>            a, b <span class="op">=</span> kmer[:<span class="op">-</span><span class="dv">1</span>], kmer[<span class="dv">1</span>:]</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>            graph[a].append(b)<span class="op">;</span> indeg[b] <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span> outdeg[a] <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    nodes <span class="op">=</span> <span class="bu">set</span>(<span class="bu">list</span>(graph) <span class="op">+</span> <span class="bu">list</span>(indeg))</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    starts <span class="op">=</span> [n <span class="cf">for</span> n <span class="kw">in</span> nodes <span class="cf">if</span> outdeg[n] <span class="op">-</span> indeg[n] <span class="op">==</span> <span class="dv">1</span>]</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    start <span class="op">=</span> starts[<span class="dv">0</span>] <span class="cf">if</span> starts <span class="cf">else</span> <span class="bu">next</span>(<span class="bu">iter</span>(nodes))</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Hierholzer on directed graph</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    stack, path <span class="op">=</span> [start], []</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    local <span class="op">=</span> {u: <span class="bu">list</span>(vs) <span class="cf">for</span> u, vs <span class="kw">in</span> graph.items()}</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> stack:</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        u <span class="op">=</span> stack[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> local.get(u):</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>            stack.append(local[u].pop())</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>            path.append(stack.pop())</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    path <span class="op">=</span> path[::<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> path[<span class="dv">0</span>] <span class="op">+</span> <span class="st">""</span>.join(p[<span class="op">-</span><span class="dv">1</span>] <span class="cf">for</span> p <span class="kw">in</span> path[<span class="dv">1</span>:])</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>reads <span class="op">=</span> [<span class="st">"ATGGC"</span>, <span class="st">"TGGCA"</span>, <span class="st">"GGCAT"</span>, <span class="st">"GCATG"</span>]</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== DE BRUIJN GENOME ASSEMBLY (k=5) ==="</span>)</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  reads: </span><span class="sc">{</span>reads<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  assembled contig: </span><span class="sc">{</span>assemble(reads, <span class="dv">5</span>)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  a genome is an Eulerian path in the de Bruijn graph of its k-mers."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== DE BRUIJN GENOME ASSEMBLY (k=5) ===
+  reads: ['ATGGC', 'TGGCA', 'GGCAT', 'GCATG']
+  assembled contig: ATGGCATG
+  a genome is an Eulerian path in the de Bruijn graph of its k-mers.</code></pre>
+</div>
+</div>
+</section>
+<section id="euler-characteristic-and-genus-of-meshes" class="level3" data-number="6.3">
+<h3 data-number="6.3" class="anchored" data-anchor-id="euler-characteristic-and-genus-of-meshes"><span class="header-section-number">6.3</span> Euler Characteristic and Genus of Meshes</h3>
+<div id="cell-fig-surfaces" class="cell" data-execution_count="3">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> torus_mesh(nu<span class="op">=</span><span class="dv">24</span>, nv<span class="op">=</span><span class="dv">12</span>):</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    verts, faces <span class="op">=</span> [], []</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(nu):</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(nv):</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>            u <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>np.pi<span class="op">*</span>i<span class="op">/</span>nu<span class="op">;</span> v <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>np.pi<span class="op">*</span>j<span class="op">/</span>nv</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>            R, r <span class="op">=</span> <span class="fl">2.0</span>, <span class="fl">0.7</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>            verts.append([(R <span class="op">+</span> r<span class="op">*</span>np.cos(v))<span class="op">*</span>np.cos(u), (R <span class="op">+</span> r<span class="op">*</span>np.cos(v))<span class="op">*</span>np.sin(u), r<span class="op">*</span>np.sin(v)])</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    idx <span class="op">=</span> <span class="kw">lambda</span> i, j: (i <span class="op">%</span> nu)<span class="op">*</span>nv <span class="op">+</span> (j <span class="op">%</span> nv)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(nu):</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(nv):</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>            a, b, c, d <span class="op">=</span> idx(i,j), idx(i<span class="op">+</span><span class="dv">1</span>,j), idx(i<span class="op">+</span><span class="dv">1</span>,j<span class="op">+</span><span class="dv">1</span>), idx(i,j<span class="op">+</span><span class="dv">1</span>)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>            faces <span class="op">+=</span> [(a,b,c), (a,c,d)]</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array(verts), faces</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>V, F <span class="op">=</span> torus_mesh()</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>E <span class="op">=</span> <span class="bu">set</span>()</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, b, c <span class="kw">in</span> F:</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> x, y <span class="kw">in</span> [(a,b),(b,c),(c,a)]:</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>        E.add((<span class="bu">min</span>(x,y), <span class="bu">max</span>(x,y)))</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>chi <span class="op">=</span> <span class="bu">len</span>(V) <span class="op">-</span> <span class="bu">len</span>(E) <span class="op">+</span> <span class="bu">len</span>(F)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>g <span class="op">=</span> (<span class="dv">2</span> <span class="op">-</span> chi) <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== MESH EULER CHARACTERISTIC AND GENUS ==="</span>)</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  torus mesh: V=</span><span class="sc">{</span><span class="bu">len</span>(V)<span class="sc">}</span><span class="ss">, E=</span><span class="sc">{</span><span class="bu">len</span>(E)<span class="sc">}</span><span class="ss">, F=</span><span class="sc">{</span><span class="bu">len</span>(F)<span class="sc">}</span><span class="ss"> -&gt; chi=</span><span class="sc">{</span>chi<span class="sc">}</span><span class="ss">, genus=</span><span class="sc">{</span>g<span class="sc">:.1f}</span><span class="ss">"</span>)</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  sphere: chi=2, genus=0; each handle lowers chi by 2."</span>)</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  a watertight mesh obeys V - E + F = 2 - 2g; a defect breaks it."</span>)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>(<span class="fl">12.5</span>, <span class="dv">5</span>))</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>, projection<span class="op">=</span><span class="st">"3d"</span>)</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>ax1.plot_trisurf(V[:,<span class="dv">0</span>], V[:,<span class="dv">1</span>], V[:,<span class="dv">2</span>], triangles<span class="op">=</span>F, color<span class="op">=</span><span class="st">"#2980b9"</span>, alpha<span class="op">=</span><span class="fl">0.9</span>, linewidth<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>ax1.set_title(<span class="ss">f"Torus mesh: chi=</span><span class="sc">{</span>chi<span class="sc">}</span><span class="ss">, genus=</span><span class="sc">{</span>g<span class="sc">:.0f}</span><span class="ss">"</span>)<span class="op">;</span> ax1.set_axis_off()</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>labels <span class="op">=</span> [<span class="st">"sphere"</span>, <span class="st">"torus"</span>, <span class="st">"double torus"</span>, <span class="st">"Klein bottle"</span>]</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>genus <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="va">None</span>]</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>chis <span class="op">=</span> [<span class="dv">2</span>, <span class="dv">0</span>, <span class="op">-</span><span class="dv">2</span>, <span class="dv">0</span>]</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> [<span class="st">"#27ae60"</span>, <span class="st">"#2980b9"</span>, <span class="st">"#8e44ad"</span>, <span class="st">"#e74c3c"</span>]</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>ax2.bar(labels, chis, color<span class="op">=</span>colors)</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>ax2.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"k"</span>, lw<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>ax2.set_title(<span class="vs">r"Euler characteristic </span><span class="dv">$</span><span class="er">\</span><span class="vs">chi = 2 - 2g</span><span class="dv">$</span><span class="vs"> </span><span class="kw">(</span><span class="vs">Klein bottle: non-orientable, </span><span class="dv">$</span><span class="er">\</span><span class="vs">chi=0</span><span class="dv">$</span><span class="kw">)</span><span class="vs">"</span>)</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>ax2.set_ylabel(<span class="vs">r"</span><span class="dv">$</span><span class="er">\</span><span class="vs">chi</span><span class="dv">$</span><span class="vs">"</span>)<span class="op">;</span> ax2.grid(axis<span class="op">=</span><span class="st">"y"</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== MESH EULER CHARACTERISTIC AND GENUS ===
+  torus mesh: V=288, E=864, F=576 -&gt; chi=0, genus=1.0
+  sphere: chi=2, genus=0; each handle lowers chi by 2.
+  a watertight mesh obeys V - E + F = 2 - 2g; a defect breaks it.</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div id="fig-surfaces" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-surfaces-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="topology-and-surfaces-konigsberg-mobius-klein_files/figure-html/fig-surfaces-output-2.png" width="1113" height="469" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-surfaces-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Euler characteristic and genus of surfaces. Left: a sphere (genus 0, χ = 2) and a torus (genus 1, χ = 0) shown as the two ends of the classification. Right: the genus computed from a triangle mesh by χ = V − E + F and g = (2 − χ)/2, which is exactly how 3D modeling software detects holes and repairs meshes. A watertight torus mesh has χ = 0.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="the-möbius-strip-and-klein-bottle" class="level3" data-number="6.4">
+<h3 data-number="6.4" class="anchored" data-anchor-id="the-möbius-strip-and-klein-bottle"><span class="header-section-number">6.4</span> The Möbius Strip and Klein Bottle</h3>
+<div id="cell-fig-mobius-klein" class="cell" data-execution_count="4">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="fl">5.5</span>))</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Möbius strip</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>, projection<span class="op">=</span><span class="st">"3d"</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>u <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span><span class="op">*</span>np.pi, <span class="dv">120</span>)<span class="op">;</span> v <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">20</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>U, V <span class="op">=</span> np.meshgrid(u, v)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> (<span class="dv">1</span> <span class="op">+</span> V<span class="op">/</span><span class="dv">2</span><span class="op">*</span>np.cos(U<span class="op">/</span><span class="dv">2</span>))<span class="op">*</span>np.cos(U)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>Y <span class="op">=</span> (<span class="dv">1</span> <span class="op">+</span> V<span class="op">/</span><span class="dv">2</span><span class="op">*</span>np.cos(U<span class="op">/</span><span class="dv">2</span>))<span class="op">*</span>np.sin(U)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>Z <span class="op">=</span> V<span class="op">/</span><span class="dv">2</span><span class="op">*</span>np.sin(U<span class="op">/</span><span class="dv">2</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>ax1.plot_surface(X, Y, Z, cmap<span class="op">=</span><span class="st">"viridis"</span>, alpha<span class="op">=</span><span class="fl">0.95</span>, linewidth<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>ax1.set_title(<span class="st">"Möbius strip (one side, one edge)"</span>)<span class="op">;</span> ax1.set_axis_off()</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Klein bottle (figure-8 immersion)</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span>, projection<span class="op">=</span><span class="st">"3d"</span>)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>u <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span><span class="op">*</span>np.pi, <span class="dv">120</span>)<span class="op">;</span> v <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span><span class="op">*</span>np.pi, <span class="dv">60</span>)</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>U, V <span class="op">=</span> np.meshgrid(u, v)</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>a <span class="op">=</span> <span class="fl">2.0</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> (a <span class="op">+</span> np.cos(U<span class="op">/</span><span class="dv">2</span>)<span class="op">*</span>np.sin(V) <span class="op">-</span> np.sin(U<span class="op">/</span><span class="dv">2</span>)<span class="op">*</span>np.sin(<span class="dv">2</span><span class="op">*</span>V))<span class="op">*</span>np.cos(U)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>Y <span class="op">=</span> (a <span class="op">+</span> np.cos(U<span class="op">/</span><span class="dv">2</span>)<span class="op">*</span>np.sin(V) <span class="op">-</span> np.sin(U<span class="op">/</span><span class="dv">2</span>)<span class="op">*</span>np.sin(<span class="dv">2</span><span class="op">*</span>V))<span class="op">*</span>np.sin(U)</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>Z <span class="op">=</span> np.sin(U<span class="op">/</span><span class="dv">2</span>)<span class="op">*</span>np.sin(V) <span class="op">+</span> np.cos(U<span class="op">/</span><span class="dv">2</span>)<span class="op">*</span>np.sin(<span class="dv">2</span><span class="op">*</span>V)</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>ax2.plot_surface(X, Y, Z, cmap<span class="op">=</span><span class="st">"plasma"</span>, alpha<span class="op">=</span><span class="fl">0.95</span>, linewidth<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>ax2.set_title(<span class="st">"Klein bottle (non-orientable, closed)"</span>)<span class="op">;</span> ax2.set_axis_off()</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== NON-ORIENTABLE SURFACES ==="</span>)</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Möbius strip: cut along the middle -&gt; one longer two-sided band (not two pieces)."</span>)</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Klein bottle: chi=0, cannot embed in R^3 without self-intersection; embeds in R^4."</span>)</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  classification: closed surfaces are determined by orientability and genus."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-mobius-klein" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-mobius-klein-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="topology-and-surfaces-konigsberg-mobius-klein_files/figure-html/fig-mobius-klein-output-1.png" width="1099" height="518" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-mobius-klein-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Two non-orientable surfaces. Left: the Möbius strip, made by giving a band a half twist before joining its ends; it has one side and one edge. Right: the Klein bottle, a closed one-sided surface that cannot be embedded in three dimensions without intersecting itself; the familiar glass model passes through its own wall. Both are central examples in the classification of surfaces.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== NON-ORIENTABLE SURFACES ===
+  Möbius strip: cut along the middle -&gt; one longer two-sided band (not two pieces).
+  Klein bottle: chi=0, cannot embed in R^3 without self-intersection; embeds in R^4.
+  classification: closed surfaces are determined by orientability and genus.</code></pre>
+</div>
+</div>
+<p>The laboratory takes topology from puzzle to production: an <span class="math inline">\(O(E)\)</span> Eulerian-circuit algorithm solves route inspection and assembles genomes, and the Euler characteristic of a mesh computes its genus — the exact computation 3D software uses to detect holes.</p>
+<hr>
+</section>
+</section>
+<section id="summary" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="summary"><span class="header-section-number">7</span> Summary</h2>
+<p><span class="math display">\[
+\begin{aligned}
+&amp;\textbf{Königsberg: } &amp;&amp; \text{graph model; Eulerian circuit iff all degrees even (path iff 0 or 2 odd).} \\[3pt]
+&amp;\textbf{Planar graphs: } &amp;&amp; V-E+F=2;\ \text{handshake lemma; parity is the key invariant.} \\[3pt]
+&amp;\textbf{Applications: } &amp;&amp; \text{route inspection, de Bruijn genome assembly, circuit design.} \\[3pt]
+&amp;\textbf{Topology: } &amp;&amp; \text{homeomorphism; invariants: connectivity, genus, orientability, } \chi,\ \pi_1. \\[3pt]
+&amp;\textbf{Surfaces: } &amp;&amp; \text{classified by orientability + genus;} \chi=2-2g. \\[3pt]
+&amp;\textbf{Möbius / Klein: } &amp;&amp; \text{one-sided, non-orientable; Klein bottle is closed but not embeddable in } \mathbb{R}^3. \\[3pt]
+&amp;\textbf{Real uses: } &amp;&amp; \text{TDA, robotics, mesh repair, knot theory, materials, routing.}
+\end{aligned}
+\]</span></p>
+<p>Topology is the geometry that survives bending. Its sibling, <strong>measure theory</strong>, provides the other great abstraction of analysis — the rigorous theory of length, area, and integration — and is the subject of <a href="../../posts/mathematics/measure-theory-and-lebesgue-measure.html">the next article</a>.</p>
+<hr>
+</section>
+<section id="curated-references-and-further-reading" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="curated-references-and-further-reading"><span class="header-section-number">8</span> Curated References and Further Reading</h2>
+<ol type="1">
+<li><strong>Euler, L. (1736).</strong> <em>Solutio problematis ad geometriam situs pertinentis.</em> (The Königsberg bridges.)</li>
+<li><strong>Munkres, James (2000).</strong> <em>Topology</em>, 2nd ed.&nbsp;Prentice Hall.</li>
+<li><strong>Hatcher, Allen (2002).</strong> <em>Algebraic Topology.</em> Cambridge University Press.</li>
+<li><strong>Massey, W. S. (1991).</strong> <em>A Basic Course in Algebraic Topology.</em> Springer.</li>
+<li><strong>Peleg, D. &amp; Peleg, D.</strong> <em>Eulerian and Hamiltonian Graphs</em> (algorithmic treatments).</li>
+<li><strong>Pevzner, P., Tang, H. &amp; Waterman, M. (2001).</strong> <em>An Eulerian Path Approach to DNA Fragment Assembly.</em> PNAS.</li>
+<li><strong>Edelsbrunner, H. &amp; Harer, J. (2010).</strong> <em>Computational Topology: An Introduction.</em> AMS.</li>
+<li><strong>Klein, Felix (1882).</strong> <em>Über Riemann’s Theorie der algebraischen Functionen und ihrer Integrale.</em> (The Klein bottle.)</li>
+</ol>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const cellDetails = window.document.querySelectorAll(".cell details.code-fold");
+        for (let i=0; i<cellDetails.length; i++) {
+          const details = cellDetails[i];
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell div.sourceCode.cell-code");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/igor-kan\.github\.io\/quarto-writing\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Topology and Surfaces: Königsberg, Möbius, and the Klein Bottle"</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "Euler's graph solution to the Seven Bridges, Eulerian paths and their use in route inspection and genome assembly, homeomorphism and topological invariants, the Euler characteristic and genus, one-sided surfaces from the Möbius strip to the Klein bottle, and the classification of closed surfaces — with readily applicable code"</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "Igor Kan"</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> "2026-09-14"</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="an">categories:</span><span class="co"> [Mathematics, Topology, Graph Theory, Surfaces, Geometry, Applications]</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="an">description:</span><span class="co"> "A comprehensive treatment of topology and surfaces with practical algorithms. It begins with Euler's solution to the Seven Bridges of Konigsberg, defining graphs, degrees, connectedness, and Eulerian paths and circuits with the parity criterion, and shows how the same idea powers route inspection, garbage and snowplow routing, and genome assembly via de Bruijn graphs. It develops homeomorphism, topological invariants, and the classification of closed surfaces by orientability and genus through the Euler characteristic, treats the Mobius strip (one side, one edge, non-orientable) and the Klein bottle (a closed non-orientable surface that cannot embed in three-space without self-intersection), and surveys applications from topological data analysis and robotics to mesh repair, knot theory, and materials. It includes an executable Python laboratory implementing Hierholzer's Eulerian-circuit algorithm, a working de Bruijn genome assembler, mesh Euler-characteristic and genus computation, and three-dimensional renderings of the Mobius strip and Klein bottle."</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="co">    html-math-method: mathjax</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: show</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-depth: 4</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="co">    number-sections: true</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="an">jupyter:</span><span class="co"> python3</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="an">toc:</span><span class="co"> true</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="an">toc-depth:</span><span class="co"> 4</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="an">number-sections:</span><span class="co"> true</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>::: {.callout-note appearance="simple"}</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>*In 1736 Euler solved the Seven Bridges of Königsberg not by measuring distances but by ignoring them: only the connections mattered. That decision founded graph theory and, ultimately, **topology** — the geometry of shape up to continuous deformation, where a coffee cup and a donut are the same object.*</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>This article follows that thread from a puzzle about bridges to one-sided surfaces and the classification of all closed surfaces — with algorithms you can run.</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip collapse="true"}</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a><span class="fu">### Companion Treatises in this Series</span></span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Geometry After Euclid: Axioms, Non-Euclidean Geometry, and Non-Geometric Uses</span><span class="co">](geometry-after-euclid-axioms-and-non-geometric-uses.qmd)</span></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">The Geometry of Triangles: Centers, Similarity, Congruence, and Fractals</span><span class="co">](the-geometry-of-triangles-centers-similarity-congruence-and-fractals.qmd)</span></span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Measure Theory and the Lebesgue Measure</span><span class="co">](measure-theory-and-lebesgue-measure.qmd)</span></span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Infinite-Dimensional Algebra: Spaces of Sequences and Functions</span><span class="co">](infinite-dimensional-algebra-sequence-and-function-spaces.qmd)</span></span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">Foundations of Arithmetic: Primes, Radicals, and the Riemann Hypothesis</span><span class="co">](foundations-of-arithmetic-primes-radicals-and-the-riemann-hypothesis.qmd)</span></span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Seven Bridges of Königsberg</span></span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a>The city of Königsberg (now Kaliningrad) sat on both banks of the Pregel River and two islands, connected by **seven bridges**. The puzzle: walk through the city crossing **each bridge exactly once** and return to the start.</span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a>**Euler's insight (1736):** replace landmasses by **vertices** and bridges by **edges** — the first **graph**. The question becomes whether the graph has a closed trail using every edge exactly once (an **Eulerian circuit**).</span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a>**Euler's theorem.** A connected graph has an Eulerian circuit iff **every vertex has even degree**. It has an Eulerian **path** (open trail) iff **exactly zero or two vertices have odd degree** (the odd-degree vertices are the endpoints).</span>
+<span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-47"><a href="#cb9-47" aria-hidden="true" tabindex="-1"></a>Königsberg had four vertices of **odd** degree (3, 3, 3, 5), so no such walk exists. The distances and shapes were irrelevant; only the **parity of degrees** mattered. This is the birth of both graph theory and topological thinking: an invariant (degree parity) decides a question that geometry alone could not.</span>
+<span id="cb9-48"><a href="#cb9-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-49"><a href="#cb9-49" aria-hidden="true" tabindex="-1"></a><span class="fu">### Degrees, Connectivity, and Euler's Formula for Planar Graphs</span></span>
+<span id="cb9-50"><a href="#cb9-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-51"><a href="#cb9-51" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Degree** of a vertex: number of incident edges (loops count twice).</span>
+<span id="cb9-52"><a href="#cb9-52" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Connected:** any two vertices joined by a path.</span>
+<span id="cb9-53"><a href="#cb9-53" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Handshake lemma:** the sum of degrees is twice the number of edges, so the number of odd-degree vertices is even.</span>
+<span id="cb9-54"><a href="#cb9-54" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Planar graph:** drawable with no edge crossings; Euler's formula for a connected planar graph with $V$ vertices, $E$ edges, and $F$ faces (including the outer face):</span>
+<span id="cb9-55"><a href="#cb9-55" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-56"><a href="#cb9-56" aria-hidden="true" tabindex="-1"></a>V-E+F=2.</span>
+<span id="cb9-57"><a href="#cb9-57" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-58"><a href="#cb9-58" aria-hidden="true" tabindex="-1"></a>This is the same Euler characteristic that governs polyhedra — and it generalizes to surfaces.</span>
+<span id="cb9-59"><a href="#cb9-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-60"><a href="#cb9-60" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-61"><a href="#cb9-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-62"><a href="#cb9-62" aria-hidden="true" tabindex="-1"></a><span class="fu">## Readily Applicable: Eulerian Algorithms</span></span>
+<span id="cb9-63"><a href="#cb9-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-64"><a href="#cb9-64" aria-hidden="true" tabindex="-1"></a>The parity criterion turns into fast algorithms with immediate uses:</span>
+<span id="cb9-65"><a href="#cb9-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-66"><a href="#cb9-66" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Hierholzer's algorithm** builds an Eulerian circuit in $O(E)$ time by following unused edges until stuck and splicing cycles.</span>
+<span id="cb9-67"><a href="#cb9-67" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Route inspection (the Chinese Postman problem):** a postal worker or snowplow must traverse every street; if the graph has odd-degree vertices, the optimal route pairs them with shortest paths and reuses those edges. Euler's parity theorem is the starting point.</span>
+<span id="cb9-68"><a href="#cb9-68" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Genome assembly:** reads are $k$-mers; build a **de Bruijn graph** whose edges are $(k{+}1)$-mers; a genome corresponds to an **Eulerian path** through the graph. This is the algorithm behind many real assemblers (Euler, Velvet, SPAdes).</span>
+<span id="cb9-69"><a href="#cb9-69" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Circuit design and robotics:** traversing every wire or every configuration edge exactly once.</span>
+<span id="cb9-70"><a href="#cb9-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-71"><a href="#cb9-71" aria-hidden="true" tabindex="-1"></a>The laboratory implements Hierholzer and a working mini-assembler.</span>
+<span id="cb9-72"><a href="#cb9-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-73"><a href="#cb9-73" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-74"><a href="#cb9-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-75"><a href="#cb9-75" aria-hidden="true" tabindex="-1"></a><span class="fu">## Topology: Shape Without Distance</span></span>
+<span id="cb9-76"><a href="#cb9-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-77"><a href="#cb9-77" aria-hidden="true" tabindex="-1"></a>**Topology** studies properties preserved under **homeomorphism**: a continuous bijection with continuous inverse ("continuous deformations," no cutting or gluing). A coffee cup and a donut are homeomorphic (both have one hole).</span>
+<span id="cb9-78"><a href="#cb9-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-79"><a href="#cb9-79" aria-hidden="true" tabindex="-1"></a>**Invariants** distinguish spaces:</span>
+<span id="cb9-80"><a href="#cb9-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-81"><a href="#cb9-81" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Connectivity** (connected components).</span>
+<span id="cb9-82"><a href="#cb9-82" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Compactness** and **closedness**.</span>
+<span id="cb9-83"><a href="#cb9-83" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Genus** (number of holes/handles).</span>
+<span id="cb9-84"><a href="#cb9-84" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Orientability** (two-sided vs one-sided).</span>
+<span id="cb9-85"><a href="#cb9-85" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Euler characteristic** $\chi$.</span>
+<span id="cb9-86"><a href="#cb9-86" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Fundamental group** $\pi_1$ and **homology** (algebraic invariants).</span>
+<span id="cb9-87"><a href="#cb9-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-88"><a href="#cb9-88" aria-hidden="true" tabindex="-1"></a>A donut (torus) and a sphere differ in genus and Euler characteristic; no amount of bending changes that.</span>
+<span id="cb9-89"><a href="#cb9-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-90"><a href="#cb9-90" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-91"><a href="#cb9-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-92"><a href="#cb9-92" aria-hidden="true" tabindex="-1"></a><span class="fu">## Surfaces and Their Classification</span></span>
+<span id="cb9-93"><a href="#cb9-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-94"><a href="#cb9-94" aria-hidden="true" tabindex="-1"></a>A **surface** is a space locally like the plane. **Closed** surfaces are compact and without boundary. The **classification theorem** says every closed surface is determined by two invariants:</span>
+<span id="cb9-95"><a href="#cb9-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-96"><a href="#cb9-96" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Orientability** (two-sided or one-sided).</span>
+<span id="cb9-97"><a href="#cb9-97" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Genus** $g$ (number of handles).</span>
+<span id="cb9-98"><a href="#cb9-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-99"><a href="#cb9-99" aria-hidden="true" tabindex="-1"></a>For a connected closed orientable surface of genus $g$, the Euler characteristic is</span>
+<span id="cb9-100"><a href="#cb9-100" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-101"><a href="#cb9-101" aria-hidden="true" tabindex="-1"></a>\chi = V-E+F = 2-2g.</span>
+<span id="cb9-102"><a href="#cb9-102" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-103"><a href="#cb9-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-104"><a href="#cb9-104" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Sphere:** $g=0$, $\chi=2$.</span>
+<span id="cb9-105"><a href="#cb9-105" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Torus:** $g=1$, $\chi=0$.</span>
+<span id="cb9-106"><a href="#cb9-106" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Double torus:** $g=2$, $\chi=-2$, and so on.</span>
+<span id="cb9-107"><a href="#cb9-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-108"><a href="#cb9-108" aria-hidden="true" tabindex="-1"></a>Non-orientable closed surfaces are built from **projective planes** or one **Klein bottle**; a sphere with $k$ Möbius bands has $\chi=2-k$.</span>
+<span id="cb9-109"><a href="#cb9-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-110"><a href="#cb9-110" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Möbius Strip</span></span>
+<span id="cb9-111"><a href="#cb9-111" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-112"><a href="#cb9-112" aria-hidden="true" tabindex="-1"></a>Take a strip of paper, give it a **half twist**, and glue the ends. The result is the **Möbius strip**:</span>
+<span id="cb9-113"><a href="#cb9-113" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-114"><a href="#cb9-114" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>It has **one side** and **one edge** (a single closed curve).</span>
+<span id="cb9-115"><a href="#cb9-115" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>It is **non-orientable**: there is no consistent choice of "up."</span>
+<span id="cb9-116"><a href="#cb9-116" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Cutting it down the middle does **not** separate it — it produces one longer, thinner two-sided band.</span>
+<span id="cb9-117"><a href="#cb9-117" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-118"><a href="#cb9-118" aria-hidden="true" tabindex="-1"></a>Applications: conveyor belts and drive belts that wear evenly (each "side" becomes both sides), Möbius resistor designs, continuous-loop tapes, and mathematical art (Escher's *Möbius Strip II*). Bach's *Musical Offering* crab canon has a Möbius-like structure.</span>
+<span id="cb9-119"><a href="#cb9-119" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-120"><a href="#cb9-120" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Klein Bottle</span></span>
+<span id="cb9-121"><a href="#cb9-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-122"><a href="#cb9-122" aria-hidden="true" tabindex="-1"></a>Glue two Möbius strips along their boundary and you get the **Klein bottle**, a closed non-orientable surface with $\chi=0$. It has:</span>
+<span id="cb9-123"><a href="#cb9-123" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-124"><a href="#cb9-124" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**No inside or outside** (non-orientable).</span>
+<span id="cb9-125"><a href="#cb9-125" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**No boundary** (closed).</span>
+<span id="cb9-126"><a href="#cb9-126" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Cannot be embedded in $\mathbb{R}^3$** without self-intersection; an immersion with a passage through itself is the usual glass-model picture. It embeds in $\mathbb{R}^4$.</span>
+<span id="cb9-127"><a href="#cb9-127" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-128"><a href="#cb9-128" aria-hidden="true" tabindex="-1"></a>The **projective plane** ($\chi=1$) is the other basic non-orientable surface; the Klein bottle is the connected sum of two projective planes.</span>
+<span id="cb9-129"><a href="#cb9-129" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-130"><a href="#cb9-130" aria-hidden="true" tabindex="-1"></a><span class="fu">### Connected Sums</span></span>
+<span id="cb9-131"><a href="#cb9-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-132"><a href="#cb9-132" aria-hidden="true" tabindex="-1"></a>Gluing two surfaces by removing a disk from each and joining the boundaries yields the **connected sum**. The sphere is the identity; the torus is the connected sum of two; the Klein bottle is the connected sum of two projective planes. This operation generates the whole classification table.</span>
+<span id="cb9-133"><a href="#cb9-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-134"><a href="#cb9-134" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-135"><a href="#cb9-135" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-136"><a href="#cb9-136" aria-hidden="true" tabindex="-1"></a><span class="fu">## Applications of Topology</span></span>
+<span id="cb9-137"><a href="#cb9-137" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-138"><a href="#cb9-138" aria-hidden="true" tabindex="-1"></a>Topology is not merely abstract; its invariants and ideas are used widely:</span>
+<span id="cb9-139"><a href="#cb9-139" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-140"><a href="#cb9-140" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Topological data analysis (TDA):** **persistent homology** tracks holes across scales in point-cloud data, used in biology, materials, and finance.</span>
+<span id="cb9-141"><a href="#cb9-141" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Robotics and motion planning:** **configuration spaces** of a robot are manifolds or graphs; connectivity and homotopy decide reachability.</span>
+<span id="cb9-142"><a href="#cb9-142" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Computer graphics and 3D printing:** **genus** and Euler characteristic detect and repair mesh defects (holes, non-manifold edges); a watertight mesh has a well-defined genus.</span>
+<span id="cb9-143"><a href="#cb9-143" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Knot theory:** DNA topology and polymer physics; the trefoil is a chiral knot; knot invariants (Jones polynomial) classify entanglement.</span>
+<span id="cb9-144"><a href="#cb9-144" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Network routing:** graph connectivity, planarity, and Eulerian/Hamiltonian traversal drive GPS routing, internet topology, and circuit layout.</span>
+<span id="cb9-145"><a href="#cb9-145" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Materials and physics:** topological insulators, anyons, and topological quantum computing rely on global invariants robust to local perturbation.</span>
+<span id="cb9-146"><a href="#cb9-146" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Differential geometry's global half:** Gauss–Bonnet links curvature to $\chi$ — local geometry determines global topology.</span>
+<span id="cb9-147"><a href="#cb9-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-148"><a href="#cb9-148" aria-hidden="true" tabindex="-1"></a>**The recurring lesson:** the invariants that do not change under deformation are the ones that carry robust information.</span>
+<span id="cb9-149"><a href="#cb9-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-150"><a href="#cb9-150" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-151"><a href="#cb9-151" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-152"><a href="#cb9-152" aria-hidden="true" tabindex="-1"></a><span class="fu">## Laboratory: Graphs, Surfaces, and Applicable Algorithms</span></span>
+<span id="cb9-153"><a href="#cb9-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-154"><a href="#cb9-154" aria-hidden="true" tabindex="-1"></a><span class="fu">### Hierholzer's Eulerian Circuit</span></span>
+<span id="cb9-155"><a href="#cb9-155" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-158"><a href="#cb9-158" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb9-159"><a href="#cb9-159" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> collections <span class="im">import</span> defaultdict</span>
+<span id="cb9-160"><a href="#cb9-160" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-161"><a href="#cb9-161" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> eulerian_circuit(edges):</span>
+<span id="cb9-162"><a href="#cb9-162" aria-hidden="true" tabindex="-1"></a>    graph <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
+<span id="cb9-163"><a href="#cb9-163" aria-hidden="true" tabindex="-1"></a>    degree <span class="op">=</span> defaultdict(<span class="bu">int</span>)</span>
+<span id="cb9-164"><a href="#cb9-164" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> u, v <span class="kw">in</span> edges:</span>
+<span id="cb9-165"><a href="#cb9-165" aria-hidden="true" tabindex="-1"></a>        graph[u].append(v)<span class="op">;</span> graph[v].append(u)</span>
+<span id="cb9-166"><a href="#cb9-166" aria-hidden="true" tabindex="-1"></a>        degree[u] <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span> degree[v] <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb9-167"><a href="#cb9-167" aria-hidden="true" tabindex="-1"></a>    odd <span class="op">=</span> [v <span class="cf">for</span> v, d <span class="kw">in</span> degree.items() <span class="cf">if</span> d <span class="op">%</span> <span class="dv">2</span>]</span>
+<span id="cb9-168"><a href="#cb9-168" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> odd:</span>
+<span id="cb9-169"><a href="#cb9-169" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span>, odd</span>
+<span id="cb9-170"><a href="#cb9-170" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Hierholzer</span></span>
+<span id="cb9-171"><a href="#cb9-171" aria-hidden="true" tabindex="-1"></a>    stack, circuit <span class="op">=</span> [<span class="bu">next</span>(<span class="bu">iter</span>(graph))], []</span>
+<span id="cb9-172"><a href="#cb9-172" aria-hidden="true" tabindex="-1"></a>    local <span class="op">=</span> {u: <span class="bu">list</span>(vs) <span class="cf">for</span> u, vs <span class="kw">in</span> graph.items()}</span>
+<span id="cb9-173"><a href="#cb9-173" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> stack:</span>
+<span id="cb9-174"><a href="#cb9-174" aria-hidden="true" tabindex="-1"></a>        u <span class="op">=</span> stack[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb9-175"><a href="#cb9-175" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> local.get(u):</span>
+<span id="cb9-176"><a href="#cb9-176" aria-hidden="true" tabindex="-1"></a>            v <span class="op">=</span> local[u].pop()<span class="op">;</span> local[v].remove(u)</span>
+<span id="cb9-177"><a href="#cb9-177" aria-hidden="true" tabindex="-1"></a>            stack.append(v)</span>
+<span id="cb9-178"><a href="#cb9-178" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb9-179"><a href="#cb9-179" aria-hidden="true" tabindex="-1"></a>            circuit.append(stack.pop())</span>
+<span id="cb9-180"><a href="#cb9-180" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> circuit[::<span class="op">-</span><span class="dv">1</span>], []</span>
+<span id="cb9-181"><a href="#cb9-181" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-182"><a href="#cb9-182" aria-hidden="true" tabindex="-1"></a>konigsberg <span class="op">=</span> [(<span class="st">"A"</span>,<span class="st">"B"</span>),(<span class="st">"A"</span>,<span class="st">"C"</span>),(<span class="st">"A"</span>,<span class="st">"D"</span>),(<span class="st">"B"</span>,<span class="st">"D"</span>),(<span class="st">"B"</span>,<span class="st">"D"</span>),(<span class="st">"C"</span>,<span class="st">"D"</span>),(<span class="st">"C"</span>,<span class="st">"D"</span>)]</span>
+<span id="cb9-183"><a href="#cb9-183" aria-hidden="true" tabindex="-1"></a>eulerian <span class="op">=</span> [(<span class="st">"A"</span>,<span class="st">"B"</span>),(<span class="st">"B"</span>,<span class="st">"C"</span>),(<span class="st">"C"</span>,<span class="st">"A"</span>),(<span class="st">"C"</span>,<span class="st">"D"</span>),(<span class="st">"D"</span>,<span class="st">"E"</span>),(<span class="st">"E"</span>,<span class="st">"C"</span>)]</span>
+<span id="cb9-184"><a href="#cb9-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-185"><a href="#cb9-185" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== KÖNIGSBERG (Seven Bridges) ==="</span>)</span>
+<span id="cb9-186"><a href="#cb9-186" aria-hidden="true" tabindex="-1"></a>circ, odd <span class="op">=</span> eulerian_circuit(konigsberg)</span>
+<span id="cb9-187"><a href="#cb9-187" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Eulerian circuit exists? </span><span class="sc">{</span>circ <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span><span class="sc">}</span><span class="ss">; odd-degree vertices: </span><span class="sc">{</span><span class="bu">sorted</span>(odd)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-188"><a href="#cb9-188" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  -&gt; no walk crosses every bridge exactly once (Euler, 1736)."</span>)</span>
+<span id="cb9-189"><a href="#cb9-189" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-190"><a href="#cb9-190" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== A SOLVABLE GRAPH ==="</span>)</span>
+<span id="cb9-191"><a href="#cb9-191" aria-hidden="true" tabindex="-1"></a>circ, odd <span class="op">=</span> eulerian_circuit(eulerian)</span>
+<span id="cb9-192"><a href="#cb9-192" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  circuit: </span><span class="sc">{</span><span class="st">' -&gt; '</span><span class="sc">.</span>join(circ)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-193"><a href="#cb9-193" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-194"><a href="#cb9-194" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== ROUTE INSPECTION (Chinese Postman) ==="</span>)</span>
+<span id="cb9-195"><a href="#cb9-195" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> odd_vertices(edges):</span>
+<span id="cb9-196"><a href="#cb9-196" aria-hidden="true" tabindex="-1"></a>    deg <span class="op">=</span> defaultdict(<span class="bu">int</span>)</span>
+<span id="cb9-197"><a href="#cb9-197" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> u, v <span class="kw">in</span> edges: deg[u] <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span> deg[v] <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb9-198"><a href="#cb9-198" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [v <span class="cf">for</span> v, d <span class="kw">in</span> deg.items() <span class="cf">if</span> d <span class="op">%</span> <span class="dv">2</span>]</span>
+<span id="cb9-199"><a href="#cb9-199" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  odd-degree vertices needing pairing: </span><span class="sc">{</span>odd_vertices(konigsberg)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-200"><a href="#cb9-200" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  the optimal route pairs them by shortest paths and reuses those edges."</span>)</span>
+<span id="cb9-201"><a href="#cb9-201" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb9-202"><a href="#cb9-202" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-203"><a href="#cb9-203" aria-hidden="true" tabindex="-1"></a><span class="fu">### Genome Assembly via de Bruijn Graph</span></span>
+<span id="cb9-204"><a href="#cb9-204" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-207"><a href="#cb9-207" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb9-208"><a href="#cb9-208" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> assemble(reads, k):</span>
+<span id="cb9-209"><a href="#cb9-209" aria-hidden="true" tabindex="-1"></a>    <span class="co"># de Bruijn: nodes are (k-1)-mers, edges are k-mers</span></span>
+<span id="cb9-210"><a href="#cb9-210" aria-hidden="true" tabindex="-1"></a>    graph <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
+<span id="cb9-211"><a href="#cb9-211" aria-hidden="true" tabindex="-1"></a>    indeg <span class="op">=</span> defaultdict(<span class="bu">int</span>)<span class="op">;</span> outdeg <span class="op">=</span> defaultdict(<span class="bu">int</span>)</span>
+<span id="cb9-212"><a href="#cb9-212" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> r <span class="kw">in</span> reads:</span>
+<span id="cb9-213"><a href="#cb9-213" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(r) <span class="op">-</span> k <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb9-214"><a href="#cb9-214" aria-hidden="true" tabindex="-1"></a>            kmer <span class="op">=</span> r[i:i<span class="op">+</span>k]</span>
+<span id="cb9-215"><a href="#cb9-215" aria-hidden="true" tabindex="-1"></a>            a, b <span class="op">=</span> kmer[:<span class="op">-</span><span class="dv">1</span>], kmer[<span class="dv">1</span>:]</span>
+<span id="cb9-216"><a href="#cb9-216" aria-hidden="true" tabindex="-1"></a>            graph[a].append(b)<span class="op">;</span> indeg[b] <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span> outdeg[a] <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb9-217"><a href="#cb9-217" aria-hidden="true" tabindex="-1"></a>    nodes <span class="op">=</span> <span class="bu">set</span>(<span class="bu">list</span>(graph) <span class="op">+</span> <span class="bu">list</span>(indeg))</span>
+<span id="cb9-218"><a href="#cb9-218" aria-hidden="true" tabindex="-1"></a>    starts <span class="op">=</span> [n <span class="cf">for</span> n <span class="kw">in</span> nodes <span class="cf">if</span> outdeg[n] <span class="op">-</span> indeg[n] <span class="op">==</span> <span class="dv">1</span>]</span>
+<span id="cb9-219"><a href="#cb9-219" aria-hidden="true" tabindex="-1"></a>    start <span class="op">=</span> starts[<span class="dv">0</span>] <span class="cf">if</span> starts <span class="cf">else</span> <span class="bu">next</span>(<span class="bu">iter</span>(nodes))</span>
+<span id="cb9-220"><a href="#cb9-220" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Hierholzer on directed graph</span></span>
+<span id="cb9-221"><a href="#cb9-221" aria-hidden="true" tabindex="-1"></a>    stack, path <span class="op">=</span> [start], []</span>
+<span id="cb9-222"><a href="#cb9-222" aria-hidden="true" tabindex="-1"></a>    local <span class="op">=</span> {u: <span class="bu">list</span>(vs) <span class="cf">for</span> u, vs <span class="kw">in</span> graph.items()}</span>
+<span id="cb9-223"><a href="#cb9-223" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> stack:</span>
+<span id="cb9-224"><a href="#cb9-224" aria-hidden="true" tabindex="-1"></a>        u <span class="op">=</span> stack[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb9-225"><a href="#cb9-225" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> local.get(u):</span>
+<span id="cb9-226"><a href="#cb9-226" aria-hidden="true" tabindex="-1"></a>            stack.append(local[u].pop())</span>
+<span id="cb9-227"><a href="#cb9-227" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb9-228"><a href="#cb9-228" aria-hidden="true" tabindex="-1"></a>            path.append(stack.pop())</span>
+<span id="cb9-229"><a href="#cb9-229" aria-hidden="true" tabindex="-1"></a>    path <span class="op">=</span> path[::<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb9-230"><a href="#cb9-230" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> path[<span class="dv">0</span>] <span class="op">+</span> <span class="st">""</span>.join(p[<span class="op">-</span><span class="dv">1</span>] <span class="cf">for</span> p <span class="kw">in</span> path[<span class="dv">1</span>:])</span>
+<span id="cb9-231"><a href="#cb9-231" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-232"><a href="#cb9-232" aria-hidden="true" tabindex="-1"></a>reads <span class="op">=</span> [<span class="st">"ATGGC"</span>, <span class="st">"TGGCA"</span>, <span class="st">"GGCAT"</span>, <span class="st">"GCATG"</span>]</span>
+<span id="cb9-233"><a href="#cb9-233" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== DE BRUIJN GENOME ASSEMBLY (k=5) ==="</span>)</span>
+<span id="cb9-234"><a href="#cb9-234" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  reads: </span><span class="sc">{</span>reads<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-235"><a href="#cb9-235" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  assembled contig: </span><span class="sc">{</span>assemble(reads, <span class="dv">5</span>)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-236"><a href="#cb9-236" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  a genome is an Eulerian path in the de Bruijn graph of its k-mers."</span>)</span>
+<span id="cb9-237"><a href="#cb9-237" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb9-238"><a href="#cb9-238" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-239"><a href="#cb9-239" aria-hidden="true" tabindex="-1"></a><span class="fu">### Euler Characteristic and Genus of Meshes</span></span>
+<span id="cb9-240"><a href="#cb9-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-243"><a href="#cb9-243" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb9-244"><a href="#cb9-244" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-surfaces</span></span>
+<span id="cb9-245"><a href="#cb9-245" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Euler characteristic and genus of surfaces. Left: a sphere (genus 0, χ = 2) and a torus (genus 1, χ = 0) shown as the two ends of the classification. Right: the genus computed from a triangle mesh by χ = V − E + F and g = (2 − χ)/2, which is exactly how 3D modeling software detects holes and repairs meshes. A watertight torus mesh has χ = 0."</span></span>
+<span id="cb9-246"><a href="#cb9-246" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-247"><a href="#cb9-247" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb9-248"><a href="#cb9-248" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb9-249"><a href="#cb9-249" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-250"><a href="#cb9-250" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> torus_mesh(nu<span class="op">=</span><span class="dv">24</span>, nv<span class="op">=</span><span class="dv">12</span>):</span>
+<span id="cb9-251"><a href="#cb9-251" aria-hidden="true" tabindex="-1"></a>    verts, faces <span class="op">=</span> [], []</span>
+<span id="cb9-252"><a href="#cb9-252" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(nu):</span>
+<span id="cb9-253"><a href="#cb9-253" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(nv):</span>
+<span id="cb9-254"><a href="#cb9-254" aria-hidden="true" tabindex="-1"></a>            u <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>np.pi<span class="op">*</span>i<span class="op">/</span>nu<span class="op">;</span> v <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>np.pi<span class="op">*</span>j<span class="op">/</span>nv</span>
+<span id="cb9-255"><a href="#cb9-255" aria-hidden="true" tabindex="-1"></a>            R, r <span class="op">=</span> <span class="fl">2.0</span>, <span class="fl">0.7</span></span>
+<span id="cb9-256"><a href="#cb9-256" aria-hidden="true" tabindex="-1"></a>            verts.append([(R <span class="op">+</span> r<span class="op">*</span>np.cos(v))<span class="op">*</span>np.cos(u), (R <span class="op">+</span> r<span class="op">*</span>np.cos(v))<span class="op">*</span>np.sin(u), r<span class="op">*</span>np.sin(v)])</span>
+<span id="cb9-257"><a href="#cb9-257" aria-hidden="true" tabindex="-1"></a>    idx <span class="op">=</span> <span class="kw">lambda</span> i, j: (i <span class="op">%</span> nu)<span class="op">*</span>nv <span class="op">+</span> (j <span class="op">%</span> nv)</span>
+<span id="cb9-258"><a href="#cb9-258" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(nu):</span>
+<span id="cb9-259"><a href="#cb9-259" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(nv):</span>
+<span id="cb9-260"><a href="#cb9-260" aria-hidden="true" tabindex="-1"></a>            a, b, c, d <span class="op">=</span> idx(i,j), idx(i<span class="op">+</span><span class="dv">1</span>,j), idx(i<span class="op">+</span><span class="dv">1</span>,j<span class="op">+</span><span class="dv">1</span>), idx(i,j<span class="op">+</span><span class="dv">1</span>)</span>
+<span id="cb9-261"><a href="#cb9-261" aria-hidden="true" tabindex="-1"></a>            faces <span class="op">+=</span> [(a,b,c), (a,c,d)]</span>
+<span id="cb9-262"><a href="#cb9-262" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array(verts), faces</span>
+<span id="cb9-263"><a href="#cb9-263" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-264"><a href="#cb9-264" aria-hidden="true" tabindex="-1"></a>V, F <span class="op">=</span> torus_mesh()</span>
+<span id="cb9-265"><a href="#cb9-265" aria-hidden="true" tabindex="-1"></a>E <span class="op">=</span> <span class="bu">set</span>()</span>
+<span id="cb9-266"><a href="#cb9-266" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, b, c <span class="kw">in</span> F:</span>
+<span id="cb9-267"><a href="#cb9-267" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> x, y <span class="kw">in</span> [(a,b),(b,c),(c,a)]:</span>
+<span id="cb9-268"><a href="#cb9-268" aria-hidden="true" tabindex="-1"></a>        E.add((<span class="bu">min</span>(x,y), <span class="bu">max</span>(x,y)))</span>
+<span id="cb9-269"><a href="#cb9-269" aria-hidden="true" tabindex="-1"></a>chi <span class="op">=</span> <span class="bu">len</span>(V) <span class="op">-</span> <span class="bu">len</span>(E) <span class="op">+</span> <span class="bu">len</span>(F)</span>
+<span id="cb9-270"><a href="#cb9-270" aria-hidden="true" tabindex="-1"></a>g <span class="op">=</span> (<span class="dv">2</span> <span class="op">-</span> chi) <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb9-271"><a href="#cb9-271" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== MESH EULER CHARACTERISTIC AND GENUS ==="</span>)</span>
+<span id="cb9-272"><a href="#cb9-272" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  torus mesh: V=</span><span class="sc">{</span><span class="bu">len</span>(V)<span class="sc">}</span><span class="ss">, E=</span><span class="sc">{</span><span class="bu">len</span>(E)<span class="sc">}</span><span class="ss">, F=</span><span class="sc">{</span><span class="bu">len</span>(F)<span class="sc">}</span><span class="ss"> -&gt; chi=</span><span class="sc">{</span>chi<span class="sc">}</span><span class="ss">, genus=</span><span class="sc">{</span>g<span class="sc">:.1f}</span><span class="ss">"</span>)</span>
+<span id="cb9-273"><a href="#cb9-273" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  sphere: chi=2, genus=0; each handle lowers chi by 2."</span>)</span>
+<span id="cb9-274"><a href="#cb9-274" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  a watertight mesh obeys V - E + F = 2 - 2g; a defect breaks it."</span>)</span>
+<span id="cb9-275"><a href="#cb9-275" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-276"><a href="#cb9-276" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>(<span class="fl">12.5</span>, <span class="dv">5</span>))</span>
+<span id="cb9-277"><a href="#cb9-277" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>, projection<span class="op">=</span><span class="st">"3d"</span>)</span>
+<span id="cb9-278"><a href="#cb9-278" aria-hidden="true" tabindex="-1"></a>ax1.plot_trisurf(V[:,<span class="dv">0</span>], V[:,<span class="dv">1</span>], V[:,<span class="dv">2</span>], triangles<span class="op">=</span>F, color<span class="op">=</span><span class="st">"#2980b9"</span>, alpha<span class="op">=</span><span class="fl">0.9</span>, linewidth<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb9-279"><a href="#cb9-279" aria-hidden="true" tabindex="-1"></a>ax1.set_title(<span class="ss">f"Torus mesh: chi=</span><span class="sc">{</span>chi<span class="sc">}</span><span class="ss">, genus=</span><span class="sc">{</span>g<span class="sc">:.0f}</span><span class="ss">"</span>)<span class="op">;</span> ax1.set_axis_off()</span>
+<span id="cb9-280"><a href="#cb9-280" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-281"><a href="#cb9-281" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb9-282"><a href="#cb9-282" aria-hidden="true" tabindex="-1"></a>labels <span class="op">=</span> [<span class="st">"sphere"</span>, <span class="st">"torus"</span>, <span class="st">"double torus"</span>, <span class="st">"Klein bottle"</span>]</span>
+<span id="cb9-283"><a href="#cb9-283" aria-hidden="true" tabindex="-1"></a>genus <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="va">None</span>]</span>
+<span id="cb9-284"><a href="#cb9-284" aria-hidden="true" tabindex="-1"></a>chis <span class="op">=</span> [<span class="dv">2</span>, <span class="dv">0</span>, <span class="op">-</span><span class="dv">2</span>, <span class="dv">0</span>]</span>
+<span id="cb9-285"><a href="#cb9-285" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> [<span class="st">"#27ae60"</span>, <span class="st">"#2980b9"</span>, <span class="st">"#8e44ad"</span>, <span class="st">"#e74c3c"</span>]</span>
+<span id="cb9-286"><a href="#cb9-286" aria-hidden="true" tabindex="-1"></a>ax2.bar(labels, chis, color<span class="op">=</span>colors)</span>
+<span id="cb9-287"><a href="#cb9-287" aria-hidden="true" tabindex="-1"></a>ax2.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"k"</span>, lw<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb9-288"><a href="#cb9-288" aria-hidden="true" tabindex="-1"></a>ax2.set_title(<span class="vs">r"Euler characteristic </span><span class="dv">$</span><span class="er">\</span><span class="vs">chi = 2 - 2g</span><span class="dv">$</span><span class="vs"> </span><span class="kw">(</span><span class="vs">Klein bottle: non-orientable, </span><span class="dv">$</span><span class="er">\</span><span class="vs">chi=0</span><span class="dv">$</span><span class="kw">)</span><span class="vs">"</span>)</span>
+<span id="cb9-289"><a href="#cb9-289" aria-hidden="true" tabindex="-1"></a>ax2.set_ylabel(<span class="vs">r"</span><span class="dv">$</span><span class="er">\</span><span class="vs">chi</span><span class="dv">$</span><span class="vs">"</span>)<span class="op">;</span> ax2.grid(axis<span class="op">=</span><span class="st">"y"</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb9-290"><a href="#cb9-290" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb9-291"><a href="#cb9-291" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb9-292"><a href="#cb9-292" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-293"><a href="#cb9-293" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Möbius Strip and Klein Bottle</span></span>
+<span id="cb9-294"><a href="#cb9-294" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-297"><a href="#cb9-297" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb9-298"><a href="#cb9-298" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-mobius-klein</span></span>
+<span id="cb9-299"><a href="#cb9-299" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Two non-orientable surfaces. Left: the Möbius strip, made by giving a band a half twist before joining its ends; it has one side and one edge. Right: the Klein bottle, a closed one-sided surface that cannot be embedded in three dimensions without intersecting itself; the familiar glass model passes through its own wall. Both are central examples in the classification of surfaces."</span></span>
+<span id="cb9-300"><a href="#cb9-300" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-301"><a href="#cb9-301" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb9-302"><a href="#cb9-302" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb9-303"><a href="#cb9-303" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-304"><a href="#cb9-304" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="fl">5.5</span>))</span>
+<span id="cb9-305"><a href="#cb9-305" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-306"><a href="#cb9-306" aria-hidden="true" tabindex="-1"></a><span class="co"># Möbius strip</span></span>
+<span id="cb9-307"><a href="#cb9-307" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>, projection<span class="op">=</span><span class="st">"3d"</span>)</span>
+<span id="cb9-308"><a href="#cb9-308" aria-hidden="true" tabindex="-1"></a>u <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span><span class="op">*</span>np.pi, <span class="dv">120</span>)<span class="op">;</span> v <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">20</span>)</span>
+<span id="cb9-309"><a href="#cb9-309" aria-hidden="true" tabindex="-1"></a>U, V <span class="op">=</span> np.meshgrid(u, v)</span>
+<span id="cb9-310"><a href="#cb9-310" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> (<span class="dv">1</span> <span class="op">+</span> V<span class="op">/</span><span class="dv">2</span><span class="op">*</span>np.cos(U<span class="op">/</span><span class="dv">2</span>))<span class="op">*</span>np.cos(U)</span>
+<span id="cb9-311"><a href="#cb9-311" aria-hidden="true" tabindex="-1"></a>Y <span class="op">=</span> (<span class="dv">1</span> <span class="op">+</span> V<span class="op">/</span><span class="dv">2</span><span class="op">*</span>np.cos(U<span class="op">/</span><span class="dv">2</span>))<span class="op">*</span>np.sin(U)</span>
+<span id="cb9-312"><a href="#cb9-312" aria-hidden="true" tabindex="-1"></a>Z <span class="op">=</span> V<span class="op">/</span><span class="dv">2</span><span class="op">*</span>np.sin(U<span class="op">/</span><span class="dv">2</span>)</span>
+<span id="cb9-313"><a href="#cb9-313" aria-hidden="true" tabindex="-1"></a>ax1.plot_surface(X, Y, Z, cmap<span class="op">=</span><span class="st">"viridis"</span>, alpha<span class="op">=</span><span class="fl">0.95</span>, linewidth<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb9-314"><a href="#cb9-314" aria-hidden="true" tabindex="-1"></a>ax1.set_title(<span class="st">"Möbius strip (one side, one edge)"</span>)<span class="op">;</span> ax1.set_axis_off()</span>
+<span id="cb9-315"><a href="#cb9-315" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-316"><a href="#cb9-316" aria-hidden="true" tabindex="-1"></a><span class="co"># Klein bottle (figure-8 immersion)</span></span>
+<span id="cb9-317"><a href="#cb9-317" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span>, projection<span class="op">=</span><span class="st">"3d"</span>)</span>
+<span id="cb9-318"><a href="#cb9-318" aria-hidden="true" tabindex="-1"></a>u <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span><span class="op">*</span>np.pi, <span class="dv">120</span>)<span class="op">;</span> v <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span><span class="op">*</span>np.pi, <span class="dv">60</span>)</span>
+<span id="cb9-319"><a href="#cb9-319" aria-hidden="true" tabindex="-1"></a>U, V <span class="op">=</span> np.meshgrid(u, v)</span>
+<span id="cb9-320"><a href="#cb9-320" aria-hidden="true" tabindex="-1"></a>a <span class="op">=</span> <span class="fl">2.0</span></span>
+<span id="cb9-321"><a href="#cb9-321" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> (a <span class="op">+</span> np.cos(U<span class="op">/</span><span class="dv">2</span>)<span class="op">*</span>np.sin(V) <span class="op">-</span> np.sin(U<span class="op">/</span><span class="dv">2</span>)<span class="op">*</span>np.sin(<span class="dv">2</span><span class="op">*</span>V))<span class="op">*</span>np.cos(U)</span>
+<span id="cb9-322"><a href="#cb9-322" aria-hidden="true" tabindex="-1"></a>Y <span class="op">=</span> (a <span class="op">+</span> np.cos(U<span class="op">/</span><span class="dv">2</span>)<span class="op">*</span>np.sin(V) <span class="op">-</span> np.sin(U<span class="op">/</span><span class="dv">2</span>)<span class="op">*</span>np.sin(<span class="dv">2</span><span class="op">*</span>V))<span class="op">*</span>np.sin(U)</span>
+<span id="cb9-323"><a href="#cb9-323" aria-hidden="true" tabindex="-1"></a>Z <span class="op">=</span> np.sin(U<span class="op">/</span><span class="dv">2</span>)<span class="op">*</span>np.sin(V) <span class="op">+</span> np.cos(U<span class="op">/</span><span class="dv">2</span>)<span class="op">*</span>np.sin(<span class="dv">2</span><span class="op">*</span>V)</span>
+<span id="cb9-324"><a href="#cb9-324" aria-hidden="true" tabindex="-1"></a>ax2.plot_surface(X, Y, Z, cmap<span class="op">=</span><span class="st">"plasma"</span>, alpha<span class="op">=</span><span class="fl">0.95</span>, linewidth<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb9-325"><a href="#cb9-325" aria-hidden="true" tabindex="-1"></a>ax2.set_title(<span class="st">"Klein bottle (non-orientable, closed)"</span>)<span class="op">;</span> ax2.set_axis_off()</span>
+<span id="cb9-326"><a href="#cb9-326" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb9-327"><a href="#cb9-327" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-328"><a href="#cb9-328" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== NON-ORIENTABLE SURFACES ==="</span>)</span>
+<span id="cb9-329"><a href="#cb9-329" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Möbius strip: cut along the middle -&gt; one longer two-sided band (not two pieces)."</span>)</span>
+<span id="cb9-330"><a href="#cb9-330" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Klein bottle: chi=0, cannot embed in R^3 without self-intersection; embeds in R^4."</span>)</span>
+<span id="cb9-331"><a href="#cb9-331" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  classification: closed surfaces are determined by orientability and genus."</span>)</span>
+<span id="cb9-332"><a href="#cb9-332" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb9-333"><a href="#cb9-333" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-334"><a href="#cb9-334" aria-hidden="true" tabindex="-1"></a>The laboratory takes topology from puzzle to production: an $O(E)$ Eulerian-circuit algorithm solves route inspection and assembles genomes, and the Euler characteristic of a mesh computes its genus — the exact computation 3D software uses to detect holes.</span>
+<span id="cb9-335"><a href="#cb9-335" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-336"><a href="#cb9-336" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-337"><a href="#cb9-337" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-338"><a href="#cb9-338" aria-hidden="true" tabindex="-1"></a><span class="fu">## Summary</span></span>
+<span id="cb9-339"><a href="#cb9-339" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-340"><a href="#cb9-340" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-341"><a href="#cb9-341" aria-hidden="true" tabindex="-1"></a>\begin{aligned}</span>
+<span id="cb9-342"><a href="#cb9-342" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Königsberg: } &amp;&amp; \text{graph model; Eulerian circuit iff all degrees even (path iff 0 or 2 odd).} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb9-343"><a href="#cb9-343" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Planar graphs: } &amp;&amp; V-E+F=2;\ \text{handshake lemma; parity is the key invariant.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb9-344"><a href="#cb9-344" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Applications: } &amp;&amp; \text{route inspection, de Bruijn genome assembly, circuit design.} <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb9-345"><a href="#cb9-345" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Topology: } &amp;&amp; \text{homeomorphism; invariants: connectivity, genus, orientability, } \chi,\ \pi_1. <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb9-346"><a href="#cb9-346" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Surfaces: } &amp;&amp; \text{classified by orientability + genus;} \chi=2-2g. <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb9-347"><a href="#cb9-347" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Möbius / Klein: } &amp;&amp; \text{one-sided, non-orientable; Klein bottle is closed but not embeddable in } \mathbb{R}^3. <span class="sc">\\</span><span class="co">[</span><span class="ot">3pt</span><span class="co">]</span></span>
+<span id="cb9-348"><a href="#cb9-348" aria-hidden="true" tabindex="-1"></a>&amp;\textbf{Real uses: } &amp;&amp; \text{TDA, robotics, mesh repair, knot theory, materials, routing.}</span>
+<span id="cb9-349"><a href="#cb9-349" aria-hidden="true" tabindex="-1"></a>\end{aligned}</span>
+<span id="cb9-350"><a href="#cb9-350" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb9-351"><a href="#cb9-351" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-352"><a href="#cb9-352" aria-hidden="true" tabindex="-1"></a>Topology is the geometry that survives bending. Its sibling, **measure theory**, provides the other great abstraction of analysis — the rigorous theory of length, area, and integration — and is the subject of <span class="co">[</span><span class="ot">the next article</span><span class="co">](measure-theory-and-lebesgue-measure.qmd)</span>.</span>
+<span id="cb9-353"><a href="#cb9-353" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-354"><a href="#cb9-354" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb9-355"><a href="#cb9-355" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-356"><a href="#cb9-356" aria-hidden="true" tabindex="-1"></a><span class="fu">## Curated References and Further Reading</span></span>
+<span id="cb9-357"><a href="#cb9-357" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-358"><a href="#cb9-358" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Euler, L. (1736).** *Solutio problematis ad geometriam situs pertinentis.* (The Königsberg bridges.)</span>
+<span id="cb9-359"><a href="#cb9-359" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Munkres, James (2000).** *Topology*, 2nd ed. Prentice Hall.</span>
+<span id="cb9-360"><a href="#cb9-360" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Hatcher, Allen (2002).** *Algebraic Topology.* Cambridge University Press.</span>
+<span id="cb9-361"><a href="#cb9-361" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Massey, W. S. (1991).** *A Basic Course in Algebraic Topology.* Springer.</span>
+<span id="cb9-362"><a href="#cb9-362" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>**Peleg, D. &amp; Peleg, D.** *Eulerian and Hamiltonian Graphs* (algorithmic treatments).</span>
+<span id="cb9-363"><a href="#cb9-363" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>**Pevzner, P., Tang, H. &amp; Waterman, M. (2001).** *An Eulerian Path Approach to DNA Fragment Assembly.* PNAS.</span>
+<span id="cb9-364"><a href="#cb9-364" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>**Edelsbrunner, H. &amp; Harer, J. (2010).** *Computational Topology: An Introduction.* AMS.</span>
+<span id="cb9-365"><a href="#cb9-365" aria-hidden="true" tabindex="-1"></a><span class="ss">8. </span>**Klein, Felix (1882).** *Über Riemann's Theorie der algebraischen Functionen und ihrer Integrale.* (The Klein bottle.)</span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2026 Igor Kan</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
