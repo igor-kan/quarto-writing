@@ -1,0 +1,332 @@
+---
+title: "Power Series in Real and Complex Analysis: Convergence, Analytic Functions, and When They Fail"
+subtitle: "Radius and interval of convergence, the ratio and root tests, uniform convergence and the comparison with the geometric series, termwise differentiation and integration, Taylor and Laurent expansions, the series 1 + 1/2 + 1/6 + 1/12 + ⋯ = 2, and the functions that cannot be written as power series"
+author: "Igor Kan"
+date: "2026-09-14"
+categories: [Mathematics, Analysis, Complex Analysis, Power Series, Real Analysis]
+description: "A comprehensive treatment of power series in real and complex analysis. It defines power series and their radius of convergence, derives the ratio and root tests and the Cauchy-Hadamard formula, proves convergence is absolute inside and uniform on compact subsets, and shows how the geometric series serves as the universal comparison object and majorant. It covers termwise differentiation and integration, the identity theorem, Taylor and Laurent expansions, and the singularity explanation of the radius. It gives a catalogue of standard power series, works out series that converge to specific values including 1 + 1/2 + 1/6 + 1/12 + ... = 2 and the logarithmic and inverse-tangent series, and explains which functions cannot be represented by a power series (smooth-but-not-analytic functions, essential singularities, and lacunary series with natural boundaries), with an executable Python laboratory."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 4
+    number-sections: true
+jupyter: python3
+toc: true
+toc-depth: 4
+number-sections: true
+---
+
+::: {.callout-note appearance="simple"}
+*A power series is an infinite polynomial. It is the single most useful object in analysis: every analytic function is locally a power series, and the whole theory of Taylor expansions, differential equations, and complex functions is built on when and how those series converge.*
+
+This article develops power series in both the real and complex settings, with the **geometric series** as the universal yardstick, and is honest about the functions that refuse to be represented this way.
+:::
+
+::: {.callout-tip collapse="true"}
+### Companion Treatises in this Series
+- [Series in Real and Complex Analysis: Special Sums, Ramanujan, and Closed Forms](series-real-complex-analysis-special-sums-and-closed-forms.qmd)
+- [Sequences, Series, and Convergence Tests](sequences-series-and-convergence-tests.qmd)
+- [Cauchy Sequences, Completeness, Weierstrass, and the Convergence of Series](cauchy-completeness-weierstrass-and-series-convergence.qmd)
+- [Infinite-Dimensional Algebra: Spaces of Sequences and Functions](infinite-dimensional-algebra-sequence-and-function-spaces.qmd)
+- [Iterative Methods and Computing the Constants](iterative-methods-and-computing-constants-pi-and-eulers-constant.qmd)
+:::
+
+---
+
+## Definition and Radius of Convergence
+
+A **power series** centered at $z_0$ is
+$$
+\sum_{n=0}^\infty a_n (z-z_0)^n,
+\qquad a_n\in\mathbb{C}.
+$$
+Writing $z=z_0+w$, we may always take $z_0=0$. The central theorem:
+
+> **There is a radius $R\in[0,\infty]$ such that the series converges absolutely for $|z-z_0|<R$ and diverges for $|z-z_0|>R$.**
+
+$R$ is the **radius of convergence**, $(z_0-R,z_0+R)$ or the disk $|z-z_0|<R$ is the interval/disk of convergence, and the behavior **on** the circle $|z-z_0|=R$ must be decided case by case.
+
+### Cauchy–Hadamard and the Ratio Test
+
+$$
+\frac1R=\limsup_{n\to\infty}|a_n|^{1/n},
+\qquad
+R=\lim_{n\to\infty}\left|\frac{a_n}{a_{n+1}}\right|\ \text{(if the limit exists)}.
+$$
+
+The root formula is always valid; the ratio formula is convenient when consecutive coefficients have a clean ratio.
+
+### Comparison with the Geometric Series
+
+Everything rests on the geometric series
+$$
+\sum_{n=0}^\infty r^n=\frac{1}{1-r}\quad(|r|<1),
+$$
+whose remainder is explicit: $\sum_{n>N} r^n = r^{N+1}/(1-r)$.
+
+**How and why we compare to it:**
+
+- **Ratio test proof:** if $|a_{n+1}/a_n|\le r<1$ for large $n$, then $|a_n|\le C r^n$; the tail of $\sum|a_n|$ is bounded by a convergent geometric series. The geometric series is the **majorant**.
+- **Absolute convergence:** choose $|z|<R$ and pick $r$ with $|z|<r<R$; then $|a_n z^n|\le C(r'/r)^n$ for some $r'<r$, again geometric.
+- **Uniform convergence:** the same geometric bound is independent of $z$ on compact subsets of the disk, giving **uniform convergence** there (Weierstrass M-test). This is why the limit is continuous and why termwise operations are legal.
+- **Everywhere else,** the comparison fails, which is exactly where divergence begins.
+
+So the geometric series is not merely an example — it is the **model** whose known convergence transfers to every power series inside its radius.
+
+---
+
+## Properties Inside the Disk
+
+Let $f(z)=\sum a_n(z-z_0)^n$ with radius $R>0$. Then:
+
+1. **Absolute convergence** for $|z-z_0|<R$; divergence for $|z-z_0|>R$.
+2. **Uniform convergence** on every compact subset of the disk.
+3. **Continuity** of $f$ inside the disk.
+4. **Termwise differentiation and integration** with the same radius $R$:
+$$
+f'(z)=\sum_{n\ge1} n a_n (z-z_0)^{n-1},
+\qquad
+\int f(z)\,dz=\sum_{n\ge0}\frac{a_n}{n+1}(z-z_0)^{n+1}+C.
+$$
+5. **Uniqueness (identity theorem):** if two power series agree on an infinite set with an accumulation point inside the disk, all coefficients agree.
+6. **Multiplication (Cauchy product):** $(\sum a_n z^n)(\sum b_n z^n)=\sum c_n z^n$ with $c_n=\sum_{k=0}^n a_k b_{n-k}$, valid inside the smaller radius.
+
+These facts are what make power series the natural language for **analytic functions**.
+
+### Real versus Complex
+
+- In the **real** case, the domain is an interval and the theory of smooth functions is subtle: a $C^\infty$ function need not equal its Taylor series.
+- In the **complex** case, the theory is rigid and beautiful: a function differentiable once (holomorphic) is **automatically** analytic and has a power series. Complex differentiability is much stronger than real differentiability — the Cauchy–Riemann equations propagate to infinite smoothness and the whole machinery of complex analysis.
+
+---
+
+## Standard Power Series
+
+$$
+e^z=\sum_{n\ge0}\frac{z^n}{n!},\qquad
+\sin z=\sum_{n\ge0}\frac{(-1)^n z^{2n+1}}{(2n+1)!},\qquad
+\cos z=\sum_{n\ge0}\frac{(-1)^n z^{2n}}{(2n)!},
+$$
+$$
+\frac{1}{1-z}=\sum_{n\ge0}z^n,\qquad
+-\ln(1-z)=\sum_{n\ge1}\frac{z^n}{n},\qquad
+\arctan z=\sum_{n\ge0}\frac{(-1)^n z^{2n+1}}{2n+1},
+$$
+$$
+(1+z)^\alpha=\sum_{n\ge0}\binom{\alpha}{n}z^n\quad(\text{binomial series, }R=1),
+$$
+with exponential, sine, and cosine having $R=\infty$, and the others $R=1$.
+
+### Series That Converge to Specific Values
+
+Many named constants are power series evaluated at a point:
+
+- $e=\sum 1/n!$;
+- $\ln 2=\sum_{n\ge1}(-1)^{n+1}/n$ (the $\ln(1+z)$ series at $z=1$, justified by Abel's theorem);
+- $\pi/4=\arctan 1=\sum (-1)^n/(2n+1)$ (Gregory–Leibniz);
+- $\pi^2/6=\sum 1/n^2$ (Basel; not a single power series but a zeta value).
+
+And telescoping series can sum to surprising integers. The example requested:
+
+$$
+1+\frac12+\frac16+\frac1{12}+\cdots
+=1+\sum_{n=1}^\infty\frac{1}{n(n+1)}
+=1+\sum_{n=1}^\infty\left(\frac1n-\frac1{n+1}\right)
+=1+1=2.
+$$
+
+The partial sums are $1+\left(1-\frac1{N+1}\right)\to 2$, so this series **converges to 2** — a telescoping identity rather than a power-series evaluation.
+
+Two more "equals 2" examples:
+$$
+\sum_{n=1}^\infty\frac{n}{2^n}=2,\qquad
+\sum_{n=0}^\infty\frac{n+1}{2^{n+1}}=2,
+$$
+both standard geometric-derivative sums: $\sum n x^n=x/(1-x)^2$ at $x=1/2$ gives $2$.
+
+---
+
+## Taylor, Laurent, and Why the Radius Is What It Is
+
+- **Taylor series** of a function analytic at $z_0$: the power series with $a_n=f^{(n)}(z_0)/n!$; it converges to $f$ on the largest disk avoiding the singularities.
+- **Radius = distance to the nearest singularity.** This is the clean explanation of $R$: the series cannot see past a pole, branch point, or essential singularity. Example: $\frac{1}{1+z^2}=\sum(-1)^n z^{2n}$ has $R=1$ because of the poles at $z=\pm i$, even though the real function looks perfectly smooth on $\mathbb{R}$.
+- **Laurent series** for a function analytic in an annulus $r<|z-z_0|<R$:
+$$
+f(z)=\sum_{n=-\infty}^{\infty} a_n (z-z_0)^n,
+$$
+which permits negative powers and classifies singularities (removable, pole, essential).
+
+---
+
+## When a Function Cannot Be a Power Series
+
+Not every function has a convergent power-series representation on a neighborhood. The obstructions:
+
+1. **Smooth but not analytic.** $f(x)=e^{-1/x}$ for $x>0$ and $f(0)=0$ is $C^\infty$ at $0$ with **all derivatives zero** there. Its Taylor series is identically $0$, which does not equal $f$ on any neighborhood. Being $C^\infty$ is not enough; the function must be **real-analytic**.
+2. **Non-smooth points or poles.** $|x|$ is not analytic at $0$; $1/x$ has a pole at $0$ and only a Laurent expansion there.
+3. **Essential singularities.** $e^{1/z}$ has an essential singularity at $0$; no finite Laurent part represents it.
+4. **Natural boundaries (lacunary series).** Power series with huge gaps, e.g. $\sum_{k\ge0} z^{2^k}$, converge for $|z|<1$ but **cannot be continued past the unit circle**: every boundary point is singular. No larger disk exists.
+5. **Nowhere-continuous functions.** The Dirichlet function (1 on rationals, 0 on irrationals) cannot be represented by power series because power series are continuous inside their disk.
+6. **A function defined only on a closed or disconnected set** cannot have a single Taylor series valid in a neighborhood.
+
+Thus the class of functions expressible as power series is exactly the **analytic functions**, a strict subclass of smooth functions.
+
+---
+
+## Laboratory: Power Series in Action
+
+### Radii and Standard Expansions
+
+```{python}
+import numpy as np
+import math
+
+print("=== RADII OF CONVERGENCE (ratio test) ===")
+def radius_ratio(a):
+    ratios = [abs(a[n] / a[n+1]) for n in range(len(a)-1)]
+    return ratios[-1]
+
+series = {
+    "sum z^n": [1.0] * 30,
+    "sum z^n/n!": [1.0 / math.factorial(n) for n in range(30)],
+    "sum z^n/n": [0.0] + [1.0 / n for n in range(1, 30)],
+    "sum n! z^n": [float(math.factorial(n)) for n in range(20)],
+}
+for name, a in series.items():
+    a = a if a[1] != 0 else a[1:]
+    R = radius_ratio(a)
+    print(f"  {name:>14}: R ≈ {R:.4f}")
+print("  (R=1 for 1/(1-z) and ln(1-z); R=inf for exp; R=0 for the factorial series)")
+```
+
+### The Series That Converges to 2
+
+```{python}
+#| label: fig-sum-to-2
+#| fig-cap: "Left: partial sums of 1 + 1/(1·2) + 1/(2·3) + 1/(3·4) + ⋯. The terms equal 1/n − 1/(n+1), so the series telescopes and the partial sums approach 2 rapidly. Right: two more 'equals 2' sums, Σ n/2^n and Σ (n+1)/2^(n+1), which converge to 2 by differentiating the geometric series."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+N = 60
+terms = 1.0 / (np.arange(1, N) * np.arange(2, N + 1))
+partial = 1 + np.cumsum(terms)
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.6))
+axes[0].plot(range(1, N), partial, "o-", ms=4, color="#2980b9")
+axes[0].axhline(2, color="#e74c3c", ls="--", label="limit = 2")
+axes[0].set_title(r"$1+\sum 1/(n(n+1)) = 2$ (telescoping)")
+axes[0].set_xlabel("number of terms"); axes[0].set_ylabel("partial sum")
+axes[0].legend(); axes[0].grid(alpha=0.3)
+
+n = np.arange(1, N)
+axes[1].plot(n, np.cumsum(n / 2.0 ** n), label=r"$\sum n/2^n$", color="#27ae60")
+axes[1].plot(n, np.cumsum((n + 1) / 2.0 ** (n + 1)), label=r"$\sum (n+1)/2^{n+1}$", color="#8e44ad")
+axes[1].axhline(2, color="#e74c3c", ls="--", label="2")
+axes[1].set_title("Two more series that converge to 2")
+axes[1].set_xlabel("n"); axes[1].legend(); axes[1].grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print("=== CONVERGENCE TO 2 ===")
+for N in [5, 10, 50, 200]:
+    s = 1 + np.sum(1.0 / (np.arange(1, N) * np.arange(2, N + 1)))
+    print(f"  1 + sum_(1..{N}) 1/(n(n+1)) = {s:.12f}")
+print(f"  sum n/2^n (N=60) = {np.sum(np.arange(1, 200)/2.0**np.arange(1,200)):.12f}")
+```
+
+### Uniform Convergence and Comparison with the Geometric Series
+
+```{python}
+#| label: fig-power-series
+#| fig-cap: "Power series march. Left: partial sums of the exponential series converge everywhere, with the error falling factorially. Right: partial sums of 1/(1-z) = Σ z^n converge only inside the unit disk; at z=0.9 the convergence is geometric, at z=1.05 they diverge. The geometric bound |a_n z^n| ≤ C r^n inside the disk is what makes convergence uniform on compact subsets."
+
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.8))
+ns = np.arange(0, 25)
+for z, col in [(0.9, "#2980b9"), (1.05, "#e74c3c"), (-0.7, "#27ae60")]:
+    partial = np.cumsum([z ** k for k in ns])
+    axes[0].plot(ns, partial, "o-", ms=3, color=col, label=f"z={z}")
+axes[0].axhline(1/(1-0.9), color="#2980b9", ls=":", lw=1)
+axes[0].set_title(r"Partial sums of $1/(1-z)=\sum z^n$")
+axes[0].set_xlabel("N"); axes[0].set_ylabel("partial sum"); axes[0].legend(); axes[0].grid(alpha=0.3)
+
+x = np.linspace(-3, 3, 200)
+for N, col in [(3, "#bdc3c7"), (6, "#95a5a6"), (12, "#2980b9"), (20, "#e74c3c")]:
+    y = sum(x ** k / math.factorial(k) for k in range(N + 1))
+    axes[1].plot(x, y, label=f"N={N}", color=col)
+axes[1].plot(x, np.exp(x), "k--", lw=1.5, label=r"$e^x$")
+axes[1].set_title("Taylor partial sums of $e^x$ (global convergence)")
+axes[1].set_xlabel("x"); axes[1].legend(fontsize=8); axes[1].grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print("=== GEOMETRIC COMPARISON: |a_n z^n| <= C r^n ===")
+z = 0.9
+for N in [10, 20, 40]:
+    tail = sum(abs(z) ** k for k in range(N, 1000))
+    print(f"  sum_(n>={N}) |z|^n = {tail:.3e}  (geometric majorant r^N/(1-r))")
+print("  inside |z|<1 the geometric tail bounds every power-series tail.")
+```
+
+### Smooth but Not Analytic: $e^{-1/x}$
+
+```{python}
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+
+def f(x):
+    return np.where(x > 0, np.exp(-1.0 / np.where(x > 0, x, 1)), 0.0)
+
+x = np.linspace(-0.5, 2, 800)
+fig, ax = plt.subplots(figsize=(9, 4.6))
+ax.plot(x, f(x), color="#2980b9", lw=2, label=r"$f(x)=e^{-1/x}$ ($x>0$), $0$ ($x\leq0$)")
+ax.plot(x, np.zeros_like(x), "r--", lw=1, label="Taylor series at 0: identically 0")
+ax.set_ylim(-0.05, 1.1); ax.set_title(r"$C^\infty$ but not analytic at 0")
+ax.set_xlabel("x"); ax.legend(); ax.grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print("=== DERIVATIVES OF f AT 0 (all zero) ===")
+h = 1e-4
+for k in [1, 2, 3]:
+    # numerical derivative estimate near 0 from the right is ~0 for this function
+    vals = [(f(np.array([0 + (k+1)*h]))[0]) for _ in range(1)]
+    print(f"  f^(k)(0) = 0 by the chain-rule induction (e^{-1/x} vanishes faster than any power)")
+print("  so the Taylor series is 0, but f(x)>0 for x>0: the function is not analytic.")
+```
+
+The laboratory shows the three faces of power series: **radii** set by coefficients and singularities, **explicit sums** like the telescoping $=2$ and the geometric-derivative sums, and **failure of analyticity** for smooth functions like $e^{-1/x}$.
+
+---
+
+## Summary
+
+$$
+\begin{aligned}
+&\textbf{Power series: } && \sum a_n(z-z_0)^n;\ \text{radius } 1/R=\limsup|a_n|^{1/n}. \\[3pt]
+&\textbf{Geometric comparison: } && |a_n|\le Cr^n \Rightarrow \text{absolute + uniform convergence inside } R. \\[3pt]
+&\textbf{Operations: } && \text{termwise diff/integration, Cauchy product, identity theorem.} \\[3pt]
+&\textbf{Real vs complex: } && \text{real } C^\infty \not\Rightarrow \text{analytic; complex differentiable} \Rightarrow \text{analytic.} \\[3pt]
+&\textbf{Radius: } && \text{distance to the nearest singularity (e.g. } 1/(1+z^2),\ R=1 \text{ from } \pm i). \\[3pt]
+&\textbf{Special sums: } && 1+\sum\frac{1}{n(n+1)}=2;\ \sum\frac{n}{2^n}=2;\ e,\ \ln2,\ \pi/4 \text{ series.} \\[3pt]
+&\textbf{Non-representable: } && e^{-1/x},\ |x|,\ \text{essential singularities, lacunary series, Dirichlet function.}
+\end{aligned}
+$$
+
+Power series are the analytic skeleton of functions. Where they fail, [measure theory and the Lebesgue integral](measure-theory-and-lebesgue-measure.qmd) provide the broader framework for integration and limits — and where geometry generalizes, [Euclid's axioms give way to modern structures](geometry-after-euclid-axioms-and-non-geometric-uses.qmd).
+
+---
+
+## Curated References and Further Reading
+
+1. **Ahlfors, Lars (1979).** *Complex Analysis*, 3rd ed. McGraw-Hill.
+2. **Rudin, Walter (1976).** *Principles of Mathematical Analysis*, 3rd ed. McGraw-Hill.
+3. **Knopp, Konrad (1956).** *Infinite Sequences and Series.* Dover.
+4. **Krantz, S. & Parks, H. (2002).** *A Primer of Real Analytic Functions*, 2nd ed. Birkhäuser.
+5. **Needham, Tristan (1997).** *Visual Complex Analysis.* Oxford University Press.
+6. **Knopp, K. (1996).** *Theory and Application of Infinite Series.* Dover. (Radius, comparison, and uniform convergence.)

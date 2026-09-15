@@ -9,6 +9,7 @@ format:
     toc: true
     toc-depth: 3
     math: true
+jupyter: python3
 ---
 
 ::: {.callout-tip collapse="true"}
@@ -605,3 +606,25 @@ print(f"Angles at P: {angles[0]:.2f}°, {angles[1]:.2f}°, {angles[2]:.2f}° (Ex
 4. **Chen, Evan.** *Euclidean Geometry in Mathematical Olympiads (EGMO)* (Mathematical Association of America, 2016).
 5. **Kedlaya, Kiran S.** *Geometry Unbound* (Freely available competition curriculum, MIT / MAA).
 6. **Gelca, Răzvan, & Andreescu, Titu.** *Putnam and Beyond* (Springer, 2007). Chapters on geometry, inequalities, and transformations.
+
+
+## Appendix: Readily Applicable Code — Computational Geometry
+
+Theorems about triangle centers become algorithms in computational geometry, CAD, and robotics. Here we verify the defining property of the incenter numerically.
+
+```{python}
+import numpy as np
+
+A, B, C = np.array([0., 0.]), np.array([6., 0.]), np.array([2., 4.])
+a, b, c = np.linalg.norm(B - C), np.linalg.norm(A - C), np.linalg.norm(A - B)
+I = (a * A + b * B + c * C) / (a + b + c)      # incenter
+
+def dist_to_line(P, X, Y):
+    return abs(np.cross(Y - X, P - X)) / np.linalg.norm(Y - X)
+
+print("=== INCENTER: EQUIDISTANT FROM THE SIDES ===")
+for X, Y in [(A, B), (B, C), (C, A)]:
+    print(f"  distance to a side: {dist_to_line(I, X, Y):.6f}")
+print("  all three distances are equal -> I is the incircle center.")
+print(f"  inradius r = {dist_to_line(I, A, B):.6f}, area = rs with s = {(a+b+c)/2:.4f}")
+```

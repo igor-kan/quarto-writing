@@ -1,0 +1,318 @@
+---
+title: "Geometry After Euclid: Axioms, Non-Euclidean Geometry, and the Reach of Geometric Ideas"
+subtitle: "Euclid's postulates and their hidden gaps, the parallel postulate and the birth of hyperbolic and elliptic geometry, Hilbert's and Tarski's axiomatizations, curvature and the angle sum, Klein's Erlangen program, and how angles, convexity, and distance reappear in optimization, machine learning, statistics, number theory, and physics"
+author: "Igor Kan"
+date: "2026-09-14"
+categories: [Mathematics, Geometry, Axiomatics, Non-Euclidean Geometry, Convexity, Foundations]
+description: "A comprehensive treatment of the evolution of geometry since Euclid. It states Euclid's five postulates and common notions and identifies the gaps (betweenness, Pasch, continuity) that later axiom systems repaired; follows the two-thousand-year struggle with the parallel postulate through Playfair, Saccheri, Gauss, Bolyai, Lobachevsky, and Riemann; explains hyperbolic and elliptic geometry, their models (Poincare disk, sphere), and the angle-sum and area results tied to curvature; presents Hilbert's Grundlagen axioms in five groups, Tarski's decidable first-order system, and Birkhoff's ruler-and-protractor approach; introduces Klein's Erlangen program classifying geometries by transformation groups; and shows how geometric structures underlie linear programming and convexity, the lp balls, machine learning and high-dimensional geometry, information geometry, the geometry of numbers, phase space, and spacetime, with an executable Python laboratory comparing angle sums across geometries and visualizing affine versus Euclidean transformations and convex hulls."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 4
+    number-sections: true
+jupyter: python3
+toc: true
+toc-depth: 4
+number-sections: true
+---
+
+::: {.callout-note appearance="simple"}
+*Euclid's Elements was the model of rigorous reasoning for two millennia — yet it rested on unstated assumptions, and its most awkward postulate turned out not to be provable at all. The discovery of non-Euclidean geometry shattered the idea that Euclid described the only possible space, and gave rise to the modern view: a geometry is the study of invariants under a group of transformations.*
+
+Geometry then reappeared everywhere it seemed not to belong — in optimization, machine learning, statistics, and physics — because distance, angle, and convexity are exactly the structures those fields need.
+:::
+
+::: {.callout-tip collapse="true"}
+### Companion Treatises in this Series
+- [The Geometry of Triangles: Centers, Similarity, Congruence, and Fractals](the-geometry-of-triangles-centers-similarity-congruence-and-fractals.qmd)
+- [Geometry: Circles, Triangles, Angles, Arcs, Polygons, and Polyhedra](geometry-circles-triangles-angles-polygons-and-polyhedra.qmd)
+- [Coordinates, Curvilinear Systems, and Differential Geometry](../physics/coordinate-systems.qmd)
+- [Topology and Surfaces: Königsberg, Möbius, and the Klein Bottle](topology-and-surfaces-konigsberg-mobius-klein.qmd)
+- [Infinite-Dimensional Algebra: Spaces of Sequences and Functions](infinite-dimensional-algebra-sequence-and-function-spaces.qmd)
+:::
+
+---
+
+## Euclid's Axioms and Their Gaps
+
+Euclid's *Elements* (c. 300 BCE) builds all of classical geometry from **five postulates** and **five common notions** (axioms).
+
+**Postulates:**
+1. A straight line can be drawn between any two points.
+2. A finite straight line can be extended indefinitely.
+3. A circle can be drawn with any center and radius.
+4. All right angles are equal.
+5. **The parallel postulate:** if a line crossing two lines makes interior angles on one side sum to less than two right angles, the two lines meet on that side.
+
+**Common notions:** things equal to the same thing are equal; equals added to equals are equal; equals subtracted from equals are equal; coinciding things are equal; the whole is greater than the part.
+
+The axiomatic method — definitions, postulates, and **proof** — was Euclid's great invention. But modern scrutiny found gaps:
+
+- **Betweenness and order** are assumed, not axiomatized ("a point lies between two others").
+- **Pasch's axiom** (a line entering a triangle must exit through a side) is needed and missing.
+- **Continuity** (no gaps in the line, circle–line intersections) is assumed.
+- The parallel postulate is used only from Proposition I.29 onward, and is conspicuously more complex than the others.
+
+These gaps motivated the nineteenth- and twentieth-century reconstructions.
+
+---
+
+## The Parallel Postulate and Non-Euclidean Geometry
+
+For two thousand years mathematicians tried to **prove** the fifth postulate from the others — and failed. The attempt assumed it was a theorem; the discovery was that it is an **independent axiom**, and denying it yields **equally consistent** geometries.
+
+**Equivalent forms:** **Playfair's axiom** (through a point not on a line there is exactly one parallel) is logically equivalent; so is the statement that a triangle's angles sum to $180^\circ$.
+
+**Hyperbolic geometry** (Gauss, Bolyai, Lobachevsky, 1820s–30s): through a point there are **infinitely many** parallels; triangle angle sums are **less than $180^\circ$**; the **angle defect** equals the area (for curvature $-1$); the circumference of a circle grows exponentially in the radius. Poincaré's **disk model** and the **Klein model** realize it inside the Euclidean plane, proving relative consistency.
+
+**Elliptic/spherical geometry** (Riemann, 1854): there are **no** parallels (any two geodesics meet); triangle angle sums are **greater than $180^\circ$**; the **angle excess** equals the area (for curvature $+1$). This is the geometry of the surface of a sphere — and of navigation, where "straight lines" are **great circles**. (The cleanest version is *spherical* geometry; *elliptic* geometry identifies antipodal points.)
+
+**Relative consistency:** Beltrami, Klein, and Poincaré built Euclidean models of non-Euclidean geometry, so if Euclidean geometry is consistent, so are the others. Thus the parallel postulate cannot be proved or disproved from the rest.
+
+### Curvature Unifies Them
+
+All three are **constant-curvature** geometries:
+
+| Geometry | Curvature | Parallels through a point | Angle sum | Area–defect |
+|---|---|---|---|---|
+| Euclidean | $0$ | exactly one | $=180^\circ$ | defect $=0$ |
+| Hyperbolic | $-1$ | infinitely many | $<180^\circ$ | area $=\pi-(A+B+C)$ |
+| Spherical | $+1$ | none | $>180^\circ$ | area $=(A+B+C)-\pi$ |
+
+The **Gauss–Bonnet theorem** makes this precise: the integral of curvature over a region plus the geodesic curvature of its boundary equals $2\pi$ times the Euler characteristic — curvature, topology, and angle sums in one identity.
+
+---
+
+## Modern Axiomatizations
+
+- **Hilbert (1899), *Grundlagen der Geometrie*:** 20 axioms in **five groups** — incidence, order (betweenness), congruence, parallels, and continuity (Archimedes and completeness). Hilbert repaired Euclid's gaps, made the parallel postulate one axiom among many, and emphasized **models, independence, and consistency** as the modern axiomatic standard.
+- **Tarski (1926–1959):** a first-order axiom system in the language of points and betweenness/congruence relations; it is **decidable** (there is an algorithm deciding any statement), a striking contrast with arithmetic by Gödel.
+- **Birkhoff (1932):** a **ruler-and-protractor** system that takes the real numbers and angle measure as primitive; short and elegant, used in many school treatments.
+- **Bachmann, metric, and analytic approaches:** geometry via metric spaces, transformation groups, or coordinates and differential structure.
+
+The lesson: "Euclidean geometry" is one model of one axiom system; the parallel postulate is a choice, and changing it changes the world.
+
+---
+
+## Klein's Erlangen Program
+
+Felix Klein (1872) proposed that a **geometry is the study of the properties invariant under a group of transformations**. This organizes the subject into a hierarchy, from the most rigid to the most flexible:
+
+| Geometry | Transformation group | Invariants |
+|---|---|---|
+| Euclidean | isometries (rigid motions) | distances, angles, congruence |
+| Similarity | similitudes (scale + isometry) | angles, ratios; shape |
+| Affine | invertible affine maps | parallelism, midpoints, ratios on a line |
+| Projective | projective transformations | cross-ratio, collinearity, conics |
+| Conformal | angle-preserving maps | angles (not lengths) |
+| Topology | homeomorphisms | continuity, connectivity, genus |
+
+Each is a **subgroup** or **supergroup** of the others, and theorems of a larger geometry restrict to those of a smaller one. This is why coordinate transformations, projective geometry, and complex analysis are all "geometry" in the same sense — and why [topology](topology-and-surfaces-konigsberg-mobius-klein.qmd) is the most flexible geometry of all.
+
+---
+
+## Geometric Ideas in Non-Geometric Contexts
+
+Geometry is not confined to figures on paper. Its core structures — **distance, angle, convexity, dimension** — are exactly what many apparently non-geometric fields require.
+
+### Optimization and Linear Programming
+
+- **Convexity** is a geometric property: a set is convex if it contains the segment between any two points. A convex function has a convex epigraph, and local minima are global.
+- **Linear programming** optimizes a linear objective over a **polytope** (the intersection of half-planes). The optimum occurs at a **vertex** — a purely geometric fact exploited by the simplex method. The dual problem has a geometric interpretation via separating hyperplanes.
+- **Gradient descent** moves in the direction of steepest ascent, i.e. **orthogonal to the level sets** — geometry of the objective.
+- **$\ell^p$ balls** (the unit balls of the norms $\lVert\cdot\rVert_p$) are convex bodies ranging from the diamond ($p=1$, promoting sparsity) to the square ($p=\infty$); the geometry of these balls is the geometry of regularization in statistics and machine learning.
+
+### Machine Learning and High-Dimensional Geometry
+
+- Data are points in a high-dimensional **feature space**; classifiers are **hyperplanes**, **margins** are distances, and kernels measure angles via inner products.
+- The **curse of dimensionality** — volume concentrating in shells, distances becoming similar — is a geometric phenomenon.
+- The **manifold hypothesis** assumes data lie near a low-dimensional manifold, making differential geometry the right language.
+- **Embedding** methods (PCA, UMAP, t-SNE) are geometric projections that are themselves transform-group statements (PCA preserves affine structure).
+
+### Statistics and Information Geometry
+
+- Probability distributions form a **manifold** with the **Fisher information metric**; estimation is projection onto sub-manifolds, and the **Cramér–Rao bound** is a geometric inequality.
+- Concentration of measure is high-dimensional geometry; covariance matrices encode an ellipsoidal geometry of the data.
+
+### Number Theory, Physics, and Beyond
+
+- **Geometry of numbers (Minkowski):** lattice points and convex bodies; the Minkowski convex-body theorem and the shortest-vector problem.
+- **Phase space:** classical mechanics is the geometry of a symplectic manifold; the [calculus of variations](analysis-18-calculus-of-variations-symplectic-mechanics.qmd) is its variational geometry.
+- **Spacetime:** special relativity is the geometry of **Minkowski space** (a pseudo-metric with signature $({+}{-}{-}{-})$); general relativity is **Riemannian geometry** with curvature, where the "angle sums" of spacetime encode gravity.
+- **Graph and coding theory:** shortest paths make graphs metric spaces; Hamming distance makes code words a discrete geometry.
+- **Functional analysis:** Banach and Hilbert spaces are infinite-dimensional geometry, where norms are generalized lengths (see [the infinite-dimensional article](infinite-dimensional-algebra-sequence-and-function-spaces.qmd)).
+
+**Why it recurs:** whenever a problem has a notion of closeness, symmetry, or "straightness," it has a geometry. The modern content of geometry is the study of **spaces with structure** and the **invariants** of their symmetry groups.
+
+---
+
+## Laboratory: Three Geometries and Non-Geometric Geometry
+
+### Angle Sums Across Geometries
+
+```{python}
+#| label: fig-geometries
+#| fig-cap: "Left: Euclidean triangles have angle sum 180°, spherical triangles have angle sum greater than 180° (the excess equals the area on the unit sphere), and hyperbolic triangles have angle sum less than 180° (the defect equals the area for curvature −1). Right: a great-circle (spherical) triangle drawn on the sphere — the geodesic 'straight lines' of navigation — with vertices at the north pole and two equatorial points."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def safe_arccos(x):
+    return np.arccos(np.clip(x, -1.0, 1.0))
+
+print("=== SPHERICAL TRIANGLE (unit sphere) ===")
+def spherical_angle(a, b, c):
+    return safe_arccos((np.cos(a) - np.cos(b) * np.cos(c)) / (np.sin(b) * np.sin(c)))
+
+a, b, c = np.radians(60), np.radians(70), np.radians(80)
+As = np.degrees(spherical_angle(a, b, c))
+Bs = np.degrees(spherical_angle(b, c, a))
+Cs = np.degrees(spherical_angle(c, a, b))
+sph_sum = As + Bs + Cs
+print(f"  angles: A={As:.2f}°, B={Bs:.2f}°, C={Cs:.2f}°; sum = {sph_sum:.2f}° (>180)")
+print(f"  spherical excess = {sph_sum-180:.2f}° = {np.radians(sph_sum-180):.4f} sr (equals area)")
+
+print("\n=== HYPERBOLIC TRIANGLE (curvature −1) ===")
+def hyperbolic_angle(a, b, c):
+    return safe_arccos(-(np.cosh(a) - np.cosh(b) * np.cosh(c)) / (np.sinh(b) * np.sinh(c)))
+a, b, c = 1.0, 1.2, 1.3
+Ah = np.degrees(hyperbolic_angle(a, b, c))
+Bh = np.degrees(hyperbolic_angle(b, c, a))
+Ch = np.degrees(hyperbolic_angle(c, a, b))
+hyp_sum = Ah + Bh + Ch
+print(f"  angles: A={Ah:.2f}°, B={Bh:.2f}°, C={Ch:.2f}°; sum = {hyp_sum:.2f}° (<180)")
+print(f"  angle defect = {180-hyp_sum:.2f}° = {np.radians(180-hyp_sum):.4f} (equals area)")
+
+fig = plt.figure(figsize=(13, 5.2))
+ax1 = fig.add_subplot(1, 2, 1)
+ax1.bar(["Euclidean", "Spherical", "Hyperbolic"], [180, sph_sum, hyp_sum],
+        color=["#2980b9", "#e67e22", "#8e44ad"])
+ax1.axhline(180, color="k", ls="--", label="180°")
+ax1.set_title("Triangle angle sums by geometry"); ax1.set_ylabel("degrees"); ax1.legend(); ax1.grid(axis="y", alpha=0.3)
+
+ax2 = fig.add_subplot(1, 2, 2, projection="3d")
+u = np.linspace(0, 2*np.pi, 40); v = np.linspace(0, np.pi, 20)
+xs = np.outer(np.cos(u), np.sin(v)); ys = np.outer(np.sin(u), np.sin(v)); zs = np.outer(np.ones_like(u), np.cos(v))
+ax2.plot_surface(xs, ys, zs, color="#d5dbdb", alpha=0.4, linewidth=0)
+P = [np.array([0,0,1]), np.array([1,0,0]), np.array([0,1,0])]
+for i in range(3):
+    p, q = P[i], P[(i+1)%3]
+    t = np.linspace(0, 1, 50)
+    arc = (p[None,:]*(1-t)[:,None] + q[None,:]*t[:,None])
+    arc /= np.linalg.norm(arc, axis=1)[:,None]
+    ax2.plot(arc[:,0], arc[:,1], arc[:,2], color="#e74c3c", lw=2)
+ax2.set_title("Spherical (great-circle) triangle")
+ax2.set_axis_off()
+plt.tight_layout(); plt.show()
+```
+
+### Affine vs Euclidean Transformations
+
+```{python}
+#| label: fig-affine
+#| fig-cap: "Euclidean versus affine transformations. A rotation preserves distances and angles (Euclidean invariants). A shear preserves parallelism and area ratios but distorts angles and lengths (affine invariants). Klein's Erlangen program: each geometry is defined by what its transformation group leaves invariant."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+square = np.array([[0,0],[1,0],[1,1],[0,1],[0,0]])
+theta = np.radians(30)
+R = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+shear = np.array([[1, 0.8], [0, 1]])
+
+fig, axes = plt.subplots(1, 2, figsize=(12.5, 5))
+axes[0].plot(square[:,0], square[:,1], "o-", label="original")
+axes[0].plot(*(square @ R.T).T, "s-", label="rotated (Euclidean)")
+axes[0].set_title("Euclidean: rotation preserves angles/distance")
+axes[0].set_aspect("equal"); axes[0].legend(); axes[0].grid(alpha=0.3)
+
+axes[1].plot(square[:,0], square[:,1], "o-", label="original")
+axes[1].plot(*(square @ shear.T).T, "s-", label="sheared (affine)")
+axes[1].set_title("Affine: shear preserves parallelism, not angles")
+axes[1].set_aspect("equal"); axes[1].legend(); axes[1].grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print("=== TRANSFORMATION INVARIANTS ===")
+def angle_at(P, i):
+    a, b = P[i-1]-P[i], P[(i+1) % len(P)]-P[i]
+    return np.degrees(np.arccos(np.clip(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)), -1, 1)))
+print(f"  original angle at vertex 1 = {angle_at(square,1):.2f}°")
+print(f"  rotated  angle at vertex 1 = {angle_at(square @ R.T,1):.2f}°  (preserved)")
+print(f"  sheared  angle at vertex 1 = {angle_at(square @ shear.T,1):.2f}°  (changed)")
+```
+
+### Convexity, Hulls, and Linear Programming
+
+```{python}
+#| label: fig-convex
+#| fig-cap: "Convexity in optimization. Left: the convex hull of random points — every line segment between two hull points stays inside, and the hull vertices are the extreme points. Right: a linear program maximizes a linear objective over a polygon; the optimum lies at a vertex, which is why the simplex method searches vertices. This is geometry doing non-geometric work."
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.spatial import ConvexHull
+from scipy.optimize import linprog
+
+rng = np.random.default_rng(4)
+pts = rng.uniform(0, 10, size=(30, 2))
+hull = ConvexHull(pts)
+h = np.append(hull.vertices, hull.vertices[0])
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+axes[0].scatter(pts[:,0], pts[:,1], color="#2980b9", s=25)
+axes[0].plot(pts[h,0], pts[h,1], color="#e74c3c", lw=2, label="convex hull")
+axes[0].fill(pts[h,0], pts[h,1], color="#e74c3c", alpha=0.1)
+axes[0].set_title("Convex hull and extreme points"); axes[0].legend(); axes[0].grid(alpha=0.3)
+
+# LP: maximize x+y subject to 0<=x<=4, 0<=y<=3, x+y<=5
+# linprog minimizes, so minimize -x-y
+res = linprog(c=[-1, -1], A_ub=[[1, 1]], b_ub=[5], bounds=[(0,4), (0,3)], method="highs")
+vertices = np.array([[0,0],[4,0],[4,1],[2,3],[0,3],[0,0]])
+axes[1].fill(vertices[:,0], vertices[:,1], color="#8e44ad", alpha=0.15)
+axes[1].plot(vertices[:,0], vertices[:,1], color="#8e44ad", lw=2, label="feasible polytope")
+for (x, y) in [[0,0],[4,0],[4,1],[2,3],[0,3]]:
+    axes[1].plot(x, y, "ko")
+axes[1].plot(res.x[0], res.x[1], "r*", ms=18, label=f"optimum ({res.x[0]:.0f},{res.x[1]:.0f})")
+axes[1].set_title("Linear program: optimum at a vertex"); axes[1].legend(); axes[1].grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print("=== LINEAR PROGRAM ===")
+print(f"  maximize x+y subject to x+y<=5, 0<=x<=4, 0<=y<=3")
+print(f"  optimum at vertex {np.round(res.x,2)} with value {-(res.fun):.2f}")
+print("  the maximum of a linear function over a convex polygon is attained at a vertex.")
+```
+
+The laboratory makes the abstraction concrete: the same triangle has three different angle sums depending on curvature; a transformation group decides what a geometry preserves; and the geometric facts of convexity and extreme points are exactly what makes optimization tractable.
+
+---
+
+## Summary
+
+$$
+\begin{aligned}
+&\textbf{Euclid: } && \text{5 postulates + 5 common notions; gaps in order, Pasch, continuity.} \\[3pt]
+&\textbf{Parallel postulate: } && \text{independent; denial gives hyperbolic (many parallels, angle sum }<180^\circ\text{).} \\[3pt]
+&\textbf{Curvature: } && 0,\,+1,\,-1 \Rightarrow \text{Euclidean, spherical, hyperbolic; angle sum and area-defect.} \\[3pt]
+&\textbf{Axiomatics: } && \text{Hilbert (5 groups), Tarski (decidable), Birkhoff (ruler-protractor).} \\[3pt]
+&\textbf{Erlangen: } && \text{geometry = invariants of a transformation group (Euclidean} \subset \text{affine} \subset \text{projective} \subset \text{topology).} \\[3pt]
+&\textbf{Non-geometric uses: } && \text{convexity \& LP, } \ell^p \text{ balls, ML feature spaces, information geometry, geometry of numbers, phase space, spacetime.}
+\end{aligned}
+$$
+
+Euclid's axioms were a beginning, not an end. Generalizing them produced non-Euclidean geometry, Riemannian geometry, and eventually the modern view of geometry as the study of structure and invariants — a view that lets the same ideas power optimization, machine learning, statistics, and physics. Where geometry loosens completely into "shape up to continuous deformation," we arrive at [topology](topology-and-surfaces-konigsberg-mobius-klein.qmd).
+
+---
+
+## Curated References and Further Reading
+
+1. **Euclid (c. 300 BCE).** *Elements.* (Heath's translation.)
+2. **Hilbert, David (1899).** *Grundlagen der Geometrie.* (Foundations of Geometry.)
+3. **Tarski, Alfred (1959).** *What Is Elementary Geometry?* (Decidable first-order axiomatization.)
+4. **Klein, Felix (1872).** *Vergleichende Betrachtungen über neuere geometrische Forschungen* (Erlangen Program).
+5. **Bonola, R. (1955).** *Non-Euclidean Geometry.* Dover. (History of the parallel postulate.)
+6. **Greenberg, M. J. (2007).** *Euclidean and Non-Euclidean Geometries*, 4th ed. W. H. Freeman.
+7. **do Carmo, M. (1976).** *Differential Geometry of Curves and Surfaces.* Prentice Hall. (Curvature and Gauss–Bonnet.)
+8. **Amari, S. & Nagaoka, H. (2000).** *Methods of Information Geometry.* AMS.
+9. **Boyd, S. & Vandenberghe, L. (2004).** *Convex Optimization.* Cambridge University Press.

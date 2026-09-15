@@ -7,6 +7,7 @@ draft: true
 format:
   html:
     math: true
+jupyter: python3
 ---
 
 ## Embedded Riemannian Surface ($\mathcal{M} \subset \mathbb{R}^3$)
@@ -108,3 +109,29 @@ H = 0
 $$
 
 The soap film naturally minimizes its surface energy functional $U = \gamma A[y]$ by adopting a shape with zero mean curvature—the catenoid.
+
+
+## Appendix: Readily Applicable Code — The Catenoid as a Soap Film
+
+The catenoid is the minimal surface of revolution: the shape a soap film takes between two rings. We minimize its area numerically and compare with a cylinder.
+
+```{python}
+import numpy as np
+from scipy.optimize import minimize
+
+R, H, n = 1.0, 1.0, 60
+z = np.linspace(-H, H, n + 1)
+r0 = np.full(n + 1, R)                      # cylinder initial guess
+
+def area(r):
+    r = np.maximum(r, 1e-6)
+    dr = np.gradient(r, z)
+    return np.trapz(2 * np.pi * r * np.sqrt(1 + dr**2), z)
+
+res = minimize(area, r0, method="L-BFGS-B", bounds=[(1e-3, None)] * (n + 1))
+print("=== MINIMAL SURFACE OF REVOLUTION ===")
+print(f"  cylinder area       : {area(r0):.6f}")
+print(f"  minimized (catenoid): {res.fun:.6f}")
+print(f"  area reduction      : {(1 - res.fun / area(r0)) * 100:.2f}%")
+print("  the minimizer is the catenary profile r(z) = cosh(z)/const — a soap-film shape.")
+```

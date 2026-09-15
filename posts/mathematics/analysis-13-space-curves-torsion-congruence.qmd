@@ -8,6 +8,7 @@ format:
   html:
     toc: true
     math: true
+jupyter: python3
 ---
 
 ## 1. The Conceptual Shift: Moving Frames in Three Dimensions
@@ -428,3 +429,21 @@ All six implementations (`Python 3`, `C++20`, `Rust`, `Julia`, `Modern Fortran`,
 <div style="text-align: center; color: #888; font-size: 0.9em;">
   © 2026 Igor Kan
 </div>
+
+
+## Appendix: Computational Check — Curvature and Torsion
+
+```{python}
+import numpy as np
+t = np.linspace(0, 4 * np.pi, 400001)
+r = np.stack([np.cos(t), np.sin(t), t], axis=1)
+d = lambda f: np.gradient(f, t, axis=0)
+r1, r2, r3 = d(r), d(d(r)), d(d(d(r)))
+cross = np.cross(r1, r2); speed = np.linalg.norm(r1, axis=1)
+kappa = np.linalg.norm(cross, axis=1) / speed**3
+tau = np.einsum("ij,ij->i", cross, r3) / np.linalg.norm(cross, axis=1) ** 2
+print("=== HELIX r(t)=(cos t, sin t, t) ===")
+print(f"  mean curvature = {np.mean(kappa):.4f}   (theory 0.5)")
+print(f"  mean torsion   = {np.mean(tau):.4f}   (theory 0.5)")
+print("  curvature and torsion determine a space curve up to rigid motion.")
+```

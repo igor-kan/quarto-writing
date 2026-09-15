@@ -8,6 +8,7 @@ format:
   html:
     toc: true
     math: true
+jupyter: python3
 ---
 
 ## 1. The Conceptual Shift: From Forces to Stationary Action
@@ -426,3 +427,21 @@ All six implementations (`Python 3`, `C++20`, `Rust`, `Julia`, `Modern Fortran`,
 <div style="text-align: center; color: #888; font-size: 0.9em;">
   © 2026 Igor Kan
 </div>
+
+
+## Appendix: Computational Check — Symplectic Energy Conservation
+
+```{python}
+import numpy as np
+g, L, dt, T = 9.81, 1.0, 0.01, 10.0
+th, om = 0.5, 0.0
+E = []
+for _ in range(int(T / dt)):
+    om -= (g / L) * np.sin(th) * dt      # symplectic (semi-implicit) Euler
+    th += om * dt
+    E.append(0.5 * om**2 + (g / L) * (1 - np.cos(th)))
+E = np.array(E)
+print("=== PENDULUM ENERGY UNDER SYMPLECTIC EULER ===")
+print(f"  energy drift over {T}s = {E.max() - E.min():.3e}  (bounded, no secular growth)")
+print("  symplectic integrators preserve the geometric structure of Hamilton's equations.")
+```

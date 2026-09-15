@@ -13,6 +13,7 @@ format:
     math: mathjax
     code-fold: show
     code-tools: true
+jupyter: python3
 ---
 
 ::: {.callout-note appearance="simple"}
@@ -905,3 +906,32 @@ print(f"Identical? {np.allclose(V_full, np.arange(N+1) / N)}")
 8. **Doyle, Peter G., & Snell, J. Laurie (1984)**. *Random Walks and Electric Networks*. Carus Mathematical Monographs, Mathematical Association of America.
 9. **Feynman, Richard P. (1985)**. *Surely You're Joking, Mr. Feynman!*. W. W. Norton & Company.
 10. **Bender, Carl M., & Orszag, Steven A. (1999)**. *Advanced Mathematical Methods for Scientists and Engineers: Asymptotic Methods and Perturbation Theory*. Springer.
+
+
+## Appendix: Readily Applicable Code — Projectile with Air Drag
+
+An olympiad-style physics problem becomes a numerical experiment: projectile motion with quadratic drag versus the ideal parabola.
+
+```{python}
+import numpy as np
+from scipy.integrate import solve_ivp
+
+g, k, v0, ang = 9.81, 0.001, 50.0, np.radians(45)
+
+def rhs(t, s, drag):
+    x, y, vx, vy = s
+    v = np.hypot(vx, vy)
+    return [vx, vy, -drag * k * v * vx, -g - drag * k * v * vy]
+
+def flight(drag):
+    s0 = [0, 0, v0 * np.cos(ang), v0 * np.sin(ang)]
+    def hit(t, s, drag): return s[1]
+    hit.terminal = True; hit.direction = -1
+    sol = solve_ivp(rhs, [0, 50], s0, args=(drag,), events=hit, rtol=1e-8)
+    return sol.y[0, -1]
+
+print("=== PROJECTILE RANGE ===")
+print(f"  vacuum    : {flight(0):.2f} m")
+print(f"  with drag : {flight(1):.2f} m")
+print("  drag shortens the range and makes the trajectory asymmetric; solve it numerically.")
+```

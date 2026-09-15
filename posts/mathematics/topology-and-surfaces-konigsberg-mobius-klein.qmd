@@ -1,0 +1,357 @@
+---
+title: "Topology and Surfaces: Königsberg, Möbius, and the Klein Bottle"
+subtitle: "Euler's graph solution to the Seven Bridges, Eulerian paths and their use in route inspection and genome assembly, homeomorphism and topological invariants, the Euler characteristic and genus, one-sided surfaces from the Möbius strip to the Klein bottle, and the classification of closed surfaces — with readily applicable code"
+author: "Igor Kan"
+date: "2026-09-14"
+categories: [Mathematics, Topology, Graph Theory, Surfaces, Geometry, Applications]
+description: "A comprehensive treatment of topology and surfaces with practical algorithms. It begins with Euler's solution to the Seven Bridges of Konigsberg, defining graphs, degrees, connectedness, and Eulerian paths and circuits with the parity criterion, and shows how the same idea powers route inspection, garbage and snowplow routing, and genome assembly via de Bruijn graphs. It develops homeomorphism, topological invariants, and the classification of closed surfaces by orientability and genus through the Euler characteristic, treats the Mobius strip (one side, one edge, non-orientable) and the Klein bottle (a closed non-orientable surface that cannot embed in three-space without self-intersection), and surveys applications from topological data analysis and robotics to mesh repair, knot theory, and materials. It includes an executable Python laboratory implementing Hierholzer's Eulerian-circuit algorithm, a working de Bruijn genome assembler, mesh Euler-characteristic and genus computation, and three-dimensional renderings of the Mobius strip and Klein bottle."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 4
+    number-sections: true
+jupyter: python3
+toc: true
+toc-depth: 4
+number-sections: true
+---
+
+::: {.callout-note appearance="simple"}
+*In 1736 Euler solved the Seven Bridges of Königsberg not by measuring distances but by ignoring them: only the connections mattered. That decision founded graph theory and, ultimately, **topology** — the geometry of shape up to continuous deformation, where a coffee cup and a donut are the same object.*
+
+This article follows that thread from a puzzle about bridges to one-sided surfaces and the classification of all closed surfaces — with algorithms you can run.
+:::
+
+::: {.callout-tip collapse="true"}
+### Companion Treatises in this Series
+- [Geometry After Euclid: Axioms, Non-Euclidean Geometry, and Non-Geometric Uses](geometry-after-euclid-axioms-and-non-geometric-uses.qmd)
+- [The Geometry of Triangles: Centers, Similarity, Congruence, and Fractals](the-geometry-of-triangles-centers-similarity-congruence-and-fractals.qmd)
+- [Measure Theory and the Lebesgue Measure](measure-theory-and-lebesgue-measure.qmd)
+- [Infinite-Dimensional Algebra: Spaces of Sequences and Functions](infinite-dimensional-algebra-sequence-and-function-spaces.qmd)
+- [Foundations of Arithmetic: Primes, Radicals, and the Riemann Hypothesis](foundations-of-arithmetic-primes-radicals-and-the-riemann-hypothesis.qmd)
+:::
+
+---
+
+## The Seven Bridges of Königsberg
+
+The city of Königsberg (now Kaliningrad) sat on both banks of the Pregel River and two islands, connected by **seven bridges**. The puzzle: walk through the city crossing **each bridge exactly once** and return to the start.
+
+**Euler's insight (1736):** replace landmasses by **vertices** and bridges by **edges** — the first **graph**. The question becomes whether the graph has a closed trail using every edge exactly once (an **Eulerian circuit**).
+
+**Euler's theorem.** A connected graph has an Eulerian circuit iff **every vertex has even degree**. It has an Eulerian **path** (open trail) iff **exactly zero or two vertices have odd degree** (the odd-degree vertices are the endpoints).
+
+Königsberg had four vertices of **odd** degree (3, 3, 3, 5), so no such walk exists. The distances and shapes were irrelevant; only the **parity of degrees** mattered. This is the birth of both graph theory and topological thinking: an invariant (degree parity) decides a question that geometry alone could not.
+
+### Degrees, Connectivity, and Euler's Formula for Planar Graphs
+
+- **Degree** of a vertex: number of incident edges (loops count twice).
+- **Connected:** any two vertices joined by a path.
+- **Handshake lemma:** the sum of degrees is twice the number of edges, so the number of odd-degree vertices is even.
+- **Planar graph:** drawable with no edge crossings; Euler's formula for a connected planar graph with $V$ vertices, $E$ edges, and $F$ faces (including the outer face):
+$$
+V-E+F=2.
+$$
+This is the same Euler characteristic that governs polyhedra — and it generalizes to surfaces.
+
+---
+
+## Readily Applicable: Eulerian Algorithms
+
+The parity criterion turns into fast algorithms with immediate uses:
+
+- **Hierholzer's algorithm** builds an Eulerian circuit in $O(E)$ time by following unused edges until stuck and splicing cycles.
+- **Route inspection (the Chinese Postman problem):** a postal worker or snowplow must traverse every street; if the graph has odd-degree vertices, the optimal route pairs them with shortest paths and reuses those edges. Euler's parity theorem is the starting point.
+- **Genome assembly:** reads are $k$-mers; build a **de Bruijn graph** whose edges are $(k{+}1)$-mers; a genome corresponds to an **Eulerian path** through the graph. This is the algorithm behind many real assemblers (Euler, Velvet, SPAdes).
+- **Circuit design and robotics:** traversing every wire or every configuration edge exactly once.
+
+The laboratory implements Hierholzer and a working mini-assembler.
+
+---
+
+## Topology: Shape Without Distance
+
+**Topology** studies properties preserved under **homeomorphism**: a continuous bijection with continuous inverse ("continuous deformations," no cutting or gluing). A coffee cup and a donut are homeomorphic (both have one hole).
+
+**Invariants** distinguish spaces:
+
+- **Connectivity** (connected components).
+- **Compactness** and **closedness**.
+- **Genus** (number of holes/handles).
+- **Orientability** (two-sided vs one-sided).
+- **Euler characteristic** $\chi$.
+- **Fundamental group** $\pi_1$ and **homology** (algebraic invariants).
+
+A donut (torus) and a sphere differ in genus and Euler characteristic; no amount of bending changes that.
+
+---
+
+## Surfaces and Their Classification
+
+A **surface** is a space locally like the plane. **Closed** surfaces are compact and without boundary. The **classification theorem** says every closed surface is determined by two invariants:
+
+1. **Orientability** (two-sided or one-sided).
+2. **Genus** $g$ (number of handles).
+
+For a connected closed orientable surface of genus $g$, the Euler characteristic is
+$$
+\chi = V-E+F = 2-2g.
+$$
+
+- **Sphere:** $g=0$, $\chi=2$.
+- **Torus:** $g=1$, $\chi=0$.
+- **Double torus:** $g=2$, $\chi=-2$, and so on.
+
+Non-orientable closed surfaces are built from **projective planes** or one **Klein bottle**; a sphere with $k$ Möbius bands has $\chi=2-k$.
+
+### The Möbius Strip
+
+Take a strip of paper, give it a **half twist**, and glue the ends. The result is the **Möbius strip**:
+
+- It has **one side** and **one edge** (a single closed curve).
+- It is **non-orientable**: there is no consistent choice of "up."
+- Cutting it down the middle does **not** separate it — it produces one longer, thinner two-sided band.
+
+Applications: conveyor belts and drive belts that wear evenly (each "side" becomes both sides), Möbius resistor designs, continuous-loop tapes, and mathematical art (Escher's *Möbius Strip II*). Bach's *Musical Offering* crab canon has a Möbius-like structure.
+
+### The Klein Bottle
+
+Glue two Möbius strips along their boundary and you get the **Klein bottle**, a closed non-orientable surface with $\chi=0$. It has:
+
+- **No inside or outside** (non-orientable).
+- **No boundary** (closed).
+- **Cannot be embedded in $\mathbb{R}^3$** without self-intersection; an immersion with a passage through itself is the usual glass-model picture. It embeds in $\mathbb{R}^4$.
+
+The **projective plane** ($\chi=1$) is the other basic non-orientable surface; the Klein bottle is the connected sum of two projective planes.
+
+### Connected Sums
+
+Gluing two surfaces by removing a disk from each and joining the boundaries yields the **connected sum**. The sphere is the identity; the torus is the connected sum of two; the Klein bottle is the connected sum of two projective planes. This operation generates the whole classification table.
+
+---
+
+## Applications of Topology
+
+Topology is not merely abstract; its invariants and ideas are used widely:
+
+- **Topological data analysis (TDA):** **persistent homology** tracks holes across scales in point-cloud data, used in biology, materials, and finance.
+- **Robotics and motion planning:** **configuration spaces** of a robot are manifolds or graphs; connectivity and homotopy decide reachability.
+- **Computer graphics and 3D printing:** **genus** and Euler characteristic detect and repair mesh defects (holes, non-manifold edges); a watertight mesh has a well-defined genus.
+- **Knot theory:** DNA topology and polymer physics; the trefoil is a chiral knot; knot invariants (Jones polynomial) classify entanglement.
+- **Network routing:** graph connectivity, planarity, and Eulerian/Hamiltonian traversal drive GPS routing, internet topology, and circuit layout.
+- **Materials and physics:** topological insulators, anyons, and topological quantum computing rely on global invariants robust to local perturbation.
+- **Differential geometry's global half:** Gauss–Bonnet links curvature to $\chi$ — local geometry determines global topology.
+
+**The recurring lesson:** the invariants that do not change under deformation are the ones that carry robust information.
+
+---
+
+## Laboratory: Graphs, Surfaces, and Applicable Algorithms
+
+### Hierholzer's Eulerian Circuit
+
+```{python}
+from collections import defaultdict
+
+def eulerian_circuit(edges):
+    graph = defaultdict(list)
+    degree = defaultdict(int)
+    for u, v in edges:
+        graph[u].append(v); graph[v].append(u)
+        degree[u] += 1; degree[v] += 1
+    odd = [v for v, d in degree.items() if d % 2]
+    if odd:
+        return None, odd
+    # Hierholzer
+    stack, circuit = [next(iter(graph))], []
+    local = {u: list(vs) for u, vs in graph.items()}
+    while stack:
+        u = stack[-1]
+        if local.get(u):
+            v = local[u].pop(); local[v].remove(u)
+            stack.append(v)
+        else:
+            circuit.append(stack.pop())
+    return circuit[::-1], []
+
+konigsberg = [("A","B"),("A","C"),("A","D"),("B","D"),("B","D"),("C","D"),("C","D")]
+eulerian = [("A","B"),("B","C"),("C","A"),("C","D"),("D","E"),("E","C")]
+
+print("=== KÖNIGSBERG (Seven Bridges) ===")
+circ, odd = eulerian_circuit(konigsberg)
+print(f"  Eulerian circuit exists? {circ is not None}; odd-degree vertices: {sorted(odd)}")
+print("  -> no walk crosses every bridge exactly once (Euler, 1736).")
+
+print("\n=== A SOLVABLE GRAPH ===")
+circ, odd = eulerian_circuit(eulerian)
+print(f"  circuit: {' -> '.join(circ)}")
+
+print("\n=== ROUTE INSPECTION (Chinese Postman) ===")
+def odd_vertices(edges):
+    deg = defaultdict(int)
+    for u, v in edges: deg[u] += 1; deg[v] += 1
+    return [v for v, d in deg.items() if d % 2]
+print(f"  odd-degree vertices needing pairing: {odd_vertices(konigsberg)}")
+print("  the optimal route pairs them by shortest paths and reuses those edges.")
+```
+
+### Genome Assembly via de Bruijn Graph
+
+```{python}
+def assemble(reads, k):
+    # de Bruijn: nodes are (k-1)-mers, edges are k-mers
+    graph = defaultdict(list)
+    indeg = defaultdict(int); outdeg = defaultdict(int)
+    for r in reads:
+        for i in range(len(r) - k + 1):
+            kmer = r[i:i+k]
+            a, b = kmer[:-1], kmer[1:]
+            graph[a].append(b); indeg[b] += 1; outdeg[a] += 1
+    nodes = set(list(graph) + list(indeg))
+    starts = [n for n in nodes if outdeg[n] - indeg[n] == 1]
+    start = starts[0] if starts else next(iter(nodes))
+    # Hierholzer on directed graph
+    stack, path = [start], []
+    local = {u: list(vs) for u, vs in graph.items()}
+    while stack:
+        u = stack[-1]
+        if local.get(u):
+            stack.append(local[u].pop())
+        else:
+            path.append(stack.pop())
+    path = path[::-1]
+    return path[0] + "".join(p[-1] for p in path[1:])
+
+reads = ["ATGGC", "TGGCA", "GGCAT", "GCATG"]
+print("=== DE BRUIJN GENOME ASSEMBLY (k=5) ===")
+print(f"  reads: {reads}")
+print(f"  assembled contig: {assemble(reads, 5)}")
+print("  a genome is an Eulerian path in the de Bruijn graph of its k-mers.")
+```
+
+### Euler Characteristic and Genus of Meshes
+
+```{python}
+#| label: fig-surfaces
+#| fig-cap: "Euler characteristic and genus of surfaces. Left: a sphere (genus 0, χ = 2) and a torus (genus 1, χ = 0) shown as the two ends of the classification. Right: the genus computed from a triangle mesh by χ = V − E + F and g = (2 − χ)/2, which is exactly how 3D modeling software detects holes and repairs meshes. A watertight torus mesh has χ = 0."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def torus_mesh(nu=24, nv=12):
+    verts, faces = [], []
+    for i in range(nu):
+        for j in range(nv):
+            u = 2*np.pi*i/nu; v = 2*np.pi*j/nv
+            R, r = 2.0, 0.7
+            verts.append([(R + r*np.cos(v))*np.cos(u), (R + r*np.cos(v))*np.sin(u), r*np.sin(v)])
+    idx = lambda i, j: (i % nu)*nv + (j % nv)
+    for i in range(nu):
+        for j in range(nv):
+            a, b, c, d = idx(i,j), idx(i+1,j), idx(i+1,j+1), idx(i,j+1)
+            faces += [(a,b,c), (a,c,d)]
+    return np.array(verts), faces
+
+V, F = torus_mesh()
+E = set()
+for a, b, c in F:
+    for x, y in [(a,b),(b,c),(c,a)]:
+        E.add((min(x,y), max(x,y)))
+chi = len(V) - len(E) + len(F)
+g = (2 - chi) / 2
+print("=== MESH EULER CHARACTERISTIC AND GENUS ===")
+print(f"  torus mesh: V={len(V)}, E={len(E)}, F={len(F)} -> chi={chi}, genus={g:.1f}")
+print("  sphere: chi=2, genus=0; each handle lowers chi by 2.")
+print("  a watertight mesh obeys V - E + F = 2 - 2g; a defect breaks it.")
+
+fig = plt.figure(figsize=(12.5, 5))
+ax1 = fig.add_subplot(1, 2, 1, projection="3d")
+ax1.plot_trisurf(V[:,0], V[:,1], V[:,2], triangles=F, color="#2980b9", alpha=0.9, linewidth=0)
+ax1.set_title(f"Torus mesh: chi={chi}, genus={g:.0f}"); ax1.set_axis_off()
+
+ax2 = fig.add_subplot(1, 2, 2)
+labels = ["sphere", "torus", "double torus", "Klein bottle"]
+genus = [0, 1, 2, None]
+chis = [2, 0, -2, 0]
+colors = ["#27ae60", "#2980b9", "#8e44ad", "#e74c3c"]
+ax2.bar(labels, chis, color=colors)
+ax2.axhline(0, color="k", lw=0.8)
+ax2.set_title(r"Euler characteristic $\chi = 2 - 2g$ (Klein bottle: non-orientable, $\chi=0$)")
+ax2.set_ylabel(r"$\chi$"); ax2.grid(axis="y", alpha=0.3)
+plt.tight_layout(); plt.show()
+```
+
+### The Möbius Strip and Klein Bottle
+
+```{python}
+#| label: fig-mobius-klein
+#| fig-cap: "Two non-orientable surfaces. Left: the Möbius strip, made by giving a band a half twist before joining its ends; it has one side and one edge. Right: the Klein bottle, a closed one-sided surface that cannot be embedded in three dimensions without intersecting itself; the familiar glass model passes through its own wall. Both are central examples in the classification of surfaces."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+fig = plt.figure(figsize=(13, 5.5))
+
+# Möbius strip
+ax1 = fig.add_subplot(1, 2, 1, projection="3d")
+u = np.linspace(0, 2*np.pi, 120); v = np.linspace(-1, 1, 20)
+U, V = np.meshgrid(u, v)
+X = (1 + V/2*np.cos(U/2))*np.cos(U)
+Y = (1 + V/2*np.cos(U/2))*np.sin(U)
+Z = V/2*np.sin(U/2)
+ax1.plot_surface(X, Y, Z, cmap="viridis", alpha=0.95, linewidth=0)
+ax1.set_title("Möbius strip (one side, one edge)"); ax1.set_axis_off()
+
+# Klein bottle (figure-8 immersion)
+ax2 = fig.add_subplot(1, 2, 2, projection="3d")
+u = np.linspace(0, 2*np.pi, 120); v = np.linspace(0, 2*np.pi, 60)
+U, V = np.meshgrid(u, v)
+a = 2.0
+X = (a + np.cos(U/2)*np.sin(V) - np.sin(U/2)*np.sin(2*V))*np.cos(U)
+Y = (a + np.cos(U/2)*np.sin(V) - np.sin(U/2)*np.sin(2*V))*np.sin(U)
+Z = np.sin(U/2)*np.sin(V) + np.cos(U/2)*np.sin(2*V)
+ax2.plot_surface(X, Y, Z, cmap="plasma", alpha=0.95, linewidth=0)
+ax2.set_title("Klein bottle (non-orientable, closed)"); ax2.set_axis_off()
+plt.tight_layout(); plt.show()
+
+print("=== NON-ORIENTABLE SURFACES ===")
+print("  Möbius strip: cut along the middle -> one longer two-sided band (not two pieces).")
+print("  Klein bottle: chi=0, cannot embed in R^3 without self-intersection; embeds in R^4.")
+print("  classification: closed surfaces are determined by orientability and genus.")
+```
+
+The laboratory takes topology from puzzle to production: an $O(E)$ Eulerian-circuit algorithm solves route inspection and assembles genomes, and the Euler characteristic of a mesh computes its genus — the exact computation 3D software uses to detect holes.
+
+---
+
+## Summary
+
+$$
+\begin{aligned}
+&\textbf{Königsberg: } && \text{graph model; Eulerian circuit iff all degrees even (path iff 0 or 2 odd).} \\[3pt]
+&\textbf{Planar graphs: } && V-E+F=2;\ \text{handshake lemma; parity is the key invariant.} \\[3pt]
+&\textbf{Applications: } && \text{route inspection, de Bruijn genome assembly, circuit design.} \\[3pt]
+&\textbf{Topology: } && \text{homeomorphism; invariants: connectivity, genus, orientability, } \chi,\ \pi_1. \\[3pt]
+&\textbf{Surfaces: } && \text{classified by orientability + genus;} \chi=2-2g. \\[3pt]
+&\textbf{Möbius / Klein: } && \text{one-sided, non-orientable; Klein bottle is closed but not embeddable in } \mathbb{R}^3. \\[3pt]
+&\textbf{Real uses: } && \text{TDA, robotics, mesh repair, knot theory, materials, routing.}
+\end{aligned}
+$$
+
+Topology is the geometry that survives bending. Its sibling, **measure theory**, provides the other great abstraction of analysis — the rigorous theory of length, area, and integration — and is the subject of [the next article](measure-theory-and-lebesgue-measure.qmd).
+
+---
+
+## Curated References and Further Reading
+
+1. **Euler, L. (1736).** *Solutio problematis ad geometriam situs pertinentis.* (The Königsberg bridges.)
+2. **Munkres, James (2000).** *Topology*, 2nd ed. Prentice Hall.
+3. **Hatcher, Allen (2002).** *Algebraic Topology.* Cambridge University Press.
+4. **Massey, W. S. (1991).** *A Basic Course in Algebraic Topology.* Springer.
+5. **Peleg, D. & Peleg, D.** *Eulerian and Hamiltonian Graphs* (algorithmic treatments).
+6. **Pevzner, P., Tang, H. & Waterman, M. (2001).** *An Eulerian Path Approach to DNA Fragment Assembly.* PNAS.
+7. **Edelsbrunner, H. & Harer, J. (2010).** *Computational Topology: An Introduction.* AMS.
+8. **Klein, Felix (1882).** *Über Riemann's Theorie der algebraischen Functionen und ihrer Integrale.* (The Klein bottle.)

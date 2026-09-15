@@ -8,6 +8,7 @@ format:
   html:
     toc: true
     math: true
+jupyter: python3
 ---
 
 ## 1. The Conceptual Shift: From Continuous Curves to Discrete Optimization
@@ -365,3 +366,31 @@ All six implementations (`Python 3`, `C++20`, `Rust`, `Julia`, `Modern Fortran`,
 <div style="text-align: center; color: #888; font-size: 0.9em;">
   © 2026 Igor Kan
 </div>
+
+
+## Appendix: Readily Applicable Code — The Ritz Method (FEM's Ancestor)
+
+Variational principles turn solving a differential equation into minimizing an energy functional. The Ritz method approximates the solution with a finite basis and minimizes — the direct ancestor of the finite element method used in every engineering simulator.
+
+```{python}
+import numpy as np
+from scipy.optimize import minimize
+
+# Solve -u'' = 1 on (0,1), u(0)=u(1)=0; exact solution u = x(1-x)/2
+n = 8
+x = np.linspace(0, 1, n + 2)
+h = x[1] - x[0]
+
+def energy(coeffs):
+    u = np.concatenate([[0], coeffs, [0]])
+    du = np.diff(u) / h
+    return 0.5 * np.sum(du**2) * h - np.sum(u[1:-1]) * h   # integral of u'^2/2 - u
+
+res = minimize(energy, np.zeros(n), method="CG", options={"maxiter": 5000})
+u = np.concatenate([[0], res.x, [0]])
+exact = x * (1 - x) / 2
+
+print("=== RITZ METHOD (energy minimization) ===")
+print(f"  max error vs exact u = x(1-x)/2: {np.max(np.abs(u - exact)):.2e}")
+print("  minimizing the energy reproduces the boundary-value-problem solution.")
+```

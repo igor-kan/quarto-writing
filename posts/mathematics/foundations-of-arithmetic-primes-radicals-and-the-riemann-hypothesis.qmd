@@ -13,6 +13,7 @@ format:
     math: mathjax
     code-fold: show
     code-tools: true
+jupyter: python3
 ---
 
 ::: {.callout-note appearance="simple"}
@@ -811,3 +812,35 @@ for p_val in [2, 3, 5, 7]:
 7. **Titchmarsh, E. C. (1986)**. *The Theory of the Riemann Zeta-Function* (2nd ed., rev. by D. R. Heath-Brown). Oxford University Press.
 8. **Ore, Øystein (1948)**. *"On the averages of the divisors of a number"*. The American Mathematical Monthly, 55(10): 615–619.
 9. **Ochem, Pascal, & Rao, Michaël (2012)**. *"Odd perfect numbers are greater than $10^{1500}$"*. Mathematics of Computation, 81(279): 1869–1877.
+
+
+## Appendix: Readily Applicable Code — Counting Primes and the Zeta Function
+
+Two of the article's central objects are easy to experiment with: the prime-counting function pi(x) and the Riemann zeta function zeta(s).
+
+```{python}
+import numpy as np
+import mpmath as mp
+
+def sieve(n):
+    s = np.ones(n + 1, bool); s[:2] = False
+    for i in range(2, int(n**0.5) + 1):
+        if s[i]:
+            s[i*i::i] = False
+    return np.nonzero(s)[0]
+
+N = 5_000_000
+primes = sieve(N)
+xs = np.logspace(2, np.log10(N), 24).astype(int)
+print("=== PRIME COUNTING THEOREM ===")
+print(f"{'x':>10} {'pi(x)':>10} {'x/ln x':>10} {'Li(x)':>10}")
+for xv in xs[::4]:
+    pi = np.searchsorted(primes, xv, side="right")
+    print(f"{xv:>10} {pi:>10} {xv/np.log(xv):>10.0f} {float(mp.li(xv)):>10.0f}")
+
+print("\n=== RIEMANN ZETA ===")
+print(f"  zeta(2) = {float(mp.zeta(2)):.10f}  (pi^2/6 = {np.pi**2/6:.10f})")
+rho = mp.zetazero(1)
+print(f"  first nontrivial zero: rho = 0.5 + {float(rho.imag):.6f}i")
+print("  the Riemann Hypothesis says every nontrivial zero has real part 1/2.")
+```

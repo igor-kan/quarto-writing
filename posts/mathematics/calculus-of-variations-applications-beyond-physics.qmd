@@ -9,6 +9,7 @@ format:
     toc: true
     toc-depth: 3
     math: true
+jupyter: python3
 ---
 
 ## 1. The Conceptual Shift: Universal Optimality Across Disciplines
@@ -640,3 +641,32 @@ All six implementations (`Python 3`, `C++20`, `Rust`, `Julia`, `Modern Fortran`,
 <div style="text-align: center; color: #888; font-size: 0.9em;">
   © 2026 Igor Kan
 </div>
+
+
+## Appendix: Readily Applicable Code — The Brachistochrone Numerically
+
+The classic application of the calculus of variations is the curve of fastest descent. Rather than solving the Euler–Lagrange equation by hand, we discretize the path and minimize the descent time directly — the strategy behind optimal control and trajectory optimization.
+
+```{python}
+import numpy as np
+from scipy.optimize import minimize
+
+g, y1, n = 9.81, 1.0, 40
+x = np.linspace(0, 1, n + 1)
+y0 = np.linspace(0, y1, n + 1)          # straight-line initial guess
+
+def descent_time(y_int):
+    y = np.concatenate([[0.0], y_int, [y1]])
+    dydx = np.gradient(y, x)
+    integrand = np.sqrt((1 + dydx**2) / (2 * g * np.maximum(y, 1e-6)))
+    return np.trapz(integrand, x)
+
+res = minimize(descent_time, y0[1:-1], method="L-BFGS-B",
+               bounds=[(1e-4, None)] * (n - 1), options={"maxiter": 1000})
+
+print("=== BRACHISTOCHRONE (curve of fastest descent) ===")
+print(f"  straight-line time : {descent_time(y0[1:-1]):.6f} s")
+print(f"  optimized time     : {res.fun:.6f} s")
+print(f"  improvement        : {(1 - res.fun / descent_time(y0[1:-1])) * 100:.2f}%")
+print("  the optimal curve is a cycloid, found here by direct minimization.")
+```
