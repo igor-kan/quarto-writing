@@ -1,0 +1,363 @@
+---
+title: "Series in Real and Complex Analysis: Special Sums, Ramanujan, and Closed Forms"
+subtitle: "The geometric series and its complex properties, power series and analytic continuation, summability (Cesàro, Abel, zeta), the Riemann zeta function, the famous regularized sums 1−1+1⋯ = 1/2 and 1+2+3+⋯ = −1/12, derivations of ln 2, e, and the Basel values π²/6 and π⁴/90, why even zeta powers have closed forms in π and odd ones do not, and what a closed-form expression really is"
+author: "Igor Kan"
+date: "2026-09-14"
+categories: [Mathematics, Analysis, Complex Analysis, Series, Riemann Zeta, Number Theory]
+description: "A comprehensive treatment of series in real and complex analysis. It develops the geometric series and its complex convergence, radius, termwise differentiation and integration, and analytic continuation; reviews convergence, absolute and conditional convergence, and uniform convergence; introduces summability methods including Cesàro, Abel, Borel, and zeta regularization; derives the famous regularized sums 1-1+1-... = 1/2, 1+1+1+... = -1/2, and Ramanujan's 1+2+3+... = -1/12 and explains why they arise in physics; develops the Riemann zeta function, its Euler product, analytic continuation, and functional equation, with the Bernoulli-number closed forms for zeta(2k) proportional to pi^(2k) and the contrast with odd zeta values that have no known closed form; derives the special sums converging to 1, ln 2, e, pi^2/6, and pi^4/90; defines closed-form expressions with examples and non-examples; and includes an executable Python laboratory using mpmath and SciPy."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 4
+    number-sections: true
+jupyter: python3
+toc: true
+toc-depth: 4
+number-sections: true
+---
+
+::: {.callout-note appearance="simple"}
+*Series are sums with infinitely many terms, and their central paradox is that the same expression can be a perfectly ordinary number, a divergent process, or a physically meaningful **regularized** value depending on how you interpret it. The geometric series is the prototype; the Riemann zeta function is the master key; and identities like $1+2+3+\cdots=-\tfrac{1}{12}$ are the spectacular edge of the theory.*
+
+This article moves from the real line to the complex plane, through several notions of summation, to the constants that fall out — $\ln 2$, $e$, $\pi^2/6$, $\pi^4/90$ — and the ones that stubbornly do not.
+:::
+
+::: {.callout-tip collapse="true"}
+### Companion Treatises in this Series
+- [Sequences, Series, and Convergence Tests](sequences-series-and-convergence-tests.qmd)
+- [Progressions, Means, and Inequalities](progressions-means-and-inequalities.qmd)
+- [Infinite-Dimensional Algebra: Spaces of Sequences and Functions](infinite-dimensional-algebra-sequence-and-function-spaces.qmd)
+- [Iterative Methods and Computing the Constants](iterative-methods-and-computing-constants-pi-and-eulers-constant.qmd)
+- [Foundations of Arithmetic: Primes, Radicals, and the Riemann Hypothesis](foundations-of-arithmetic-primes-radicals-and-the-riemann-hypothesis.qmd)
+:::
+
+---
+
+## The Geometric Series
+
+$$
+\sum_{n=0}^\infty z^n=\frac{1}{1-z}\quad\text{for }|z|<1,
+$$
+with partial sums $S_N=\frac{1-z^{N}}{1-z}$ and remainder $R_N=\frac{z^{N}}{1-z}$. Convergence is **absolute** for $|z|<1$ and **diverges** for $|z|>1$; on $|z|=1$ it converges only at $z=-1$ (to $1/2$, non-absolutely) and diverges elsewhere.
+
+### Real and Complex Differences
+
+On the real line, $|r|<1$ is just an interval. In the complex plane, the region of convergence is a **disk**, and the picture is richer:
+
+- **Geometric decay:** $|z^n|=|z|^n\to0$ iff $|z|<1$; the phase of $z$ controls oscillation.
+- **Radius of convergence:** the series has radius $R=1$; the boundary is where all the action is.
+- **Termwise operations:** inside the disk, power series can be differentiated and integrated term by term:
+$$
+\sum_{n\ge0} n z^{n-1}=\frac{1}{(1-z)^2},\qquad
+\sum_{n\ge1}\frac{z^n}{n}=-\ln(1-z).
+$$
+- **Analytic continuation:** the function $1/(1-z)$ is defined for all $z\ne1$, even though the series only converges for $|z|<1$. The series *represents* the function locally; the function extends globally. This gap between a series and its sum's continuation is the seed of everything below.
+
+### Power Series and the Geometric Series as Prototype
+
+Every analytic function is locally a power series, and the geometric series is the model: coefficients, radius, boundary behavior, differentiation, integration. The complex case adds **uniform convergence on compact subsets** of the disk (not on the whole open disk), and boundary phenomena like Abel's theorem on radial limits.
+
+---
+
+## Convergence and Summability
+
+A series $\sum a_n$ **converges** (in the ordinary sense) to $L$ if partial sums $S_N\to L$. Facts:
+
+- Convergence requires $a_n\to0$ (not sufficient: harmonic series).
+- **Absolute convergence** ($\sum|a_n|<\infty$) implies convergence and is reorder-invariant.
+- **Conditional convergence** (convergent but not absolutely) is reorder-sensitive: Riemann's rearrangement theorem. Example: the [alternating harmonic series](cauchy-completeness-weierstrass-and-series-convergence.qmd) converges to $\ln2$ but can be rearranged to any value.
+
+When a series does not converge, we may still assign it a value by a **summability method**:
+
+| Method | Idea | Example: $1-1+1-\cdots$ |
+|---|---|---|
+| **Cesàro** | limit of averages of partial sums | $1/2$ |
+| **Abel** | $\lim_{z\to1^-}\sum a_n z^n$ | $1/2$ |
+| **Borel** | Laplace-transform weighting | $1/2$ |
+| **Zeta regularization** | $a_n=n^s \Rightarrow \zeta(-s)$ | — |
+
+Each method agrees with ordinary convergence when it exists, and extends the notion of "sum."
+
+---
+
+## Ramanujan and the Regularized Sums
+
+### Grandi's Series: $1-1+1-1+\cdots = \tfrac12$
+
+Partial sums oscillate $1,0,1,0,\dots$. Their **Cesàro means** are $\frac{S_0+\cdots+S_N}{N+1}\to\frac12$, and the **Abel sum** is
+$$
+\lim_{z\to1^-}\sum_{n\ge0}(-z)^n=\lim_{z\to1^-}\frac{1}{1+z}=\frac12.
+$$
+So the natural regularized value is $1/2$ — not a "true" sum but a consistent extension.
+
+### $1+1+1+\cdots = -\tfrac12$
+
+By the same Abel/zeta logic, $\zeta(0)=-\tfrac12$ "sums" the constant series to $-1/2$ in the regularized sense.
+
+### Ramanujan's Sum: $1+2+3+\cdots = -\tfrac{1}{12}$
+
+This is the most famous identity of the genre. It is **not** an ordinary sum — the series diverges — but the **analytic continuation** of $\zeta(s)=\sum n^{-s}$ to $s=-1$ gives
+$$
+\zeta(-1)=\sum_{n=1}^\infty n \ \Big|_{\text{regularized}}=-\frac{1}{12}.
+$$
+How it is derived (sketch): by **Euler–Maclaurin / functional equation**,
+$$
+\zeta(s)=2^s\pi^{s-1}\sin\!\left(\frac{\pi s}{2}\right)\Gamma(1-s)\,\zeta(1-s),
+$$
+and evaluating at $s=-1$ (using $\zeta(2)=\pi^2/6$, $\Gamma(2)=1$, $\sin(-\pi/2)=-1$) yields $-\frac{1}{12}$.
+
+**Why it matters physically:** the same value appears in the **Casimir effect** (force between parallel plates), in **bosonic string theory** (the critical dimension $D=26$), and in renormalization, because the regularized vacuum energy involves $\sum n$. The mathematics of analytic continuation makes the divergent expression mean something.
+
+---
+
+## The Riemann Zeta Function
+
+$$
+\zeta(s)=\sum_{n=1}^\infty\frac{1}{n^s}\quad(\operatorname{Re}s>1),
+$$
+with the **Euler product**
+$$
+\zeta(s)=\prod_{p\ \text{prime}}\frac{1}{1-p^{-s}},
+$$
+encoding unique factorization, and the **functional equation** that continues it to all $s\ne1$. Its zeros govern the distribution of primes — the [Riemann hypothesis](foundations-of-arithmetic-primes-radicals-and-the-riemann-hypothesis.qmd). Special values:
+
+$$
+\zeta(0)=-\frac12,\qquad \zeta(-1)=-\frac{1}{12},\qquad \zeta(-2k)=0\ (\text{trivial zeros}),\qquad \zeta(2)=\frac{\pi^2}{6}.
+$$
+
+### Even Powers: Closed Forms in $\pi$
+
+For positive integers $k$,
+$$
+\zeta(2k)=(-1)^{k+1}\,\frac{B_{2k}\,(2\pi)^{2k}}{2\,(2k)!},
+$$
+where $B_{2k}$ are the **Bernoulli numbers**. Examples:
+
+$$
+\zeta(2)=\frac{\pi^2}{6},\qquad
+\zeta(4)=\frac{\pi^4}{90},\qquad
+\zeta(6)=\frac{\pi^6}{945},\qquad
+\zeta(8)=\frac{\pi^8}{9450}.
+$$
+
+Every **even** zeta value is a rational multiple of $\pi^{2k}$ — a genuine closed form.
+
+### Odd Powers: No Known Closed Form
+
+For odd arguments $>1$ there is **no known closed form**. The history:
+
+- **Apéry (1978)** proved $\zeta(3)$ (Apéry's constant) is **irrational**, but it is not known to be a rational multiple of $\pi^3$ or to have any closed form.
+- $\zeta(5),\zeta(7),\dots$ are not even known to be irrational in general.
+- There are special identities (§ below) expressing certain odd sums via $\ln2$, $\pi$, and $\zeta(3)$, but no general formula.
+
+This asymmetry between even and odd zeta values is one of the deepest unexplained patterns in number theory.
+
+---
+
+## Special Sums and Their Values
+
+A catalogue worth memorizing:
+
+$$
+\sum_{n=1}^\infty\frac{1}{2^n}=1 \quad(\text{Zeno}),\qquad
+\sum_{n=0}^\infty\frac{1}{n!}=e,
+$$
+$$
+\sum_{n=1}^\infty\frac{(-1)^{n+1}}{n}=\ln2,\qquad
+\sum_{n=1}^\infty\frac{1}{n^2}=\frac{\pi^2}{6},\qquad
+\sum_{n=1}^\infty\frac{1}{n^4}=\frac{\pi^4}{90}.
+$$
+
+- The geometric sum resolves **Zeno's paradox** (see [the Cauchy article](cauchy-completeness-weierstrass-and-series-convergence.qmd)).
+- $e=\sum 1/n!$ is the fastest-converging of the constants.
+- $\ln2$ comes from the Mercator series $-\ln(1-x)=\sum x^n/n$ at $x=-1$ (Abel-justified on the boundary).
+- The **Basel problem** $\zeta(2)=\pi^2/6$ was Euler's 1735 triumph; $\zeta(4)=\pi^4/90$ followed.
+
+Related identities: $\sum 1/(2n-1)^2=\pi^2/8$; $\sum (-1)^{n+1}/(2n-1)=\pi/4$ (Gregory–Leibniz); **Catalan's constant** $G=\sum(-1)^n/(2n+1)^2$ has no known closed form (another open problem); and $\sum_{n\ge1} H_n/n^2=2\zeta(3)$ relates harmonic sums to odd zeta values.
+
+---
+
+## What Is a Closed-Form Expression?
+
+A **closed form** is an expression built from a fixed, finite set of standard operations — arithmetic, powers, roots, exponentials, logarithms, trigonometric functions, and named constants ($\pi$, $e$, $\gamma$, $\varphi$) — that gives a value exactly in one evaluation. Non-examples include infinite series, integrals, limits, and recursively defined quantities unless they reduce to the standard functions.
+
+| Value | Closed form? | Notes |
+|---|---|---|
+| $\zeta(2)$ | yes | $\pi^2/6$ |
+| $\zeta(4)$ | yes | $\pi^4/90$ |
+| $\zeta(3)$ | **no known** | irrational (Apéry), no known closed form |
+| $e$ | yes (as a limit/series) | $e=\sum1/n!$; one of the definitions |
+| $\ln2$ | yes | as the alternating harmonic sum |
+| Fibonacci $F_n$ | yes | Binet: $(\varphi^n-\psi^n)/\sqrt5$ |
+| $1+2+3+\cdots$ | not an ordinary sum | regularized value $-1/12$, not a closed form |
+| $\sum 1/n!$ | not a closed form per se | but equals $e$, which is named |
+
+The distinction is partly historical and partly structural: $\zeta(2k)$ has a closed form because the Bernoulli numbers are "the right constants"; $\zeta(2k+1)$ resists because no such reduction exists (or at least none is known). Naming a constant (like $\gamma$ or $G$) is not the same as finding a closed form.
+
+---
+
+## Laboratory: Series in Action
+
+### Geometric Series in the Complex Plane
+
+```{python}
+#| label: fig-geometric-complex
+#| fig-cap: "Partial sums of the complex geometric series. For |z|<1 (left) the partial sums spiral inward to 1/(1−z); for |z|>1 (right) they fly outward and never settle. The disk of convergence is the real difference between real and complex series, and its boundary — the unit circle — is where the most delicate behavior occurs."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(1, 2, figsize=(12.5, 5))
+for ax, z, title in [(axes[0], 0.6 + 0.4j, "|z|<1: converges to 1/(1−z)"),
+                     (axes[1], 1.05 + 0.2j, "|z|>1: diverges")]:
+    S = [0]
+    for n in range(30):
+        S.append(S[-1] + z ** n)
+    S = np.array(S)
+    ax.plot(S.real, S.imag, "o-", color="#2980b9", ms=3)
+    if abs(z) < 1:
+        ax.plot((1/(1-z)).real, (1/(1-z)).imag, "r*", ms=15, label="1/(1−z)")
+    ax.set_title(title); ax.set_aspect("equal"); ax.grid(alpha=0.3)
+    ax.set_xlabel("Re"); ax.set_ylabel("Im"); ax.legend()
+plt.tight_layout(); plt.show()
+
+for z in [0.6 + 0.4j, 0.9 * np.exp(1j), 1.05 + 0.2j]:
+    S = sum(z ** n for n in range(200))
+    print(f"  z={z:.3f}: 200-term partial sum = {S:.5f},  1/(1−z) = {1/(1-z):.5f}")
+```
+
+### Special Sums: 1, ln 2, e, π²/6, π⁴/90
+
+```{python}
+#| label: fig-special-sums
+#| fig-cap: "Error (on a log scale) of partial sums against their closed-form values for four famous series. The geometric and factorial series converge geometrically (straight lines on log scale); the Basel series converges like 1/n; the alternating harmonic series, though convergent to ln 2, converges only like 1/n. Convergence rate depends on the series, not just on the value."
+
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+
+N = 20000
+ns = np.arange(1, N)
+fact_n = np.arange(1, 171)
+fact_terms = np.array([1 / math.factorial(k) for k in fact_n])
+series = {
+    r"$\sum 1/2^n \to 1$": (ns, np.abs(np.cumsum(1 / 2.0 ** ns) - 1)),
+    r"$\sum 1/n! \to e$": (fact_n, np.abs(np.cumsum(fact_terms) - np.e)),
+    r"$\sum 1/n^2 \to \pi^2/6$": (ns, np.abs(np.cumsum(1.0 / ns ** 2) - np.pi ** 2 / 6)),
+    r"$\sum (-1)^{n+1}/n \to \ln 2$": (ns, np.abs(np.cumsum((-1.0) ** (ns + 1) / ns) - np.log(2))),
+}
+fig, ax = plt.subplots(figsize=(10, 5))
+for label, (x, err) in series.items():
+    ax.loglog(x, np.maximum(err, 1e-18), label=label)
+ax.set_title("Convergence of special series to their closed forms")
+ax.set_xlabel("terms"); ax.set_ylabel("absolute error"); ax.legend(); ax.grid(alpha=0.3, which="both")
+plt.tight_layout(); plt.show()
+
+print("=== SPECIAL SUMS AT N=1000 ===")
+n = np.arange(1, 1001)
+fact = np.array([1 / math.factorial(k) for k in range(1001)])
+print(f"  sum 1/2^n      = {np.sum(1/2.0**n):.12f}  (1)")
+print(f"  sum 1/n!       = {np.sum(fact):.12f}  (e={np.e:.12f})")
+print(f"  alternating H  = {np.sum((-1.0)**(n+1)/n):.12f}  (ln2={np.log(2):.12f})")
+print(f"  Basel          = {np.sum(1/n**2):.12f}  (pi^2/6={np.pi**2/6:.12f})")
+print(f"  zeta(4)        = {np.sum(1/n**4):.12f}  (pi^4/90={np.pi**4/90:.12f})")
+```
+
+### Even Zeta Values: Closed Forms via Bernoulli Numbers
+
+```{python}
+from scipy.special import bernoulli, zeta as zeta_fn
+import numpy as np
+import math
+
+print("=== ZETA(2k) = (-1)^(k+1) B_2k (2π)^(2k) / (2 (2k)!) ===")
+print(f"{'k':>3} {'closed form':>20} {'scipy zeta(2k)':>18} {'match':>8}")
+for k in [1, 2, 3, 4, 5]:
+    B2k = bernoulli(2 * k)[-1]
+    closed = (-1) ** (k + 1) * B2k * (2 * np.pi) ** (2 * k) / (2 * math.factorial(2 * k))
+    exact = float(zeta_fn(2 * k, 1))
+    print(f"{k:>3} {closed:20.12f} {exact:18.12f} {abs(closed-exact) < 1e-9}")
+
+print("\n  every even zeta value is a rational multiple of pi^(2k).")
+print("  odd values (zeta(3), zeta(5), ...) have NO known closed form.")
+```
+
+### Analytic Continuation, Cesàro, and Ramanujan
+
+```{python}
+#| label: fig-zeta-continuation
+#| fig-cap: "The Riemann zeta function. Left: on the real axis the defining series ζ(s)=Σn^(−s) converges only for s>1, where it is plotted; the analytic continuation extends it to all s≠1 (dashed). Right: the Cesàro means of the divergent series 1−1+1−1⋯ converge to 1/2, illustrating how a summability method assigns a value to a divergent series. Analytic continuation gives 1+2+3+⋯ the regularized value ζ(−1)=−1/12."
+
+import numpy as np
+import matplotlib.pyplot as plt
+import mpmath as mp
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.7))
+
+s_pos = np.linspace(1.02, 6, 200)
+zeta_pos = [float(mp.zeta(s)) for s in s_pos]
+s_all = np.linspace(-3, 0.98, 200)
+zeta_all = [float(mp.zeta(s)) for s in s_all]
+axes[0].plot(s_pos, zeta_pos, color="#2980b9", label=r"series (s>1)")
+axes[0].plot(s_all, zeta_all, "--", color="#e74c3c", label="analytic continuation")
+axes[0].axhline(0, color="k", lw=0.6)
+for s0, col in [(0, "#27ae60"), (-1, "#8e44ad"), (-2, "#16a085")]:
+    axes[0].plot(s0, float(mp.zeta(s0)), "o", color=col)
+    axes[0].annotate(f"ζ({s0})={float(mp.zeta(s0)):.3f}", (s0, float(mp.zeta(s0))),
+                     textcoords="offset points", xytext=(4, 6), color=col, fontsize=9)
+axes[0].set_title("Riemann zeta and its continuation")
+axes[0].set_xlabel("s"); axes[0].set_ylabel("ζ(s)"); axes[0].legend(); axes[0].grid(alpha=0.3)
+
+partial = np.cumsum([(-1.0) ** n for n in range(0, 200)])   # +1, -1, +1, ...
+cesaro = np.cumsum(partial) / np.arange(1, 201)
+axes[1].plot(range(1, 201), partial, ".", ms=4, color="#95a5a6", label="partial sums")
+axes[1].plot(range(1, 201), cesaro, color="#e74c3c", lw=2, label="Cesàro means")
+axes[1].axhline(0.5, color="#27ae60", ls="--", label="→ 1/2")
+axes[1].set_title(r"Cesàro summation of $1-1+1-1\cdots$")
+axes[1].set_xlabel("N"); axes[1].set_ylim(-0.1, 1.1); axes[1].legend(); axes[1].grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print("=== REGULARIZED SUMS VIA ZETA ===")
+print(f"  1+1+1+...   -> zeta(0)   = {float(mp.zeta(0)):.6f}  (-1/2)")
+print(f"  1+2+3+...   -> zeta(-1)  = {float(mp.zeta(-1)):.6f}  (-1/12)")
+print(f"  1^2+2^2+... -> zeta(-2)  = {float(mp.zeta(-2)):.6f}  (trivial zero)")
+print(f"  Cesàro sum of 1-1+1-...  = {cesaro[-1]:.6f}")
+print("\n  these are analytic-continuation values, NOT ordinary convergence.")
+```
+
+The laboratory shows the whole arc: geometric convergence in the plane; the special sums converging to their famous constants at different rates; even zeta values reduced to Bernoulli numbers times $\pi^{2k}$; and the analytic continuation and summability methods that make sense of divergent series — including Ramanujan's $-\tfrac{1}{12}$.
+
+---
+
+## Summary
+
+$$
+\begin{aligned}
+&\textbf{Geometric: } && \sum z^n=\frac{1}{1-z}\ (|z|<1);\ \text{disk of convergence; analytic continuation.} \\[3pt]
+&\textbf{Summability: } && \text{Cesàro, Abel, Borel, zeta; } 1-1+1-\cdots=\tfrac12. \\[3pt]
+&\textbf{Ramanujan: } && 1+2+3+\cdots=-\tfrac{1}{12}=\zeta(-1)\ \text{(regularized).} \\[3pt]
+&\textbf{Zeta: } && \zeta(s)=\sum n^{-s}=\prod_p(1-p^{-s})^{-1};\ \text{functional equation.} \\[3pt]
+&\textbf{Even values: } && \zeta(2k)=(-1)^{k+1}\frac{B_{2k}(2\pi)^{2k}}{2(2k)!};\ \zeta(2)=\frac{\pi^2}{6},\ \zeta(4)=\frac{\pi^4}{90}. \\[3pt]
+&\textbf{Odd values: } && \text{no known closed form; } \zeta(3) \text{ irrational (Apéry).} \\[3pt]
+&\textbf{Special sums: } && \sum 2^{-n}=1,\ \sum(-1)^{n+1}/n=\ln2,\ \sum 1/n!=e. \\[3pt]
+&\textbf{Closed form: } && \text{finite expression in standard functions/constants; } \zeta(2k) \text{ yes, } \zeta(2k+1) \text{ no.}
+\end{aligned}
+$$
+
+Series are the bridge between the discrete and the continuous — and between the real line and the complex plane. The same sums appear in the [harmonic analysis of strings and music](../physics/standing-waves-plucked-strings-harmonics-beats-and-doppler.qmd), in the [Basel problem's aftermath in number theory](foundations-of-arithmetic-primes-radicals-and-the-riemann-hypothesis.qmd), and in the renormalized infinities of quantum field theory.
+
+---
+
+## Curated References and Further Reading
+
+1. **Ahlfors, Lars (1979).** *Complex Analysis*, 3rd ed. McGraw-Hill.
+2. **Knopp, Konrad (1956).** *Infinite Sequences and Series.* Dover.
+3. **Titchmarsh, E. C. (1986).** *The Theory of the Riemann Zeta-Function*, 2nd ed. Oxford.
+4. **Edwards, H. M. (1974).** *Riemann's Zeta Function.* Academic Press.
+5. **Hardy, G. H. (1949).** *Divergent Series.* Oxford. (Summability: Cesàro, Abel, Borel.)
+6. **Apéry, R. (1979).** *Irrationalité de ζ(2) et ζ(3).* Astérisque.
+7. **Berndt, B. (1985).** *Ramanujan's Notebooks, Part I.* Springer.
+8. **Borwein, J. & Borwein, P. (1987).** *Pi and the AGM.* Wiley. (Zeta values and fast algorithms.)
