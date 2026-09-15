@@ -226,6 +226,7 @@ To prevent API rate limits and throttling caused by shared application credentia
 6. Copy the generated **Client ID** and **Client Secret**.
 
 ### Running the Wizard
+
 In WSL, run:
 
 ```bash
@@ -235,12 +236,155 @@ rclone config
 1. Press `n` for **New remote**.
 2. Name: `gdrive`.
 3. Storage Type: `drive` (Google Drive).
-4. Paste your **Client ID** and **Client Secret**.
-5. Scope: Select `1` (`drive` - full access).
-6. When prompted to `Use web browser to automatically authenticate?`, choose `y`.
-   - WSL2 will automatically forward the authentication URL to your default Windows web browser.
-   - Log into your Google account and grant permissions.
-7. Confirm the remote and quit (`q`).
+4. Paste your **Client ID** and **Client Secret** (from the section above).
+5. **Scope:** select `1` (`drive` — full access). See the scope notes below if you want least privilege.
+6. When prompted to authenticate, choose `y` for **auto config**.
+   - WSL2 forwards the authentication URL to your default Windows web browser.
+   - Log into your Google account and grant permissions; rclone then reports `Got code`.
+7. Confirm the remote (`y`) and quit the menu (`q`).
+
+### What You Will See at Each Step (sanitized)
+
+The interactive wizard prints a lot, and the prompts come in a fixed order. Below is a **redacted** transcript so you know exactly what to expect. Every secret (`state`, `access_token`, `refresh_token`, and your own `client_id` / `client_secret`) has been replaced with a placeholder — never publish these values.
+
+```text
+$ rclone config
+No remotes found, make a new one?
+n) New remote
+s) Set configuration password
+q) Quit config
+n/s/q> n
+
+Enter name for new remote.
+name> gdrive
+
+Option Storage.
+Type of storage to configure.
+Choose a number from below, or type in your own value.
+ 1 / 1Fichier
+   \ (fichier)
+ ...
+XX / Google Drive
+   \ (drive)
+Storage> drive
+
+Option client_id.
+OAuth Client Id.
+Leave blank normally.
+Enter a value. Press Enter to leave empty.
+client_id> 1234567890-EXAMPLE.apps.googleusercontent.com
+
+Option client_secret.
+OAuth Client Secret.
+Leave blank normally.
+Enter a value. Press Enter to leave empty.
+client_secret> GOCSPX-EXAMPLE-REDACTED
+
+Option scope.
+Scope that rclone should use when requesting access from drive.
+Choose a number from below, or type in your own value.
+ 1 / Full access all files, excluding Application Data Folder.
+   \ (drive)
+ 2 / Read-only access to file metadata and file contents.
+   \ (drive.readonly)
+   / Access to files created by rclone only.
+ 3 | These are visible in the drive website.
+   | File authorization is revoked when the user deauthorizes the app.
+   \ (drive.file)
+   / Allows read and write access to the Application Data folder.
+ 4 | This is not visible in the drive website.
+   \ (drive.appfolder)
+   / Allows read-only access to file metadata but
+ 5 | does not allow any access to read or download file content.
+   \ (drive.metadata.readonly)
+scope> 1
+
+Option service_account_file.
+Service Account Credentials JSON file path.
+Leave blank normally.
+Needed only if you want use SA instead of interactive login.
+Leading `~` will be expanded in the file name as will environment variables such as `${RCLONE_CONFIG_DIR}`.
+Enter a value. Press Enter to leave empty.
+service_account_file>
+
+Edit advanced config?
+y) Yes
+n) No (default)
+y/n> n
+
+Use auto config?
+ * Say Y if not sure
+ * Say N if you are working on a remote or headless machine
+
+y) Yes (default)
+n) No
+y/n> y
+
+2026/09/15 18:50:36 NOTICE: If your browser doesn't open automatically go to the following link: http://127.0.0.1:53682/auth?state=EXAMPLE-REDACTED
+2026/09/15 18:50:36 NOTICE: Log in and authorize rclone for access
+2026/09/15 18:50:36 NOTICE: Waiting for code...
+2026/09/15 18:50:51 NOTICE: Got code
+Configure this as a Shared Drive (Team Drive)?
+
+y) Yes
+n) No (default)
+y/n> n
+
+Configuration complete.
+Options:
+- type: drive
+- scope: drive
+- token: {"access_token":"ya29.EXAMPLE-REDACTED","token_type":"Bearer","refresh_token":"1//EXAMPLE-REDACTED","expiry":"2026-09-15T19:50:50-04:00"}
+- team_drive:
+Keep this "gdrive" remote?
+y) Yes this is OK (default)
+e) Edit this remote
+d) Delete this remote
+y/e/d> y
+
+Current remotes:
+
+Name                 Type
+====                 ====
+gdrive               drive
+
+e) Edit existing remote
+n) New remote
+d) Delete remote
+r) Rename remote
+c) Copy remote
+s) Set configuration password
+q) Quit config
+e/n/d/r/c/s/q> q
+```
+
+**Reading the prompts:**
+
+- **`Storage> drive`** — the Google Drive backend.
+- **`client_id` / `client_secret`** — your own OAuth app (recommended to avoid the shared rclone ID being rate-limited). Leave blank to use rclone's built-in ID.
+- **`scope> 1`** — the access level. The five choices are:
+  - `1` **drive** — full read/write to everything (simplest; what this guide uses).
+  - `2` **drive.readonly** — read-only; safe for mounting media or backups you will never write to.
+  - `3` **drive.file** — rclone only sees files **it created**; the upload is *not* revocable selectively, and authorization is revoked when you deauthorize the app.
+  - `4` **drive.appfolder** — read/write only the hidden Application Data folder (not visible on the Drive website).
+  - `5` **drive.metadata.readonly** — metadata only; **cannot read or download content**.
+- **`service_account_file>`** — leave blank for an interactive personal login. Only needed for a Google Cloud **service account** (headless servers).
+- **Edit advanced config? `n`** — defaults are fine.
+- **Use auto config? `y`** — in WSL2 this opens the browser via the local callback `http://127.0.0.1:53682/auth?state=...`. On a headless machine choose `n` and paste the code manually.
+- **Shared Drive? `n`** — choose `y` only for a Google Workspace **Team/Shared Drive**.
+- **`token: {...}`** — the OAuth credential (see the security note below).
+- **Keep this remote? `y`**, then **`q`** to quit.
+
+::: {.callout-warning}
+### Security: the token in `rclone.conf` is a live credential
+The config file stores an `access_token` and a long-lived `refresh_token`. Anyone who obtains them can access your Google Drive **until the authorization is revoked**, even without your password. Therefore:
+
+- **Never** commit `rclone.conf` to Git, paste it into an issue/forum/AI chat, or include it in screenshots. The transcript above is **redacted** for exactly this reason.
+- The file lives at `~/.config/rclone/rclone.conf` in WSL (and `%APPDATA%\rclone\rclone.conf` on Windows). Restrict it: `chmod 600 ~/.config/rclone/rclone.conf`.
+- Encrypt it at rest with a configuration password: run `rclone config` and choose **`s) Set configuration password`**.
+- **Revoke** at any time at <https://myaccount.google.com/permissions> (Google account → third-party access), or in `rclone config` via **`d) Delete remote`**. Revoking invalidates the `refresh_token`.
+- For least privilege, use scope `2` (read-only), `3` (`drive.file`), or a dedicated folder instead of scope `1` when you do not need full access.
+:::
 
 Verify connectivity:
 ```bash
