@@ -1,0 +1,335 @@
+---
+title: "Iterative Methods and Computing the Constants: Archimedes, Newton, and Algorithms for π and Euler's γ"
+subtitle: "From Archimedes' exhaustion of the circle and Gregory–Leibniz and Machin series to Newton's quadratic root-finding and the numerical evaluation of Euler–Mascheroni constant — fixed-point iteration, bisection, convergence orders, and acceleration"
+author: "Igor Kan"
+date: "2026-09-14"
+categories: [Mathematics, Numerical Analysis, Iterative Methods, Constants, Pi, Number Theory, Algorithms]
+description: "A comprehensive treatment of iterative methods and the computation of mathematical constants. It develops fixed-point iteration, bisection, Newton's method and the secant method with their convergence orders; covers pi from Archimedes' doubling polygons and his 223/71 < pi < 22/7 bounds, through the Gregory-Leibniz alternating series, Machin's arctangent formula, Nilakantha, Ramanujan, the Chudnovsky algorithm, and the BBP spigot formula, to Newton's arcsine-series computation; treats the Euler-Mascheroni constant gamma, its definition and existence, its relation to the gamma function, its unknown irrationality, and algorithms from the naive harmonic-minus-logarithm estimate through Euler-Maclaurin summation to Brent-McMillan; and closes with related constant computations, with an executable Python laboratory that bounds pi with Archimedes, compares series convergence rates, runs Newton's method, and estimates gamma with acceleration."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 4
+    number-sections: true
+jupyter: python3
+toc: true
+toc-depth: 4
+number-sections: true
+---
+
+::: {.callout-note appearance="simple"}
+*Mathematics is full of constants we cannot write down finitely — π, e, γ — and the only way to know them is to compute them. Every such computation is an **iteration**: a rule that turns a guess into a better guess. The history of π is the history of increasingly clever iterations, from Archimedes' polygons to the spigot algorithms that stream digits.*
+
+This article is about machines for constants: fixed points, root-finding, and the series that produce digits.
+:::
+
+::: {.callout-tip collapse="true"}
+### Companion Treatises in this Series
+- [The Great Constants: Golden Ratio, e, π, τ, and the Transcendental Fabric](the-great-constants-golden-ratio-e-pi-tau-and-the-transcendental-fabric.qmd)
+- [Geometry: Circles, Triangles, Angles, Polygons, and Polyhedra](geometry-circles-triangles-angles-polygons-and-polyhedra.qmd)
+- [Sequences, Series, and Convergence Tests](sequences-series-and-convergence-tests.qmd)
+- [Dynamical Systems and Chaos: Iteration, Initial Conditions, and the Butterfly Effect](dynamical-systems-chaos-and-the-butterfly-effect.qmd)
+- [The Euclidean Algorithm: Foundations, Variants, and Numerical Computing](euclidean-algorithm-foundations-variants-and-numerical-computing.qmd)
+:::
+
+---
+
+## What Makes an Iteration Good
+
+An **iterative method** produces a sequence $x_{n+1}=g(x_n)$ that should converge to a solution $x^\*$ of some problem. Three questions govern quality:
+
+1. **Does it converge?** Usually because $g$ is a **contraction**: $|g(x)-g(y)|\le L|x-y|$ with $L<1$ (Banach fixed-point theorem).
+2. **How fast?** The **order of convergence** $p$: $|x_{n+1}-x^*|\le C|x_n-x^*|^p$. Linear ($p=1$), quadratic ($p=2$), etc.
+3. **At what cost?** Function evaluations per step, and numerical stability.
+
+| Method | Order | Needs derivative? | Notes |
+|---|---|---|---|
+| Bisection | linear, rate $1/2$ | no | robust, halves the interval each step |
+| Fixed-point | linear (or better) | no | converges iff $\lvert g'\rvert<1$ near the root |
+| Secant | $\approx1.618$ | no | superlinear |
+| Newton (Newton–Raphson) | quadratic | yes | doubles correct digits each step |
+| Halley | cubic | second derivative | higher cost per step |
+
+**Newton's method.** For $f(x)=0$,
+$$
+x_{n+1}=x_n-\frac{f(x_n)}{f'(x_n)}.
+$$
+It is the tangent-line root approximation, and its quadratic convergence is why it dominates scientific computing — when it works. It fails when $f'=0$, can cycle, and needs a good initial guess.
+
+---
+
+## π: Two Thousand Years of Iteration
+
+### Archimedes' Method of Exhaustion
+
+Around 250 BCE, Archimedes bounded a circle between an **inscribed** and a **circumscribed** regular polygon, starting from a hexagon and **doubling** the number of sides:
+
+$$
+\text{inscribed } n\text{-gon perimeter} = 2n\sin\frac{\pi}{n},
+\qquad
+\text{circumscribed } n\text{-gon perimeter} = 2n\tan\frac{\pi}{n}
+\quad(\text{unit circle}).
+$$
+
+By the half-angle identities he iterated to a **96-gon**, obtaining
+
+$$
+3\frac{10}{71}=\frac{223}{71}<\pi<\frac{22}{7}=3\frac{1}{7},
+\qquad \text{i.e. } 3.1408<\pi<3.1429.
+$$
+
+The error of the inscribed/circumscribed bound shrinks like $O(1/n^2)$, so the number of correct digits grows like $2\log_{10} n$ — only linear in the number of doublings. Archimedes' idea also *defines* π as the common limit of two sequences, a prototype of the squeeze theorem.
+
+### π by Infinite Series
+
+**Gregory–Leibniz (Madhava):**
+$$
+\frac{\pi}{4}=1-\frac13+\frac15-\frac17+\cdots
+$$
+Beautiful, but converges like $1/n$ — about three terms per correct digit. It is the classic warning that "convergent" does not mean "computable quickly."
+
+**Machin (1706):**
+$$
+\frac{\pi}{4}=4\arctan\frac15-\arctan\frac1{239},
+\qquad \arctan x=\sum_{k\ge0}\frac{(-1)^k x^{2k+1}}{2k+1}.
+$$
+Because $x=1/5$ and $x=1/239$ are small, each term adds several digits; Machin computed 100 digits by hand. Machin-like formulas still drive record computations.
+
+**Nilakantha (faster):**
+$$
+\pi=3+\frac{4}{2\cdot3\cdot4}-\frac{4}{4\cdot5\cdot6}+\frac{4}{6\cdot7\cdot8}-\cdots
+$$
+Terms decay like $1/n^3$: faster than Leibniz, still polynomial.
+
+**Ramanujan and beyond.** Ramanujan's series add about **8 digits per term**:
+$$
+\frac1\pi=\frac{2\sqrt2}{9801}\sum_{k\ge0}\frac{(4k)!(1103+26390k)}{(k!)^4\,396^{4k}}.
+$$
+The **Chudnovsky** algorithm adds about **14 digits per term** and has powered all recent record computations (trillions of digits). The **BBP formula** is a spigot: it extracts hexadecimal digits of π without computing earlier ones.
+
+### Newton's Contribution
+
+In 1666 Newton computed π by integrating the circle's area with a **binomial series** (a forerunner of the general binomial theorem) and then inverting a series — an early instance of both power-series computation and Newton's method. In modern language, π can be obtained from $\arcsin$:
+$$
+\pi=6\arcsin\frac12=6\sum_{k\ge0}\frac{(2k)!}{4^k(k!)^2(2k+1)2^{2k+1}},
+$$
+whose terms decay geometrically. Newton's dual legacies — the **series** and the **root-finding iteration** — are the two engines of constant computation.
+
+---
+
+## Euler's Constant γ
+
+The **Euler–Mascheroni constant** is
+$$
+\gamma=\lim_{n\to\infty}\left(H_n-\ln n\right),\qquad H_n=1+\frac12+\cdots+\frac1n,
+$$
+where the limit exists because $H_n-\ln n$ is **decreasing and bounded below** (convergence follows by bounding $\int_1^n dx/x$). Numerically,
+
+$$
+\gamma\approx0.5772156649015328606065120900824\ldots
+$$
+
+### Where It Appears
+
+- **Gamma function:** $\gamma=-\Gamma'(1)$; the Laurent expansion of $\Gamma$ about its pole has $\gamma$ as the constant term.
+- **Number theory:** Mertens' theorems, the prime-counting error terms, and the Dirichlet divisor problem all involve $\gamma$.
+- **Analysis:** asymptotic expansions of harmonic sums, integrals like $\int_0^\infty e^{-x}\ln x\,dx=-\gamma$.
+
+### The Open Question
+
+It is **unknown whether $\gamma$ is rational, irrational, or transcendental**. It is not even known to be irrational — one of the most embarrassing open problems in mathematics, in stark contrast to $e$ (Hermite) and $\pi$ (Lindemann).
+
+### Algorithms for γ
+
+1. **Direct (very slow):** compute $H_n-\ln n$. The error decays like $1/(2n)$, so a million terms give only ~6 correct digits. (The error is $1/(2n)+O(1/n^2)$.)
+2. **Euler–Maclaurin acceleration:**
+$$
+H_n=\ln n+\gamma+\frac{1}{2n}-\frac{1}{12n^2}+\frac{1}{120n^4}-\frac{1}{252n^6}+\cdots
+$$
+so
+$$
+\gamma \approx H_n-\ln n-\frac{1}{2n}+\frac{1}{12n^2}-\frac{1}{120n^4}.
+$$
+With $n=10^6$ this already gives ~20 correct digits — the classic trick.
+3. **Brent–McMillan:** the state-of-the-art multiprecision algorithm, combining an exponentially accelerated series with binary splitting; it computes $\gamma$ to $D$ digits in time $O(D\log^3 D)$.
+4. **Gamma-function and zeta connections:** algorithms using the derivative of $\Gamma$ at 1 or the Laurent coefficients of $\zeta$ (Stieltjes constants) provide independent routes.
+
+The lesson mirrors π: **the naive limit converges, but acceleration transforms an impractical computation into a routine one.**
+
+---
+
+## Laboratory: The Machines in Action
+
+### Archimedes' Polygons
+
+```{python}
+#| label: fig-archimedes
+#| fig-cap: "Archimedes' method of exhaustion. Inscribed and circumscribed regular polygons with 3·2^k sides bracket π from below and above, and the bracket tightens. The errors are O(1/n²), so each doubling of the sides adds only a constant number of correct digits — convergence, but slow convergence, just as the method of exhaustion would suggest."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def archimedes(k):
+    n = 3 * 2 ** k                        # number of sides
+    lower = n * np.sin(np.pi / n)         # inscribed perimeter / diameter
+    upper = n * np.tan(np.pi / n)         # circumscribed perimeter / diameter
+    return n, lower, upper
+
+ks = np.arange(0, 14)
+ns, lows, ups = zip(*[archimedes(k) for k in ks])
+lows, ups = np.array(lows), np.array(ups)
+
+fig, ax = plt.subplots(figsize=(9.5, 5))
+ax.semilogx(ns, lows, "o-", color="#2980b9", label="inscribed lower bound")
+ax.semilogx(ns, ups, "s-", color="#e74c3c", label="circumscribed upper bound")
+ax.axhline(np.pi, color="#27ae60", ls="--", label=r"$\pi$")
+ax.set_title("Archimedes' exhaustion: bounds on π from 3·2^k-gons")
+ax.set_xlabel("number of sides n"); ax.set_ylabel("perimeter / diameter")
+ax.legend(); ax.grid(alpha=0.3, which="both")
+plt.tight_layout(); plt.show()
+
+print("=== ARCHIMEDES BOUNDS ===")
+for k in [0, 2, 5, 10, 13]:
+    n, lo, up = archimedes(k)
+    print(f"  n={n:>6}: {lo:.10f} < pi < {up:.10f}   width={up-lo:.2e}")
+print(f"  true pi = {np.pi:.10f}")
+print("  Archimedes' 96-gon (k=5) -> 223/71 < pi < 22/7, about 1.3e-3 wide.")
+```
+
+### Series Convergence Rates
+
+```{python}
+#| label: fig-series
+#| fig-cap: "Error versus number of terms for three π series on a log-log scale. The Gregory–Leibniz alternating series converges like 1/n (three terms per digit); Nilakantha like 1/n³; the arctangent series with small argument (as used by Machin) converges geometrically, so its error plummets. The same constant can be unreachable or cheap depending on the representation you choose."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def error_leibniz(N):
+    k = np.arange(N)
+    return abs(4 * np.sum((-1.0) ** k / (2 * k + 1)) - np.pi)
+
+def error_nilakantha(N):
+    k = np.arange(1, N + 1)
+    s = 3 + 4 * np.sum(((-1.0) ** (k + 1)) / (2 * k * (2 * k + 1) * (2 * k + 2)))
+    return abs(s - np.pi)
+
+def error_machin(N):
+    def arctan_inv(x, N):
+        k = np.arange(N)
+        return np.sum((-1.0) ** k / ((2 * k + 1) * x ** (2 * k + 1)))
+    return abs(16 * arctan_inv(5, N) - 4 * arctan_inv(239, N) - np.pi)
+
+N = 2000
+fig, ax = plt.subplots(figsize=(9.5, 5))
+for name, fn, col in [("Gregory–Leibniz ~1/n", error_leibniz, "#e74c3c"),
+                      ("Nilakantha ~1/n³", error_nilakantha, "#e67e22"),
+                      ("Machin (geometric)", error_machin, "#27ae60")]:
+    ns = np.arange(2, N)
+    errs = [max(fn(int(k)), 1e-18) for k in ns]
+    ax.loglog(ns, errs, color=col, label=name)
+ax.set_title("π series: error vs number of terms")
+ax.set_xlabel("terms"); ax.set_ylabel("|approximation − π|"); ax.legend(); ax.grid(alpha=0.3, which="both")
+plt.tight_layout(); plt.show()
+
+print("=== TERMS NEEDED FOR 10 CORRECT DIGITS (approx) ===")
+print("  Gregory–Leibniz : ~10^10 terms (impractical)")
+print(f"  Machin (N=25)   : error = {error_machin(25):.2e}")
+print(f"  Machin (N=50)   : error = {error_machin(50):.2e}")
+```
+
+### Newton's Method: Quadratic Convergence
+
+```{python}
+#| label: fig-newton
+#| fig-cap: "Newton's method. Left: iterates of the tangent-line approximation on f(x)=x²−2. Right: the absolute error on a log scale, falling so fast that the number of correct digits roughly doubles each step — the signature of quadratic convergence. π can be computed the same way by solving cos(x)=0 or by Newton's arcsine series."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def newton(f, fp, x0, n=6):
+    xs = [x0]
+    for _ in range(n):
+        xs.append(xs[-1] - f(xs[-1]) / fp(xs[-1]))
+    return np.array(xs)
+
+f = lambda x: x ** 2 - 2
+fp = lambda x: 2 * x
+xs = newton(f, fp, 1.0, 6)
+errs = np.abs(xs - np.sqrt(2))
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.6))
+gx = np.linspace(0.5, 2.0, 200)
+axes[0].plot(gx, f(gx), color="#2980b9", label=r"$f(x)=x^2-2$")
+axes[0].axhline(0, color="k", lw=0.8)
+axes[0].plot(xs, f(xs), "ro")
+for i in range(len(xs) - 1):
+    axes[0].annotate("", xy=(xs[i + 1], 0), xytext=(xs[i], f(xs[i])),
+                     arrowprops=dict(arrowstyle="->", color="#e74c3c", lw=1))
+axes[0].set_title("Newton iterates on f(x)=x²−2")
+axes[0].set_xlabel("x"); axes[0].legend(); axes[0].grid(alpha=0.3)
+
+axes[1].semilogy(range(len(errs)), errs, "o-", color="#8e44ad")
+axes[1].set_title("Error per iteration (quadratic convergence)")
+axes[1].set_xlabel("iteration"); axes[1].set_ylabel("|x_n − √2|"); axes[1].grid(alpha=0.3, which="both")
+plt.tight_layout(); plt.show()
+
+print("=== NEWTON: CORRECT DIGITS DOUBLE ===")
+for i, (x, e) in enumerate(zip(xs, errs)):
+    print(f"  iter {i}: x={x:.16f}  error={e:.2e}  digits={-np.log10(max(e,1e-18)):.1f}")
+```
+
+### Estimating Euler's Constant
+
+```{python}
+import numpy as np
+GAMMA = 0.5772156649015328606
+
+def harmonic(n):
+    return np.sum(1.0 / np.arange(1, n + 1))
+
+print("=== EULER–MASCHERONI γ ===")
+print(f"  reference γ = {GAMMA:.16f}\n")
+print(f"{'n':>10} {'H_n−ln n':>16} {'error':>10} {'Euler–Maclaurin':>18} {'error':>10}")
+for n in [10, 100, 1000, 10_000, 100_000, 1_000_000]:
+    H = harmonic(n)
+    naive = H - np.log(n)
+    em = H - np.log(n) - 1 / (2 * n) + 1 / (12 * n ** 2) - 1 / (120 * n ** 4)
+    print(f"{n:>10} {naive:16.12f} {abs(naive-GAMMA):10.2e} {em:18.15f} {abs(em-GAMMA):10.2e}")
+print("\n  the naive limit needs ~10^6 terms for 6 digits;")
+print("  Euler–Maclaurin gets ~20 digits from the same 10^6 terms.")
+```
+
+The laboratory shows the three faces of iteration: **bracketing** (Archimedes squeezes π), **series** (representation determines convergence rate), and **root-finding / acceleration** (Newton doubles digits; Euler–Maclaurin turns a slow limit into a fast one). Every method here is a special case of the same contractive iteration, and the choice of representation is often more important than raw computing power.
+
+---
+
+## Summary
+
+$$
+\begin{aligned}
+&\textbf{Iteration: } && x_{n+1}=g(x_n);\ \text{contraction} \Rightarrow \text{convergence; order } p \text{ decides speed.} \\[3pt]
+&\textbf{π (geometry): } && \text{Archimedes: } 2n\sin(\pi/n) < \pi < 2n\tan(\pi/n),\ \frac{223}{71}<\pi<\frac{22}{7}. \\[3pt]
+&\textbf{π (series): } && \text{Leibniz } O(1/n),\ \text{Nilakantha } O(1/n^3),\ \text{Machin geometric, Ramanujan/Chudnovsky, BBP.} \\[3pt]
+&\textbf{π (Newton): } && \text{arcsine/binomial series + Newton's method (quadratic).} \\[3pt]
+&\textbf{γ: } && \gamma=\lim(H_n-\ln n);\ \text{naive } O(1/n);\ \text{Euler–Maclaurin/Brent–McMillan accelerate; irrationality open.} \\[3pt]
+&\textbf{Lesson: } && \text{choose a good representation; accelerate the tail; then iterate.}
+\end{aligned}
+$$
+
+Constants are not given; they are manufactured by iteration. The same iterative mindset reappears in [dynamical systems and chaos](dynamical-systems-chaos-and-the-butterfly-effect.qmd) — where iteration becomes the object of study rather than a tool — and in the [Collatz problem](collatz-conjecture-3x-plus-1-orbits-and-similar-iterations.qmd), where a simple iteration still defies all proof.
+
+---
+
+## Curated References and Further Reading
+
+1. **Archimedes (c. 250 BCE).** *Measurement of a Circle.* (The 223/71 and 22/7 bounds.)
+2. **Berggren, L., Borwein, J. & Borwein, P. (2004).** *Pi: A Source Book*, 3rd ed. Springer.
+3. **Borwein, J. & Borwein, P. (1987).** *Pi and the AGM.* Wiley. (Quadratic algorithms.)
+4. **Bailey, D., Borwein, P. & Plouffe, S. (1997).** *On the Rapid Computation of Various Polylogarithmic Constants.* (BBP spigot.)
+5. **Chudnovsky, D. & Chudnovsky, G. (1989).** *The Computation of Classical Constants.* PNAS.
+6. **Brent, R. & McMillan, E. (1980).** *Some New Algorithms for High-Precision Computation of Euler's Constant.* Mathematics of Computation.
+7. **Havil, Julian (2003).** *Gamma: Exploring Euler's Constant.* Princeton University Press.
+8. **Atkinson, K. (1989).** *An Introduction to Numerical Analysis*, 2nd ed. Wiley. (Iterative methods and convergence orders.)

@@ -1,0 +1,285 @@
+---
+title: "The 3x+1 Problem: Collatz Orbits, the Conjecture, and Similar Iterations"
+subtitle: "Hailstone numbers, stopping times and record orbits, the 27 trajectory, heuristic drift and random-walk models, the three known cycles, Conway's undecidability, Tao's near-proof, and related iterations like 5x+1 and 3x−1"
+author: "Igor Kan"
+date: "2026-09-14"
+categories: [Mathematics, Number Theory, Dynamical Systems, Collatz, Iteration, Open Problems]
+description: "A comprehensive treatment of the 3x+1 (Collatz) problem and related iterations. It defines the Collatz map and conjecture, introduces stopping time, total stopping time, glide, and hailstone terminology, examines the record orbit of 27 and computational verification up to roughly 2^68, analyzes the heuristic multiplicative drift and random-walk model that predicts logarithmic total stopping times, surveys the three known cycles of the map and the constraints on cycle lengths, explains why the problem resists proof through its connections to dynamical systems and ergodic theory, presents Conway's undecidability of generalized Collatz maps and Tao's theorem that almost all orbits eventually fall below any unbounded function, and surveys similar iterations including 5x+1, 3x-1, and qx+1 maps, with an executable Python laboratory computing orbits, stopping-time records, distributions, and the trajectories of related maps."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 4
+    number-sections: true
+jupyter: python3
+toc: true
+toc-depth: 4
+number-sections: true
+---
+
+::: {.callout-note appearance="simple"}
+*Pick any positive integer. If it is even, halve it; if it is odd, triple it and add one. Repeat. The claim — that **every** starting number eventually reaches 1 — is the Collatz conjecture, and it is one of the most famous unsolved problems in mathematics.*
+
+Nothing in the rule is hard; everything about its behavior is. This is the story of an iteration simple enough for a child and unproved for nearly a century.
+:::
+
+::: {.callout-tip collapse="true"}
+### Companion Treatises in this Series
+- [Dynamical Systems and Chaos: Iteration, Initial Conditions, and the Butterfly Effect](dynamical-systems-chaos-and-the-butterfly-effect.qmd)
+- [Iterative Methods and Computing the Constants](iterative-methods-and-computing-constants-pi-and-eulers-constant.qmd)
+- [Foundations of Arithmetic: Primes, Radicals, and the Riemann Hypothesis](foundations-of-arithmetic-primes-radicals-and-the-riemann-hypothesis.qmd)
+- [The Architecture of Number Systems: Constructions, Cayley–Dickson, and Recursion](the-architecture-of-number-systems-constructions-cayley-dickson-and-recursion.qmd)
+- [Gödel: Completeness and Incompleteness Theorems](godel-completeness-and-incompleteness-theorems.qmd)
+:::
+
+---
+
+## The Map and the Conjecture
+
+The **Collatz map** $T:\mathbb{N}\to\mathbb{N}$ is
+
+$$
+T(n)=
+\begin{cases}
+n/2, & n \text{ even},\\[2pt]
+3n+1, & n \text{ odd}.
+\end{cases}
+$$
+
+The **Collatz conjecture** (also the $3x+1$, Syracuse, Ulam, or hailstone problem) states:
+
+> For every positive integer $n$, the orbit $n, T(n), T^2(n), \dots$ eventually reaches $1$.
+
+Once at 1, the map cycles $1\to4\to2\to1$ (the **trivial cycle**). The conjecture has been verified computationally for all $n$ up to about $2^{68}$ (Barina, 2020), and no counterexample is known, but no proof exists.
+
+### Terminology
+
+- **Stopping time:** the least $k$ with $T^k(n)<n$ (first time below the start).
+- **Total stopping time:** the number of steps to reach 1.
+- **Glide:** the number of steps to go below the starting value.
+- **Hailstone numbers:** the values along an orbit (they rise and fall, like hailstones in a cloud).
+- **Trajectory / orbit:** the full sequence.
+
+### The Record Orbit of 27
+
+The most famous illustration: starting at **27** takes **111 steps** to reach 1 (total stopping time 111) and peaks at **9232** — about 342 times the start. Small numbers can have enormous, erratic orbits, which is exactly why the problem is hard: there is no local monotonicity to exploit.
+
+---
+
+## Statistical Behavior
+
+The map is not a contraction — it can increase $n$ by a factor near $3/2$ on odd steps and decrease by $1/2$ on even steps. A heuristic **random-walk model** treats parities as fair coin flips:
+
+$$
+\text{typical multiplicative change per step}
+= \left(\frac{3}{2}\right)^{1/2}\left(\frac{1}{2}\right)^{1/2}
+= \sqrt{\frac34}<1.
+$$
+
+Taking logarithms, the expected drift per step is
+$$
+\mu=\tfrac12\ln\tfrac32+\tfrac12\ln\tfrac12=\tfrac12\ln\tfrac34\approx-0.1438,
+$$
+so the orbit should behave like a random walk with negative drift on the $\log$ scale. This predicts a **total stopping time growing like $c\ln n$** for some constant $c$ — empirically the average is about $10$–$14\ln n$, and the maximum over $n\le N$ grows like $\gamma\ln N$ with $\gamma\approx41.7$. The model also predicts that the "right" invariant measure exists (Terras showed the parity vector is uniformly distributed), but **it is only a heuristic**: rare long runs of odd steps can push orbits far up, and controlling them rigorously is the whole difficulty.
+
+### The Parity Vector and 3-adic Structure
+
+A key reformulation: after a block of $k$ steps with exactly $m$ odd steps, the odd part is affine in $n$:
+$$
+T^k(n)=\frac{3^m n+r}{2^k},
+$$
+so the dynamics is governed by rational maps $n\mapsto(3n+1)/2^{v_2(3n+1)}$ and by **2-adic** and **3-adic** arithmetic. Terras proved that the stopping time is finite for almost all $n$, and that parity sequences are uniformly distributed. This is strong evidence, but not the conjecture.
+
+---
+
+## Cycles
+
+A cycle is a finite orbit returning to itself. Only a handful are known for the positive map:
+
+- $1\to4\to2\to1$ (length 3).
+- The fixed point $0$ (outside $\mathbb{N}$).
+
+For the map extended to negative integers, there are three known cycles (including $-1\to-2\to-1$). **No other cycles have ever been found**, and it is proved that any nontrivial cycle must have enormous length (at least $17$ billion steps, with additional bounds under weak assumptions) and contain astronomically large elements. Since the conjecture is equivalent to "no nontrivial cycle can trap a positive orbit and no orbit diverges to infinity," the problem has two failure modes to rule out:
+
+1. **A nontrivial cycle** (an orbit that repeats without reaching 1).
+2. **A divergent orbit** (an orbit that grows without bound).
+
+Both remain open.
+
+---
+
+## Why It Is Hard
+
+The Collatz iteration destroys the number-theoretic structure that proofs usually exploit:
+
+- It mixes operations mod 2, mod 3, and division by powers of two; there is no evident algebraic or analytic invariant.
+- It is **not monotone**, **not contractive**, and **not linear**: the standard tools (fixed points, Lyapunov functions, Banach) do not directly apply.
+- It behaves like a **dynamical system** with sensitive dependence on initial conditions on the $\log$ scale — a number-theoretic cousin of chaos.
+
+Three deep results frame the difficulty:
+
+1. **Conway (1972):** generalized Collatz maps are **undecidable** — there is no algorithm that decides, for an arbitrary generalized rule, whether every orbit reaches 1. The original $3x+1$ is a fixed rule, so this does not settle it, but it shows the family is computationally wild.
+2. **Krasikov–Lagarias (2003):** a density-1 set of $n$ reaches 1, and bounds on the count of exceptions improving with the verification bound.
+3. **Tao (2019):** **almost all** orbits eventually fall below **any** function tending to infinity (with a quantitative bound); the conjecture is "almost true" in a precise statistical sense, but the exceptional set is not eliminated.
+
+So the problem is not merely "unsolved" — it is perched exactly at the boundary between provable statistics and unprovable-in-general iteration.
+
+---
+
+## Similar Iterations
+
+The $3x+1$ map is the simplest member of a family, and the family shows how delicate the behavior is:
+
+- **$5x+1$ (and $qx+1$):** maps like $n\mapsto(5n+1)/2^{v_2(5n+1)}$ are believed to have **divergent orbits** and multiple cycles; simulations show many orbits escaping. Changing 3 to 5 changes the dynamics qualitatively.
+- **$3x-1$:** $n\mapsto(3n-1)/2$ for odd $n$ admits several nontrivial cycles (e.g. $5\to14\to7\to20\to10\to5$), so the sign matters.
+- **Generalized Collatz / Conway maps:** affine maps with several branches; these can encode arbitrary computation, which is why Conway's undecidability result holds.
+- **The "wondrous numbers" viewpoint (Conway):** the iteration as a game, related to the undecidability of the halting problem.
+- **Other iterations:** the [logistic map](dynamical-systems-chaos-and-the-butterfly-effect.qmd) shows the same tension — utterly simple rule, intractable global behavior.
+
+**Related open problems** in the same iterative spirit include the **recursive** forms of the Riemann hypothesis's distributional questions, the **Sylow/quadratic residue** iteration behind factorization heuristics (Pollard's rho uses a pseudorandom iteration), and the convergence of numerous fixed-point schemes whose global behavior resists proof. The $3x+1$ problem is the purest example.
+
+---
+
+## Laboratory: Collatz Orbits and Relatives
+
+### Orbits, Stopping Times, and Records
+
+```{python}
+#| label: fig-collatz
+#| fig-cap: "Collatz dynamics. Left: the trajectory of 27, which rises to a peak of 9232 before eventually collapsing to 1 — a dramatic illustration that small starts can have huge, erratic orbits. Right: the total stopping time for n up to 100,000, with record holders marked. The stopping time grows roughly logarithmically on average but with large fluctuations, and the record holders grow slowly."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def collatz_orbit(n):
+    orbit = [n]
+    while n != 1:
+        n = n // 2 if n % 2 == 0 else 3 * n + 1
+        orbit.append(n)
+    return orbit
+
+def total_stopping_time(n):
+    steps = 0
+    while n != 1:
+        n = n // 2 if n % 2 == 0 else 3 * n + 1
+        steps += 1
+    return steps
+
+orb27 = collatz_orbit(27)
+print("=== THE ORBIT OF 27 ===")
+print(f"  length={len(orb27)-1} steps, peak={max(orb27)}")
+print(f"  first 20 values: {orb27[:20]}")
+
+N = 100_000
+S = np.array([total_stopping_time(n) for n in range(1, N + 1)])
+records = []
+best = -1
+for i, s in enumerate(S, start=1):
+    if s > best:
+        best = s
+        records.append((i, s))
+print(f"\n=== RECORD TOTAL STOPPING TIMES up to {N:,} ===")
+for n, s in records[-8:]:
+    print(f"  n={n:>6} -> {s} steps")
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.8))
+axes[0].plot(orb27, color="#e74c3c", lw=1)
+axes[0].set_yscale("log")
+axes[0].set_title("Collatz trajectory of 27 (peak 9232)")
+axes[0].set_xlabel("step"); axes[0].set_ylabel("value (log scale)"); axes[0].grid(alpha=0.3)
+
+axes[1].scatter(range(1, N + 1), S, s=1, color="#2980b9", alpha=0.4)
+rec_n, rec_s = zip(*records)
+axes[1].plot(rec_n, rec_s, "o-", color="#e74c3c", ms=4, label="records")
+axes[1].set_title("Total stopping time and records")
+axes[1].set_xlabel("n"); axes[1].set_ylabel("steps to 1"); axes[1].legend(); axes[1].grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print(f"\n  mean stopping time = {S.mean():.1f};  max = {S.max()} at n={S.argmax()+1}")
+print(f"  mean/ln(n) at n={N}: {S.mean()/np.log(N):.2f} (heuristic ~ 10-14)")
+```
+
+### The Random-Walk Model vs Reality
+
+```{python}
+import numpy as np
+rng = np.random.default_rng(0)
+
+print("=== HEURISTIC DRIFT ===")
+mu = 0.5 * np.log(3 / 2) + 0.5 * np.log(1 / 2)
+print(f"  expected log-drift per step = {mu:.4f} (< 0 -> contraction on log scale)")
+print(f"  predicted total stopping time ~ ln(n)/|mu| = {1/abs(mu):.2f}·ln(n)")
+
+# simulate the random-walk model: fair coin, multiply by 3/2 or 1/2
+def rw_stopping(target=1.0, start=1e6, rng=rng):
+    x, steps = start, 0
+    while x > target:
+        x *= 1.5 if rng.random() < 0.5 else 0.5
+        steps += 1
+    return steps
+
+sims = [rw_stopping(start=10**6) for _ in range(5000)]
+print(f"  random-walk model from 10^6: mean steps = {np.mean(sims):.1f}")
+print(f"  actual Collatz from 10^6: {total_stopping_time(10**6)} steps")
+print("  the model captures the logarithmic scale but not the exact constant.")
+```
+
+### Related Maps: $5x+1$ and $3x-1$
+
+```{python}
+def orbit_general(n, odd_mult, odd_add, limit=200_000):
+    seen, orbit, steps = set(), [n], 0
+    while n != 1 and steps < limit:
+        if n in seen:
+            return orbit, "cycle", steps
+        seen.add(n)
+        n = n // 2 if n % 2 == 0 else odd_mult * n + odd_add
+        orbit.append(n); steps += 1
+    return orbit, ("reached 1" if n == 1 else "limit"), steps
+
+print("=== 3x+1 vs 5x+1 vs 3x−1 ===")
+for label, mult, add in [("3x+1", 3, 1), ("5x+1", 5, 1), ("3x−1", 3, -1)]:
+    peaks, outcomes = [], {}
+    for n in range(1, 501):
+        orb, out, steps = orbit_general(n, mult, add, limit=50_000)
+        peaks.append(max(orb))
+        outcomes[out] = outcomes.get(out, 0) + 1
+    print(f"  {label:6s}: max peak over n<=500 = {max(peaks):>12,}  outcomes={outcomes}")
+print("\n  3x+1: all tested n reach 1;  5x+1: many orbits escape (no such conjecture);")
+print("  3x−1: admits nontrivial cycles, e.g. 5 -> 14 -> 7 -> 20 -> 10 -> 5.")
+```
+
+The laboratory shows the central facts empirically: orbits are erratic and can be enormous; stopping times fluctuate widely around a logarithmic mean; the random-walk heuristic predicts the right scale; and changing the coefficients changes the qualitative dynamics — which is why a proof for $3x+1$ is unlikely to come from generic dynamical-systems arguments alone.
+
+---
+
+## Summary
+
+$$
+\begin{aligned}
+&\textbf{Map: } && T(n)=n/2\ (n\text{ even}),\ 3n+1\ (n\text{ odd});\ \text{conjecture: all orbits reach } 1. \\[3pt]
+&\textbf{Orbits: } && \text{stopping time, total stopping time, glide, hailstone; } 27 \to 1 \text{ in 111 steps, peak } 9232. \\[3pt]
+&\textbf{Evidence: } && \text{verified to } \sim2^{68};\ \text{density-1 reach 1 (Krasikov–Lagarias); no counterexample.} \\[3pt]
+&\textbf{Heuristic: } && \text{log-drift } \tfrac12\ln\tfrac34<0;\ \text{random-walk model; } O(\ln n) \text{ stopping times.} \\[3pt]
+&\textbf{Cycles: } && \text{only } 1\to4\to2\to1 \text{ (positive); any nontrivial cycle is astronomically long.} \\[3pt]
+&\textbf{Difficulty: } && \text{Conway's undecidability; Tao's almost-bounded orbits; no invariant to exploit.} \\[3pt]
+&\textbf{Relatives: } && 5x+1,\ 3x-1,\ qx+1 \text{ generalized maps behave qualitatively differently.}
+\end{aligned}
+$$
+
+The $3x+1$ problem is the cleanest demonstration that a deterministic rule can be computationally unpredictable. That same lesson — simple iteration, intractable global behavior — is the heart of [chaos theory](dynamical-systems-chaos-and-the-butterfly-effect.qmd), to which we turn next.
+
+---
+
+## Curated References and Further Reading
+
+1. **Lagarias, J. (ed.) (2010).** *The Ultimate Challenge: The 3x+1 Problem.* AMS.
+2. **Lagarias, J. (1985).** *The 3x+1 Problem and Its Generalizations.* American Mathematical Monthly.
+3. **Conway, J. (1972).** *Unpredictable Iterations.* Proc. 1972 Number Theory Conference.
+4. **Terras, R. (1976).** *A Stopping Time Problem on the Positive Integers.* Acta Arithmetica.
+5. **Krasikov, I. & Lagarias, J. (2003).** *Bounds for the 3x+1 Problem Using Difference Inequalities.* Acta Arithmetica.
+6. **Tao, Terence (2019).** *Almost All Orbits of the Collatz Map Attain Almost Bounded Values.* arXiv.
+7. **Barina, D. (2020).** *Convergence Verification of the Collatz Problem.* Journal of Supercomputing.
+8. **Guy, R. K. (2004).** *Unsolved Problems in Number Theory*, 3rd ed. Springer. (The Collatz entry.)

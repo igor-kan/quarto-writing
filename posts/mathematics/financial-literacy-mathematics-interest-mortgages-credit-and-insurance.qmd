@@ -1,0 +1,392 @@
+---
+title: "Financial Literacy Mathematics: Interest, Mortgages, Credit Cards, Cars, and Insurance"
+subtitle: "Simple and compound interest, APY versus APR and continuous compounding, present and future value, annuities, loan amortization, mortgage mechanics, the credit-card minimum-payment trap, auto loans and depreciation, insurance and expected value, inflation, taxes, and the mathematics behind Khan Academy's financial literacy course and beyond"
+author: "Igor Kan"
+date: "2026-09-14"
+categories: [Mathematics, Finance, Financial Literacy, Personal Finance, Probability, Applied Mathematics]
+description: "A comprehensive mathematical treatment of personal finance. It covers percentages, simple and compound interest, the difference between APR and APY, continuous compounding and the number e, present and future value, net present value, annuities, the loan payment and amortization formulas, mortgage mechanics including terms, down payments, points, and equity, the credit-card minimum-payment trap and debt-payoff strategies, auto loans versus leasing and depreciation, insurance pricing through expected value and risk pooling, inflation and real returns, the rule of 72, marginal versus effective tax rates, and retirement savings, with an executable Python laboratory that builds amortization schedules, simulates credit-card payoff, compares loans to leases, and models risk pooling."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 4
+    number-sections: true
+jupyter: python3
+toc: true
+toc-depth: 4
+number-sections: true
+---
+
+::: {.callout-note appearance="simple"}
+*Personal finance is applied mathematics. Every loan, credit card, mortgage, insurance policy, and retirement account is a formula, and the difference between understanding it and not runs into tens or hundreds of thousands of dollars over a lifetime. This article develops the mathematics behind the financial decisions everyone faces.*
+
+It follows the arc of a financial-literacy course — interest, saving, borrowing, insurance, and planning — but does the formulas explicitly.
+:::
+
+::: {.callout-tip collapse="true"}
+### Companion Treatises in this Series
+- [Probability Theory and Mathematical Probability](probability-theory-and-mathematical-probability.qmd)
+- [Sequences, Series, and Convergence Tests](sequences-series-and-convergence-tests.qmd)
+- [The Great Constants: Golden Ratio, e, π, τ, and the Transcendental Fabric](the-great-constants-golden-ratio-e-pi-tau-and-the-transcendental-fabric.qmd)
+- [The Learning Arbitrage: Earning by Studying CS, AI, Math, and Physics](../economics/monetizing-stem-learning-cs-ai-math-physics.qmd)
+- [A North American Financial Literacy Guide](../finance/us-canada-financial-literacy.qmd)
+:::
+
+---
+
+## Percentages and Interest
+
+Everything begins with percentages. A **percentage change** from $a$ to $b$ is $(b-a)/a$. **Percentage points** (an APR rising from 4% to 5%) are not the same as percent (a 25% increase).
+
+### Simple vs Compound Interest
+
+**Simple interest** grows linearly:
+$$
+A=P(1+rt).
+$$
+
+**Compound interest**, with $m$ compounding periods per year at nominal rate $r$:
+$$
+A=P\left(1+\frac{r}{m}\right)^{mt}.
+$$
+
+Compounding is the most important idea in finance: interest earns interest. Over long horizons the difference is enormous. As $m\to\infty$, compounding becomes **continuous**:
+$$
+A=Pe^{rt},
+$$
+connecting finance directly to [the number $e$](the-great-constants-golden-ratio-e-pi-tau-and-the-transcendental-fabric.qmd).
+
+### APR vs APY
+
+- **APR (nominal annual rate):** the quoted rate, ignoring compounding within the year.
+- **APY / EAR (effective annual rate):** what you actually pay/earn:
+$$
+\text{APY}=\left(1+\frac{r}{m}\right)^{m}-1 \quad\xrightarrow{m\to\infty}\quad e^{r}-1.
+$$
+
+APR is a marketing number; APY is the truth. A 20% APR compounded daily is an APY of $e^{0.20}-1\approx22.1\%$.
+
+### The Rule of 72
+
+To estimate doubling time at rate $r$ (as a percent), $t\approx72/r$ years — a linearization of $2=(1+r)^t$. It is remarkably accurate for rates near 8%.
+
+---
+
+## Time Value of Money
+
+A dollar today is worth more than a dollar tomorrow because it can be invested. **Present value** discounts a future cash flow:
+$$
+PV=\frac{FV}{(1+r)^t},\qquad FV=PV(1+r)^t.
+$$
+
+**Net present value (NPV)** of a stream of cash flows $C_t$ is
+$$
+NPV=\sum_{t=0}^{T}\frac{C_t}{(1+r)^t},
+$$
+and the **internal rate of return (IRR)** is the $r$ making $NPV=0$. These are the tools of capital budgeting and also of comparing a mortgage, a lease, or an investment.
+
+### Annuities
+
+An **annuity** is a series of equal payments.
+
+- **Future value** of an ordinary annuity (payment $PMT$, $n$ periods, rate $i$ per period):
+$$
+FV=PMT\,\frac{(1+i)^n-1}{i}.
+$$
+- **Present value:** $PV=PMT\,\dfrac{1-(1+i)^{-n}}{i}$.
+
+A retirement account is a future-value annuity problem; a mortgage or pension is a present-value annuity problem. Note the geometric series $(1+i)^n-1)/i$ — the same mathematics as [series](sequences-series-and-convergence-tests.qmd).
+
+---
+
+## Loans and Amortization
+
+For a loan of principal $P$ at periodic rate $i$ over $n$ periods, the **level payment** is derived by equating the present value of payments to the principal:
+$$
+PMT=\frac{P\,i}{1-(1+i)^{-n}}.
+$$
+
+Each payment splits into **interest** ($i\times$ current balance) and **principal** (the rest). The **amortization schedule** tracks this. Early payments are mostly interest; late payments are mostly principal.
+
+Key facts:
+
+- **Longer term $\Rightarrow$ lower payment but more total interest.** A 30-year mortgage has smaller payments than a 15-year, but can cost roughly twice the interest overall.
+- **Extra principal payments** attack the balance directly and shorten the term dramatically because they remove future interest.
+
+---
+
+## Mortgages
+
+A **mortgage** is a secured amortizing loan.
+
+- **Down payment:** the fraction paid upfront; below 20% typically triggers **PMI** (private mortgage insurance).
+- **Points:** prepaid interest (1 point $=1\%$ of the loan) that buys a lower rate.
+- **Fixed vs adjustable (ARM):** fixed locks the rate; an ARM resets, transferring rate risk to the borrower.
+- **Closing costs:** origination, title, appraisal, and recording fees.
+- **Equity** $=$ market value $-$ outstanding balance.
+- **Total cost** $=$ down payment $+$ sum of payments $+$ closing costs $+$ (maintenance, taxes, insurance).
+
+The break-even on paying points or on refinancing is an NPV calculation. The **effective cost of borrowing** should be compared **after tax** where mortgage interest is deductible.
+
+---
+
+## Credit Cards and Debt
+
+Credit cards charge **compound interest at high APR**, often compounded daily, with a **minimum payment** that is a small percentage of the balance. This combination creates the debt trap:
+
+- A minimum payment of, say, 2% (or \$25) mostly covers interest, so the balance shrinks glacially.
+- Because interest compounds daily, the effective rate is higher than the quoted APR suggests.
+
+| Variable | Typical value | Effect |
+|---|---|---|
+| APR | 18–29% | high compounding cost |
+| Minimum payment | 1–3% of balance | near-perpetual debt |
+| Grace period | ~21–25 days | interest-free if paid in full |
+| Credit utilization | <30% recommended | affects credit score |
+
+**Debt-payoff strategies:**
+
+- **Avalanche:** pay highest-APR debt first — minimizes total interest (mathematically optimal).
+- **Snowball:** pay smallest balance first — maximizes psychological wins.
+
+Both are valid; avalanche is cheaper, snowball is often more sustainable. The mathematics of prepayment is a race between the compounding of the debt and the opportunity cost of the money.
+
+---
+
+## Cars: Loans, Leases, and Depreciation
+
+- **Auto loan:** amortizing loan, finance charges like any other.
+- **Lease:** you pay for **depreciation plus a money factor (rent charge)**, not the car. The **residual value** is crucial: lease payments are roughly $\frac{(\text{price}-\text{residual})+\text{finance}}{\text{term}}$. Leases hide total cost and often penalize mileage.
+- **Depreciation:** a new car typically loses 15–25% in the first year and ~60% by five years; this is usually the largest cost of ownership, larger than fuel or maintenance.
+
+**Total cost of ownership** = depreciation + interest + fuel + insurance + maintenance + taxes − residual value. Comparing a lease versus a buy is an NPV problem using the car's residual value.
+
+---
+
+## Insurance and Expected Value
+
+Insurance is the transfer of risk. Its mathematics is **expected value** and **risk pooling**.
+
+- **Premium** $p$, **deductible** $d$, **coverage** — the insurer pays the loss above the deductible.
+- **Expected loss** to the insurer $= \Pr(\text{loss})\times\text{typical severity}$.
+- A **fair premium** equals expected payout plus administrative costs and profit. Buying insurance has negative expected value in isolation — you pay more than the average loss — yet is rational because the **utility** of avoiding ruin is not linear.
+
+**Risk pooling (law of large numbers):** if $n$ independent identical risks each with variance $\sigma^2$ are pooled, the average loss has variance $\sigma^2/n$, which vanishes as $n\to\infty$. This is why insurers can price risk reliably while individuals cannot — a direct application of the [law of large numbers](probability-theory-and-mathematical-probability.qmd).
+
+Concepts: **moral hazard** (insured behavior changes), **adverse selection** (high-risk buyers), **term vs whole life** insurance, and **copays/coinsurance** in health insurance.
+
+---
+
+## Inflation, Taxes, and Planning
+
+- **Inflation** erodes purchasing power. The **real return** is $(1+\text{nominal})/(1+\text{inflation})-1\approx\text{nominal}-\text{inflation}$. A 5% nominal return with 3% inflation is only ~2% real.
+- **Rule of 72** applies to inflation too: at 3%, prices double in ~24 years.
+- **Taxes:** **marginal** rate applies to the last dollar; **effective** rate is total tax divided by total income. Tax-advantaged accounts (401(k), IRA, TFSA, RRSP) defer or eliminate taxes on growth.
+- **Emergency fund:** 3–6 months of expenses in liquid form.
+- **Diversification:** correlation lowers portfolio variance; the mathematics is quadratic forms and covariance.
+
+---
+
+## Laboratory: The Formulas, Computed
+
+### Compound Growth and the Rule of 72
+
+```{python}
+import numpy as np
+
+print("=== COMPOUNDING: $10,000 AT 7% ===")
+P, r = 10_000, 0.07
+print(f"{'years':>6} {'annual':>12} {'monthly':>12} {'daily':>12} {'continuous':>12}")
+for t in [1, 5, 10, 20, 30]:
+    annual = P * (1 + r) ** t
+    monthly = P * (1 + r / 12) ** (12 * t)
+    daily = P * (1 + r / 365) ** (365 * t)
+    cont = P * np.exp(r * t)
+    print(f"{t:>6} {annual:12,.0f} {monthly:12,.0f} {daily:12,.0f} {cont:12,.0f}")
+
+print("\n=== APR vs APY ===")
+for apr, m in [(0.20, 365), (0.06, 12), (0.05, 1), (0.05, 4)]:
+    apy = (1 + apr / m) ** m - 1
+    print(f"  APR {apr:.2%} compounded {m:>3}x -> APY {apy:.4%}")
+
+print("\n=== RULE OF 72 ===")
+for r_pct in [3, 5, 7, 10]:
+    exact = np.log(2) / np.log(1 + r_pct / 100)
+    print(f"  {r_pct:>2}%: rule-of-72 -> {72/r_pct:5.1f} yrs, exact -> {exact:5.1f} yrs")
+```
+
+### Mortgage Amortization
+
+```{python}
+#| label: fig-mortgage
+#| fig-cap: "A 30-year fixed mortgage of $300,000 at 6.5%. Left: the monthly payment splits into interest (which dominates early) and principal (which dominates late); the crossover is around year 20. Right: how the balance falls, and how much faster it falls if an extra $200/month is applied. The total interest saved by the extra payment is often tens of thousands of dollars."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def amortize(P, annual_rate, years, extra=0.0):
+    i = annual_rate / 12
+    n = years * 12
+    pmt = P * i / (1 - (1 + i) ** -n) + extra
+    bal = P
+    interest_paid, principal_paid, balances = [], [], []
+    for _ in range(n):
+        interest = bal * i
+        principal = min(pmt - interest, bal)
+        bal -= principal
+        interest_paid.append(interest)
+        principal_paid.append(principal)
+        balances.append(max(bal, 0))
+        if bal <= 0:
+            break
+    return pmt, np.array(interest_paid), np.array(principal_paid), np.array(balances)
+
+pmt, interest, principal, balances = amortize(300_000, 0.065, 30)
+pmt_extra, interest_e, principal_e, balances_e = amortize(300_000, 0.065, 30, extra=200)
+
+print("=== MORTGAGE: $300,000, 6.5%, 30 years ===")
+print(f"  monthly payment       = ${pmt:,.2f}")
+print(f"  total paid            = ${pmt*len(interest):,.2f}")
+print(f"  total interest        = ${interest.sum():,.2f}")
+print(f"  with extra $200/month = ${pmt_extra:,.2f}, paid off in {len(interest_e)} months "
+      f"(vs {len(interest)})")
+print(f"  interest saved         = ${interest.sum()-interest_e.sum():,.2f}")
+
+# compare 15 vs 30 years
+pmt15, int15, _, _ = amortize(300_000, 0.065, 15)
+print(f"\n  15-year: payment ${pmt15:,.2f}, total interest ${int15.sum():,.2f}")
+print(f"  30-year: payment ${pmt:,.2f}, total interest ${interest.sum():,.2f}")
+print(f"  shorter term costs ${pmt15-pmt:,.2f}/month more but saves ${interest.sum()-int15.sum():,.2f}")
+
+fig, axes = plt.subplots(1, 2, figsize=(13.5, 5))
+years = np.arange(len(interest)) / 12
+axes[0].stackplot(years, principal, interest, labels=["principal", "interest"],
+                  colors=["#2980b9", "#e74c3c"], alpha=0.85)
+axes[0].set_title("Monthly payment split (30-year, baseline)")
+axes[0].set_xlabel("year"); axes[0].set_ylabel("$ per month"); axes[0].legend(); axes[0].grid(alpha=0.3)
+axes[1].plot(np.arange(len(balances)) / 12, balances, color="#2980b9", label="baseline")
+axes[1].plot(np.arange(len(balances_e)) / 12, balances_e, color="#27ae60", label="+$200/month")
+axes[1].set_title("Remaining balance")
+axes[1].set_xlabel("year"); axes[1].set_ylabel("balance ($)"); axes[1].legend(); axes[1].grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+```
+
+### The Credit-Card Minimum-Payment Trap
+
+```{python}
+#| label: fig-creditcard
+#| fig-cap: "Credit-card payoff. A $5,000 balance at 22% APR paid with the minimum (2% of balance, floor $25) takes many years and costs thousands in interest, whereas a fixed $250/month clears it in under two years. The curves show why minimum payments are designed to keep you in debt: most of each payment is interest, so the principal shrinks extremely slowly."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def payoff(balance, apr, min_rate=0.02, min_floor=25.0, fixed=None, cap=3000):
+    i = apr / 12
+    months, total_interest = 0, 0.0
+    bal = balance
+    path = [bal]
+    for _ in range(cap):
+        if bal <= 0:
+            break
+        interest = bal * i
+        pay = fixed if fixed is not None else max(min_floor, min_rate * bal)
+        pay = min(pay, bal + interest)
+        bal = bal + interest - pay
+        total_interest += interest
+        months += 1
+        path.append(max(bal, 0))
+    return months, total_interest, np.array(path)
+
+m_min, int_min, path_min = payoff(5000, 0.22)
+m_fix, int_fix, path_fix = payoff(5000, 0.22, fixed=250)
+print("=== CREDIT CARD: $5,000 AT 22% APR ===")
+print(f"  minimum payments : {m_min} months, interest ${int_min:,.2f}")
+print(f"  fixed $250/month : {m_fix} months, interest ${int_fix:,.2f}")
+print(f"  savings from paying a fixed amount: ${int_min-int_fix:,.2f}")
+
+plt.figure(figsize=(9.5, 5))
+plt.plot(np.arange(len(path_min)) / 12, path_min, color="#e74c3c", label=f"minimum ({m_min} mo)")
+plt.plot(np.arange(len(path_fix)) / 12, path_fix, color="#27ae60", label=f"$250/mo ({m_fix} mo)")
+plt.title("Credit-card balance over time")
+plt.xlabel("years"); plt.ylabel("balance ($)"); plt.legend(); plt.grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+```
+
+### Loans vs Leases and Risk Pooling
+
+```{python}
+import numpy as np
+
+print("=== AUTO: BUY (5-yr loan) vs LEASE (3-yr) ===")
+price, resid3 = 35_000, 21_000        # residual after 3 years
+down = 3_000
+loan_rate, lease_rate = 0.07, 0.06
+
+# buy: finance price-down over 5 years
+i = loan_rate / 12
+P = price - down
+pmt_buy = P * i / (1 - (1 + i) ** -60)
+bal_after_3 = sum(pmt_buy / (1 + i) ** k for k in range(1, 25))  # remaining balance after 36 months
+equity3 = resid3 - bal_after_3
+# lease: pay depreciation + finance (money factor)
+dep = (price - resid3) / 36
+money_factor = lease_rate / 24
+lease_pmt = dep + (price + resid3) * money_factor
+print(f"  buy   : payment ${pmt_buy:,.2f}/mo x 60; after 3 yrs you own a car worth ~${resid3:,} "
+      f"with balance ~${bal_after_3:,.0f} -> equity ~${equity3:,.0f}")
+print(f"  lease : payment ${lease_pmt:,.2f}/mo x 36; after 3 yrs you own nothing")
+print(f"  the lease is essentially paying ${dep*36:,.0f} of depreciation + ${(lease_pmt-dep)*36:,.0f} finance")
+print("  verdict: leasing is convenient and lower-commitment; buying builds equity.")
+
+print("\n=== INSURANCE: EXPECTED VALUE AND RISK POOLING ===")
+p_loss, loss = 0.01, 50_000
+fair = p_loss * loss
+print(f"  P(loss)={p_loss:.0%}, loss if it happens=${loss:,}")
+print(f"  fair premium (expected payout) = ${fair:,.2f}")
+print(f"  an insurer charging $700 keeps ${700-fair:,.2f} expected margin per policy")
+
+rng = np.random.default_rng(1)
+for n in [1, 10, 1000, 100_000]:
+    claims = rng.random(n) < p_loss
+    payouts = np.where(claims, loss, 0)
+    print(f"  pool of {n:>6}: mean loss/person = ${payouts.mean():8,.2f}, "
+          f"std = ${payouts.std():9,.2f}")
+print("  as the pool grows, the average loss per person converges to $500 (LLN),")
+print("  so the insurer can price risk precisely while any individual cannot.")
+```
+
+The laboratory turns financial advice into arithmetic: compounding and APY, an amortization schedule that shows why early payments are mostly interest, the credit-card minimum-payment trap, the loan-versus-lease trade-off, and the law of large numbers behind insurance.
+
+---
+
+## Summary
+
+$$
+\begin{aligned}
+&\textbf{Interest: } && A=P(1+r/m)^{mt};\ \text{continuous } A=Pe^{rt};\ \text{APY}=(1+r/m)^m-1;\ \text{rule of 72.} \\[3pt]
+&\textbf{Time value: } && PV=FV/(1+r)^t;\ NPV=\sum C_t/(1+r)^t;\ \text{annuities.} \\[3pt]
+&\textbf{Loans: } && PMT=\frac{Pi}{1-(1+i)^{-n}};\ \text{amortization: interest early, principal late.} \\[3pt]
+&\textbf{Mortgage: } && \text{term, down payment, points, equity; extra principal saves large interest.} \\[3pt]
+&\textbf{Credit cards: } && \text{high compounding APR + minimum payments = debt trap; avalanche vs snowball.} \\[3pt]
+&\textbf{Cars: } && \text{loans build equity; leases pay depreciation; depreciation dominates TCO.} \\[3pt]
+&\textbf{Insurance: } && \text{expected value + risk pooling (variance } \to0 \text{ as } n\to\infty). \\[3pt]
+&\textbf{Planning: } && \text{real return} \approx \text{nominal}-\text{inflation};\ \text{marginal vs effective tax; emergency fund; diversification.}
+\end{aligned}
+$$
+
+Financial literacy is not a body of tricks but a handful of formulas — compounding, discounting, amortization, and expected value — applied consistently across a lifetime.
+
+---
+
+## Curated References and Further Reading
+
+1. **Khan Academy.** *Financial Literacy* and *Finance and Capital Markets* courses.
+2. **Bodie, Z., Kane, A. & Marcus, A. (2020).** *Investments*, 12th ed. McGraw-Hill.
+3. **Brealey, R., Myers, S. & Allen, F. (2019).** *Principles of Corporate Finance*, 13th ed. McGraw-Hill.
+4. **Ross, S., Westerfield, R. & Jordan, B. (2019).** *Fundamentals of Corporate Finance*, 12th ed. McGraw-Hill.
+5. **Consumer Financial Protection Bureau (CFPB).** *Mortgage, credit card, and loan guides.*
+6. **Federal Reserve.** *Consumer's Guide to Credit Cards* and *mortgage amortization* resources.
+7. **Bernstein, William (2014).** *The Four Pillars of Investing.* McGraw-Hill.
+8. **Malkiel, B. (2019).** *A Random Walk Down Wall Street*, 12th ed. W. W. Norton. (Diversification and risk.)
