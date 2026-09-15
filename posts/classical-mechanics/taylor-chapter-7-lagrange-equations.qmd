@@ -296,6 +296,37 @@ $$n = \dim Q.$$
 - **A coordinate may be vector-valued, or local.** The position $\mathbf r$ is three coordinates for three DOF; the angle of a pendulum is one coordinate on $S^1$ with no globally single-valued value, yet the DOF is one global number.
 - **Implication for Lagrange.** Pick exactly $n = \dim Q$ independent generalized coordinates and you get $n$ second-order equations with no constraint forces. The number of equations equals the DOF; the *choice* of coordinates is free.
 
+### Counting DOF from Infinitesimal Displacements
+
+Taylor defines the DOF as "the number of coordinates that can be independently varied in a small displacement." That definition is operational, and it yields a concrete algorithm.
+
+**Virtual displacements.** A small displacement of the system is a set of infinitesimal changes $\delta\mathbf r_a$ of the particle positions, taken at fixed time. If the system is subject to holonomic constraints
+$$f_j(\mathbf r_1,\dots,\mathbf r_N,t)=0,\qquad j=1,\dots,k,$$
+then a displacement is **consistent with the constraints** if and only if, to first order,
+$$\delta f_j=\sum_{a=1}^N \frac{\partial f_j}{\partial \mathbf r_a}\cdot\delta\mathbf r_a=0,\qquad j=1,\dots,k.$$
+These $k$ linear equations define the set of **allowed infinitesimal displacements**.
+
+**Counting.** The allowed displacements form a vector space — the **tangent space** to the constraint manifold at that configuration — and the DOF is its dimension:
+$$\boxed{\ n=\dim\{\text{allowed }\delta\mathbf r\}=3N-\operatorname{rank}J\ },$$
+where $J=\big(\partial f_j/\partial\mathbf r_a\big)$ is the $k\times 3N$ **constraint Jacobian**. Equivalently: *the DOF is the number of linearly independent directions in which the system can move from the configuration.*
+
+**Linearly independent coordinates.** A set of $n$ generalized coordinates $q_i=q_i(\mathbf r_1,\dots,\mathbf r_N)$ is admissible precisely when their differentials $\delta q_i=\sum_a(\partial q_i/\partial\mathbf r_a)\cdot\delta\mathbf r_a$ are **linearly independent** on the allowed tangent space — equivalently, when the Jacobian $\partial q_i/\partial\mathbf r_a$ has rank $n$. Only then can the $q_i$ be varied independently, with each $(q_1,\dots,q_n)$ labelling exactly one configuration.
+
+**Worked counts.**
+
+| System | Configuration coords $3N$ | Independent constraints | $\operatorname{rank}J$ | DOF $=3N-\operatorname{rank}J$ |
+|---|---|---|---|---|
+| simple pendulum (plane) | 2 | $x^2+y^2=l^2$ | 1 | 1 |
+| particle on a sphere | 3 | $x^2+y^2+z^2=R^2$ | 1 | 2 |
+| rigid body ($N\to\infty$) | $3N$ | fixed pairwise distances | $3N-6$ | 6 |
+| double pendulum (plane) | 4 | 2 rod lengths | 2 | 2 |
+| ball on a plane (x,y + orientation) | 5 | no holonomic constraint | 0 | 5 (*motion*: 3) |
+
+**Degeneracies and non-holonomic systems.**
+
+- **Rank drops at singular configurations.** If $J$ loses rank at some configuration, the DOF can jump there. The fully extended double pendulum and the inverted-vertical rolling hoop are examples where constraints become degenerate.
+- **Non-holonomic constraints** are first-order (velocity) conditions $\sum_a\mathbf a_j(\mathbf r)\cdot\delta\mathbf r_a=0$ that are **not integrable**: they confine the *motion* to a subspace at each instant without reducing the configuration dimension. The rolling sphere (or disk) is the standard case — five configuration coordinates, but only three (sphere) or two (disk) instantaneous directions of motion.
+
 ### Mixing Natural and Inertial Descriptions
 
 Three notions are independent and must never be conflated:
@@ -755,6 +786,44 @@ The procedure is nearly infallible:
 3. Construct $\mathcal{L} = T - U$.
 4. Evaluate the Lagrange equations.
 
+### The Simple Pendulum (Taylor §7.2)
+
+The canonical constrained system: a bob of mass $m$ on a rigid massless rod of length $l$, swinging in a plane. Although the bob has two Cartesian coordinates $(x,y)$, the rod imposes $x^2+y^2=l^2$, so there is **one** DOF. Choosing $\theta$ from the vertical,
+$$\mathbf r=(l\sin\theta,\,-l\cos\theta),\quad T=\tfrac12 ml^2\dot\theta^2,\quad U=mgl(1-\cos\theta),$$
+$$\mathcal L=\tfrac12 ml^2\dot\theta^2-mgl(1-\cos\theta).$$
+The single Lagrange equation is
+$$-mgl\sin\theta-\frac{d}{dt}\big(ml^2\dot\theta\big)=0
+\qquad\Longrightarrow\qquad
+\ddot\theta=-\frac{g}{l}\sin\theta.$$
+The rod's tension — the force of constraint — never appears, which is the whole point. For small $\theta$ this is SHM with $\omega=\sqrt{g/l}$, and the *same* equation also follows Newtonianly from torque $=I\alpha$ (here $\Gamma=-mgl\sin\theta$, $I=ml^2+r$).
+
+### Atwood's Machine (Taylor Example 7.3)
+
+Two masses $m_1,m_2$ hang from an inextensible string over a massless frictionless pulley. With $x$ the downward displacement of $m_1$ and $y$ the upward displacement of $m_2$, the fixed string length gives $x+y=\text{const}$, hence $\dot y=-\dot x$: **one** DOF. Then
+$$T=\tfrac12(m_1+m_2)\dot x^2,\qquad U=-(m_1-m_2)gx,\qquad \mathcal L=\tfrac12(m_1+m_2)\dot x^2+(m_1-m_2)gx.$$
+Lagrange's equation is $(m_1-m_2)g=(m_1+m_2)\ddot x$, i.e.
+$$\ddot x=\frac{m_1-m_2}{m_1+m_2}\,g.$$
+The Newtonian route needs **two** equations (one per mass) and the string tension $F_t$ as an extra unknown, which must then be eliminated; Lagrange never introduces $F_t$ at all. (If the tension is wanted, the multiplier method of §7.10 recovers it.)
+
+### A Particle Confined to a Cylinder (Taylor Example 7.4)
+
+A mass $m$ slides frictionlessly on the cylinder $\rho=R$ under the Hooke force $\mathbf F=-k\mathbf r$. With coordinates $z,\phi$ (two DOF since $\rho=R$ is fixed),
+$$T=\tfrac12 m\big(R^2\dot\phi^2+\dot z^2\big),\qquad U=\tfrac12 k(R^2+z^2),$$
+$$\mathcal L=\tfrac12 m\big(R^2\dot\phi^2+\dot z^2\big)-\tfrac12 k(R^2+z^2).$$
+The equations are
+$$m\ddot z=-kz\quad(\text{SHM in }z),\qquad \frac{d}{dt}\big(mR^2\dot\phi\big)=0\quad(\text{angular momentum about }z\text{ conserved}).$$
+Here $\phi$ is **ignorable**: $\mathcal L$ does not contain $\phi$, so its conjugate momentum is constant. This is the Lagrangian route to a conservation law with zero effort.
+
+### A Block Sliding on a Wedge (Taylor Example 7.5)
+
+A block (mass $m$) slides on a frictionless wedge (mass $M$) that itself slides on a frictionless table. Use $q_1$ = distance of the block down the slope and $q_2$ = horizontal position of the wedge. The block's velocity is the vector sum of its motion down the slope and the wedge's motion:
+$$T=\tfrac12(M+m)\dot q_2^2+m\dot q_1\dot q_2\cos\alpha+\tfrac12 m\dot q_1^2,\qquad U=-mg\,q_1\sin\alpha.$$
+The $q_2$ coordinate is ignorable, so
+$$(M+m)\dot q_2+m\dot q_1\cos\alpha=\text{const}\qquad(\text{horizontal momentum}),$$
+and the $q_1$ equation, after eliminating $\ddot q_2$, gives the block's acceleration relative to the wedge:
+$$\ddot q_1=\frac{g\sin\alpha}{1-\dfrac{m}{M+m}\cos^2\alpha}.$$
+Checks: $M\to\infty$ gives $g\sin\alpha$ (fixed incline); $\alpha=90^\circ$ gives $g$ (free fall). Solving this Newtonianly requires carefully tracking normal forces between block and wedge; Lagrange needs only the two energies.
+
 ### Bead on a Spinning Wire Hoop (Bifurcation Example)
 Consider a circular wire hoop of radius $R$ spinning at constant angular velocity $\omega$ about its vertical axis, with a bead of mass $m$ free to slide. The generalized coordinate is the angle $\theta$ from the bottom.
 
@@ -815,6 +884,33 @@ If the Lagrangian has no explicit time dependence ($\partial \mathcal{L} / \part
 Furthermore, if the generalized coordinates are *natural* (time-independent transformations), Euler's homogeneous function theorem guarantees that the kinetic energy $T$ is a homogeneous quadratic function of the velocities, which implies:
 $$ \sum_{i} p_i \dot{q}_i = 2T \implies \mathcal{H} = 2T - (T - U) = T + U = E $$
 Hence, time-translation invariance leads to **Energy Conservation**.
+
+### The Mass Matrix and Why $\mathcal H = T + U$
+
+The claim $\sum_i p_i\dot q_i = 2T$ deserves its derivation. For **natural** coordinates, differentiating $\mathbf r_a(q)$ gives $\dot{\mathbf r}_a=\sum_i(\partial\mathbf r_a/\partial q_i)\,\dot q_i$, hence
+$$T=\tfrac12\sum_a m_a|\dot{\mathbf r}_a|^2=\tfrac12\,A_{jk}(q)\,\dot q_j\dot q_k,
+\qquad
+A_{jk}(q)=\sum_a m_a\,\frac{\partial\mathbf r_a}{\partial q_j}\cdot\frac{\partial\mathbf r_a}{\partial q_k}.$$
+The symmetric matrix $A_{jk}$ is the **mass matrix** (the metric on configuration space). Then
+$$\frac{\partial T}{\partial\dot q_i}=A_{ij}\dot q_j=p_i,
+\qquad
+\sum_i p_i\dot q_i=A_{ij}\dot q_i\dot q_j=2T,$$
+so $\mathcal H=\sum_i p_i\dot q_i-\mathcal L=2T-(T-U)=T+U$. Thus:
+
+> If the coordinates are natural **and** $\partial\mathcal L/\partial t=0$, then $\mathcal H=T+U=E$ and energy is conserved.
+
+### Momentum Conservation as Noether's Theorem
+
+An isolated system is **translationally invariant**: shifting every particle by the same infinitesimal $\boldsymbol\epsilon$ changes nothing physical, so $\delta U=0$, $\delta T=0$ (velocities are unchanged), hence $\delta\mathcal L=0$. Writing that change out,
+$$\delta\mathcal L=\boldsymbol\epsilon\cdot\sum_a\frac{\partial\mathcal L}{\partial\mathbf r_a}=0
+\ \text{for all }\boldsymbol\epsilon
+\qquad\Longrightarrow\qquad
+\sum_a\frac{\partial\mathcal L}{\partial\mathbf r_a}=0.$$
+Using Lagrange's equations, $\partial\mathcal L/\partial\mathbf r_a=\dfrac{d}{dt}\dfrac{\partial\mathcal L}{\partial\dot{\mathbf r}_a}$, so the last equation becomes
+$$\frac{d}{dt}\sum_a\mathbf p_a=0
+\qquad\Longrightarrow\qquad
+\mathbf P=\sum_a\mathbf p_a\ \text{conserved}.$$
+This is the first instance of **Noether's theorem**: *invariance of $\mathcal L$ under a continuous transformation implies a conservation law.* Time-translation invariance $\Rightarrow$ energy; space-translation invariance $\Rightarrow$ total momentum; rotational invariance $\Rightarrow$ total angular momentum. The three great conservation laws of mechanics are three symmetries of one function.
 
 ---
 
@@ -937,6 +1033,18 @@ $$ \frac{\partial \mathcal{L}}{\partial q_i} - \frac{d}{dt}\frac{\partial \mathc
 
 The extra term $\lambda \frac{\partial f}{\partial q_i}$ is precisely the $i$-th component of the **force of constraint**. Solving this system of differential algebraic equations (DAEs) yields both the trajectory $q_i(t)$ and the dynamic magnitude of the constraint force via $\lambda(t)$.
 
+### Worked Example: Atwood's Machine via a Multiplier (Taylor Example 7.8)
+
+With $x,y$ the downward displacements of $m_1,m_2$ and the string constraint $f(x,y)=x+y=\text{const}$,
+$$\mathcal L=\tfrac12 m_1\dot x^2+\tfrac12 m_2\dot y^2+m_1gx+m_2gy.$$
+The modified Lagrange equations ($\partial f/\partial x=\partial f/\partial y=1$) are
+$$m_1g+\lambda=m_1\ddot x,\qquad m_2g+\lambda=m_2\ddot y,\qquad \ddot x+\ddot y=0.$$
+Eliminating $\ddot y=-\ddot x$ gives the same acceleration as before,
+$$\ddot x=\frac{m_1-m_2}{m_1+m_2}\,g,$$
+and the multiplier is
+$$\lambda=-\frac{2m_1m_2}{m_1+m_2}\,g=-F_t,$$
+so $\lambda$ is (minus) the string **tension** — the constraint force that the ordinary Lagrange method never introduced. This is the whole point of the multiplier: it is not a fudge factor but the physical constraint force in disguise.
+
 ---
 
 ## Lean 4 Formalization of Lagrange's Equations
@@ -992,3 +1100,36 @@ def IsNewtonian : Prop :=
 - **Canonical momentum is a Fréchet derivative,** so `p = ∂L/∂v` is meaningful only once `v` ranges over a normed space.
 - **Conservation is algebraic.** A symmetry with generator `G` and `{G, L} = 0` yields a conserved quantity — the same argument as in [the Hamiltonian chapter](taylor-chapter-13-hamiltonian-mechanics.qmd).
 - **Gaps.** Mathlib has the analysis and manifold infrastructure but lacks a ready-made variational/mechanics library, so the `IsEL` operator, the Legendre transform, and the symplectic form must be constructed. Building them *is* the honest statement of the assumptions.
+
+---
+
+## Chapter 7 in Review
+
+A map of Taylor's Chapter 7 to the sections of this article, followed by the master list of definitions and equations.
+
+| Taylor § | Topic | Covered here |
+|---|---|---|
+| **7.1** | Lagrange's equations for unconstrained motion; Hamilton's principle; equivalence to Newton | The Equivalence Chain; *F = dp/dt, Inertial Frames* |
+| **7.2** | Constrained systems: the simple pendulum | *The Simple Pendulum* |
+| **7.3** | Generalized coordinates; natural (scleronomic) coordinates; degrees of freedom; holonomic vs non-holonomic | §7.3; *Degrees of Freedom Are Not Coordinates*; *Counting DOF from Infinitesimal Displacements* |
+| **7.4** | Proof of Lagrange's equations with constraints | *Deriving Lagrange's Equations from Hamilton's Principle*; §7.4 |
+| **7.5** | Examples: Atwood, cylinder, wedge, spinning hoop, oscillations near equilibrium | *7.5 Examples* and the worked examples |
+| **7.6** | Generalized momenta and ignorable coordinates | §7.6 |
+| **7.7** | Conclusion | this section |
+| **7.8** | Conservation laws, Noether's theorem, the Hamiltonian | §7.8; *The Mass Matrix and Why H = T + U* |
+| **7.9** | Magnetic forces; non-uniqueness of the Lagrangian | §7.9; *What Does the Lagrangian Physically Represent?* |
+| **7.10** | Lagrange multipliers and constraint forces | §7.10; *Atwood's Machine via a Multiplier* |
+
+**Principal definitions and equations.**
+
+- **Lagrangian:** $\mathcal L = T - U$ for conservative systems; more generally, *any* scalar $\mathcal L(q,\dot q,t)$ whose Euler–Lagrange equations reproduce the dynamics.
+- **Generalized coordinates:** the smallest set $q_1,\dots,q_n$ such that $\mathbf r_a=\mathbf r_a(q,t)$ and conversely. **Natural** (scleronomic) iff the map has no explicit $t$.
+- **Degrees of freedom:** the number of independently variable coordinates = $\dim Q = 3N-\operatorname{rank}J$; reduced by holonomic constraints, not by non-holonomic ones.
+- **Lagrange's equations:** $\dfrac{d}{dt}\dfrac{\partial\mathcal L}{\partial\dot q_i}-\dfrac{\partial\mathcal L}{\partial q_i}=0$.
+- **Generalized force and momentum:** $Q_i=\dfrac{\partial\mathcal L}{\partial q_i}$, $p_i=\dfrac{\partial\mathcal L}{\partial\dot q_i}$, so $Q_i=\dot p_i$.
+- **Ignorable coordinate:** if $\mathcal L$ is independent of $q_i$, then $p_i$ is conserved.
+- **Hamiltonian:** $\mathcal H=\sum_i p_i\dot q_i-\mathcal L$; $\mathcal H$ is conserved iff $\partial\mathcal L/\partial t=0$, and $\mathcal H=T+U$ if the coordinates are natural.
+- **Magnetic Lagrangian:** $\mathcal L=\tfrac12 m\dot{\mathbf r}^2-q(V-\dot{\mathbf r}\cdot\mathbf A)$, for which the canonical momentum is $\mathbf p=m\mathbf v+q\mathbf A$.
+- **Lagrange multipliers:** $\dfrac{d}{dt}\dfrac{\partial\mathcal L}{\partial\dot q_i}-\dfrac{\partial\mathcal L}{\partial q_i}=\lambda\dfrac{\partial f}{\partial q_i}$, where $\lambda\,\partial f/\partial q_i$ is the constraint force.
+
+**What the chapter achieves** is exactly the promise of Hamilton's epigraph: *"the most varied consequences respecting the motions of systems of bodies may be derived from one radical formula."* Two structural gains make this work — **coordinate freedom** (the same equations in any description) and **constraint elimination** (the forces we do not want disappear automatically). Both rest on the assumptions catalogued in [The Hidden Assumptions of Classical Mechanics](assumptions-of-classical-mechanics-spaces-coordinates-and-frames.qmd): an inertial frame to *start* from, smooth functionals, holonomic constraints doing no virtual work, and conservative (or potentially derivable) non-constraint forces. From here the same radical formula powers central forces (Ch. 8), non-inertial frames (Ch. 9), rigid bodies (Ch. 10), normal modes (Ch. 11), chaos (Ch. 12), and the [Hamiltonian reformulation (Ch. 13)](taylor-chapter-13-hamiltonian-mechanics.qmd).
