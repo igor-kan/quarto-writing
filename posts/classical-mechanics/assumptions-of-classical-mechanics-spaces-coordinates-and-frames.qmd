@@ -213,6 +213,125 @@ A typical problem ("a block slides down a frictionless incline") assumes, silent
 
 ---
 
+## Formalizing the Assumptions in Lean 4
+
+A proof assistant makes assumptions impossible to hide. In **Lean 4** with **Mathlib**, every structure discussed above — affine space, Euclidean space, manifold, smoothness, Lipschitz continuity — becomes an explicit **type**, **typeclass instance**, or **hypothesis**. Omit one and the terms you try to write simply do not type-check. This is the deepest test of whether you really understand the assumptions.
+
+### Points vs Vectors: The Torsor
+
+Mathlib formalizes an affine space as a **torsor**: the point type `P` carries an action of the vector space `V`, with the operations `+ᵥ` (point displaced by a vector) and `-ᵥ` (difference of two points).
+
+```lean
+import Mathlib
+
+-- V : the vector space of displacements; P : the affine space of positions
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {P : Type*} [PseudoMetricSpace P] [NormedAddTorsor V P]
+
+variable (p q : P)          -- two POINTS
+#check (q -ᵥ p)             -- : V   (a displacement -- a vector)
+#check (q -ᵥ p) +ᵥ p        -- : P   (point + vector = point)
+-- p + q is a TYPE ERROR: points cannot be added, exactly the affine rule
+```
+
+The distinction that is "usually invisible" in physics is here a **hard typing rule**: `p + q` has no instance, while `q -ᵥ p : V` and `v +ᵥ p : P` do. Choosing an origin is literally choosing a basepoint `p₀ : P`, after which `p ↦ p -ᵥ p₀ : V`.
+
+### Euclidean Space, Frames, and Coordinates
+
+```lean
+-- n-dimensional Euclidean space: a function type carrying the Pi inner product
+abbrev Euc (n : ℕ) := EuclideanSpace ℝ (Fin n)
+example : InnerProductSpace ℝ (Euc 3) := inferInstance
+
+-- a frame is a basis; coordinates are the coefficient map
+variable {b : Basis (Fin 3) ℝ (Euc 3)} (v : Euc 3)
+#check b.repr v             -- the coordinates of v in the frame b
+```
+
+A change of coordinates is a change of basis, and the **metric tensor** is `g i j := ⟪b i, b j⟫`. The physics is invariant under the change of `b` — a theorem, not an assumption.
+
+### Time, Trajectories, and Derivatives
+
+```lean
+variable (γ : ℝ → Euc 3)     -- a trajectory: time -> configuration
+#check deriv γ               -- velocity  : ℝ → Euc 3
+#check deriv (deriv γ)       -- acceleration
+#check ContDiff ℝ 2 γ        -- the smoothness hypothesis, as a Prop
+#check DifferentiableAt ℝ γ 0
+```
+
+`deriv` does not exist until you have supplied `[NormedAddCommGroup]` and `[NormedSpace ℝ]`; the analytic assumptions of mechanics are the **typeclass context** of the theory.
+
+### Newton's Law as a Differential Equation
+
+```lean
+variable (F : Euc 3 → Euc 3) (U : Euc 3 → ℝ) (m : ℝ)
+-- force is a VECTOR FIELD (a vector assigned to each point); potential is a scalar field
+def IsNewtonian (γ : ℝ → Euc 3) : Prop :=
+  ∀ t, m • deriv (deriv γ) t = F (γ t)
+-- conservative force law as a definition:
+#check (fun x => - gradient U x)     -- F = -∇U
+```
+
+Note that `IsNewtonian` is only meaningful in **inertial coordinates**: the frame assumption is *not* in the type of `F`, so it must be stated in the surrounding theorem. (This is a nice illustration of an assumption that formalization exposes rather than enforces automatically.)
+
+### Configuration Manifolds and Bundles
+
+```lean
+variable {𝕜 E H M : Type*}
+  [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
+  [TopologicalSpace M] [ChartedSpace H M]
+#check TangentSpace     -- T_x Q at a point
+#check TangentBundle    -- the state space TQ
+#check CotangentSpace   -- the phase space fibre T*_x Q
+#check chartAt          -- a coordinate chart as a partial homeomorphism
+```
+
+The **configuration space** is a `ChartedSpace` / manifold, the **state space** is `TangentBundle`, and the **phase space** is the cotangent bundle — the same geometry as before, now a type.
+
+### Determinism, Smoothness, and Constraints
+
+```lean
+#check IsPicardLindelof   -- existence AND uniqueness need a Lipschitz vector field
+#check IsSubmanifold      -- a holonomic constraint is a submanifold of Q
+#check AffineIsometryEquiv -- an inertial change of frame preserves all distances
+```
+
+- **Determinism** is not automatic: without a Lipschitz hypothesis, the ODE existence–uniqueness theorem does not apply, and trajectories need not be unique.
+- **Holonomic constraints** are `IsSubmanifold`; the dimension drop `3N → 3N−k` becomes a statement about tangent spaces.
+- **Galilean boosts** are affine isometries (`AffineIsometryEquiv`), making the relativity of inertial frames a theorem about a group action.
+
+### A Translation Table
+
+| Concept | Lean 4 / Mathlib encoding |
+|---|---|
+| displacement (vector) | `v : V`, `[NormedAddCommGroup V] [NormedSpace ℝ V]` |
+| position (point) | `p : P`, `[NormedAddTorsor V P]` |
+| move / difference | `v +ᵥ p : P`, `q -ᵥ p : V` |
+| frame | `Basis ι ℝ E` |
+| coordinates / chart | `b.repr`, `chartAt`, `PartialHomeomorph` |
+| trajectory | `γ : ℝ → E` |
+| velocity / acceleration | `deriv γ`, `deriv (deriv γ)` |
+| smoothness | `ContDiff ℝ n f` |
+| force / potential | `F : E → E`, `U : E → ℝ`, `gradient U` |
+| manifold | `ModelWithCorners`, `[ChartedSpace H M]` |
+| tangent / cotangent space | `TangentSpace`, `CotangentSpace` |
+| constraint | `Set M`, `IsSubmanifold` |
+| inertial frame change | `AffineIsometryEquiv` |
+| determinism | `IsPicardLindelof` + ODE existence/uniqueness |
+
+### What Formalization Reveals
+
+- **Assumptions become types.** The affine/vector distinction is enforced by `+ᵥ` vs `+`; no smoothness means no `deriv`; no Lipschitz means no uniqueness.
+- **Gauge freedom is a theorem.** That `L` and `L + dF/dt` yield identical Euler–Lagrange equations is statable and provable — the "the Lagrangian represents nothing in itself" point, made rigorous.
+- **The Lagrangian is a function on the tangent bundle**: `L : TangentBundle I Q → ℝ`, or locally `E × E → ℝ`; the cotangent bundle and its symplectic form are the Hamiltonian stage.
+- **Gaps remain.** Mathlib has rich analysis, manifold, and Lie-group libraries, but no comprehensive classical-mechanics library: the variational calculus on manifolds, the Euler–Lagrange and Hamilton formalisms, and symplectic geometry are only partially developed. Formalizing even "a block slides down a frictionless incline" means assembling those pieces — which is itself a way of *seeing* the assumptions.
+
+*Caveat: Mathlib's API evolves between releases; the names above are illustrative of the current design rather than a guarantee for a particular version.*
+
+---
+
 ## Laboratory: The Assumptions, Made Concrete
 
 ### Affine Space: Points Versus Vectors
