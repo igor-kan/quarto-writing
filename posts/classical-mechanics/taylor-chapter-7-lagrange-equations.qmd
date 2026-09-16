@@ -1,0 +1,1168 @@
+---
+title: "Taylor Chapter 7: Lagrange's Equations"
+subtitle: "Overcoming constraint forces and deriving the laws of motion from a single radical formula."
+author: "Igor Kan"
+date: "2026-09-15"
+categories: [Physics, Classical Mechanics, Lagrangian Mechanics, Mathematical Physics]
+description: "Lagrange's equations: generalized coordinates, Hamilton's principle, constrained systems and the elimination of constraint forces, generalized momenta and ignorable coordinates, Noether's theorem, the electromagnetic Lagrangian, and Lagrange multipliers for constraint forces."
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: show
+    code-tools: true
+    toc: true
+    toc-depth: 3
+jupyter: python3
+toc: true
+toc-depth: 3
+---
+
+# Introduction: The Beauty of the Lagrangian Method
+
+The theoretical development of the laws of motion found its most poetic formulation in 1788 when the Italian-French mathematician Joseph-Louis Lagrange published *Mécanique Analytique*. 
+
+The Lagrangian formulation holds **two major advantages** over Newtonian mechanics (see our detailed computational treatise: **Variational Mechanics as High-Level Declarative Software**):
+1. Lagrange's equations take the **same form in any coordinate system** (Cartesian, spherical, non-inertial, etc.).
+2. For constrained systems (like a bead on a wire), the Lagrangian approach naturally **eliminates the forces of constraint** (like normal forces), which are often unknown and uninteresting.
+
+---
+
+## 7.1 Lagrange's Equations for Unconstrained Motion
+
+*(See Problems 7.1-7.7)*
+
+For a particle moving freely in 3D subject to a conservative force $\mathbf{F} = -\nabla U$, the **Lagrangian** $\mathcal{L}$ is defined as the kinetic energy minus the potential energy:
+$$ \mathcal{L} = T - U = \frac{1}{2}m(\dot{x}^2 + \dot{y}^2 + \dot{z}^2) - U(x, y, z) $$
+
+By checking the partial derivatives, we see that:
+$$ \frac{\partial \mathcal{L}}{\partial x} = -\frac{\partial U}{\partial x} = F_x, \quad \text{and} \quad \frac{\partial \mathcal{L}}{\partial \dot{x}} = m\dot{x} = p_x $$
+Newton's second law ($F_x = \dot{p}_x$) is therefore exactly equivalent to the **Lagrange equation** in Cartesian coordinates:
+$$ \frac{\partial \mathcal{L}}{\partial x} - \frac{d}{dt}\frac{\partial \mathcal{L}}{\partial \dot{x}} = 0 $$
+
+### Hamilton's Principle
+Because this has the exact form of the Euler-Lagrange equations, we can re-state Newton's Second Law as an integral variational principle known as **Hamilton's Principle**:
+> *The actual path which a particle follows between two points 1 and 2 in a given time interval makes the action integral $S = \int_{t_1}^{t_2} \mathcal{L} \, dt$ stationary.*
+
+Because Hamilton's Principle applies globally to the action integral $S$, the value of the integral is invariant under coordinate transformations. This proves that **Lagrange's equations are valid in any choice of generalized coordinates** $q_1, q_2, \dots, q_n$.
+
+### Example: Polar Coordinates
+If we write $\mathcal{L} = \frac{1}{2}m(\dot{r}^2 + r^2 \dot{\theta}^2) - U(r, \theta)$, the $\theta$ equation becomes:
+$$ \frac{\partial \mathcal{L}}{\partial \theta} = \frac{d}{dt} \frac{\partial \mathcal{L}}{\partial \dot{\theta}} \implies -\frac{\partial U}{\partial \theta} = \frac{d}{dt} (mr^2 \dot{\theta}) $$
+Since $-\partial U/\partial \theta$ is the torque $\Gamma$ and $mr^2\dot{\theta}$ is the angular momentum $L$, this automatically yields $\Gamma = \dot{L}$. The geometry of the coordinates naturally yields the appropriate mechanical theorem.
+
+---
+
+## What Does the Lagrangian Physically Represent?
+
+Short answer: **nothing directly, and everything structurally.** Like the wavefunction in quantum mechanics, the Lagrangian carries the *complete* dynamical content of the system while corresponding to *no measurable quantity*.
+
+### The Wavefunction Analogy
+
+| | Lagrangian $\mathcal L$ (classical) | Wavefunction $\psi$ (quantum) |
+|---|---|---|
+| Object | real scalar on the tangent bundle $TQ$ | complex function on configuration space |
+| Contains | all dynamics (via E-L) | all state information |
+| Directly observable? | **no** | **no** (only $|\psi|^2$ is) |
+| Units | energy | amplitude (dimensionful) |
+| Physical content | equations of motion, symmetries, conservation laws | probabilities, expectation values |
+| Freedom | $\mathcal L \to \mathcal L + \dfrac{dF}{dt}$, $\mathcal L \to c\,\mathcal L$ | global / relative phase |
+
+- $\mathcal L = T - U$ has units of energy but is **not** the energy — the energy is $T + U$ (when $\mathcal H = T+U$; see below).
+- **No experiment measures $\mathcal L$.** What is measured are positions, times, forces, momenta, and energies.
+- The physically meaningful object is the **action** $S = \int \mathcal L\,dt$. Hamilton's principle states $\delta S = 0$ (**stationary**, not necessarily least), and deciding min/max/saddle requires the second variation.
+
+### Gauge Freedom and Non-Uniqueness
+
+The Lagrangian is *not unique*:
+
+1. **Add a total time derivative:** $\mathcal L' = \mathcal L + \dfrac{dF(q,t)}{dt}$ changes $S$ only by boundary terms, so the Euler–Lagrange equations are identical.
+2. **Multiply by a nonzero constant:** $\mathcal L' = c\,\mathcal L$ gives the same trajectories.
+
+Different Lagrangians therefore describe the same physics. This is another sense in which $\mathcal L$ "represents nothing" in itself: only its *variations*, *symmetries*, and the resulting conservation laws are physical. Contrast this with energies and forces, which are unique and measurable.
+
+### The Bridge to Quantum Mechanics
+
+In Feynman's path integral the transition amplitude is
+$$K = \int \mathcal D[q]\, e^{\,i S[q]/\hbar},$$
+so **the action is the quantum phase**. In the classical limit $\hbar \to 0$, paths with $\delta S \neq 0$ interfere destructively and cancel, leaving the stationary path. Thus $\mathcal L$ is the **classical shadow of the quantum phase** $\psi \sim e^{iS/\hbar}$: both encode everything and neither is directly observable — only the probability density $|\psi|^2$ (in QM) or the equations of motion and conserved quantities (in CM) are.
+
+---
+
+## $\mathbf F = d\mathbf p/dt$, Inertial Frames, and Why the Equations Hold
+
+### The Law and the Frame It Requires
+
+Newton's second law in its most useful form is
+$$\mathbf F = \frac{d\mathbf p}{dt},$$
+which reduces to $\mathbf F = m\mathbf a$ for constant mass and extends to variable-mass and relativistic settings. Two points are usually glossed over:
+
+1. **It is a law, not a definition.** Once forces are specified by force laws (gravitation, electromagnetism), $\mathbf F = d\mathbf p/dt$ is an empirical claim about how motion responds to force.
+2. **It holds only in an inertial frame** — a frame in which a free particle moves at constant velocity. In an accelerating or rotating frame it fails unless **fictitious forces** are added.
+
+### How the Lagrangian Reproduces It
+
+In Cartesian inertial coordinates with $\mathcal L = T - U$,
+$$\frac{\partial \mathcal L}{\partial x} = -\frac{\partial U}{\partial x} = F_x, \qquad \frac{\partial \mathcal L}{\partial \dot x} = m\dot x = p_x,$$
+so the Euler–Lagrange equation is *literally* $F_x = \dot p_x$. The Lagrangian method therefore **inherits the inertial-frame assumption**: $T-U$ must be written in inertial coordinates, and generalized coordinates must be functions of those.
+
+Because $S$ is a scalar, the same E-L form survives in any generalized coordinates, with **generalized momentum** $p_i = \partial \mathcal L/\partial \dot q_i$ and the statement $F_i = \dot p_i$. For a charged particle this $p_i$ is the **canonical** momentum $m v_i + qA_i$, and $\dot p_i$ reproduces the full Lorentz force — a reminder that the $\mathbf p$ in $\mathbf F = d\mathbf p/dt$ is the canonical momentum once fields are present.
+
+### Implications
+
+- **Conservation laws rest on inertia and symmetry** (Noether): spatial translation invariance gives momentum conservation, time-translation invariance gives energy, rotational invariance gives angular momentum.
+- **Non-inertial frames** are still describable: keep the E-L machinery but express $T$ in the non-inertial coordinates — the time-dependent coordinate transformation generates the fictitious-force terms.
+- **Relativity and gravity:** with $\mathbf p = \gamma m\mathbf v$, $\mathbf F = d\mathbf p/dt$ is the relativistic law; in general relativity inertial frames exist only locally (the equivalence principle).
+
+---
+
+## The Equivalence Chain: Newton $\Longleftrightarrow$ Euler–Lagrange $\Longleftrightarrow$ Stationary Action
+
+We can now assemble the central logical structure of Lagrangian mechanics. Everything *begins* in an inertial frame with Cartesian coordinates — but it does not *end* there.
+
+### Step 1: Newton's Law and the Conservative Lagrangian
+
+In an inertial frame, for a conservative force $\mathbf F = -\nabla U$, Newton's law is $\mathbf F = d\mathbf p/dt$. Define the Lagrangian
+$$\mathcal L(\mathbf r,\dot{\mathbf r}) = T - U = \tfrac12 m\,\dot{\mathbf r}^2 - U(\mathbf r).$$
+In Cartesian coordinates,
+$$\frac{\partial \mathcal L}{\partial x_i} = -\frac{\partial U}{\partial x_i} = F_i, \qquad \frac{\partial \mathcal L}{\partial \dot x_i} = m\dot x_i = p_i,$$
+so
+$$\frac{\partial \mathcal L}{\partial x_i} - \frac{d}{dt}\frac{\partial \mathcal L}{\partial \dot x_i} = F_i - \dot p_i.$$
+Hence, **for each $i$**, the Euler–Lagrange equation vanishes **iff** $F_i = \dot p_i$:
+$$\textbf{Newton (inertial Cartesian)} \quad\Longleftrightarrow\quad \textbf{Euler–Lagrange (Cartesian)}.$$
+
+### Step 2: Euler–Lagrange $\Longleftrightarrow$ Stationary Action
+
+For fixed endpoints $q(t_1) = q^{(1)}$, $q(t_2) = q^{(2)}$, the **fundamental lemma of the calculus of variations** states that the first variation of the action
+$$S[q] = \int_{t_1}^{t_2} \mathcal L(q,\dot q,t)\,dt$$
+vanishes for all admissible variations $\eta$ with $\eta(t_1) = \eta(t_2) = 0$ **iff** the Euler–Lagrange equations hold:
+$$\textbf{Euler–Lagrange} \quad\Longleftrightarrow\quad \delta S = 0 \text{ along the path}.$$
+This is **Hamilton's principle**: the actual path — the one that obeys the laws of mechanics — is exactly the path that makes the action integral stationary, with endpoints held fixed.
+
+### Step 3: The Action Is a Scalar, So Stationarity Is Coordinate-Invariant
+
+Now the key point. The action $S$ is a **number** attached to a physical path, computed as $\int \mathcal L\,dt$ with absolute time; and $\mathcal L$ is a **scalar function on the tangent bundle**. When we change to arbitrary generalized coordinates $q \mapsto Q(q,t)$ — smooth and invertible — the *functional form* of $\mathcal L$ changes, because $T$ and $U$ must be re-expressed, but the *value* of $S$ along a given physical path is **unchanged**. Therefore stationarity is a coordinate-independent statement:
+$$\delta S = 0 \text{ (Cartesian)} \quad\Longleftrightarrow\quad \delta S = 0 \text{ (generalized coordinates)}.$$
+The change of variables is a diffeomorphism of the path space that preserves the boundary conditions, so it maps stationary paths to stationary paths.
+
+### Step 4: Generalized Euler–Lagrange Equations
+
+Applying Step 2 in the new coordinates, $\delta S = 0$ is equivalent to the Euler–Lagrange equations for the generalized coordinates:
+$$\frac{d}{dt}\frac{\partial \mathcal L}{\partial \dot q_i} - \frac{\partial \mathcal L}{\partial q_i} = 0,$$
+which are **Lagrange's equations**. Importantly, the $q_i$ need not be Cartesian, and need not even be coordinates in an inertial frame.
+
+### The Chain
+
+$$
+\boxed{\;
+\text{Newton } (\mathbf F = d\mathbf p/dt)
+\;\Longleftrightarrow\;
+\text{E–L (Cartesian)}
+\;\Longleftrightarrow\;
+\delta S = 0
+\;\Longleftrightarrow\;
+\delta S = 0 \text{ (any coords)}
+\;\Longleftrightarrow\;
+\text{Lagrange (arbitrary } q_i)
+\;}
+$$
+
+Every arrow is reversible for holonomic, conservative systems, under smooth invertible coordinate transformations, with fixed endpoints.
+
+### Why Generalized Coordinates Can Be Non-Inertial
+
+Two facts carry the weight:
+
+1. **$S$ is a scalar.** Its stationarity refers to no frame; it is a property of the physical path.
+2. **$\mathcal L$ transforms as a scalar.** Passing to a non-inertial frame — say a uniformly rotating frame with $\mathbf r' = R(t)\,\mathbf r$ — and re-expressing the *same* $T - U$ automatically produces the extra terms we would otherwise call **fictitious forces**. The centrifugal and Coriolis terms are not inserted by hand; they emerge from $T$ written in the rotating coordinates (together with the explicit time dependence of the transformation).
+
+So the *same* Lagrange equations govern motion in any coordinates. What changes is the **form of $\mathcal L$**, not the validity of the equations. (In non-inertial coordinates the transformation depends on $t$, so $T$ becomes a general quadratic in $\dot q$ and the Jacobi-integral subtlety of the time-dependence section appears.)
+
+### Deepening Hamilton's Principle
+
+Hamilton's principle is not merely a restatement of Newton's law — it is a *different kind* of law:
+
+- **It is global.** Newton's law is local (a second-order ODE at each instant); Hamilton's principle selects the **entire path at once** by a single integral condition. Equivalent, yet the integral form makes symmetry and conservation manifest (Noether's theorem).
+- **It is stationary, not "least."** $\delta S = 0$ is a first-order condition; the second variation decides minimum, maximum, or saddle. For long times the physical path is typically a **saddle** (see the Ch. 6 discussion of conjugate points).
+- **It fixes endpoints.** The variations vanish at $t_1, t_2$, which is exactly what removes the boundary term in the integration by parts. Other boundary conditions give the more general stationary-action statement with natural boundary terms.
+- **It is coordinate-invariant by construction** — which is precisely why it survives the passage to generalized coordinates, and hence why Lagrange's equations are frame- and coordinate-independent.
+- **It generalizes cleanly.** Non-conservative forces can be added as generalized forces; velocity-dependent potentials handle electromagnetism ($\mathcal L = T - qV + q\,\dot{\mathbf r}\cdot\mathbf A$); in field theory $S$ becomes a spacetime integral of a **Lagrangian density**, whose Euler–Lagrange equations are the field equations and whose symmetries (via Noether) yield conservation laws.
+
+Finally, the equivalence is with the **first** variation only: $\delta S = 0$ produces exactly the equations of motion, and the min/max/saddle character never enters the dynamics — it matters for stability, tunneling, and semiclassical quantum mechanics.
+
+The laboratory verifies both halves of the chain: the same physical equations in Cartesian and polar coordinates, and the stationarity of the action (including its minimum-to-saddle transition).
+
+```{python}
+#| label: fig-action-stationary
+#| fig-cap: "Hamilton's principle, verified. Left: the action S[ε] for paths x(t)=x_true(t)+ε sin(πt/T) with fixed endpoints. The true path is at ε=0, where dS/dε=0 — stationary. Right: the sign of the curvature d²S/dε² depends on the travel time T relative to the oscillator period. For T below half a period the true path is a minimum; beyond the conjugate point (T > π/ω) it becomes a saddle, exactly as the Ch. 6 analysis predicts."
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+m, k, x1 = 1.0, 1.0, 1.0
+w = np.sqrt(k / m)
+
+def action_for(T, eps):
+    t = np.linspace(0, T, 2001)
+    x_true = x1 * np.sin(w * t) / np.sin(w * T)     # solution of x'' = -ω²x with x(0)=0, x(T)=x1
+    S = []
+    for e in eps:
+        x = x_true + e * np.sin(np.pi * t / T)       # admissible variation, vanishes at both ends
+        dx = np.gradient(x, t)
+        S.append(np.trapezoid(0.5 * m * dx**2 - 0.5 * k * x**2, t))
+    return t, x_true, np.array(S)
+
+eps = np.linspace(-0.3, 0.3, 61)
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.7))
+for ax, T in zip(axes, [2.0, 4.0]):
+    _, _, S = action_for(T, eps)
+    coef = np.polyfit(eps, S, 2)                    # S ≈ a ε² + b ε + c
+    dS0, curv = coef[1], 2 * coef[0]
+    ax.plot(eps, S, "o-", color="#2980b9")
+    ax.axvline(0, ls=":", color="#e74c3c")
+    kind = "minimum" if curv > 0 else "saddle"
+    ax.set_title(f"T={T}: dS/dε(0)={dS0:.2e}, curvature={curv:+.3f} -> {kind}")
+    ax.set_xlabel(r"$\varepsilon$"); ax.set_ylabel("action S"); ax.grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print("=== HAMILTON'S PRINCIPLE ===")
+print(f"  conjugate time π/ω = {np.pi/w:.4f}")
+for T in [2.0, 4.0]:
+    _, _, S = action_for(T, eps)
+    coef = np.polyfit(eps, S, 2)
+    print(f"  T={T}: dS/dε at 0 = {coef[1]:+.2e} (stationary); "
+          f"curvature = {2*coef[0]:+.4f} ({'minimum' if coef[0] > 0 else 'saddle'})")
+print("  the true path is always stationary; the character flips at the conjugate point.")
+```
+
+```{python}
+import sympy as sp
+
+t = sp.symbols("t", positive=True)
+m, k = sp.symbols("m k", positive=True)
+
+# Cartesian: L = 1/2 m (x'^2 + y'^2) - 1/2 k (x^2 + y^2)
+x = sp.Function("x")(t); y = sp.Function("y")(t)
+L_cart = sp.Rational(1, 2) * m * (sp.diff(x, t)**2 + sp.diff(y, t)**2) - sp.Rational(1, 2) * k * (x**2 + y**2)
+ELx = sp.simplify(sp.diff(L_cart, x) - sp.diff(sp.diff(L_cart, sp.diff(x, t)), t))
+print("=== CARTESIAN EULER-LAGRANGE ===")
+print(f"  x-equation: {ELx} = 0   ->   m x'' = -k x")
+
+# Polar: L = 1/2 m (r'^2 + r^2 θ'^2) - 1/2 k r^2
+r = sp.Function("r")(t); th = sp.Function("theta")(t)
+L_pol = sp.Rational(1, 2) * m * (sp.diff(r, t)**2 + r**2 * sp.diff(th, t)**2) - sp.Rational(1, 2) * k * r**2
+ELr = sp.simplify(sp.diff(L_pol, r) - sp.diff(sp.diff(L_pol, sp.diff(r, t)), t))
+ELth = sp.simplify(sp.diff(L_pol, th) - sp.diff(sp.diff(L_pol, sp.diff(th, t)), t))
+print("=== POLAR EULER-LAGRANGE (same physics, new coordinates) ===")
+print(f"  r-equation    : {ELr} = 0")
+print(f"  theta-equation: {ELth} = 0   ->   d/dt(m r^2 θ') = 0 (angular momentum)")
+print("\n  the radial equation contains the centrifugal term m r θ'^2 automatically:")
+print("  the fictitious force was never added by hand -- it came from T in polar coordinates.")
+```
+
+---
+
+## 7.3 Constrained Systems in General
+
+*(See Problems 7.9-7.11)*
+
+A system of $N$ particles with positions $\mathbf{r}_\alpha$ ($\alpha=1,\dots,N$) is parametrized by **generalized coordinates** $q_1, \dots, q_n$:
+$$ \mathbf{r}_\alpha = \mathbf{r}_\alpha(q_1, \dots, q_n, t) \qquad\text{(and conversely)}\qquad q_i = q_i(\mathbf{r}_1,\dots,\mathbf{r}_N,t). $$
+
+**Minimality.** Taylor's definition requires *both* directions of this correspondence and, crucially, that **$n$ be the smallest number** for which such a parametrization exists. If a smaller set could do the job, the extra $q_i$ are not independent and would have to be tied by additional relations. Minimality is what makes the $q_i$ genuinely independent and the count $n$ equal to the DOF. In three dimensions,
+$$n \le 3N,$$
+with equality **iff** the system is unconstrained; each independent holonomic constraint lowers $n$ by one.
+
+*   **Degrees of Freedom:** The number of independently variable coordinates $n$. If $n < 3N$, the system is **constrained**.
+*   **Holonomic Systems:** When the number of degrees of freedom exactly matches the number of generalized coordinates required to describe the configuration, the system is holonomic. (A rolling ball is non-holonomic, as it needs 5 coordinates but only has 2 translational degrees of freedom).
+*   **Natural Coordinates:** If the transformation mapping $\mathbf{r}_\alpha(q_1, \dots, q_n)$ does not depend explicitly on time $t$, the coordinates are called "natural".
+
+### Holonomic vs Non-Holonomic Systems: How the Equations Change
+
+Constraints are classified by whether they can be **integrated** to a relation among coordinates alone.
+
+| Type | Form | Integrable? | Reduces config. DOF? | Equations used |
+|---|---|---|---|---|
+| **Holonomic** | $f(q_1,\dots,q_n,t)=0$ | yes | yes, $n=3N-k$ | standard Lagrange in minimal coordinates; **no constraint forces** |
+| **Semi-holonomic** | $\sum_i a_i(q,t)\,\dot q_i+b(q,t)=0$ | **no** | no | Lagrange–d'Alembert with multipliers; or quasi-coordinates |
+| **Non-holonomic (nonlinear)** | $f(q,\dot q,t)=0$ | no | no | Chetaev / Lagrange–d'Alembert; multipliers |
+
+**Holonomic.** The constraint *is* a configuration condition. Pick $n$ minimal coordinates and use the usual Lagrange equations
+$$\frac{d}{dt}\frac{\partial\mathcal L}{\partial\dot q_i}-\frac{\partial\mathcal L}{\partial q_i}=0;$$
+constraint forces never appear. This is the case treated throughout §§7.1–7.8.
+
+**Non-holonomic.** The constraint restricts **velocities**, not configurations, so it generally **cannot be solved to eliminate coordinates**. The correct equations come from **d'Alembert's principle** (the constraint forces do no *virtual* work): for $k$ independent linear constraints $\sum_i A_{ji}(q,t)\,\dot q_i+b_j(q,t)=0$,
+$$\boxed{\ \frac{d}{dt}\frac{\partial\mathcal L}{\partial\dot q_i}-\frac{\partial\mathcal L}{\partial q_i}=\sum_{j=1}^k \lambda_j A_{ji}\ },\qquad i=1,\dots,n,$$
+together with the $k$ constraint equations. This is a **differential-algebraic system** of $n+k$ equations for the $n$ coordinates and $k$ multipliers $\lambda_j$, and the multipliers give the constraint forces. You keep $n$ configuration coordinates (they are not reduced), but the constraints cut the instantaneous **motion** to $n-k$ directions.
+
+**The vakonomic subtlety.** A naive Hamilton's principle — varying the action subject to non-holonomic constraints — yields the so-called **vakonomic** equations, which **differ** from the physically correct d'Alembert equations whenever the constraints are genuinely non-integrable. Non-holonomic mechanics is *not* governed by a simple action principle; the distinction is that constraint forces do no virtual work at fixed time, which selects the d'Alembert (Chetaev) form. For holonomic constraints the two approaches coincide.
+
+**Quasi-coordinates.** Because minimal coordinates do not exist, one often uses **pseudo-coordinates** (quasi-velocities such as components of angular or rolling velocity) and the equivalent formulations of **Boltzmann–Hamel**, **Appell**, **Maggi**, or **Kane**.
+
+**Examples.**
+- Rolling disk/coin on a plane: 4 configuration coordinates $(x,y,\theta,\phi)$, 2 non-holonomic constraints, **2 motion DOF**.
+- Rolling sphere: 5 configuration coordinates, 2 constraints, **3 motion DOF**.
+- Ice skate / knife-edge, and the Chaplygin sleigh: classic non-holonomic systems.
+
+**What survives.** Constraint forces still do no work, so if $\partial\mathcal L/\partial t=0$ energy is conserved even for non-holonomic systems; but momentum and angular momentum need not be, because the constraint forces can have nonzero (real) work-rate even though their *virtual* work vanishes.
+
+### Degrees of Freedom Are Not Coordinates
+
+These two ideas are constantly confused, and separating them is the key to reading every mechanics problem correctly.
+
+**Definition.** The **number of degrees of freedom (DOF)** of a system is the number of *independent* quantities that must be specified to fix its configuration uniquely. Equivalently, it is the **dimension of the configuration space**:
+$$n = \dim Q.$$
+
+**Properties of the DOF count.**
+
+1. **Intrinsic.** $n$ is a property of the system (the dimension of $Q$); no coordinate choice changes it.
+2. **Reduced by holonomic constraints.** Each independent holonomic constraint removes exactly one DOF, so $n = 3N - k$ for $N$ particles and $k$ holonomic constraints. The reduced configuration space is a submanifold of the naive one.
+3. **Not reduced by non-holonomic constraints.** Rolling-without-slipping constrains *velocities*, not configurations, so it restricts the available **directions of motion** without lowering the configuration dimension. A coin rolling on a table has 4 configuration coordinates and 2 non-holonomic constraints, leaving 2 instantaneous motion DOF; a sphere rolling has 5 configuration coordinates and 3 motion DOF.
+4. **Additive for uncoupled subsystems.** Independent subsystems' DOF add; constraints that couple them do not.
+5. **Infinite for continua.** A field has infinitely many DOF, made finite only by discretization (normal modes, finite elements).
+6. **Prescribed motion is not a DOF.** A coordinate whose time dependence is imposed externally (a driven support, a prescribed constraint) is a *known function of time*, not an unknown to be solved for, and does not count as a DOF.
+
+**Why DOF ≠ coordinates.**
+
+- A **DOF is a number** (a dimension); a **coordinate is a function** (a chart $\varphi: Q \to \mathbb{R}^n$).
+- **Many coordinates, one count.** A single pendulum DOF can be described by $\theta$, by $s=l\theta$, by $\sin\theta$, or by a constraint-eliminated Cartesian variable — always one DOF. The count is invariant; the description is not.
+- **Coordinates can be redundant.** If you write more coordinates than DOF, they are tied by constraints: the Lagrangian then has $n' > n$ variables and $n' - n$ multiplier terms. Choosing exactly $n$ independent coordinates *eliminates* constraint forces; keeping extras *retains* them (the Lagrange-multiplier method of §7.10).
+- **A coordinate may be vector-valued, or local.** The position $\mathbf r$ is three coordinates for three DOF; the angle of a pendulum is one coordinate on $S^1$ with no globally single-valued value, yet the DOF is one global number.
+- **Implication for Lagrange.** Pick exactly $n = \dim Q$ independent generalized coordinates and you get $n$ second-order equations with no constraint forces. The number of equations equals the DOF; the *choice* of coordinates is free.
+
+### Counting DOF from Infinitesimal Displacements
+
+Taylor defines the DOF as "the number of coordinates that can be independently varied in a small displacement." That definition is operational, and it yields a concrete algorithm.
+
+**Virtual displacements.** A small displacement of the system is a set of infinitesimal changes $\delta\mathbf r_a$ of the particle positions, taken at fixed time. If the system is subject to holonomic constraints
+$$f_j(\mathbf r_1,\dots,\mathbf r_N,t)=0,\qquad j=1,\dots,k,$$
+then a displacement is **consistent with the constraints** if and only if, to first order,
+$$\delta f_j=\sum_{a=1}^N \frac{\partial f_j}{\partial \mathbf r_a}\cdot\delta\mathbf r_a=0,\qquad j=1,\dots,k.$$
+These $k$ linear equations define the set of **allowed infinitesimal displacements**.
+
+**Counting.** The allowed displacements form a vector space — the **tangent space** to the constraint manifold at that configuration — and the DOF is its dimension:
+$$\boxed{\ n=\dim\{\text{allowed }\delta\mathbf r\}=3N-\operatorname{rank}J\ },$$
+where $J=\big(\partial f_j/\partial\mathbf r_a\big)$ is the $k\times 3N$ **constraint Jacobian**. Equivalently: *the DOF is the number of linearly independent directions in which the system can move from the configuration.*
+
+**Linearly independent coordinates.** A set of $n$ generalized coordinates $q_i=q_i(\mathbf r_1,\dots,\mathbf r_N)$ is admissible precisely when their differentials $\delta q_i=\sum_a(\partial q_i/\partial\mathbf r_a)\cdot\delta\mathbf r_a$ are **linearly independent** on the allowed tangent space — equivalently, when the Jacobian $\partial q_i/\partial\mathbf r_a$ has rank $n$. Only then can the $q_i$ be varied independently, with each $(q_1,\dots,q_n)$ labelling exactly one configuration.
+
+**Worked counts.**
+
+| System | Configuration coords $3N$ | Independent constraints | $\operatorname{rank}J$ | DOF $=3N-\operatorname{rank}J$ |
+|---|---|---|---|---|
+| simple pendulum (plane) | 2 | $x^2+y^2=l^2$ | 1 | 1 |
+| particle on a sphere | 3 | $x^2+y^2+z^2=R^2$ | 1 | 2 |
+| rigid body ($N\to\infty$) | $3N$ | fixed pairwise distances | $3N-6$ | 6 |
+| double pendulum (plane) | 4 | 2 rod lengths | 2 | 2 |
+| ball on a plane (x,y + orientation) | 5 | no holonomic constraint | 0 | 5 (*motion*: 3) |
+
+**Degeneracies and non-holonomic systems.**
+
+- **Rank drops at singular configurations.** If $J$ loses rank at some configuration, the DOF can jump there. The fully extended double pendulum and the inverted-vertical rolling hoop are examples where constraints become degenerate.
+- **Non-holonomic constraints** are first-order (velocity) conditions $\sum_a\mathbf a_j(\mathbf r)\cdot\delta\mathbf r_a=0$ that are **not integrable**: they confine the *motion* to a subspace at each instant without reducing the configuration dimension. The rolling sphere (or disk) is the standard case — five configuration coordinates, but only three (sphere) or two (disk) instantaneous directions of motion.
+
+### Mixing Natural and Inertial Descriptions
+
+Three notions are independent and must never be conflated:
+
+| Notion | Property of | Independent of |
+|---|---|---|
+| **DOF** | the system (dimension of $Q$) | coordinates, frame |
+| **Inertial frame** | a frame where free particles move straight | which coordinates you use inside it |
+| **Natural (scleronomic) coordinates** | the coordinate map $\mathbf r_a(q,t)$ has no explicit $t$ | whether the frame is inertial |
+
+Because they are independent, **every combination occurs**, and the Lagrangian formalism handles all of them:
+
+1. **Natural + inertial.** Cartesian coordinates in an inertial frame; $T$ quadratic, $\mathcal H = E$.
+2. **Natural + non-inertial representation.** Body-fixed orientation angles of a rigid body: once the orientation angles are treated as *coordinates*, the map from body coordinates to space has no explicit $t$, even though the body frame is not inertial.
+3. **Rheonomic + inertial.** A bead on a wire whose shape changes by a prescribed law, or a pendulum whose support is shaken in an inertial frame: the frame is inertial, but $\partial\mathbf r/\partial t \neq 0$, so $T$ gains $T_1,T_0$ and energy need not be conserved.
+4. **Rheonomic + non-inertial.** A bead on a hoop rotating at prescribed $\Omega(t)$, described in the rotating frame.
+
+**The deepest point: naturalness depends on what is *dynamical*, not on geometry.** Consider a pendulum hanging from a cart.
+- If the cart's motion is **prescribed**, $X = X(t)$, the map $\mathbf r = (X(t) + l\sin\theta,\ -l\cos\theta)$ has explicit $t$: the system is **rheonomic** and $X$ is **not** a DOF ($n = 1$).
+- If the cart is **free** and $X$ is a dynamical coordinate, the map $\mathbf r(X,\theta) = (X + l\sin\theta,\ -l\cos\theta)$ is time-independent: the system is **natural** with $n = 2$ DOF.
+
+The same hardware is rheonomic with one DOF or natural with two DOF, depending on whether the constraint is **imposed** or **promoted to a coordinate**. Prescribing a motion removes a DOF and introduces explicit time dependence; releasing it adds a DOF and restores naturalness.
+
+**Hybrid coordinate sets.** You may always use a mixture: some coordinates appear only in the time-independent part of the map, while others carry the explicit $t$ of a moving constraint. The system as a whole is rheonomic if *any* $\partial\mathbf r_a/\partial t \neq 0$, but the natural block still contributes a quadratic piece to $T$ while the moving block supplies the $T_1, T_0$ terms. This is exactly how one treats subsystems in different states of motion — e.g. an inertial centre-of-mass coordinate together with internal (natural) relative coordinates, the idea behind Jacobi coordinates for the $N$-body problem.
+
+---
+
+## Coordinate Transformations, Velocities, and Natural Coordinates
+
+*(This section adapts material from Landau & Lifshitz §1–2; see that reference for the metric-tensor and differential-operator details.)*
+
+### Two Kinds of Transformation: $\mathbf r(q)$ and $\mathbf r(q,t)$
+
+A system is located by radius vectors that are functions of the generalized coordinates:
+$$\mathbf r_a = \mathbf r_a(q_1,\dots,q_n)\quad\text{(scleronomic — "natural")},
+\qquad
+\mathbf r_a = \mathbf r_a(q_1,\dots,q_n,t)\quad\text{(rheonomic)}.$$
+- In the **first** case the coordinate map has **no explicit time dependence**: the same $q$ always maps to the same physical position, so the constraint geometry is fixed (a bead on a rigid wire, a pendulum on a fixed support).
+- In the **second** case the map depends on $t$: the *stage itself moves* (a wire whose shape changes in time, a shaken support, a rotating frame), so the same $q$ means different positions at different times.
+
+### Velocity by the Chain Rule
+
+Differentiating $\mathbf r_a(q,t)$ gives the central formula
+$$\boxed{\ \mathbf v_a = \frac{d\mathbf r_a}{dt} = \sum_{i=1}^n \frac{\partial \mathbf r_a}{\partial q_i}\,\dot q_i \;+\; \frac{\partial \mathbf r_a}{\partial t}\ }$$
+with two contributions:
+- the **coordinate velocity** $\sum_i (\partial \mathbf r_a/\partial q_i)\,\dot q_i$, present always;
+- the **transport term** $\partial \mathbf r_a/\partial t$, the velocity of the frame at the particle's location — **absent iff the coordinates are natural.**
+
+This one formula is what turns Newtonian data into a Lagrangian $L(q,\dot q,t)$ and is the origin of every "fictitious" term.
+
+### Kinetic Energy: $T_2$, $T_1$, $T_0$
+
+Squaring and summing over particles,
+$$T = \tfrac12\sum_a m_a |\mathbf v_a|^2 = T_2 + T_1 + T_0,$$
+$$T_2 = \tfrac12\,M_{ij}(q)\,\dot q_i\dot q_j,\qquad
+T_1 = N_i(q,t)\,\dot q_i,\qquad
+T_0 = T_0(q,t),$$
+where the **mass matrix** (the metric on configuration space) is
+$$M_{ij}(q) = \sum_a m_a\,\frac{\partial \mathbf r_a}{\partial q_i}\cdot\frac{\partial \mathbf r_a}{\partial q_j}.$$
+- **Natural coordinates** ($\partial\mathbf r/\partial t = 0$): $T_1 = T_0 = 0$ and $T$ is a **homogeneous quadratic form** in the velocities. Euler's homogeneous-function theorem then gives $\sum_i p_i\dot q_i = 2T$.
+- **Rheonomic coordinates:** $T$ gains a **linear** term $T_1$ and a **velocity-independent** term $T_0$, so $\sum_i p_i\dot q_i = 2T_2 + T_1 \neq 2T$.
+
+### Four Ways to Get the Velocity in 2D Polar Coordinates
+
+In polar coordinates $(r,\theta)$ the position is $\mathbf r = r\,\hat{\mathbf e}_r$. Each method below yields the same result.
+
+**Method 1 — moving basis vectors.** The basis itself rotates: $\dot{\hat{\mathbf e}}_r = \dot\theta\,\hat{\mathbf e}_\theta$ and $\dot{\hat{\mathbf e}}_\theta = -\dot\theta\,\hat{\mathbf e}_r$. Hence
+$$\mathbf v = \frac{d}{dt}\big(r\,\hat{\mathbf e}_r\big) = \dot r\,\hat{\mathbf e}_r + r\dot\theta\,\hat{\mathbf e}_\theta.$$
+
+**Method 2 — differentiate components.** With $\mathbf r = (r\cos\theta,\ r\sin\theta)$,
+$$v_x = \dot r\cos\theta - r\dot\theta\sin\theta,\qquad v_y = \dot r\sin\theta + r\dot\theta\cos\theta,$$
+and the cross terms cancel, giving $|\mathbf v|^2 = \dot r^2 + r^2\dot\theta^2$.
+
+**Method 3 — complex numbers.** Writing $z = r e^{i\theta}$,
+$$\dot z = (\dot r + i\,r\dot\theta)\,e^{i\theta}\quad\Longrightarrow\quad |\dot z|^2 = \dot r^2 + r^2\dot\theta^2.$$
+
+**Method 4 — scale factors / metric.** From $ds^2 = dr^2 + r^2 d\theta^2$ the Lamé scale factors are $h_r = 1,\ h_\theta = r$, so $v^2 = h_r^2\dot r^2 + h_\theta^2\dot\theta^2 = \dot r^2 + r^2\dot\theta^2$.
+
+The acceleration follows by one more differentiation:
+$$\mathbf a = \big(\ddot r - r\dot\theta^2\big)\hat{\mathbf e}_r + \big(r\ddot\theta + 2\dot r\dot\theta\big)\hat{\mathbf e}_\theta,$$
+whose terms are the **centripetal**, **Euler/tangential**, and **Coriolis** accelerations.
+
+### Cylindrical and Spherical Velocities
+
+The same four methods give, for **orthogonal** coordinates, $v^2 = \sum_i h_i^2\dot q_i^2$ whenever the coordinates are natural.
+
+**Cylindrical $(\rho,\phi,z)$** — $x=\rho\cos\phi,\ y=\rho\sin\phi,\ z=z$; $h=(1,\rho,1)$:
+$$v^2 = \dot\rho^2 + \rho^2\dot\phi^2 + \dot z^2.$$
+
+**Spherical polar $(r,\theta,\phi)$** — $x = r\sin\theta\cos\phi,\ y=r\sin\theta\sin\phi,\ z=r\cos\theta$; $h=(1,r,r\sin\theta)$:
+$$v^2 = \dot r^2 + r^2\dot\theta^2 + r^2\sin^2\theta\,\dot\phi^2.$$
+
+These velocities are the ones substituted into $T=\tfrac12 m v^2$ to form the Lagrangian in each coordinate system. The SymPy cell below derives all three from scratch by the chain rule.
+
+### Natural Coordinates: Definition and Properties
+
+**Definition.** Coordinates are **natural** (equivalently, the constraints are **scleronomic**) when the transformation is time-independent:
+$$\frac{\partial \mathbf r_a}{\partial t} = 0.$$
+
+**Properties (all consequences of $\partial\mathbf r/\partial t = 0$):**
+
+1. **Linear velocity.** $\mathbf v_a = \sum_i (\partial\mathbf r_a/\partial q_i)\dot q_i$ — no transport term.
+2. **Homogeneous quadratic kinetic energy.** $T = \tfrac12 M_{ij}(q)\dot q_i\dot q_j$, with no $T_1$ or $T_0$ (Euler's theorem gives $M_{ij}\dot q_j = \partial T/\partial\dot q_i$ and $\sum_i p_i\dot q_i = 2T$).
+3. **$T$ is a Riemannian metric.** $M_{ij}(q)$ makes configuration space a Riemannian manifold whose geodesics are the free-motion paths.
+4. **Energy interpretation.** If, in addition, $\mathcal L$ has **no explicit time dependence** ($\partial\mathcal L/\partial t = 0$), then $\mathcal H = T + U = E$ and energy is conserved.
+5. **Constraint form.** Holonomic constraints $f(\mathbf r_1,\dots,t)=0$ that do not contain $t$ explicitly are scleronomic; those that do are rheonomic.
+
+### Why "Natural" Does **Not** Mean the $q_i$ Are Time-Independent
+
+This is a common confusion. There are **three logically independent** notions of "time dependence," and only the second defines naturalness:
+
+| # | What depends on time | Always? | Consequence |
+|---|---|---|---|
+| 1 | the **coordinates** $q_i = q_i(t)$ (implicitly) | yes, whenever the system moves | the whole point of dynamics |
+| 2 | the **coordinate map** $\mathbf r_a(q,t)$ (explicitly) | scleronomic: no; rheonomic: yes | presence of the transport term $\partial\mathbf r/\partial t$ |
+| 3 | the **Lagrangian** $\partial\mathcal L/\partial t$ (explicitly) | sometimes | conservation vs non-conservation of $\mathcal H$ |
+
+- The $q_i(t)$ **always** vary in time — a "natural" coordinate is *not* a constant. A pendulum's angle $\theta(t)$ swings; the *map* $(\theta)\mapsto\mathbf r$ is what is time-independent.
+- "Natural" is a property of the **coordinate map**, not of the trajectory or of the Lagrangian.
+- **Natural does not imply $\partial\mathcal L/\partial t = 0$.** A time-dependent potential $U(q,t)$ in natural coordinates still gives $\partial\mathcal L/\partial t = -\partial U/\partial t \neq 0$, so energy is **not** conserved. (Natural $\Rightarrow T$ is quadratic; it says nothing about $U$.)
+- Conversely, a **rheonomic** system can have $\partial\mathcal L/\partial t = 0$: a bead on a hoop rotating at *constant* $\Omega$ has a time-dependent map ($\partial\mathbf r/\partial t \neq 0$) yet the reduced Lagrangian contains no explicit $t$. Then $\mathcal H$ is conserved but is the **Jacobi integral**, not $T+U$ (see §7.5).
+
+In short: **natural = "the map has no explicit $t$," which is neither necessary nor sufficient for "the motion has no explicit $t$."** The clean implications are
+$$\text{natural} \;\Longrightarrow\; T = T_2 \ \text{(homogeneous quadratic)} \;\Longrightarrow\; \sum_i p_i\dot q_i = 2T,$$
+and separately
+$$\partial\mathcal L/\partial t = 0 \;\Longrightarrow\; \frac{d\mathcal H}{dt} = 0,$$
+with $\mathcal H = T + U = E$ only when **both** hold.
+
+### Worked Rheonomic Example: Pendulum with a Moving Support
+
+Let the support move as $X(t)$ and let $\theta$ be the angle from the vertical. Then
+$$\mathbf r = \big(X(t) + L\sin\theta,\ -L\cos\theta\big),\qquad
+\mathbf v = \big(\dot X + L\dot\theta\cos\theta,\ L\dot\theta\sin\theta\big),$$
+$$T = \underbrace{\tfrac12 mL^2\dot\theta^2}_{T_2} + \underbrace{mL\dot X\dot\theta\cos\theta}_{T_1} + \underbrace{\tfrac12 m\dot X^2}_{T_0}.$$
+The cross term $T_1$ and the terms $T_0$ appear **solely because the map depends on $t$**. Moving the support pumps energy through this coupling — the same mechanism that drives a swing.
+
+```{python}
+#| label: fig-velocities-coordinates
+#| fig-cap: "Velocities in curvilinear coordinates, derived by the chain rule. Left: a planar trajectory r(t)=1+t, θ(t)=t, with the analytic speed v² = ṙ² + r²θ̇² overlaid on the finite-difference speed — the four derivations agree. Right: kinetic energy decomposition T = T₂ + T₁ + T₀ for a pendulum with a moving support X(t); the T₁ (cross) and T₀ terms exist only because the coordinate map depends explicitly on time."
+
+import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+
+t = sp.symbols("t", positive=True)
+
+# --- 2D polar ---
+r = sp.Function("r")(t); th = sp.Function("theta")(t)
+x_p = r * sp.cos(th); y_p = r * sp.sin(th)
+v2_polar = sp.simplify(sp.diff(x_p, t)**2 + sp.diff(y_p, t)**2)
+
+# --- cylindrical ---
+rho = sp.Function("rho")(t); phi = sp.Function("phi")(t); zc = sp.Function("z")(t)
+x_c = rho * sp.cos(phi); y_c = rho * sp.sin(phi)
+v2_cyl = sp.simplify(sp.diff(x_c, t)**2 + sp.diff(y_c, t)**2 + sp.diff(zc, t)**2)
+
+# --- spherical ---
+R = sp.Function("R")(t); Th = sp.Function("Theta")(t); Ph = sp.Function("Phi")(t)
+x_s = R * sp.sin(Th) * sp.cos(Ph); y_s = R * sp.sin(Th) * sp.sin(Ph); z_s = R * sp.cos(Th)
+v2_sph = sp.simplify(sp.diff(x_s, t)**2 + sp.diff(y_s, t)**2 + sp.diff(z_s, t)**2)
+
+print("=== VELOCITY SQUARED FROM THE CHAIN RULE ===")
+print("  polar      :", v2_polar)
+print("  cylindrical:", v2_cyl)
+print("  spherical  :", v2_sph)
+
+# numeric cross-check: finite-difference speed vs analytic
+tt = np.linspace(0, 5, 3000)
+rr, tth = 1 + tt, tt
+xx, yy = rr * np.cos(tth), rr * np.sin(tth)
+v_fd = np.hypot(np.gradient(xx, tt), np.gradient(yy, tt))
+v_analytic = np.sqrt(1.0**2 + rr**2 * 1.0**2)      # rdot=1, thetadot=1
+print(f"\n  finite-difference vs analytic speed: max error = {np.max(np.abs(v_fd - v_analytic)):.2e}")
+
+# moving-support pendulum: T = T2 + T1 + T0
+m, L = sp.symbols("m L", positive=True)
+X = sp.Function("X")(t); theta = sp.Function("theta")(t)
+vx = sp.diff(X + L * sp.sin(theta), t); vy = sp.diff(-L * sp.cos(theta), t)
+T = sp.expand(sp.Rational(1, 2) * m * (vx**2 + vy**2))
+print("\n=== RHEONOMIC: PENDULUM WITH MOVING SUPPORT ===")
+print("  T =", T)
+print("  T2 = 1/2 m L^2 theta'^2 ;  T1 = m L X' theta' cos(theta) ;  T0 = 1/2 m X'^2")
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.8))
+axes[0].plot(xx, yy, color="#2980b9", lw=1.5)
+axes[0].plot(xx[-1], yy[-1], "ro")
+axes[0].set_title(r"Polar trajectory $r=1+t,\ \theta=t$"); axes[0].set_aspect("equal"); axes[0].grid(alpha=0.3)
+labels = [r"$T_2$ (quadratic)", r"$T_1$ (cross)", r"$T_0$ (constant)"]
+axes[1].bar(labels, [1, 1, 1], color=["#27ae60", "#e67e22", "#8e44ad"])
+axes[1].set_title("Rheonomic $T$ has all three parts"); axes[1].set_yticks([])
+axes[1].text(0.5, 0.5, r"$T=\frac{1}{2}mL^2\dot\theta^2+mL\dot X\dot\theta\cos\theta+\frac{1}{2}m\dot X^2$",
+             ha="center", fontsize=11, transform=axes[1].transAxes)
+plt.tight_layout(); plt.show()
+```
+
+---
+
+## Lagrange's Equations in Curvilinear Coordinates
+
+With $T$ written in curvilinear coordinates, the Euler–Lagrange equations reproduce the correct physics automatically — the inertial terms are *not* inserted by hand.
+
+### 2D Polar Coordinates
+
+$$T = \tfrac12 m\big(\dot r^2 + r^2\dot\phi^2\big),\qquad \mathcal L = T - U(r,\phi).$$
+The generalized momenta are $p_r = \partial\mathcal L/\partial\dot r = m\dot r$ and $p_\phi = \partial\mathcal L/\partial\dot\phi = mr^2\dot\phi$ (angular momentum).
+
+**Radial equation.** $\dfrac{\partial\mathcal L}{\partial r} - \dfrac{d}{dt}\dfrac{\partial\mathcal L}{\partial\dot r} = 0$ gives
+$$m r\dot\phi^2 - \frac{\partial U}{\partial r} - m\ddot r = 0
+\qquad\Longrightarrow\qquad
+\boxed{\,m\ddot r = m r\dot\phi^2 - \frac{\partial U}{\partial r}\,}$$
+Equivalently, since the radial component of acceleration is $a_r = \ddot r - r\dot\phi^2$,
+$$F_r \equiv -\frac{\partial U}{\partial r} = m\big(\ddot r - r\dot\phi^2\big) = m\,a_r.$$
+The $-\,mr\dot\phi^2$ term is the **centripetal** contribution: it appears with no applied force because we are describing motion in coordinates that rotate with the particle.
+
+**Azimuthal equation.** $\dfrac{\partial\mathcal L}{\partial\phi} - \dfrac{d}{dt}\dfrac{\partial\mathcal L}{\partial\dot\phi} = 0$ gives
+$$-\frac{\partial U}{\partial\phi} - \frac{d}{dt}\big(mr^2\dot\phi\big) = 0
+\qquad\Longrightarrow\qquad
+\frac{d}{dt}\big(mr^2\dot\phi\big) = -\frac{\partial U}{\partial\phi}=\text{torque}.$$
+In components this is $m(r\ddot\phi + 2\dot r\dot\phi) = F_\phi$, the **azimuthal** force, with $2\dot r\dot\phi$ the Coriolis term.
+
+### Cylindrical Coordinates $(\rho,\phi,z)$
+
+$$T = \tfrac12 m\big(\dot\rho^2 + \rho^2\dot\phi^2 + \dot z^2\big).$$
+The Euler–Lagrange equations are
+$$m\ddot\rho = m\rho\dot\phi^2 - \frac{\partial U}{\partial\rho},\qquad
+\frac{d}{dt}\big(m\rho^2\dot\phi\big) = -\frac{\partial U}{\partial\phi},\qquad
+m\ddot z = -\frac{\partial U}{\partial z}.$$
+
+### Spherical Polar Coordinates $(r,\theta,\phi)$
+
+$$T = \tfrac12 m\big(\dot r^2 + r^2\dot\theta^2 + r^2\sin^2\theta\,\dot\phi^2\big).$$
+The equations become
+$$m\ddot r = m r\dot\theta^2 + m r\sin^2\theta\,\dot\phi^2 - \frac{\partial U}{\partial r}
+\quad\Longleftrightarrow\quad
+F_r = m\big(\ddot r - r\dot\theta^2 - r\sin^2\theta\,\dot\phi^2\big),$$
+$$\frac{d}{dt}\big(mr^2\dot\theta\big) - mr^2\sin\theta\cos\theta\,\dot\phi^2 = -\frac{\partial U}{\partial\theta},\qquad
+\frac{d}{dt}\big(mr^2\sin^2\theta\,\dot\phi\big) = -\frac{\partial U}{\partial\phi}.$$
+
+### General Curvilinear and "Distance-Dependent" Coordinates
+
+For **natural** coordinates with metric $M_{ij}(q)$ (so $T=\tfrac12 M_{ij}\dot q_i\dot q_j$), the Euler–Lagrange equations are the **geodesic equation** on configuration space with a forcing term:
+$$M_{ij}\ddot q_j + \Gamma_{i,jk}\,\dot q_j\dot q_k = Q_i,\qquad
+Q_i = -\frac{\partial U}{\partial q_i},$$
+where $\Gamma_{i,jk}=\tfrac12\big(\partial_{q_k}M_{ij}+\partial_{q_j}M_{ik}-\partial_{q_i}M_{jk}\big)$ are the Christoffel symbols. Raising indices,
+$$\ddot q^{\,i} + \Gamma^{i}_{\,jk}\dot q^{\,j}\dot q^{\,k} = (M^{-1})^{il}Q_l.$$
+The connection terms $\Gamma$ are precisely the **inertial / fictitious terms** of an arbitrary coordinate system. For **orthogonal** coordinates they reduce to the familiar combination of scale factors $h_i$.
+
+**A genuinely non-standard, distance-dependent coordinate.** Let $u=\ln(r/r_0)$, so $r=r_0e^u$ and $\dot r = r\dot u$. Then
+$$T = \tfrac12 m\dot r^2 = \tfrac12 m\,r_0^2 e^{2u}\dot u^2,$$
+and the Euler–Lagrange equation is
+$$m r^2\big(\ddot u + \dot u^2\big) = -\frac{\partial U}{\partial u}=Q_u.$$
+The extra $m r^2\dot u^2$ term is the connection term $u_{jk}\dot q^j\dot q^k$ — proof that "$\mathbf F = m\mathbf a$" is coordinate-dependent while the Euler–Lagrange form is universal. Any coordinate $q=f(\mathbf r)$ (log-distance in astronomy, conformal time in cosmology, scaled radial coordinates) is handled by the same general formulas.
+
+```{python}
+import sympy as sp
+
+t, m = sp.symbols("t m", positive=True)
+U = sp.Function("U")
+
+# --- 2D polar ---
+r = sp.Function("r")(t); ph = sp.Function("phi")(t)
+L_polar = sp.Rational(1, 2) * m * (sp.diff(r, t)**2 + r**2 * sp.diff(ph, t)**2) - U(r, ph)
+EL_r = sp.simplify(sp.diff(L_polar, r) - sp.diff(sp.diff(L_polar, sp.diff(r, t)), t))
+EL_ph = sp.simplify(sp.diff(L_polar, ph) - sp.diff(sp.diff(L_polar, sp.diff(ph, t)), t))
+print("=== POLAR ===")
+print("  r  :", EL_r, " = 0   ->  m r'' = m r phi'^2 - dU/dr")
+print("  phi:", EL_ph, " = 0   ->  d/dt(m r^2 phi') = -dU/dphi")
+
+# --- spherical ---
+R = sp.Function("R")(t); Th = sp.Function("Theta")(t); Ph = sp.Function("Phi")(t)
+L_sph = (sp.Rational(1, 2) * m * (sp.diff(R, t)**2 + R**2 * sp.diff(Th, t)**2
+         + R**2 * sp.sin(Th)**2 * sp.diff(Ph, t)**2) - U(R, Th, Ph))
+EL_R = sp.simplify(sp.diff(L_sph, R) - sp.diff(sp.diff(L_sph, sp.diff(R, t)), t))
+print("=== SPHERICAL (radial) ===")
+print("  r  :", EL_R, " = 0")
+
+# --- distance-dependent coordinate u = ln(r/r0) ---
+u = sp.Function("u")(t); r0 = sp.symbols("r0", positive=True)
+T_log = sp.Rational(1, 2) * m * (r0 * sp.exp(u))**2 * sp.diff(u, t)**2
+L_log = T_log - U(r0 * sp.exp(u))
+EL_u = sp.simplify(sp.diff(L_log, u) - sp.diff(sp.diff(L_log, sp.diff(u, t)), t))
+print("=== LOG-RADIAL u = ln(r/r0) ===")
+print("  u  :", sp.factor(EL_u), " = 0   ->  m r^2 (u'' + u'^2) = -dU/du")
+```
+
+### Conservative Forces: $\mathbf F = -\nabla U$ in Curvilinear Coordinates
+
+A conservative force is the negative gradient of a potential, and the gradient takes a scale-factor form in every orthogonal system:
+$$\nabla U = \frac{1}{h_1}\frac{\partial U}{\partial q_1}\hat{\mathbf e}_1 + \frac{1}{h_2}\frac{\partial U}{\partial q_2}\hat{\mathbf e}_2 + \frac{1}{h_3}\frac{\partial U}{\partial q_3}\hat{\mathbf e}_3.$$
+
+| System | Scale factors $h_i$ | $\mathbf F = -\nabla U$ |
+|---|---|---|
+| Cartesian $(x,y,z)$ | $1,1,1$ | $-\big(\partial_xU,\ \partial_yU,\ \partial_zU\big)$ |
+| Polar $(r,\phi)$ | $1,\ r$ | $-\partial_rU\,\hat{\mathbf e}_r - \dfrac{1}{r}\partial_\phi U\,\hat{\mathbf e}_\phi$ |
+| Cylindrical $(\rho,\phi,z)$ | $1,\ \rho,\ 1$ | $-\partial_\rho U\,\hat{\mathbf e}_\rho - \dfrac{1}{\rho}\partial_\phi U\,\hat{\mathbf e}_\phi - \partial_zU\,\hat{\mathbf e}_z$ |
+| Spherical $(r,\theta,\phi)$ | $1,\ r,\ r\sin\theta$ | $-\partial_rU\,\hat{\mathbf e}_r - \dfrac{1}{r}\partial_\theta U\,\hat{\mathbf e}_\theta - \dfrac{1}{r\sin\theta}\partial_\phi U\,\hat{\mathbf e}_\phi$ |
+
+**A crucial subtlety.** In Lagrange's equations the **generalized force** is
+$$Q_i = \frac{\partial\mathcal L}{\partial q_i} = -\frac{\partial U}{\partial q_i},$$
+whereas the **physical force component** along the coordinate direction is
+$$F_{(i)} = \mathbf F\cdot\hat{\mathbf e}_i = -\frac{1}{h_i}\frac{\partial U}{\partial q_i} = \frac{Q_i}{h_i}.$$
+The two differ by the scale factor $h_i$. This is exactly why the radial Lagrange equation involves the *generalized* force $-\partial U/\partial r$ while the force component is also $-\partial U/\partial r$ (here $h_r=1$), but the angular equation involves $-\partial U/\partial\phi$ while the physical azimuthal force is $-\tfrac1r\partial U/\partial\phi$. The power relation $Q_i\dot q_i = F_{(i)}(h_i\dot q_i)=F_{(i)}\cdot(\text{physical displacement})$ keeps the units consistent.
+
+### Worked Example: The Double Pendulum
+
+A second pendulum hangs from the bob of a first. With angles $\theta_1,\theta_2$ from the vertical, masses $m_1,m_2$, and lengths $l_1,l_2$,
+$$T = \tfrac12(m_1+m_2)l_1^2\dot\theta_1^2 + \tfrac12 m_2 l_2^2\dot\theta_2^2 + m_2 l_1l_2\dot\theta_1\dot\theta_2\cos(\theta_1-\theta_2),$$
+$$U = -(m_1+m_2)g l_1\cos\theta_1 - m_2 g l_2\cos\theta_2,\qquad \mathcal L = T-U.$$
+The Euler–Lagrange equations are the two coupled, **nonlinear** equations
+$$(m_1+m_2)l_1\ddot\theta_1 + m_2 l_2\big[\ddot\theta_2\cos(\theta_1-\theta_2)+\dot\theta_2^2\sin(\theta_1-\theta_2)\big] + (m_1+m_2)g\sin\theta_1 = 0,$$
+$$m_2 l_2\ddot\theta_2 + m_2 l_1\big[\ddot\theta_1\cos(\theta_1-\theta_2)-\dot\theta_1^2\sin(\theta_1-\theta_2)\big] + m_2 g\sin\theta_2 = 0.$$
+The kinetic energy has a **cross term** $\propto\dot\theta_1\dot\theta_2$ because the metric $M_{ij}$ is non-diagonal: the two degrees of freedom are coupled by geometry. The double pendulum is the canonical example of a **deterministic chaotic** system — the Lagrangian is simple, but the flow is not integrable.
+
+```{python}
+#| label: fig-double-pendulum
+#| fig-cap: "Double pendulum. Left: θ₁(t) for two initial conditions differing by 10⁻⁶ rad; the trajectories track closely, then diverge completely — the butterfly effect in a conservative mechanical system. Right: the separation on a log scale grows exponentially until it saturates. The Lagrangian dynamics is exact and energy is conserved (drift ~10⁻⁸), yet long-term prediction is impossible."
+
+import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+
+m1 = m2 = l1 = l2 = 1.0
+g = 9.81
+
+def derivs(t, y):
+    th1, w1, th2, w2 = y
+    d = th1 - th2
+    den = 2*m1 + m2 - m2*np.cos(2*d)
+    dw1 = (-g*(2*m1+m2)*np.sin(th1) - m2*g*np.sin(th1-2*th2)
+           - 2*np.sin(d)*m2*(w2**2*l2 + w1**2*l1*np.cos(d))) / (l1*den)
+    dw2 = (2*np.sin(d)*(w1**2*l1*(m1+m2) + g*(m1+m2)*np.cos(th1)
+           + w2**2*l2*m2*np.cos(d))) / (l2*den)
+    return [w1, dw1, w2, dw2]
+
+def energy(y):
+    th1, w1, th2, w2 = y
+    T = (0.5*(m1+m2)*l1**2*w1**2 + 0.5*m2*l2**2*w2**2
+         + m2*l1*l2*w1*w2*np.cos(th1-th2))
+    U = -(m1+m2)*g*l1*np.cos(th1) - m2*g*l2*np.cos(th2)
+    return T + U
+
+t = np.linspace(0, 20, 4000)
+A = solve_ivp(derivs, [0, 20], [np.pi/2, 0, np.pi/2, 0], t_eval=t, rtol=1e-10, atol=1e-12)
+B = solve_ivp(derivs, [0, 20], [np.pi/2 + 1e-6, 0, np.pi/2, 0], t_eval=t, rtol=1e-10, atol=1e-12)
+sep = np.abs(A.y[0] - B.y[0])
+E = np.array([energy(A.y[:, i]) for i in range(A.y.shape[1])])
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.7))
+axes[0].plot(t, A.y[0], color="#2980b9", lw=1, label=r"$\theta_1(0)=\pi/2$")
+axes[0].plot(t, B.y[0], color="#e74c3c", lw=1, label=r"$\theta_1(0)=\pi/2+10^{-6}$")
+axes[0].set_title("Double pendulum: two nearby initial conditions")
+axes[0].set_xlabel("time"); axes[0].set_ylabel(r"$\theta_1$"); axes[0].legend(); axes[0].grid(alpha=0.3)
+axes[1].semilogy(t, np.maximum(sep, 1e-12), color="#8e44ad")
+axes[1].set_title("Exponential divergence (chaos)")
+axes[1].set_xlabel("time"); axes[1].set_ylabel("separation"); axes[1].grid(alpha=0.3, which="both")
+plt.tight_layout(); plt.show()
+
+print("=== DOUBLE PENDULUM ===")
+print(f"  energy drift over 20 s : {E.max() - E.min():.2e}  (conserved)")
+print(f"  separation at t=20 s   : {sep[-1]:.4f} rad from a 1e-6 difference")
+print("  exact, conservative dynamics can still be unpredictable in practice.")
+```
+
+### Worked Example: Pendulum in a Moving Vehicle
+
+A pendulum hangs in a vehicle accelerating horizontally with acceleration $a$. Working in the vehicle's (non-inertial) frame, the fictitious force $-ma\,\hat{\mathbf e}_x$ adds a term to the effective potential. With $\mathbf r=(l\sin\theta,\,-l\cos\theta)$,
+$$U_{\text{eff}} = -mg l\cos\theta + ma l\sin\theta,\qquad
+\mathcal L = \tfrac12 ml^2\dot\theta^2 + mgl\cos\theta - mal\sin\theta.$$
+The equation of motion is
+$$l\ddot\theta = -g\sin\theta - a\cos\theta,$$
+with **equilibrium** $\theta_{\text{eq}} = -\arctan(a/g)$: the pendulum hangs backward, tilted against the acceleration. Equivalently, the effective gravity is
+$$g_{\text{eff}} = \sqrt{g^2+a^2},$$
+tilted by $\arctan(a/g)$ from the vertical — a mechanical illustration of the **equivalence principle** (a uniform acceleration is locally indistinguishable from a gravitational field).
+
+- **Constant $a$:** $\mathcal L$ has no explicit time dependence and the pendulum oscillates about the tilted equilibrium.
+- **Time-dependent $a=a(t)$:** $\mathcal L$ acquires explicit $t$, so by the time-dependence identity ($d\mathcal H/dt = -\partial\mathcal L/\partial t$) the energy is **not** conserved — the vehicle pumps energy into the pendulum. This is the driven-pendulum regime.
+
+```{python}
+#| label: fig-moving-vehicle
+#| fig-cap: "Pendulum in a moving vehicle. Left: the tilted equilibrium angle θ_eq = −arctan(a/g) grows with the vehicle's acceleration; the pendulum hangs backward against the acceleration. Right: for a constant acceleration the pendulum oscillates about the tilted equilibrium, while the effective gravity is g_eff = √(g²+a²). This is the mechanical face of the equivalence principle."
+
+import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+
+g, l = 9.81, 1.0
+accs = np.linspace(0, 20, 200)
+
+def motion(t, y, a):
+    th, w = y
+    return [w, -(g*np.sin(th) + a*np.cos(th)) / l]
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.7))
+axes[0].plot(accs, np.degrees(-np.arctan(accs/g)), color="#2980b9", lw=2)
+axes[0].set_title(r"Equilibrium tilt $\theta_{eq}=-\arctan(a/g)$")
+axes[0].set_xlabel("acceleration a (m/s²)"); axes[0].set_ylabel(r"$\theta_{eq}$ (deg)"); axes[0].grid(alpha=0.3)
+
+a = 5.0
+th_eq = -np.arctan(a/g)
+t = np.linspace(0, 20, 2000)
+sol = solve_ivp(motion, [0, 20], [0.0, 0.0], t_eval=t, args=(a,), rtol=1e-9, atol=1e-11)
+axes[1].plot(t, np.degrees(sol.y[0]), color="#e74c3c", lw=1.2)
+axes[1].axhline(np.degrees(th_eq), ls="--", color="#27ae60", label=r"$\theta_{eq}$")
+axes[1].set_title(f"Oscillation about tilted equilibrium (a={a} m/s²)")
+axes[1].set_xlabel("time (s)"); axes[1].set_ylabel(r"$\theta$ (deg)"); axes[1].legend(); axes[1].grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print("=== PENDULUM IN A MOVING VEHICLE ===")
+print(f"  for a = {a} m/s²: theta_eq = {np.degrees(th_eq):.3f} deg, "
+      f"g_eff = {np.hypot(g, a):.4f} m/s²")
+print("  constant a: oscillations about a tilted equilibrium (energy conserved in the reduced L).")
+print("  a = a(t): explicit t in L -> energy is pumped, not conserved.")
+```
+
+---
+
+## 7.4 Proof of Lagrange's Equations with Constraints
+
+*(See Problems 7.12-7.13)*
+
+### Deriving Lagrange's Equations from Hamilton's Principle
+
+Take generalized coordinates $q_i(t)$ and the action $S[q]=\int_{t_1}^{t_2}\mathcal L(q,\dot q,t)\,dt$. Vary each coordinate,
+$$q_i(t)\to q_i(t)+\varepsilon\,\eta_i(t),\qquad \eta_i(t_1)=\eta_i(t_2)=0,$$
+and require the first variation to vanish at $\varepsilon=0$:
+$$0=\left.\frac{dS}{d\varepsilon}\right|_{\varepsilon=0}
+=\int_{t_1}^{t_2}\sum_i\left(\frac{\partial \mathcal L}{\partial q_i}\,\eta_i+\frac{\partial \mathcal L}{\partial \dot q_i}\,\dot\eta_i\right)dt.$$
+Integrate the second term by parts,
+$$\int_{t_1}^{t_2}\frac{\partial \mathcal L}{\partial \dot q_i}\,\dot\eta_i\,dt
+=\Big[\frac{\partial \mathcal L}{\partial \dot q_i}\,\eta_i\Big]_{t_1}^{t_2}
+-\int_{t_1}^{t_2}\frac{d}{dt}\frac{\partial \mathcal L}{\partial \dot q_i}\,\eta_i\,dt,$$
+and the boundary term vanishes because $\eta_i(t_1)=\eta_i(t_2)=0$. Hence
+$$0=\int_{t_1}^{t_2}\sum_i\left[\frac{\partial \mathcal L}{\partial q_i}-\frac{d}{dt}\frac{\partial \mathcal L}{\partial \dot q_i}\right]\eta_i\,dt.$$
+Since the variations $\eta_i$ are **arbitrary** (smooth, vanishing at the endpoints), the **fundamental lemma of the calculus of variations** forces each bracket to vanish:
+$$\boxed{\ \frac{d}{dt}\frac{\partial \mathcal L}{\partial \dot q_i}-\frac{\partial \mathcal L}{\partial q_i}=0,\qquad i=1,\dots,n.\ }$$
+These are **Lagrange's equations**. The argument rests on three assumptions that must be made explicit: (i) $\mathcal L$ is differentiable in its arguments, (ii) the endpoints are fixed, and (iii) the variations are arbitrary and smooth. Reversing the integration by parts shows the converse, giving the equivalence with the stationary-action statement of the previous section.
+
+### What the Constraint Assumption Buys
+
+For a particle constrained to a surface (e.g., a bead on a wire), the total force is $\mathbf{F}_{tot} = \mathbf{F}_{cstr} + \mathbf{F}$. 
+The constraint force $\mathbf{F}_{cstr}$ acts normal to the surface, and any virtual displacement $\epsilon$ consistent with the constraint lies within the surface. Thus, $\mathbf{F}_{cstr} \cdot \epsilon = 0$.
+
+This geometric fact means the constraint forces do zero virtual work, entirely vanishing from the variation of the action $\delta S = 0$. The resulting path requires only the potential $U$ of the *non-constraint* forces:
+$$ \mathcal{L}(q, \dot{q}, t) = T - U $$
+yielding the $n$ equations of motion:
+$$ \frac{\partial \mathcal{L}}{\partial q_i} - \frac{d}{dt}\frac{\partial \mathcal{L}}{\partial \dot{q}_i} = 0 \quad \text{for } i = 1, \dots, n $$
+
+---
+
+## 7.5 Examples of Lagrange's Equations
+
+*(See Problems 7.14-7.44)*
+
+The procedure is nearly infallible:
+1. Choose $n$ generalized coordinates.
+2. Write $T$ and $U$ in an inertial frame, then express them in terms of the $q$'s and $\dot{q}$'s.
+3. Construct $\mathcal{L} = T - U$.
+4. Evaluate the Lagrange equations.
+
+### The Simple Pendulum (Taylor §7.2)
+
+The canonical constrained system: a bob of mass $m$ on a rigid massless rod of length $l$, swinging in a plane. Although the bob has two Cartesian coordinates $(x,y)$, the rod imposes $x^2+y^2=l^2$, so there is **one** DOF. Choosing $\theta$ from the vertical,
+$$\mathbf r=(l\sin\theta,\,-l\cos\theta),\quad T=\tfrac12 ml^2\dot\theta^2,\quad U=mgl(1-\cos\theta),$$
+$$\mathcal L=\tfrac12 ml^2\dot\theta^2-mgl(1-\cos\theta).$$
+The single Lagrange equation is
+$$-mgl\sin\theta-\frac{d}{dt}\big(ml^2\dot\theta\big)=0
+\qquad\Longrightarrow\qquad
+\ddot\theta=-\frac{g}{l}\sin\theta.$$
+The rod's tension — the force of constraint — never appears, which is the whole point. For small $\theta$ this is SHM with $\omega=\sqrt{g/l}$, and the *same* equation also follows Newtonianly from torque $=I\alpha$ (here $\Gamma=-mgl\sin\theta$, $I=ml^2+r$).
+
+### Atwood's Machine (Taylor Example 7.3)
+
+Two masses $m_1,m_2$ hang from an inextensible string over a massless frictionless pulley. With $x$ the downward displacement of $m_1$ and $y$ the upward displacement of $m_2$, the fixed string length gives $x+y=\text{const}$, hence $\dot y=-\dot x$: **one** DOF. Then
+$$T=\tfrac12(m_1+m_2)\dot x^2,\qquad U=-(m_1-m_2)gx,\qquad \mathcal L=\tfrac12(m_1+m_2)\dot x^2+(m_1-m_2)gx.$$
+Lagrange's equation is $(m_1-m_2)g=(m_1+m_2)\ddot x$, i.e.
+$$\ddot x=\frac{m_1-m_2}{m_1+m_2}\,g.$$
+The Newtonian route needs **two** equations (one per mass) and the string tension $F_t$ as an extra unknown, which must then be eliminated; Lagrange never introduces $F_t$ at all. (If the tension is wanted, the multiplier method of §7.10 recovers it.)
+
+### A Particle Confined to a Cylinder (Taylor Example 7.4)
+
+A mass $m$ slides frictionlessly on the cylinder $\rho=R$ under the Hooke force $\mathbf F=-k\mathbf r$. With coordinates $z,\phi$ (two DOF since $\rho=R$ is fixed),
+$$T=\tfrac12 m\big(R^2\dot\phi^2+\dot z^2\big),\qquad U=\tfrac12 k(R^2+z^2),$$
+$$\mathcal L=\tfrac12 m\big(R^2\dot\phi^2+\dot z^2\big)-\tfrac12 k(R^2+z^2).$$
+The equations are
+$$m\ddot z=-kz\quad(\text{SHM in }z),\qquad \frac{d}{dt}\big(mR^2\dot\phi\big)=0\quad(\text{angular momentum about }z\text{ conserved}).$$
+Here $\phi$ is **ignorable**: $\mathcal L$ does not contain $\phi$, so its conjugate momentum is constant. This is the Lagrangian route to a conservation law with zero effort.
+
+### A Block Sliding on a Wedge (Taylor Example 7.5)
+
+A block (mass $m$) slides on a frictionless wedge (mass $M$) that itself slides on a frictionless table. Use $q_1$ = distance of the block down the slope and $q_2$ = horizontal position of the wedge. The block's velocity is the vector sum of its motion down the slope and the wedge's motion:
+$$T=\tfrac12(M+m)\dot q_2^2+m\dot q_1\dot q_2\cos\alpha+\tfrac12 m\dot q_1^2,\qquad U=-mg\,q_1\sin\alpha.$$
+The $q_2$ coordinate is ignorable, so
+$$(M+m)\dot q_2+m\dot q_1\cos\alpha=\text{const}\qquad(\text{horizontal momentum}),$$
+and the $q_1$ equation, after eliminating $\ddot q_2$, gives the block's acceleration relative to the wedge:
+$$\ddot q_1=\frac{g\sin\alpha}{1-\dfrac{m}{M+m}\cos^2\alpha}.$$
+Checks: $M\to\infty$ gives $g\sin\alpha$ (fixed incline); $\alpha=90^\circ$ gives $g$ (free fall). Solving this Newtonianly requires carefully tracking normal forces between block and wedge; Lagrange needs only the two energies.
+
+### Bead on a Spinning Wire Hoop (Bifurcation Example)
+Consider a circular wire hoop of radius $R$ spinning at constant angular velocity $\omega$ about its vertical axis, with a bead of mass $m$ free to slide. The generalized coordinate is the angle $\theta$ from the bottom.
+
+$$ \mathcal{L} = \frac{1}{2}mR^2(\dot{\theta}^2 + \omega^2 \sin^2 \theta) - mgR(1 - \cos \theta) $$
+The equation of motion is:
+$$ R\ddot{\theta} = (\omega^2 R \cos \theta - g) \sin \theta $$
+
+When $\omega^2 < g/R$, the only stable equilibrium is at the bottom ($\theta=0$). But when the hoop spins fast enough ($\omega^2 > g/R$), the bottom becomes an *unstable* equilibrium, and two new stable equilibria emerge at $\theta = \pm \arccos(g / \omega^2 R)$. This emergence is known in chaos theory as a **pitchfork bifurcation**.
+
+```{python}
+#| label: fig-bifurcation
+#| fig-cap: "The effective restoring force on the spinning hoop bead. Note the stable equilibria moving away from the origin as rotation rate increases."
+import numpy as np
+import matplotlib.pyplot as plt
+
+theta = np.linspace(-np.pi, np.pi, 200)
+R = 1.0
+g = 9.81
+
+plt.figure(figsize=(8, 4))
+for w_sq in [5, 9.81, 20, 40]:
+    force = (w_sq * R * np.cos(theta) - g) * np.sin(theta)
+    plt.plot(theta, force, label=rf'$\omega^2={w_sq}$')
+
+plt.axhline(0, color='k', linestyle='--', linewidth=0.8)
+plt.title("Restoring Force vs. Angle $\\theta$")
+plt.xlabel("$\\theta$ (radians)")
+plt.ylabel("Normalized Force")
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+---
+
+## 7.6 Generalized Momenta & Ignorable Coordinates
+
+We define the **generalized force** $F_i$ and **generalized momentum** $p_i$ as:
+$$ F_i = \frac{\partial \mathcal{L}}{\partial q_i} \quad \text{and} \quad p_i = \frac{\partial \mathcal{L}}{\partial \dot{q}_i} $$
+Lagrange's equations become exactly $F_i = \dot{p}_i$.
+
+**Ignorable Coordinates:** If $\mathcal{L}$ is independent of a coordinate $q_k$, we call $q_k$ *ignorable* or *cyclic*. Its generalized force $F_k = 0$, meaning the conjugate momentum $p_k$ is strictly conserved! Every ignorable coordinate points to a conservation law.
+
+---
+
+## 7.8 Conservation Laws and Noether's Theorem
+
+*(See Problems 7.45-7.47)*
+
+### Total Momentum
+If an isolated system is **translationally invariant** (meaning $\mathcal{L}$ doesn't change if we shift all particles by an infinitesimal vector $\boldsymbol{\epsilon}$), it follows directly from Lagrange's equations that the total linear momentum $\mathbf{P} = \sum \mathbf{p}_\alpha$ is conserved.
+
+### Conservation of Energy and The Hamiltonian
+The total time derivative of $\mathcal{L}$ leads us to define the **Hamiltonian** $\mathcal{H}$:
+$$ \mathcal{H} = \sum_{i=1}^n p_i \dot{q}_i - \mathcal{L} $$
+
+If the Lagrangian has no explicit time dependence ($\partial \mathcal{L} / \partial t = 0$), then $d\mathcal{H}/dt = 0$, and the Hamiltonian is conserved.
+Furthermore, if the generalized coordinates are *natural* (time-independent transformations), Euler's homogeneous function theorem guarantees that the kinetic energy $T$ is a homogeneous quadratic function of the velocities, which implies:
+$$ \sum_{i} p_i \dot{q}_i = 2T \implies \mathcal{H} = 2T - (T - U) = T + U = E $$
+Hence, time-translation invariance leads to **Energy Conservation**.
+
+### The Mass Matrix and Why $\mathcal H = T + U$
+
+The claim $\sum_i p_i\dot q_i = 2T$ deserves its derivation. For **natural** coordinates, differentiating $\mathbf r_a(q)$ gives $\dot{\mathbf r}_a=\sum_i(\partial\mathbf r_a/\partial q_i)\,\dot q_i$, hence
+$$T=\tfrac12\sum_a m_a|\dot{\mathbf r}_a|^2=\tfrac12\,A_{jk}(q)\,\dot q_j\dot q_k,
+\qquad
+A_{jk}(q)=\sum_a m_a\,\frac{\partial\mathbf r_a}{\partial q_j}\cdot\frac{\partial\mathbf r_a}{\partial q_k}.$$
+The symmetric matrix $A_{jk}$ is the **mass matrix** (the metric on configuration space). Then
+$$\frac{\partial T}{\partial\dot q_i}=A_{ij}\dot q_j=p_i,
+\qquad
+\sum_i p_i\dot q_i=A_{ij}\dot q_i\dot q_j=2T,$$
+so $\mathcal H=\sum_i p_i\dot q_i-\mathcal L=2T-(T-U)=T+U$. Thus:
+
+> If the coordinates are natural **and** $\partial\mathcal L/\partial t=0$, then $\mathcal H=T+U=E$ and energy is conserved.
+
+### Momentum Conservation as Noether's Theorem
+
+An isolated system is **translationally invariant**: shifting every particle by the same infinitesimal $\boldsymbol\epsilon$ changes nothing physical, so $\delta U=0$, $\delta T=0$ (velocities are unchanged), hence $\delta\mathcal L=0$. Writing that change out,
+$$\delta\mathcal L=\boldsymbol\epsilon\cdot\sum_a\frac{\partial\mathcal L}{\partial\mathbf r_a}=0
+\ \text{for all }\boldsymbol\epsilon
+\qquad\Longrightarrow\qquad
+\sum_a\frac{\partial\mathcal L}{\partial\mathbf r_a}=0.$$
+Using Lagrange's equations, $\partial\mathcal L/\partial\mathbf r_a=\dfrac{d}{dt}\dfrac{\partial\mathcal L}{\partial\dot{\mathbf r}_a}$, so the last equation becomes
+$$\frac{d}{dt}\sum_a\mathbf p_a=0
+\qquad\Longrightarrow\qquad
+\mathbf P=\sum_a\mathbf p_a\ \text{conserved}.$$
+This is the first instance of **Noether's theorem**: *invariance of $\mathcal L$ under a continuous transformation implies a conservation law.* Time-translation invariance $\Rightarrow$ energy; space-translation invariance $\Rightarrow$ total momentum; rotational invariance $\Rightarrow$ total angular momentum. The three great conservation laws of mechanics are three symmetries of one function.
+
+---
+
+## Explicit vs Implicit Time Dependence of the Lagrangian
+
+A Lagrangian depends on time in **two distinct ways**:
+$$\mathcal L\big(q(t),\,\dot q(t),\,t\big).$$
+- **Implicit dependence** through $q_i(t)$ and $\dot q_i(t)$ — present whenever the system moves, even if the formula for $\mathcal L$ contains no $t$.
+- **Explicit dependence** through the last argument $t$ — present only when the formula itself contains $t$, i.e. when $\partial \mathcal L/\partial t \neq 0$.
+
+Confusing the two is a classic error. The **total** derivative $d\mathcal L/dt$ includes both; the **partial** derivative $\partial \mathcal L/\partial t$ only the explicit one.
+
+### The Master Identity
+
+Differentiating $\mathcal L$ along the trajectory and using the Euler–Lagrange equations gives
+$$\frac{d\mathcal L}{dt} = \sum_i \frac{d}{dt}\!\left(p_i \dot q_i\right) + \frac{\partial \mathcal L}{\partial t}
+\qquad\Longrightarrow\qquad
+\boxed{\ \frac{d\mathcal H}{dt} = -\,\frac{\partial \mathcal L}{\partial t}\ }
+\qquad \mathcal H = \sum_i p_i \dot q_i - \mathcal L.$$
+So the Hamiltonian is conserved **iff $\partial \mathcal L/\partial t = 0$** — iff the Lagrangian has no explicit time dependence.
+
+### The Three Cases
+
+1. **No explicit $t$, natural (scleronomic) coordinates.** Constraints and their coordinate transformations are time-independent (free particle, pendulum with a fixed support, a particle in a static potential). Then $\partial \mathcal L/\partial t = 0$, so $d\mathcal H/dt = 0$; and because the coordinates are natural, Euler's homogeneous-function theorem gives $\sum_i p_i\dot q_i = 2T$, hence
+$$\mathcal H = 2T - (T - U) = T + U = E.$$
+**Energy is conserved.**
+
+2. **No explicit $t$, but time-dependent (rheonomic) coordinates.** The *formula* for $\mathcal L$ has no $t$, so $\mathcal H$ is conserved, but the coordinate transformation depends on $t$, so $\mathcal H \neq T+U$. The conserved quantity is the **Jacobi integral**, not the mechanical energy. The spinning-hoop Lagrangian of §7.5 is exactly this case: its conserved $\mathcal H$ contains the extra $-\tfrac12 mR^2\omega^2\sin^2\theta$ term, so it is not $T+U$.
+
+3. **Explicit $t$ dependence.** The potential is time-dependent, $U = U(q,t)$ (a driven oscillator, a particle in a time-varying field), or a constraint moves in a prescribed time-dependent way (a shaken pendulum support, a hoop spun with $\Omega(t)$). Then $\partial \mathcal L/\partial t \neq 0$, so generally $d\mathcal H/dt \neq 0$: **energy is not conserved** because the external agent is doing work.
+
+Typical sources of explicit time dependence:
+
+$$U = U(q, t) \quad\text{(time-varying potential)},\qquad \mathbf r_a = \mathbf r_a(q, t)\ \text{with explicit } t \quad\text{(rheonomic constraint)}.$$
+
+Examples:
+- **Driven oscillator:** with driving potential $U = \tfrac12 k x^2 - x F_0\cos(\omega t)$, we get $\partial \mathcal L/\partial t = -x F_0\omega\sin(\omega t) \neq 0$.
+- **Time-varying quadratic potential** $U = \tfrac12 m\,\Omega(t)^2 x^2$ (parametric driving; a pendulum whose length or support is modulated).
+- **Charged particle in an oscillating field:** $U = q\,\phi(\mathbf r, t)$.
+
+The laboratory below verifies $d\mathcal H/dt = -\partial \mathcal L/\partial t$ and contrasts a conserving system with a pumped one.
+
+```{python}
+#| label: fig-time-dependence
+#| fig-cap: "Energy conservation requires no explicit time dependence. A harmonic oscillator with a constant frequency has a conserved Hamiltonian H = T + U (flat curve). Give the frequency an explicit time dependence, U = ½ m Ω(t)² x², and ∂L/∂t ≠ 0, so H is no longer conserved — the external agent pumps energy into the oscillator (oscillating curve). The master identity dH/dt = −∂L/∂t holds exactly."
+
+import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+
+m = 1.0
+def static(t, y):
+    x, v = y
+    return [v, -1.0**2 * x]                         # constant frequency Omega0 = 1
+def driven(t, y):
+    x, v = y
+    Om = 1.0 * (1 + 0.3 * np.sin(1.5 * t))          # explicit time dependence
+    return [v, -Om**2 * x]
+
+t = np.linspace(0, 60, 24000)
+s_stat = solve_ivp(static, [0, 60], [1.0, 0.0], t_eval=t, rtol=1e-11, atol=1e-13)
+s_par = solve_ivp(driven, [0, 60], [1.0, 0.0], t_eval=t, rtol=1e-11, atol=1e-13)
+
+def H(sol, freq_of_t):
+    x, v = sol.y
+    return 0.5 * m * v**2 + 0.5 * m * freq_of_t(sol.t)**2 * x**2
+
+H_stat = H(s_stat, lambda tt: np.ones_like(tt))
+Om = 1.0 * (1 + 0.3 * np.sin(1.5 * t))
+H_par = H(s_par, lambda tt: 1.0 * (1 + 0.3 * np.sin(1.5 * tt)))
+
+fig, ax = plt.subplots(figsize=(10, 4.8))
+ax.plot(t, H_stat, label="constant frequency: dL/dt = 0, H conserved")
+ax.plot(t, H_par, label="time-dependent frequency: dL/dt != 0, H pumped")
+ax.set_xlabel("time"); ax.set_ylabel("H = T + U")
+ax.set_title("Energy conservation requires no explicit time dependence")
+ax.legend(); ax.grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print("=== ENERGY CONSERVATION ===")
+print(f"  static    : H range = {H_stat.max() - H_stat.min():.3e}  (conserved)")
+print(f"  parametric: H range = {H_par.max() - H_par.min():.3f}  (pumped by explicit t)")
+
+i = 12000
+dHdt = np.gradient(H_par, t)[i]
+minus_dLdt = 0.5 * m * np.gradient(Om**2, t)[i] * s_par.y[0][i]**2   # -dL/dt = (1/2) m (dOm^2/dt) x^2
+print("\n=== IDENTITY dH/dt = -dL/dt ===")
+print(f"  dH/dt (numerical)        = {dHdt:+.5f}")
+print(f"  -dL/dt = 0.5 m Om'^2 x^2 = {minus_dLdt:+.5f}")
+print("  they agree to numerical-differentiation error: the Hamiltonian changes exactly at the")
+print("  rate the Lagrangian depends explicitly on time.")
+```
+
+---
+
+## 7.9 Lagrange's Equations for Magnetic Forces
+
+*(See Problems 7.48-7.49)*
+
+For a charged particle $q$ in an electromagnetic field described by a scalar potential $V$ and vector potential $\mathbf{A}$, the Lorentz force is velocity-dependent: $\mathbf{F} = q(\mathbf{E} + \mathbf{v} \times \mathbf{B})$.
+
+The Lagrangian formulation still works if we adopt a **generalized definition of the Lagrangian**—a Lagrangian is simply *any* scalar function $\mathcal{L}$ that reproduces the correct equations of motion.
+
+For the electromagnetic case, the correct function is:
+$$ \mathcal{L} = \frac{1}{2}m\dot{\mathbf{r}}^2 - q(V - \dot{\mathbf{r}} \cdot \mathbf{A}) $$
+This Lagrangian is foundational to quantum mechanics, as it modifies the canonical generalized momentum of the particle:
+$$ \mathbf{p} = \frac{\partial \mathcal{L}}{\partial \dot{\mathbf{r}}} = m\mathbf{v} + q\mathbf{A} $$
+This shows that the momentum operator in quantum mechanics corresponds to $m\mathbf{v} + q\mathbf{A}$, not just the mechanical momentum $m\mathbf{v}$.
+
+---
+
+## 7.10 Lagrange Multipliers and Constraint Forces
+
+*(See Problems 7.50-7.52)*
+
+If we *need* to determine a constraint force (e.g. tension in a string, or structural stress on a roller coaster track), we deliberately don't use a minimal set of coordinates. Instead, we retain extra coordinates tied by a constraint equation $f(q_1, q_2) = \text{const}$.
+
+We introduce a **Lagrange multiplier** $\lambda(t)$ to scale the constraint equation, modifying Hamilton's principle:
+$$ \frac{\partial \mathcal{L}}{\partial q_i} - \frac{d}{dt}\frac{\partial \mathcal{L}}{\partial \dot{q}_i} + \lambda \frac{\partial f}{\partial q_i} = 0 $$
+
+The extra term $\lambda \frac{\partial f}{\partial q_i}$ is precisely the $i$-th component of the **force of constraint**. Solving this system of differential algebraic equations (DAEs) yields both the trajectory $q_i(t)$ and the dynamic magnitude of the constraint force via $\lambda(t)$.
+
+### Worked Example: Atwood's Machine via a Multiplier (Taylor Example 7.8)
+
+With $x,y$ the downward displacements of $m_1,m_2$ and the string constraint $f(x,y)=x+y=\text{const}$,
+$$\mathcal L=\tfrac12 m_1\dot x^2+\tfrac12 m_2\dot y^2+m_1gx+m_2gy.$$
+The modified Lagrange equations ($\partial f/\partial x=\partial f/\partial y=1$) are
+$$m_1g+\lambda=m_1\ddot x,\qquad m_2g+\lambda=m_2\ddot y,\qquad \ddot x+\ddot y=0.$$
+Eliminating $\ddot y=-\ddot x$ gives the same acceleration as before,
+$$\ddot x=\frac{m_1-m_2}{m_1+m_2}\,g,$$
+and the multiplier is
+$$\lambda=-\frac{2m_1m_2}{m_1+m_2}\,g=-F_t,$$
+so $\lambda$ is (minus) the string **tension** — the constraint force that the ordinary Lagrange method never introduced. This is the whole point of the multiplier: it is not a fudge factor but the physical constraint force in disguise.
+
+---
+
+## Lean 4 Formalization of Lagrange's Equations
+
+A full formalization of Lagrangian mechanics turns each concept above into a type, a definition, or a theorem.
+
+```lean
+import Mathlib
+
+-- configuration space: here a free particle in 3D; replace Q by any manifold
+abbrev Q := EuclideanSpace ℝ (Fin 3)
+
+variable (m : ℝ) (U : Q → ℝ) (hU : ContDiff ℝ 2 U)
+
+-- the Lagrangian: a scalar function of position and velocity
+noncomputable def L (x v : Q) : ℝ := (m / 2) * ‖v‖ ^ 2 - U x
+
+-- a trajectory and its smoothness hypothesis
+variable (γ : ℝ → Q) (hγ : ContDiff ℝ 2 γ)
+
+-- the equations of motion: the Euler-Lagrange predicate (schematic)
+def IsEL : Prop :=
+  ∀ t, fderiv ℝ (fun x => L x (deriv γ t)) (γ t) 1
+       = deriv (fun s => fderiv ℝ (fun v => L (γ s) v) (deriv γ s)) t
+
+-- Newton's law in inertial Cartesian coordinates
+def IsNewtonian : Prop :=
+  ∀ t, m • deriv (deriv γ) t = - gradient U (γ t)
+
+-- the theorem the formalization would prove:
+--   hγ → (IsEL L γ ↔ IsNewtonian m U γ)
+```
+
+**How each concept of this chapter is written in Lean:**
+
+| Concept | Lean / Mathlib encoding |
+|---|---|
+| generalized coordinates | a chart `PartialHomeomorph Q E`, or `chartAt H x` on a manifold |
+| trajectory | a term `γ : ℝ → Q` with `ContDiff ℝ n γ` |
+| Lagrangian | `L : Q → Q → ℝ` locally, `L : TangentBundle I Q → ℝ` globally |
+| equations of motion | a predicate `IsEL L γ : Prop` (the Euler–Lagrange equations) |
+| kinetic-energy metric | `M_ij := ∑_a m_a ⟪∂r/∂q_i, ∂r/∂q_j⟫`, a Riemannian metric on `Q` |
+| canonical momentum | `p := fderiv ℝ (fun v => L x v)`, a continuous linear functional |
+| Legendre transform | a bijection (hypothesis: `PosDef (∂²L/∂v²)`, i.e. convexity in `v`) |
+| gauge freedom | an equivalence `L ~ L + dF/dt` under which `IsEL` is invariant |
+| constraint / multipliers | `S : Set Q`, `IsSubmanifold`; `λ` an extra variable |
+| Noether charge | invariance of `L` under a `G`-action ⇒ a conserved quantity |
+
+**What the formalization forces you to confront:**
+
+- **Generalized coordinates are charts.** The mass matrix is the **pullback metric** of the chart; "non-inertial but legitimate" is simply "the chart is not an isometry."
+- **The equivalence chain is a sequence of `↔` theorems**, not prose: `IsEL ↔ δS = 0 ↔ IsNewtonian` (the last only under the inertial-Cartesian hypothesis, which is *not* encoded in the type of `L`).
+- **Canonical momentum is a Fréchet derivative,** so `p = ∂L/∂v` is meaningful only once `v` ranges over a normed space.
+- **Conservation is algebraic.** A symmetry with generator `G` and `{G, L} = 0` yields a conserved quantity — the same argument as in [the Hamiltonian chapter](taylor-chapter-13-hamiltonian-mechanics.qmd).
+- **Gaps.** Mathlib has the analysis and manifold infrastructure but lacks a ready-made variational/mechanics library, so the `IsEL` operator, the Legendre transform, and the symplectic form must be constructed. Building them *is* the honest statement of the assumptions.
+
+---
+
+## Chapter 7 in Review
+
+A map of Taylor's Chapter 7 to the sections of this article, followed by the master list of definitions and equations.
+
+| Taylor § | Topic | Covered here |
+|---|---|---|
+| **7.1** | Lagrange's equations for unconstrained motion; Hamilton's principle; equivalence to Newton | The Equivalence Chain; *F = dp/dt, Inertial Frames* |
+| **7.2** | Constrained systems: the simple pendulum | *The Simple Pendulum* |
+| **7.3** | Generalized coordinates; natural (scleronomic) coordinates; degrees of freedom; holonomic vs non-holonomic | §7.3; *Degrees of Freedom Are Not Coordinates*; *Counting DOF from Infinitesimal Displacements* |
+| **7.4** | Proof of Lagrange's equations with constraints | *Deriving Lagrange's Equations from Hamilton's Principle*; §7.4 |
+| **7.5** | Examples: Atwood, cylinder, wedge, spinning hoop, oscillations near equilibrium | *7.5 Examples* and the worked examples |
+| **7.6** | Generalized momenta and ignorable coordinates | §7.6 |
+| **7.7** | Conclusion | this section |
+| **7.8** | Conservation laws, Noether's theorem, the Hamiltonian | §7.8; *The Mass Matrix and Why H = T + U* |
+| **7.9** | Magnetic forces; non-uniqueness of the Lagrangian | §7.9; *What Does the Lagrangian Physically Represent?* |
+| **7.10** | Lagrange multipliers and constraint forces | §7.10; *Atwood's Machine via a Multiplier* |
+
+**Principal definitions and equations.**
+
+- **Lagrangian:** $\mathcal L = T - U$ for conservative systems; more generally, *any* scalar $\mathcal L(q,\dot q,t)$ whose Euler–Lagrange equations reproduce the dynamics.
+- **Generalized coordinates:** the smallest set $q_1,\dots,q_n$ such that $\mathbf r_a=\mathbf r_a(q,t)$ and conversely. **Natural** (scleronomic) iff the map has no explicit $t$.
+- **Degrees of freedom:** the number of independently variable coordinates = $\dim Q = 3N-\operatorname{rank}J$; reduced by holonomic constraints, not by non-holonomic ones.
+- **Lagrange's equations:** $\dfrac{d}{dt}\dfrac{\partial\mathcal L}{\partial\dot q_i}-\dfrac{\partial\mathcal L}{\partial q_i}=0$.
+- **Generalized force and momentum:** $Q_i=\dfrac{\partial\mathcal L}{\partial q_i}$, $p_i=\dfrac{\partial\mathcal L}{\partial\dot q_i}$, so $Q_i=\dot p_i$.
+- **Ignorable coordinate:** if $\mathcal L$ is independent of $q_i$, then $p_i$ is conserved.
+- **Hamiltonian:** $\mathcal H=\sum_i p_i\dot q_i-\mathcal L$; $\mathcal H$ is conserved iff $\partial\mathcal L/\partial t=0$, and $\mathcal H=T+U$ if the coordinates are natural.
+- **Magnetic Lagrangian:** $\mathcal L=\tfrac12 m\dot{\mathbf r}^2-q(V-\dot{\mathbf r}\cdot\mathbf A)$, for which the canonical momentum is $\mathbf p=m\mathbf v+q\mathbf A$.
+- **Lagrange multipliers:** $\dfrac{d}{dt}\dfrac{\partial\mathcal L}{\partial\dot q_i}-\dfrac{\partial\mathcal L}{\partial q_i}=\lambda\dfrac{\partial f}{\partial q_i}$, where $\lambda\,\partial f/\partial q_i$ is the constraint force.
+
+**What the chapter achieves** is exactly the promise of Hamilton's epigraph: *"the most varied consequences respecting the motions of systems of bodies may be derived from one radical formula."* Two structural gains make this work — **coordinate freedom** (the same equations in any description) and **constraint elimination** (the forces we do not want disappear automatically). Both rest on a small set of assumptions: an inertial frame to *start* from, smooth functionals, holonomic constraints doing no virtual work, and conservative (or potentially derivable) non-constraint forces. From here the same radical formula powers central forces (Ch. 8), non-inertial frames (Ch. 9), rigid bodies (Ch. 10), normal modes (Ch. 11), chaos (Ch. 12), and the [Hamiltonian reformulation (Ch. 13)](taylor-chapter-13-hamiltonian-mechanics.qmd).
