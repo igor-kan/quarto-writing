@@ -10,7 +10,7 @@ files = [
 ]
 
 for filepath in files:
-    full_path = os.path.join('/home/igorkan/repos/quarto-writing', filepath)
+    full_path = os.path.join('/home/user/repos/quarto-writing', filepath)
     if not os.path.exists(full_path):
         print(f"File not found: {full_path}")
         continue

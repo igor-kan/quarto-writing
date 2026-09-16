@@ -10,7 +10,7 @@ description: Quarto Writing Main Blog Guidelines
 ### Scope & Content Boundaries
 * This repository (`quarto-writing`) is Igor's **main technical and personal blog**.
 * It hosts general articles on Computer Science, Linux administration, Vim/Neovim, DevOps, Literature, and Philosophy.
-* **DO NOT store university course-specific materials here** (e.g. PHYD57 problem sets, lecture notes, cluster login guides). Course materials belong strictly in their dedicated course repositories (e.g. `/home/igorkan/repos/phyd57h3`).
+* **DO NOT store university course-specific materials here** (e.g. PHYD57 problem sets, lecture notes, cluster login guides). Course materials belong strictly in their dedicated course repositories (e.g. `/home/user/repos/phyd57h3`).
 
 ### Git Dual Remotes (MANDATORY)
 * `origin`: `https://github.com/igor-kan/quarto-writing.git` (Public GitHub Pages deployment)

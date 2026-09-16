@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import os
 
-out_dir = "/home/igorkan/repos/quarto-writing/posts/literature"
+out_dir = "/home/user/repos/quarto-writing/posts/literature"
 os.makedirs(out_dir, exist_ok=True)
 
 sonnets = [18, 130]

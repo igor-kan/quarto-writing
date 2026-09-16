@@ -28,7 +28,7 @@ The precompilation workflow consists of three integrated systems configured in `
 To view the complete drafts blog with zero compile lag:
 
 ```bash
-cd /home/igorkan/repos/quarto-writing-drafts
+cd /home/user/repos/quarto-writing-drafts
 ./serve_drafts.sh
 ```
 
@@ -86,7 +86,7 @@ quarto-writing-drafts/
 * **Draft State (`draft: true`)**: Files remain private to this repository and are rendered locally via `./serve_drafts.sh`. They are never published to public GitHub Pages.
 * **Publishing to Public Site**:
   1. Set `draft: false` (or remove `draft: true`) in the article's YAML frontmatter.
-  2. Copy the sanitized article to the public repository (`/home/igorkan/repos/quarto-writing/posts/...`).
+  2. Copy the sanitized article to the public repository (`/home/user/repos/quarto-writing/posts/...`).
   3. Commit and push in the public repository to trigger the GitHub Actions deployment.
 
 ---

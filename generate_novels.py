@@ -56,7 +56,7 @@ format:
 
 {chap_text.strip()}
 """
-        out_path = f"/home/igorkan/repos/quarto-writing/posts/{out_prefix}-ch{chapter_count}.qmd"
+        out_path = f"/home/user/repos/quarto-writing/posts/{out_prefix}-ch{chapter_count}.qmd"
         with open(out_path, 'w', encoding='utf-8') as out_f:
             out_f.write(qmd_content)
             

@@ -1,6 +1,6 @@
 import re
 
-filepath = '/home/igorkan/repos/quarto-writing/posts/computer-science/setup-rclone-gdrive-linux.qmd'
+filepath = '/home/user/repos/quarto-writing/posts/computer-science/setup-rclone-gdrive-linux.qmd'
 
 with open(filepath, 'r', encoding='utf-8') as f:
     content = f.read()

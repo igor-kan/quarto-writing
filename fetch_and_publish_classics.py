@@ -107,12 +107,12 @@ format:
 """
     # Create valid filename
     safe_title = title_suffix.replace(' ', '-').lower()
-    out_path = f"/home/igorkan/repos/quarto-writing/posts/{book_key}-{safe_title}.qmd"
+    out_path = f"/home/user/repos/quarto-writing/posts/{book_key}-{safe_title}.qmd"
     # To avoid filename length issues or strange characters
     out_path = "".join([c for c in out_path if c.isalpha() or c.isdigit() or c in ['-', '.', '/']])
     
     # Just use sequential numbering to be safe
-    out_path = f"/home/igorkan/repos/quarto-writing/posts/{book_key}-part{count}.qmd"
+    out_path = f"/home/user/repos/quarto-writing/posts/{book_key}-part{count}.qmd"
     
     with open(out_path, 'w', encoding='utf-8') as f:
         f.write(qmd_content)

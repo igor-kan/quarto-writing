@@ -41,7 +41,7 @@ format:
 
 """
 
-    with open('/home/igorkan/repos/quarto-writing/posts/the-waste-land.qmd', 'w', encoding='utf-8') as f:
+    with open('/home/user/repos/quarto-writing/posts/the-waste-land.qmd', 'w', encoding='utf-8') as f:
         f.write(header)
         for line in poem_lines:
             # simple formatting: replace leading spaces with non-breaking spaces for poetry formatting
@@ -59,7 +59,7 @@ format:
                 f.write(line.rstrip('\n') + "  \n")
 
 def create_major_barbara():
-    with open('/home/igorkan/.gemini/antigravity-cli/brain/903db887-b1b9-4c2a-9f42-47fa80108611/.system_generated/steps/83/content.md', 'r', encoding='utf-8') as f:
+    with open('/home/user/.gemini/antigravity-cli/brain/903db887-b1b9-4c2a-9f42-47fa80108611/.system_generated/steps/83/content.md', 'r', encoding='utf-8') as f:
         content = f.read()
 
     acts = re.split(r'#\s*Act [123]', content)
@@ -86,7 +86,7 @@ format:
 # Act {act_num}
 
 """
-            with open(f'/home/igorkan/repos/quarto-writing/posts/major-barbara-act{act_num}.qmd', 'w', encoding='utf-8') as f:
+            with open(f'/home/user/repos/quarto-writing/posts/major-barbara-act{act_num}.qmd', 'w', encoding='utf-8') as f:
                 f.write(header)
                 # Replace character names with bold for better reading
                 act_text = acts[act_num]

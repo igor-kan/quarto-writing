@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import os
 import re
 
-out_dir = "/home/igorkan/repos/quarto-writing/posts/literature"
+out_dir = "/home/user/repos/quarto-writing/posts/literature"
 os.makedirs(out_dir, exist_ok=True)
 
 # Process a batch of sonnets to avoid rate limiting or extremely long runs
