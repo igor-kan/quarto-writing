@@ -1,0 +1,125 @@
+---
+title: "The Mechanics of Data Integrity: ACID Transactions, Concurrency Locks, and Timeouts"
+subtitle: "Deconstructing how relational databases guarantee consistency, manage contention, and resolve deadlocks."
+description: "A foundational guide to database systems: ACID properties, write-ahead logging (WAL), row-level locks, two-phase locking (2PL), lock wait timeouts, and why transactions abort."
+author: "Igor Kan"
+date: "2026-10-11"
+categories: [Computer Science, Databases, Backend Architecture, Distributed Systems]
+draft: false
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    theme:
+      light: cosmo
+      dark: darkly
+---
+
+## Introduction: The Invariant of Consistency
+
+In modern software development and backend systems, the database is the authoritative guardian of state. Whether executing a financial transfer, reserving a flight seat, or updating user authentication tokens, software must guarantee that business data remains consistent even during server crashes, network partitions, or massive concurrent access.
+
+In systems engineering and incident triage, engineers frequently ask:
+
+> *"Did the transaction complete before the timeout elapsed?"*
+
+To appreciate why this inquiry matters, one must understand how databases group operations into atomic units, how they guard records against conflicting modifications, and why time limits are necessary to prevent systemic deadlocks.
+
+---
+
+## 1. What is a Database Transaction?
+
+A **transaction** is a sequence of one or more database operations (reads and writes) executed as a single logical unit of work. 
+
+A canonical example is a bank transfer: debiting $100 from Account $A$ and crediting $100 to Account $B$. If the database credits $B$ but crashes before debiting $A$, or debits $A$ without crediting $B$, the system enters an invalid state. Transactions prevent this partial execution.
+
+```sql
+BEGIN TRANSACTION;
+  UPDATE accounts SET balance = balance - 100 WHERE account_id = 'A';
+  UPDATE accounts SET balance = balance + 100 WHERE account_id = 'B';
+COMMIT;
+```
+
+---
+
+## 2. The ACID Guarantees
+
+Reliable relational databases (such as PostgreSQL, MySQL, and SQLite) enforce the **ACID** framework:
+
+```{mermaid}
+graph TD
+    ACID["ACID Guarantees"] --> A["Atomicity<br>All or nothing. If any statement fails, the entire transaction rolls back."]
+    ACID --> C["Consistency<br>Data transitions only between valid states conforming to schema constraints."]
+    ACID --> I["Isolation<br>Concurrent transactions execute without mutually corrupting intermediate state."]
+    ACID --> D["Durability<br>Once committed, changes survive subsequent power loss or crashes (via WAL)."]
+```
+
+* **Atomicity:** The entire set of operations either commits in full or is rolled back with zero side-effects.
+* **Consistency:** The database enforces schema constraints, primary keys, foreign keys, and domain rules at transaction boundaries.
+* **Isolation:** Prevents anomalies like dirty reads, non-repeatable reads, or phantom reads when thousands of clients access the same tables simultaneously.
+* **Durability:** Committed data is permanently persisted to disk via a **Write-Ahead Log (WAL)** before acknowledging success to the client.
+
+---
+
+## 3. Concurrency, Locks, and Lock Contention
+
+When multiple transactions attempt to update the same record simultaneously, the database must coordinate access to preserve isolation. It achieves this using **locks**:
+
+* **Shared Locks (S-Locks / Read Locks):** Multiple transactions can hold shared locks concurrently to read a record without modification.
+* **Exclusive Locks (X-Locks / Write Locks):** Only a single transaction can hold an exclusive lock on a record. No other transaction can read or write that record until the lock is released.
+
+```{mermaid}
+sequenceDiagram
+    participant Tx1 as Transaction 1 (Transfer A -> B)
+    participant DB as Database Engine (Row Level)
+    participant Tx2 as Transaction 2 (Audit Account B)
+
+    Tx1->>DB: BEGIN; UPDATE Account A ...
+    Tx1->>DB: UPDATE Account B ... (Acquires Exclusive Lock on Row B)
+    Tx2->>DB: BEGIN; SELECT balance FROM Account B ...
+    Note over Tx2,DB: Tx2 is BLOCKED waiting for Exclusive Lock on B to release!
+    Tx1->>DB: COMMIT; (Releases Lock on Row B)
+    DB->>Tx2: Lock granted; Returns balance
+    Tx2->>DB: COMMIT;
+```
+
+When transaction $Tx_1$ locks Row $B$, any subsequent transaction $Tx_2$ requiring that row must wait in a queue. This condition is called **lock contention**.
+
+---
+
+## 4. The Specter of Deadlocks and Timeouts
+
+In high-concurrency architectures, lock contention can escalate into a circular dependency called a **deadlock**:
+* Transaction 1 holds a lock on Record $A$ and requests a lock on Record $B$.
+* Transaction 2 holds a lock on Record $B$ and requests a lock on Record $A$.
+
+Neither transaction can proceed; both wait indefinitely for the other to yield.
+
+### Why Timeouts are Essential
+To prevent threads and client connections from hanging forever, databases and application connection pools enforce **timeouts**:
+
+1. **Lock Wait Timeout (`lock_wait_timeout`):** The maximum time a transaction will queue waiting for another transaction to release an exclusive lock. If the lock is not granted within the threshold (e.g., 5 seconds), the engine aborts the statement.
+2. **Statement / Query Timeout (`statement_timeout`):** The maximum allowable duration for executing an individual query.
+3. **Transaction Timeout:** The total wall-clock duration permitted from `BEGIN` to `COMMIT`.
+
+```{mermaid}
+flowchart TD
+    Tx["Transaction Starts (BEGIN)"] --> Exec["Execute Queries & Acquire Locks"]
+    Exec --> Wait{"Lock Contention or Long Query?"}
+    Wait -- "Resource Granted within limit" --> Commit["COMMIT: Changes Persisted (200 OK)"]
+    Wait -- "Time Exceeds Timeout Threshold" --> Abort["TIMEOUT ELAPSED!<br>Engine issues ROLLBACK & Aborts Transaction"]
+```
+
+When a timeout elapses before the transaction reaches `COMMIT`, the database automatically issues a **ROLLBACK**. All intermediate mutations are discarded, locks are released, and an error is returned to the client application.
+
+---
+
+## Summary & Key Takeaways
+
+When a database architect or engineer asks:
+
+> *"Did the transaction complete before the timeout elapsed?"*
+
+They are asking a vital operational question:
+1. Did all database statements finish, validate constraints, and successfully `COMMIT`?
+2. Or did lock contention, a slow query, or a deadlock cause the operation to exceed its configured threshold, resulting in an automatic rollback and aborted state?

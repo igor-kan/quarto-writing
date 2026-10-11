@@ -1,0 +1,117 @@
+---
+title: "The Math of Trust: Cryptographic Hashes, Public Keys, and Digital Signatures"
+subtitle: "An introduction to asymmetric cryptography, authenticity verification, and Public Key Infrastructure."
+description: "A foundational guide to cryptography: symmetric vs. asymmetric keys, cryptographic hash functions (SHA-256), digital signature algorithms (RSA/ECDSA), and verifying data authenticity."
+author: "Igor Kan"
+date: "2026-10-11"
+categories: [Computer Science, Cryptography, Security, Software Engineering]
+draft: false
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    theme:
+      light: cosmo
+      dark: darkly
+---
+
+## Introduction: The Crisis of Impersonation
+
+In physical society, trust is established through handwritten signatures, physical seals, government-issued photo IDs, and notarized paper. In the digital universe—where any string of binary bits can be copied, edited, or retransmitted with zero physical traces—how can an operating system know that a software update genuinely originates from Apple or Microsoft? How can a web browser know that bank data comes from the authentic financial institution and not an eavesdropper?
+
+In cybersecurity, secure communications, and blockchain systems, the central inquiry is always:
+
+> *"Is the cryptographic signature authentic?"*
+
+To understand what it means for a signature to be "authentic," we must unpack the mathematics of one-way hash functions, asymmetric key pairs, and digital signature algorithms.
+
+---
+
+## 1. Cryptographic Hash Functions: The Digital Fingerprint
+
+At the foundation of digital signatures sits the **cryptographic hash function** (such as SHA-256). A hash function takes an input of arbitrary length (a small password, an entire operating system image, or a legal contract) and compresses it into a fixed-length string of bits (256 bits for SHA-256):
+
+$$\text{Hash} = H(\text{Message})$$
+
+A secure cryptographic hash function exhibits three mathematically essential properties:
+1. **Deterministic:** Identical inputs always produce the exact same hash output.
+2. **Pre-image Resistance (One-Way):** Given a hash digest $h$, it is computationally impossible to reverse-engineer the original message $m$.
+3. **Collision Resistance:** It is mathematically infeasible to find two distinct messages $m_1 \neq m_2$ that produce the identical hash $H(m_1) = H(m_2)$.
+4. **Avalanche Effect:** Changing a single bit in the input message completely scrambles more than 50% of the resulting output hash.
+
+---
+
+## 2. Asymmetric Cryptography: The Key Pair Revolution
+
+In traditional **symmetric cryptography**, the same secret key encrypts and decrypts data (like a physical padlock). The fatal flaw is key exchange: how do two parties share the secret key over an insecure internet without someone intercepting it?
+
+In the 1970s, Whitfield Diffie, Martin Hellman, and the inventors of RSA (Rivest, Shamir, Adleman) introduced **asymmetric (public-key) cryptography**. Instead of one key, every participant generates a mathematically linked **key pair**:
+
+* **Private Key ($K_{\text{private}}$):** Kept strictly secret by the owner. Never transmitted or shared with anyone.
+* **Public Key ($K_{\text{public}}$):** Freely distributed to the world. Anyone can download and inspect it.
+
+The mathematical relationship between the keys is built on asymmetric mathematical problems (such as factoring large semiprime integers or the discrete logarithm problem over elliptic curves). Data processed by one key can only be inverted or verified by the other key.
+
+---
+
+## 3. How a Digital Signature Works
+
+A digital signature does not simply encrypt the document. Instead, it signs the document's **cryptographic hash** using the sender's **private key**.
+
+### The Signing Phase (Executed by the Author)
+1. Alice takes a contract $M$ and computes its SHA-256 hash: $h = H(M)$.
+2. Alice encrypts the hash $h$ using her secret **Private Key**: 
+   $$\text{Signature} = \text{Sign}(K_{\text{private}}, h)$$
+3. Alice bundles the original contract $M$ alongside the digital signature and sends both to Bob.
+
+### The Verification Phase (Executed by Any Recipient)
+Bob receives the contract $M$ and the signature. To verify whether the signature is authentic:
+
+```{mermaid}
+flowchart TD
+    subgraph Signing ["1. Signing (Alice - Secret)"]
+        Msg1["Message M"] --> Hash1["Hash H(M)"]
+        Hash1 --> Sign["Sign with Alice's Private Key"]
+        Sign --> SigOutput["Digital Signature"]
+    end
+
+    subgraph Verification ["2. Verification (Bob - Public)"]
+        Msg2["Received Message M"] --> Hash2["Compute Independent Hash H(M)"]
+        SigInput["Received Signature"] --> Decrypt["Decrypt using Alice's Public Key"]
+        Decrypt --> RecoveredHash["Recovered Hash"]
+        
+        Hash2 --> Compare{"Do Both Hashes Match Exactly?"}
+        RecoveredHash --> Compare
+        Compare -- Yes --> Valid["AUTHENTIC & TAMPER-FREE!<br>Signature is Verified."]
+        Compare -- No --> Invalid["INVALID / FORGED!<br>Data was modified or key is wrong."]
+    end
+```
+
+1. Bob independently hashes the received contract $M$ to compute $h_{\text{calculated}} = H(M)$.
+2. Bob decrypts the signature using Alice’s **Public Key** to reveal the original hash: $h_{\text{recovered}}$.
+3. Bob compares the two values:
+   * If $h_{\text{calculated}} == h_{\text{recovered}}$, the signature is **authentic**.
+   * If they differ by even a single bit, the signature is rejected as counterfeit or corrupted.
+
+---
+
+## 4. The Three Guarantees of an Authentic Signature
+
+When a cryptographic signature passes verification, it delivers three rock-solid security guarantees:
+
+1. **Authenticity:** Only the owner of the private key could have generated the signature. It proves beyond mathematical doubt who authored the message.
+2. **Integrity:** If an attacker intercepted the message in transit and modified so much as a single comma or byte, the computed hash will diverge wildly from the decrypted signature hash, instantly exposing the tampering.
+3. **Non-Repudiation:** Because only the author possesses their private key, they cannot later claim: *"I never signed that document."*
+
+---
+
+## Summary & Key Takeaways
+
+When a security analyst, software installer, or cryptography engineer asks:
+
+> *"Is the cryptographic signature authentic?"*
+
+They are asking:
+1. Did the received message produce a hash that matches the decrypted signature?
+2. Does the signature decrypt cleanly with the sender's public key?
+3. Has the message remained uncorrupted and untampered since it was originally signed?
