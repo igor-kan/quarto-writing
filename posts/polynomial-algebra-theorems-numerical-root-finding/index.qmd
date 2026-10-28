@@ -1,0 +1,568 @@
+---
+title: "Polynomial Algebra: Theorems, Factoring Tactics, and Numerical Root-Finding"
+subtitle: "From abstract monomial rings and algebraic theorems to Horner's scheme, Aberth-Ehrlich, and companion matrix algorithms."
+description: "A comprehensive mathematical and computational exposition of polynomials: monomial products, multi-index notation, polynomial division, factoring criteria, root bounds, Sturm sequences, and high-performance root-finding implementations across C, C++, Python, and Fortran."
+author: "Igor Kan"
+date: "2026-10-28"
+categories: [Preprints, Mathematics, Abstract Algebra, Numerical Analysis, Algorithms]
+draft: false
+format:
+  html:
+    toc: true
+    toc-depth: 3
+---
+
+::: {.callout-note}
+### Preprint / Working Draft
+This article is published under the **Preprints** category. It represents an active working paper bridging formal polynomial ring algebra with high-performance numerical root-finding algorithms across modern scientific languages.
+:::
+
+---
+
+## 1. Monomial Products in Mathematical Terms
+
+In abstract algebra, algebraic geometry, and multivariable calculus, a **monomial** in a set of indeterminates (variables) $x_1, x_2, \dots, x_d$ is an algebraic expression formed strictly by multiplying these variables together, each raised to a specific exponent, optionally scaled by a coefficient $c \in \mathbb{K}$:
+
+$$x^\alpha = x_1^{\alpha_1} x_2^{\alpha_2} \cdots x_d^{\alpha_d} = \prod_{i=1}^d x_i^{\alpha_i} \tag{1}$$
+
+### 1.1 Multi-Index Notation
+
+The tuple of exponents $\alpha = (\alpha_1, \alpha_2, \dots, \alpha_d)$ is called a **multi-index**. In classical polynomial algebra:
+* Each $\alpha_i \in \mathbb{N}_0 = \{0, 1, 2, \dots\}$ is a non-negative integer.
+* The **total degree** of the monomial is the sum of its multi-index components:
+  $$|\alpha| = \sum_{i=1}^d \alpha_i \tag{2}$$
+* The **factorial of a multi-index** is defined as $\alpha! = \alpha_1! \alpha_2! \cdots \alpha_d!$.
+* **Partial Derivatives:** Multi-index notation streamlines multivariable calculus notation:
+  $$\partial^\alpha f = \frac{\partial^{|\alpha|} f}{\partial x_1^{\alpha_1} \partial x_2^{\alpha_2} \cdots \partial x_d^{\alpha_d}}$$
+
+### 1.2 Absence of Addition: Monomials vs. Polynomials
+
+A fundamental structural property of a monomial is that it consists of a **single term**:
+* It contains no internal additive ($+$) or subtractive ($-$) operators.
+* An expression containing sums of distinct monomials (e.g., $c_1 x^\alpha + c_2 x^\beta$) ceases to be a monomial and becomes a **polynomial** (or multinomial).
+* **The Structural Link to Dimensional Analysis:** As shown in our companion paper on [The Vector Space of Dimensions](../vector-space-of-dimensions-buckingham-pi/index.qmd), physical dimensions $[Q] = \prod_i D_i^{\alpha_i}$ are literally monomial products where the base dimensions $\{M, L, T, \dots\}$ serve as indeterminates and the dimension coordinates form a rational multi-index vector $\alpha \in \mathbb{Q}^m$.
+
+---
+
+## 2. The Polynomial Ring Structure
+
+Let $\mathbb{K}$ be a field (such as $\mathbb{Q}, \mathbb{R}$, or $\mathbb{C}$). The set of all univariate polynomials in indeterminate $x$ with coefficients in $\mathbb{K}$ forms a ring denoted by $\mathbb{K}[x]$:
+
+$$P(x) = a_n x^n + a_{n-1} x^{n-1} + \dots + a_1 x + a_0 = \sum_{k=0}^n a_k x^k, \quad a_k \in \mathbb{K}, \quad a_n \ne 0 \tag{3}$$
+
+where $n = \deg(P)$ is the degree of the polynomial, and $a_n$ is the **leading coefficient**. When $a_n = 1$, $P(x)$ is **monic**.
+
+### 2.1 Ring Axioms and Degree Properties
+
+The ring $(\mathbb{K}[x], +, \cdot)$ satisfies:
+1. **Additive Group:** $(\mathbb{K}[x], +)$ is an abelian group with zero polynomial $0$.
+2. **Associativity & Distributivity of Multiplication:** Multiplication distributes over addition.
+3. **Degree Multiplicativity:** For any non-zero polynomials $f, g \in \mathbb{K}[x]$:
+   $$\deg(f \cdot g) = \deg(f) + \deg(g) \tag{4}$$
+   $$\deg(f + g) \le \max(\deg(f), \deg(g)) \tag{5}$$
+4. **Integral Domain:** If $\mathbb{K}$ is a field, $\mathbb{K}[x]$ contains no zero divisors: $f \cdot g = 0 \implies f = 0 \text{ or } g = 0$.
+
+---
+
+## 3. Algebraic Operations and Factoring Tactics
+
+### 3.1 Polynomial Long Division and Synthetic Division
+
+For any polynomials $f(x), d(x) \in \mathbb{K}[x]$ with $d(x) \ne 0$, there exist unique polynomials $q(x)$ (quotient) and $r(x)$ (remainder) such that:
+
+$$f(x) = q(x) \cdot d(x) + r(x), \quad \text{where } \deg(r) < \deg(d) \tag{6}$$
+
+When dividing by a linear monic divisor $d(x) = x - c$, the remainder is a scalar constant matching the polynomial evaluation at $c$ (**The Remainder Theorem**):
+
+$$f(x) = q(x)(x - c) + f(c) \tag{7}$$
+
+If $f(c) = 0$, then $(x - c)$ divides $f(x)$ evenly (**The Factor Theorem**). **Synthetic division** executes this division in $O(n)$ operations by updating coefficients iteratively:
+
+$$b_{n-1} = a_n, \quad b_{k-1} = a_k + c \cdot b_k \quad (k = n-1, \dots, 1)$$
+
+### 3.2 The Euclidean Algorithm for Polynomials
+
+Because $\mathbb{K}[x]$ is a **Euclidean domain**, the greatest common divisor $\gcd(f, g)$ can be computed efficiently via the Euclidean algorithm through successive divisions:
+
+$$r_0 = f, \quad r_1 = g$$
+$$r_{k-1} = q_k r_k + r_{k+1}, \quad \deg(r_{k+1}) < \deg(r_k)$$
+
+The last non-zero remainder (normalized to be monic) is $\gcd(f, g)$. Furthermore, **Bézout's identity for polynomials** guarantees the existence of polynomials $u(x), v(x)$ such that:
+
+$$u(x) f(x) + v(x) g(x) = \gcd(f, g) \tag{8}$$
+
+### 3.3 The Rational Root Theorem
+
+For a polynomial with integer coefficients $P(x) = \sum_{k=0}^n a_k x^k \in \mathbb{Z}[x]$:
+
+> If $x = p/q$ is a rational root in irreducible form ($\gcd(p, q) = 1$), then:
+> 1. The numerator $p$ must divide the constant term: $p \mid a_0$
+> 2. The denominator $q$ must divide the leading coefficient: $q \mid a_n$
+
+This restricts the search space of possible rational roots to a finite set of integer divisor pairs.
+
+### 3.4 Eisenstein's Irreducibility Criterion
+
+Let $P(x) = a_n x^n + \dots + a_0 \in \mathbb{Z}[x]$. If there exists a prime number $p$ such that:
+1. $p \mid a_k$ for all $k \in \{0, 1, \dots, n-1\}$
+2. $p \nmid a_n$
+3. $p^2 \nmid a_0$
+
+Then $P(x)$ is **irreducible** over the field of rational numbers $\mathbb{Q}$.
+
+### 3.5 Square-Free Factorization
+
+A polynomial possesses multiple (repeated) roots at $x = r$ if and only if $(x - r)$ is also a root of its formal derivative $P'(x)$. The greatest common divisor $\gcd(P, P')$ extracts all repeated roots. The **square-free reduction**:
+
+$$P_{\text{sqfree}}(x) = \frac{P(x)}{\gcd(P(x), P'(x))} \tag{9}$$
+
+produces a polynomial containing the exact same distinct roots as $P(x)$, but with every root having a multiplicity of exactly 1, eliminating numerical instability during root-finding.
+
+---
+
+## 4. Fundamental Root Theorems and Enclosure Bounds
+
+### 4.1 The Fundamental Theorem of Algebra
+
+> **Theorem (Gauss, 1799):**  
+> Every non-zero single-variable polynomial $P(z) \in \mathbb{C}[z]$ of degree $n \ge 1$ has exactly $n$ complex roots (counted with multiplicity). That is, $\mathbb{C}$ is algebraically closed:
+> 
+> $$P(z) = a_n \prod_{k=1}^n (z - z_k), \quad z_k \in \mathbb{C} \tag{10}$$
+
+### 4.2 Vieta's Formulas
+
+Vieta's formulas establish the exact algebraic relation between polynomial roots $\{z_1, \dots, z_n\}$ and coefficients $\{a_0, \dots, a_n\}$ via **elementary symmetric polynomials**:
+
+$$\sum_{1 \le i \le n} z_i = -\frac{a_{n-1}}{a_n}$$
+
+$$\sum_{1 \le i < j \le n} z_i z_j = +\frac{a_{n-2}}{a_n}$$
+
+$$\prod_{k=1}^n z_k = (-1)^n \frac{a_0}{a_n}$$
+
+### 4.3 Descartes' Rule of Signs
+
+Let $P(x) \in \mathbb{R}[x]$ be an ordered real polynomial. Let $v$ be the number of sign variations between consecutive non-zero coefficients:
+* The number of positive real roots is either equal to $v$ or is less than $v$ by an even integer: $N_+ = v - 2k$ ($k \in \mathbb{N}_0$).
+* The number of negative real roots is determined similarly by counting sign variations in $P(-x)$.
+
+### 4.4 Cauchy's Root Bound
+
+Before running an iterative numerical solver, Cauchy's bound establishes a rigorous disk in the complex plane containing **all** roots:
+
+$$|z_k| \le 1 + \max_{0 \le i < n} \left| \frac{a_i}{a_n} \right| \quad \forall \, k \in \{1, \dots, n\} \tag{11}$$
+
+### 4.5 Sturm's Theorem (Exact Real Root Isolation)
+
+Sturm's theorem provides an exact algorithm to determine the precise number of real roots in any half-open interval $(a, b]$:
+1. Construct the **Sturm sequence** $f_0, f_1, f_2, \dots, f_m$ using Euclidean polynomial division with negative remainders:
+   $$f_0(x) = P(x), \quad f_1(x) = P'(x)$$
+   $$f_{k-1}(x) = q_k(x) f_k(x) - f_{k+1}(x), \quad \deg(f_{k+1}) < \deg(f_k)$$
+2. Let $V(c)$ denote the number of sign changes in the sequence $(f_0(c), f_1(c), \dots, f_m(c))$.
+3. **The number of distinct real roots in $(a, b]$ is precisely:**
+   $$N_{\text{roots}} = V(a) - V(b) \tag{12}$$
+
+---
+
+## 5. Numerical Root-Finding Algorithms
+
+### 5.1 Horner's Method (Nested Multiplication)
+
+Evaluating a polynomial naively requires $O(n^2)$ multiplications. **Horner's method** rewrites $P(x)$ in nested form:
+
+$$P(x) = a_0 + x(a_1 + x(a_2 + \dots + x(a_{n-1} + x a_n)\dots)) \tag{13}$$
+
+Horner's algorithm evaluates both $P(x)$ and its derivative $P'(x)$ simultaneously in only $2n$ additions and $2n$ multiplications:
+
+$$\begin{aligned}
+b_n &= a_n, & d_n &= b_n \\
+b_k &= a_k + x \cdot b_{k+1}, & d_k &= b_k + x \cdot d_{k+1} \quad (k = n-1, \dots, 1) \\
+P(x) &= a_0 + x \cdot b_1, & P'(x) &= d_1
+\end{aligned}$$
+
+Furthermore, the computed coefficients $b_1, \dots, b_n$ represent the exact quotient polynomial under synthetic deflation by $(x - r)$.
+
+### 5.2 Newton-Raphson with Deflation
+
+Given an initial root estimate $x_0$, Newton-Raphson iterates:
+
+$$x_{k+1} = x_k - \frac{P(x_k)}{P'(x_k)} \tag{14}$$
+
+Once a root $r$ converges to machine precision:
+1. Deflate the polynomial: $P_{\text{new}}(x) = P(x) / (x - r)$ using Horner synthetic division.
+2. Search for the next root on the deflated polynomial.
+3. *Numerical Safeguard:* Always polish the found root on the original non-deflated polynomial $P(x)$ to prevent the accumulation of roundoff errors.
+
+### 5.3 The Aberth-Ehrlich Simultaneous Method
+
+For finding all $n$ complex roots simultaneously without catastrophic deflation errors, the **Aberth-Ehrlich method** models the roots as charged electrostatic particles in the complex plane that repel one another:
+
+$$z_j^{(k+1)} = z_j^{(k)} - \frac{\frac{P(z_j^{(k)})}{P'(z_j^{(k)})}}{1 - \frac{P(z_j^{(k)})}{P'(z_j^{(k)})} \sum_{\ell \ne j} \frac{1}{z_j^{(k)} - z_\ell^{(k)}}} \tag{15}$$
+
+The method exhibits cubic ($O(h^3)$) local convergence and finds all roots in parallel.
+
+### 5.4 The Frobenius Companion Matrix (Eigenvalue Method)
+
+The industry standard algorithm implemented in MATLAB (`roots`) and NumPy (`np.roots`) maps polynomial root-finding into a matrix eigenvalue problem. For a monic polynomial $P(x) = x^n + \sum_{k=0}^{n-1} a_k x^k$, the **Frobenius Companion Matrix** is:
+
+$$\mathbf{C}(P) = \begin{pmatrix}
+0 & 0 & \cdots & 0 & -a_0 \\
+1 & 0 & \cdots & 0 & -a_1 \\
+0 & 1 & \cdots & 0 & -a_2 \\
+\vdots & \vdots & \ddots & \vdots & \vdots \\
+0 & 0 & \cdots & 1 & -a_{n-1}
+\end{pmatrix} \in \mathbb{R}^{n \times n} \tag{16}$$
+
+The characteristic polynomial of $\mathbf{C}(P)$ is identically $\det(\lambda I - \mathbf{C}(P)) = P(\lambda)$. Computing the eigenvalues of $\mathbf{C}(P)$ using the backward-stable **QR algorithm with Francis shifts** yields all $n$ roots simultaneously with exceptional numerical stability.
+
+---
+
+## 6. Multi-Language Production Implementations
+
+Below is a complete, production-grade implementation of Horner polynomial evaluation, formal derivative calculation, and Newton-Raphson root extraction with synthetic deflation.
+
+Choose your programming language using the tab interface below:
+
+::: {.panel-tabset}
+
+## C (C99 / C11)
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+/* Evaluates P(x) and P'(x) in a single pass using Horner's method */
+void horner_eval(const double *coeffs, int degree, double x, double *p_val, double *dp_val) {
+    double p = coeffs[degree];
+    double dp = 0.0;
+    
+    for (int i = degree - 1; i >= 0; i--) {
+        dp = dp * x + p;
+        p = p * x + coeffs[i];
+    }
+    *p_val = p;
+    *dp_val = dp;
+}
+
+/* Performs synthetic deflation: divides P(x) by (x - root) */
+void deflate(double *coeffs, int *degree, double root) {
+    int n = *degree;
+    double *q = (double *)malloc(n * sizeof(double));
+    q[n - 1] = coeffs[n];
+    for (int i = n - 2; i >= 0; i--) {
+        q[i] = coeffs[i + 1] + root * q[i + 1];
+    }
+    for (int i = 0; i < n; i++) {
+        coeffs[i] = q[i];
+    }
+    free(q);
+    (*degree)--;
+}
+
+/* Finds a single real root using Newton-Raphson */
+int find_root_newton(const double *coeffs, int degree, double x0, double tol, int max_iter, double *root) {
+    double x = x0;
+    for (int iter = 0; iter < max_iter; iter++) {
+        double p, dp;
+        horner_eval(coeffs, degree, x, &p, &dp);
+        if (fabs(p) < tol) {
+            *root = x;
+            return 1;
+        }
+        if (fabs(dp) < 1e-14) break;
+        x -= p / dp;
+    }
+    *root = x;
+    return 0;
+}
+
+int main(void) {
+    /* P(x) = x^3 - 6x^2 + 11x - 6 = (x-1)(x-2)(x-3) */
+    /* coeffs ordered as [a0, a1, a2, a3] */
+    double coeffs[4] = {-6.0, 11.0, -6.0, 1.0};
+    int degree = 3;
+    double root;
+
+    printf("=== C99 Horner & Newton Root Finder ===\n");
+    while (degree > 0) {
+        if (find_root_newton(coeffs, degree, 0.5, 1e-12, 100, &root)) {
+            printf("Found Root: %12.8f\n", root);
+            deflate(coeffs, &degree, root);
+        } else {
+            printf("Convergence failed or complex root encountered.\n");
+            break;
+        }
+    }
+    return 0;
+}
+```
+
+## C++ (C++17 / C++20)
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <numeric>
+#include <iomanip>
+
+class Polynomial {
+public:
+    // Coefficients ordered from lowest degree to highest: a0, a1, ..., an
+    std::vector<double> coeffs;
+
+    Polynomial(std::initializer_list<double> c) : coeffs(c) {}
+    Polynomial(std::vector<double> c) : coeffs(std::move(c)) {}
+
+    int degree() const { return static_cast<int>(coeffs.size()) - 1; }
+
+    // Evaluates P(x) and P'(x) simultaneously via Horner's Rule
+    std::pair<double, double> eval_with_derivative(double x) const {
+        int n = degree();
+        double p = coeffs[n];
+        double dp = 0.0;
+        for (int i = n - 1; i >= 0; --i) {
+            dp = dp * x + p;
+            p = p * x + coeffs[i];
+        }
+        return {p, dp};
+    }
+
+    // Synthetic Deflation: returns quotient polynomial when divided by (x - root)
+    Polynomial deflated(double root) const {
+        int n = degree();
+        std::vector<double> q(n);
+        q[n - 1] = coeffs[n];
+        for (int i = n - 2; i >= 0; --i) {
+            q[i] = coeffs[i + 1] + root * q[i + 1];
+        }
+        return Polynomial(q);
+    }
+
+    // Finds a real root via Newton-Raphson iteration
+    bool solve_newton(double x0, double& root, double tol = 1e-12, int max_iter = 100) const {
+        double x = x0;
+        for (int iter = 0; iter < max_iter; ++iter) {
+            auto [p, dp] = eval_with_derivative(x);
+            if (std::abs(p) < tol) {
+                root = x;
+                return true;
+            }
+            if (std::abs(dp) < 1e-15) return false;
+            x -= p / dp;
+        }
+        root = x;
+        return false;
+    }
+};
+
+int main() {
+    // P(x) = (x-1)(x-2)(x-3) = x^3 - 6x^2 + 11x - 6
+    Polynomial poly{-6.0, 11.0, -6.0, 1.0};
+    
+    std::cout << std::fixed << std::setprecision(8);
+    std::cout << "=== C++17 Polynomial Solver ===\n";
+
+    while (poly.degree() > 0) {
+        double root = 0.0;
+        if (poly.solve_newton(0.5, root)) {
+            std::cout << "Extracted Root: " << root << "\n";
+            poly = poly.deflated(root);
+        } else {
+            std::cout << "No further real roots found.\n";
+            break;
+        }
+    }
+    return 0;
+}
+```
+
+## Python (Python 3.10+)
+
+```python
+#!/usr/bin/env python3
+"""
+Production polynomial evaluation and root-finding using Horner's rule,
+Newton-Raphson with synthetic deflation, and the Companion Matrix.
+"""
+from typing import Tuple, List
+import numpy as np
+
+def horner_eval(coeffs: List[float], x: float) -> Tuple[float, float]:
+    """
+    Evaluates P(x) and P'(x) in a single pass using Horner's scheme.
+    coeffs is ordered [a0, a1, ..., an].
+    """
+    n = len(coeffs) - 1
+    p = coeffs[n]
+    dp = 0.0
+    for i in range(n - 1, -1, -1):
+        dp = dp * x + p
+        p = p * x + coeffs[i]
+    return p, dp
+
+def synthetic_deflation(coeffs: List[float], root: float) -> List[float]:
+    """Divides P(x) by (x - root) via synthetic division."""
+    n = len(coeffs) - 1
+    q = [0.0] * n
+    q[n - 1] = coeffs[n]
+    for i in range(n - 2, -1, -1):
+        q[i] = coeffs[i + 1] + root * q[i + 1]
+    return q
+
+def find_root_newton(coeffs: List[float], x0: float = 0.5, tol: float = 1e-12, max_iter: int = 100) -> float:
+    """Finds a root using Newton-Raphson iteration."""
+    x = x0
+    for _ in range(max_iter):
+        p, dp = horner_eval(coeffs, x)
+        if abs(p) < tol:
+            return x
+        if abs(dp) < 1e-15:
+            raise ArithmeticError("Derivative vanished during iteration.")
+        x -= p / dp
+    return x
+
+if __name__ == "__main__":
+    # P(x) = (x - 1)(x - 2)(x - 3) = x^3 - 6x^2 + 11x - 6
+    coeffs = [-6.0, 11.0, -6.0, 1.0]
+    print("=== Python Horner & Companion Matrix Solver ===")
+    
+    current_coeffs = list(coeffs)
+    roots = []
+    for _ in range(len(coeffs) - 1):
+        r = find_root_newton(current_coeffs, x0=0.0)
+        roots.append(r)
+        current_coeffs = synthetic_deflation(current_coeffs, r)
+        
+    print(f"Roots via Horner + Newton: {roots}")
+    
+    # Validation via NumPy Frobenius Companion Matrix
+    # np.roots expects coefficients in descending order [an, ..., a0]
+    np_roots = np.roots(coeffs[::-1])
+    print(f"Roots via Companion Matrix (QR): {np_roots}")
+```
+
+## Fortran (Fortran 2003 / 2008)
+
+```fortran
+module polynomial_solver
+    use, intrinsic :: iso_fortran_env, only: real64
+    implicit none
+    private
+    public :: horner_eval, synthetic_deflate, newton_solve
+
+contains
+
+    subroutine horner_eval(coeffs, n, x, p, dp)
+        real(real64), intent(in)  :: coeffs(0:n)
+        integer,      intent(in)  :: n
+        real(real64), intent(in)  :: x
+        real(real64), intent(out) :: p, dp
+        integer :: i
+
+        p = coeffs(n)
+        dp = 0.0_real64
+        do i = n - 1, 0, -1
+            dp = dp * x + p
+            p = p * x + coeffs(i)
+        end do
+    end subroutine horner_eval
+
+    subroutine synthetic_deflate(coeffs, n, root, q)
+        real(real64), intent(in)  :: coeffs(0:n)
+        integer,      intent(in)  :: n
+        real(real64), intent(in)  :: root
+        real(real64), intent(out) :: q(0:n-1)
+        integer :: i
+
+        q(n-1) = coeffs(n)
+        do i = n - 2, 0, -1
+            q(i) = coeffs(i+1) + root * q(i+1)
+        end do
+    end subroutine synthetic_deflate
+
+    logical function newton_solve(coeffs, n, x0, tol, max_iter, root)
+        real(real64), intent(in)  :: coeffs(0:n)
+        integer,      intent(in)  :: n
+        real(real64), intent(in)  :: x0, tol
+        integer,      intent(in)  :: max_iter
+        real(real64), intent(out) :: root
+        real(real64) :: x, p, dp
+        integer :: iter
+
+        x = x0
+        newton_solve = .false.
+        do iter = 1, max_iter
+            call horner_eval(coeffs, n, x, p, dp)
+            if (abs(p) < tol) then
+                root = x
+                newton_solve = .true.
+                return
+            end if
+            if (abs(dp) < 1.0e-14_real64) exit
+            x = x - p / dp
+        end do
+        root = x
+    end function newton_solve
+
+end module polynomial_solver
+
+program test_poly
+    use, intrinsic :: iso_fortran_env, only: real64
+    use polynomial_solver
+    implicit none
+
+    real(real64) :: coeffs(0:3) = [-6.0_real64, 11.0_real64, -6.0_real64, 1.0_real64]
+    real(real64) :: q(0:2), q2(0:1), root
+    logical :: success
+
+    print *, "=== Fortran 2008 Modular Horner Solver ==="
+    
+    success = newton_solve(coeffs, 3, 0.5_real64, 1.0e-12_real64, 100, root)
+    if (success) then
+        print '(A, F12.8)', " Found Root 1: ", root
+        call synthetic_deflate(coeffs, 3, root, q)
+    end if
+
+    success = newton_solve(q, 2, 1.5_real64, 1.0e-12_real64, 100, root)
+    if (success) then
+        print '(A, F12.8)', " Found Root 2: ", root
+        call synthetic_deflate(q, 2, root, q2)
+    end if
+
+    success = newton_solve(q2, 1, 2.5_real64, 1.0e-12_real64, 100, root)
+    if (success) then
+        print '(A, F12.8)', " Found Root 3: ", root
+    end if
+
+end program test_poly
+```
+
+:::
+
+---
+
+## 7. Connecting to Physics and Scale Invariance
+
+The structural algebra of polynomials directly anchors physical scaling and intermediate asymptotics:
+* In [Mathematical Foundations: The Vector Space of Dimensions](../vector-space-of-dimensions-buckingham-pi/index.qmd), monomial products over base dimensions provide the coordinates for the Buckingham $\Pi$ null-space.
+* In [The Sedov-Taylor Blast Wave and Self-Similarity](../sedov-taylor-blast-wave-self-similarity/index.qmd), the self-similar collapse of the Euler PDEs relies on integrating rational polynomial functions of velocity $V(\xi)$ and density $G(\xi)$.
+
+---
+
+## 8. Foundational Terminology Glossary
+
+* **Monomial:** A single-term algebraic expression formed strictly by the product of powers of variables without internal addition or subtraction: $\prod_i x_i^{\alpha_i}$.
+* **Multi-Index:** An ordered tuple of non-negative integers $\alpha = (\alpha_1, \dots, \alpha_d)$ specifying the powers in a multivariate monomial.
+* **Polynomial Ring ($\mathbb{K}[x]$):** The set of all polynomials in indeterminate $x$ with coefficients in a field $\mathbb{K}$, equipped with standard addition and multiplication.
+* **Euclidean Domain:** An integral domain endowed with a Euclidean function (degree for polynomials) allowing division with a remainder strictly smaller than the divisor.
+* **Synthetic Division:** An optimized $O(n)$ numerical algorithm for dividing a polynomial by a linear factor $(x - c)$ while evaluating the polynomial at $c$.
+* **Bézout's Identity:** The theorem stating that for any polynomials $f, g$, there exist polynomials $u, v$ such that $u \cdot f + v \cdot g = \gcd(f, g)$.
+* **Square-Free Reduction:** The transformation $P / \gcd(P, P')$ that strips duplicate factors, producing a polynomial with identical roots having multiplicity 1.
+* **Vieta's Formulas:** Algebraic identities expressing the elementary symmetric sums and products of polynomial roots directly in terms of coefficient ratios.
+* **Horner's Method:** An $O(n)$ nested algebraic algorithm for computing polynomial values and derivatives simultaneously while generating deflated coefficients.
+* **Frobenius Companion Matrix:** A square matrix whose characteristic polynomial matches a given monic polynomial, allowing root-finding to be solved via the QR matrix eigenvalue algorithm.
+
+---
+
+© 2026 Igor Kan
