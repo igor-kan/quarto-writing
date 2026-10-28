@@ -1,10 +1,10 @@
 ---
 title: "Mathematical Foundations: The Vector Space of Dimensions"
-subtitle: "Linear algebraic formulation of dimensional analysis, the Buckingham Pi theorem, and scale invariance."
-description: "An algebraic and geometric exposition of physical dimensions: abelian groups, vector spaces over fields, the Buckingham Pi null-space formulation, rank-nullity, Huntley's directed dimensions, and inspectional scaling."
+subtitle: "Linear algebraic formulation of dimensional analysis, field axioms, Fourier homogeneity, and the Buckingham Pi theorem."
+description: "A rigorous mathematical exposition of physical dimensions: algebraic fields, abelian groups, vector spaces over fields, the unit rescaling proof of Fourier's homogeneity, the Buckingham Pi null-space formulation, rank-nullity, and complete worked examples."
 author: "Igor Kan"
 date: "2026-10-28"
-categories: [Preprints, Physics, Applied Mathematics, Dimensional Analysis, Linear Algebra]
+categories: [Preprints, Physics, Applied Mathematics, Dimensional Analysis, Linear Algebra, Abstract Algebra]
 draft: false
 format:
   html:
@@ -14,7 +14,7 @@ format:
 
 ::: {.callout-note}
 ### Preprint / Working Draft
-This article is published under the **Preprints** category. It represents an active working draft exploring the formal algebraic foundations of dimensional analysis, linear transformations on dimension modules, and inspectional scaling. Feedback and discussions are welcome.
+This article is published under the **Preprints** category. It represents an active working draft exploring the formal algebraic foundations of dimensional analysis, field theory over rational exponents, linear transformations on dimension modules, and dimensional reduction. Feedback and mathematical reviews are welcome.
 :::
 
 ---
@@ -23,35 +23,86 @@ This article is published under the **Preprints** category. It represents an act
 
 In physics and engineering, dimensional analysis is frequently introduced as an empirical heuristic or a pragmatic bookkeeping checklist for catching arithmetic algebraic errors. However, at its deepest theoretical foundation, dimensional analysis is the formal realization of **scale invariance**: the mathematical principle that the objective validity of physical laws cannot depend on the arbitrary choices humans make when assigning units of measurement.
 
-Whether an observer measures lengths in meters, ångströms, or light-years, the structural geometry of physical reality remains invariant. When formalized through abstract algebra and linear algebra, the set of physical dimensions ceases to be a collection of arbitrary labels and reveals itself as a **finite-dimensional vector space over a field**.
+Whether an observer measures lengths in meters, feet, or light-years, the structural geometry of physical reality remains invariant. When formalized through abstract algebra and linear algebra, the set of physical dimensions ceases to be a collection of arbitrary labels and reveals itself as a **finite-dimensional vector space over a field**.
 
 ---
 
-## 2. Monomial Products and the Vector Space Isomorphism
+## 2. What an Algebraic Field Is and Why the Rationals ($\mathbb{Q}$) Form a Field
 
-### 2.1 Monomial Products of Fundamental Dimensions
+To understand why physical dimensions form a vector space, we must first establish the algebraic structure of the scalars that govern their exponents. In classical mechanics, exponents in dimensional formulas are almost exclusively rational numbers ($\alpha_i \in \mathbb{Q}$).
 
-Let $\mathcal{D} = \{D_1, D_2, \dots, D_m\}$ denote an ordered basis of $m$ mutually independent fundamental dimensions (for example, in the SI metric system, mass $M$, length $L$, time $T$, electric current $I$, thermodynamic temperature $\Theta$, amount of substance $N$, and luminous intensity $J$).
+### 2.1 The Field Axioms
+
+An **algebraic field** $(\mathbb{F}, +, \cdot)$ is a set $\mathbb{F}$ equipped with two binary operations—addition ($+$) and multiplication ($\cdot$)—that satisfy the field axioms:
+
+```
+                     FIELD AXIOMS (𝔽, +, ·)
+  ┌─────────────────────────────────────────────────────────────┐
+  │ 1. Abelian Group under Addition (+)                         │
+  │    • Closure: a + b ∈ 𝔽                                     │
+  │    • Associativity: (a + b) + c = a + (b + c)               │
+  │    • Commutativity: a + b = b + a                           │
+  │    • Additive Identity: ∃ 0 ∈ 𝔽 such that a + 0 = a         │
+  │    • Additive Inverse: ∀ a ∈ 𝔽, ∃ (-a) such that a + (-a)=0 │
+  ├─────────────────────────────────────────────────────────────┤
+  │ 2. Abelian Group under Multiplication (·) on 𝔽 \ {0}        │
+  │    • Closure: a · b ∈ 𝔽                                     │
+  │    • Associativity: (a · b) · c = a · (b · c)               │
+  │    • Commutativity: a · b = b · a                           │
+  │    • Multiplicative Identity: ∃ 1 ≠ 0 such that a · 1 = a   │
+  │    • Multiplicative Inverse: ∀ a ≠ 0, ∃ a⁻¹ s.t. a · a⁻¹ = 1│
+  ├─────────────────────────────────────────────────────────────┤
+  │ 3. Distributivity of Multiplication over Addition           │
+  │    • a · (b + c) = (a · b) + (a · c)                        │
+  └─────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 Why the Rational Numbers ($\mathbb{Q}$) Form a Field
+
+The set of rational numbers is defined as the set of equivalence classes of integer fractions:
+
+$$\mathbb{Q} = \left\{ \frac{a}{b} \;\middle\vert\; a, b \in \mathbb{Z}, \; b \neq 0 \right\} \tag{1}$$
+
+where two fractions $\frac{a}{b}$ and $\frac{c}{d}$ represent the same element if and only if $ad = bc$.
+
+The rational numbers satisfy every field requirement:
+1. **Additive Closure and Inverses:** Adding two fractions $\frac{a}{b} + \frac{c}{d} = \frac{ad + bc}{bd}$ produces an integer numerator $ad + bc$ and a non-zero integer denominator $bd$, which remains in $\mathbb{Q}$. The additive identity is $\frac{0}{1} = 0$, and the additive inverse of $\frac{a}{b}$ is $\frac{-a}{b} \in \mathbb{Q}$.
+2. **Multiplicative Closure and Identity:** Multiplying $\frac{a}{b} \cdot \frac{c}{d} = \frac{ac}{bd}$ yields another rational number. The multiplicative identity is $\frac{1}{1} = 1$.
+3. **Existence of Non-Zero Multiplicative Inverses:** For any non-zero element $x = \frac{a}{b} \in \mathbb{Q}$ (which implies $a \neq 0$), there exists a unique reciprocal:
+   $$x^{-1} = \frac{b}{a} \in \mathbb{Q} \quad \text{such that} \quad \left(\frac{a}{b}\right) \left(\frac{b}{a}\right) = \frac{ab}{ab} = 1 \tag{2}$$
+
+#### Why the Integers ($\mathbb{Z}$) Fail to Form a Field
+The integers $\mathbb{Z}$ form a **commutative ring**, but fail to form a field because non-zero integers (e.g., $2 \in \mathbb{Z}$) lack multiplicative inverses in $\mathbb{Z}$ ($1/2 \notin \mathbb{Z}$). The rational numbers $\mathbb{Q}$ represent the **fraction field (field of quotients)** of $\mathbb{Z}$, ensuring that division by any non-zero element is always well-defined.
+
+Because $\mathbb{Q}$ is a field, any vector space constructed over $\mathbb{Q}$ inherits the full machinery of linear algebra: Gaussian elimination, echelon forms, rank-nullity, and exact rational basis extraction without loss of algebraic precision.
+
+---
+
+## 3. Monomial Products and the Vector Space Isomorphism
+
+### 3.1 Monomial Products of Fundamental Dimensions
+
+Let $\mathcal{D} = \{D_1, D_2, \dots, D_m\}$ denote an ordered basis of $m$ mutually independent fundamental dimensions (in the SI metric system: mass $M$, length $L$, time $T$, electric current $I$, thermodynamic temperature $\Theta$, amount of substance $N$, and luminous intensity $J$).
 
 Every derived physical quantity $Q$ possesses a dimensional representation $[Q]$ uniquely expressed as a **monomial product** of the fundamental dimensions:
 
-$$[Q] = \prod_{i=1}^m D_i^{\alpha_i} = D_1^{\alpha_1} D_2^{\alpha_2} \cdots D_m^{\alpha_m}, \quad \alpha_i \in \mathbb{Q} \text{ or } \mathbb{R} \tag{1}$$
+$$[Q] = \prod_{i=1}^m D_i^{\alpha_i} = D_1^{\alpha_1} D_2^{\alpha_2} \cdots D_m^{\alpha_m}, \quad \alpha_i \in \mathbb{Q} \text{ or } \mathbb{R} \tag{3}$$
 
-Crucially, physical dimensions obey three basic algebraic axioms:
+Crucially, physical dimensions obey three basic algebraic operations:
 1. **Multiplication via Exponent Addition:** When two quantities multiply, their corresponding dimensional exponents add:
    $$[Q_1 \cdot Q_2] = \prod_{i=1}^m D_i^{\alpha_i + \beta_i}$$
 2. **Division via Exponent Subtraction:** When two quantities divide, their exponents subtract:
    $$[Q_1 / Q_2] = \prod_{i=1}^m D_i^{\alpha_i - \beta_i}$$
-3. **Powers via Scalar Scaling:** Raising a physical quantity to a power $p \in \mathbb{R}$ scales each dimensional exponent by $p$:
+3. **Powers via Scalar Scaling:** Raising a physical quantity to a power $p \in \mathbb{Q}$ scales each dimensional exponent by $p$:
    $$[Q^p] = \prod_{i=1}^m D_i^{p \cdot \alpha_i}$$
 
-### 2.2 The Vector Space $(\mathcal{V}, +, \cdot)$
+### 3.2 The Vector Space $(\mathcal{V}, +, \cdot)$
 
 The algebraic operations on dimensions map identically to the axioms of an abstract **vector space**. If we define the coordinate mapping $\Psi: [Q] \mapsto \mathbf{v}_Q$:
 
-$$\mathbf{v}_Q = \begin{pmatrix} \alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_m \end{pmatrix} \in \mathbb{R}^m \tag{2}$$
+$$\mathbf{v}_Q = \begin{pmatrix} \alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_m \end{pmatrix} \in \mathbb{Q}^m \tag{4}$$
 
-then the set of all possible physical dimensions constitutes a vector space $\mathcal{V} \cong \mathbb{R}^m$ over the field of scalars $\mathbb{R}$ (or the field of rational numbers $\mathbb{Q}$ when fractional powers are restricted to rational roots):
+then the set of all physical dimensions forms a vector space $\mathcal{V} \cong \mathbb{Q}^m$ over the field $\mathbb{Q}$:
 
 * **Vector Addition:** Multiplication of physical quantities $[Q_1 \cdot Q_2]$ corresponds strictly to vector addition in $\mathcal{V}$:
   $$\Psi([Q_1 \cdot Q_2]) = \mathbf{v}_{Q_1} + \mathbf{v}_{Q_2}$$
@@ -70,63 +121,98 @@ Physical Operations                       Dimension Vector Space V
    [Q⁻¹]               ─────────►                 -v_Q
 ```
 
-### 2.3 Fourier's Principle of Dimensional Homogeneity
+---
 
-In 1822, Joseph Fourier established the foundational postulate of dimensional analysis:
+## 4. Fourier's Principle of Dimensional Homogeneity
 
-> **Fourier's Principle of Dimensional Homogeneity:**  
-> Any physically meaningful relationship $f(q_1, q_2, \dots, q_n) = 0$ expressing a natural law must be invariant under any rescaling of base measurement units. Consequently, any terms connected by additive ($+$) or subtractive ($-$) operators or asserted by an equality sign ($=$) must possess identical coordinate vectors in dimension space:
-> 
-> $$A + B = C \implies \mathbf{v}_A = \mathbf{v}_B = \mathbf{v}_C$$
+Fourier's Principle states that any physically meaningful relationship $f(q_1, q_2, \dots, q_n) = 0$ must remain invariant under arbitrary changes in the fundamental units of measurement. Consequently, every additive term within a physical equation must possess the exact same dimensional representation.
 
-An expression attempting to compute $5\text{ meters} + 3\text{ seconds}$ is mathematically ill-posed because it attempts to add vectors $(0, 1, 0)^T$ and $(0, 0, 1)^T$ that occupy distinct one-dimensional subspaces.
+### 4.1 Rigorous Proof: Why Mismatched Vectors Cannot Be Added
+
+Suppose a candidate physical equation contains an additive sum of two terms:
+
+$$S = A + B \tag{5}$$
+
+Under the dimensional vector-space isomorphism, the dimensions of $A$ and $B$ correspond to exponent coordinate vectors $\mathbf{u}, \mathbf{v} \in \mathbb{R}^m$:
+
+$$[A] = \prod_{i=1}^m D_i^{u_i} \iff \mathbf{u} = (u_1, \dots, u_m)^T, \qquad [B] = \prod_{i=1}^m D_i^{v_i} \iff \mathbf{v} = (v_1, \dots, v_m)^T \tag{6}$$
+
+Now rescale the system's fundamental unit of dimension $D_k$ by an arbitrary positive real factor $\lambda_k > 0$ (for example, converting length from meters to feet, where $\lambda_L \approx 3.28084$). The numerical values of $A$ and $B$ transform according to their dimensional scaling laws:
+
+$$A' = \lambda_k^{u_k} A, \qquad B' = \lambda_k^{v_k} B \tag{7}$$
+
+Evaluate the sum in the new unit system:
+
+$$S' = A' + B' = \lambda_k^{u_k} A + \lambda_k^{v_k} B = \lambda_k^{u_k} \left( A + \lambda_k^{v_k - u_k} B \right) \tag{8}$$
+
+We examine the two possibilities:
+
+* **Case 1: $\mathbf{u} = \mathbf{v}$ (Identical Dimensional Vectors):**  
+  Then $u_k = v_k$ for every base dimension $k$. The scale factor factors out completely:
+  $$S' = \lambda_k^{u_k}(A + B) = \lambda_k^{u_k} S$$
+  If $A + B = 0$ in one unit system, it remains zero ($S' = 0$) in **all** unit systems. The ratio $A/B$ is preserved invariant under coordinate scaling:
+  $$\frac{A'}{B'} = \frac{\lambda_k^{u_k} A}{\lambda_k^{u_k} B} = \frac{A}{B}$$
+* **Case 2: $\mathbf{u} \neq \mathbf{v}$ (Mismatched Dimensional Vectors):**  
+  There exists at least one dimension $k$ where $u_k \neq v_k$. In this case, the relative weight of the two terms depends explicitly on the arbitrary unit choice $\lambda_k$:
+  $$\frac{A'}{B'} = \lambda_k^{u_k - v_k} \left(\frac{A}{B}\right) \tag{9}$$
+
+An equation like $A + B = C$ that holds true in the metric system would fail completely in imperial units simply because the relative coefficients shift with $\lambda_k$. Because the laws of nature are objective and cannot depend on human conventions of measurement, terms with mismatched dimensional exponent vectors can never be combined by addition or subtraction.
 
 ---
 
-## 3. Linear Algebraic Formulation: The Buckingham $\Pi$ Theorem
+## 5. Linear Algebra Overview for Dimensional Analysis
 
-The core goal of dimensional reduction is to transform a physical problem involving $n$ dimensional variables into an equivalent problem involving a minimal set of independent **dimensionless groups** ($\Pi$-parameters). Linear algebra transforms this search from an ad-hoc trial-and-error game into an exact **null space (kernel) computation**.
+The transformation of physical parameters into dimensionless scaling laws relies on fundamental linear algebraic mappings:
 
-### 3.1 Constructing the Dimensional Matrix $D$
+```
+                 LINEAR ALGEBRAIC MAPPING
+Variables qⱼ  ────────► Columns of Dimensional Matrix D
+Dimensions Dᵢ ────────► Rows of Dimensional Matrix D
+Matrix Map    ────────► D : ℝⁿ ──► ℝᵐ
 
-Consider a physical phenomenon governed by $n$ variables $q_1, q_2, \dots, q_n$, characterized by $m$ fundamental base dimensions $D_1, \dots, D_m$. Each variable $q_j$ has a known dimensional vector $\mathbf{d}_j = (\alpha_{1j}, \alpha_{2j}, \dots, \alpha_{mj})^T$.
+         Null Space ker(D)                 Range im(D)
+┌─────────────────────────────────────┐  ┌─────────────────┐
+│  D x = 0                            │  │  dim = rank(D)  │
+│  dim(ker D) = nullity = n - rank(D) │  │  (Independent   │
+│  Basis vectors span dimensionless   │  │   fundamental   │
+│  Π-groups (Buckingham Theorem)      │  │   dimensions)   │
+└─────────────────────────────────────┘  └─────────────────┘
+```
 
-We assemble these column vectors into the **Dimensional Matrix** $D \in \mathbb{R}^{m \times n}$:
+### 5.1 Linear Independence and Basis in Dimension Space
 
-$$D = \begin{pmatrix} 
+A collection of dimensional exponent vectors $\{\mathbf{v}_1, \dots, \mathbf{v}_k\}$ is **linearly independent** if and only if:
+
+$$\sum_{j=1}^k c_j \mathbf{v}_j = \mathbf{0} \implies c_1 = c_2 = \dots = c_k = 0 \tag{10}$$
+
+In physics, linear independence of variables means that no combination of these variables can form a dimensionless ratio on their own. A maximal linearly independent subset forms a **basis** spanning the relevant dimensional subspace.
+
+### 5.2 The Dimensional Matrix $D$
+
+For a system with $n$ physical variables $q_1, \dots, q_n$ and $m$ base dimensions, the dimensional matrix $D \in \mathbb{R}^{m \times n}$ is defined column-wise by the dimensional coordinate vector of each variable:
+
+$$D = \begin{pmatrix} \mathbf{v}_{q_1} & \mathbf{v}_{q_2} & \cdots & \mathbf{v}_{q_n} \end{pmatrix} = \begin{pmatrix} 
 \alpha_{11} & \alpha_{12} & \cdots & \alpha_{1n} \\
 \alpha_{21} & \alpha_{22} & \cdots & \alpha_{2n} \\
 \vdots & \vdots & \ddots & \vdots \\
 \alpha_{m1} & \alpha_{m2} & \cdots & \alpha_{mn}
-\end{pmatrix} \tag{3}$$
+\end{pmatrix} \tag{11}$$
 
-Where row $i$ corresponds to the $i$-th base dimension, and column $j$ corresponds to the $j$-th physical variable $q_j$.
+### 5.3 Null Space (Kernel), Range, and Rank
 
-### 3.2 The Null Space Condition
+* **Range (Image):** The column space $\operatorname{im}(D) = \{D\mathbf{x} \mid \mathbf{x} \in \mathbb{R}^n\} \subseteq \mathbb{R}^m$. Its dimension is the matrix **rank** ($r = \operatorname{rank}(D)$), which equals the number of independent physical dimensions actively spanned by the variables.
+* **Null Space (Kernel):** The subspace of all vectors $\mathbf{x} \in \mathbb{R}^n$ mapped to zero:
+  $$\ker(D) = \{\mathbf{x} \in \mathbb{R}^n \mid D\mathbf{x} = \mathbf{0}\} \tag{12}$$
+  Because $D\mathbf{x} = \sum_{j=1}^n x_j \mathbf{v}_{q_j} = \mathbf{0}$, every non-trivial solution vector $\mathbf{x} = (x_1, \dots, x_n)^T \in \ker(D)$ represents the exponents of a valid dimensionless product:
+  $$\Pi = \prod_{j=1}^n q_j^{x_j} \implies [\Pi] = \prod_{i=1}^m D_i^{(D\mathbf{x})_i} = \prod_{i=1}^m D_i^0 = 1 \tag{13}$$
 
-Any arbitrary monomial product of the physical variables can be represented as:
+### 5.4 The Rank-Nullity Theorem: Foundation of Buckingham $\Pi$
 
-$$\Pi = \prod_{j=1}^n q_j^{x_j} = q_1^{x_1} q_2^{x_2} \cdots q_n^{x_n} \tag{4}$$
+For any linear map $D: \mathbb{R}^n \to \mathbb{R}^m$, the dimension of the domain equals the rank plus the nullity:
 
-where $\mathbf{x} = (x_1, x_2, \dots, x_n)^T \in \mathbb{R}^n$ is an unknown exponent vector.
+$$\operatorname{rank}(D) + \operatorname{nullity}(D) = n \implies \dim(\ker(D)) = n - \operatorname{rank}(D) \tag{14}$$
 
-The product $\Pi$ is dimensionless if and only if the net exponent along every fundamental dimension vanishes identically:
-
-$$\sum_{j=1}^n D_{ij} x_j = 0 \quad \forall \, i \in \{1, 2, \dots, m\} \iff D\mathbf{x} = \mathbf{0} \tag{5}$$
-
-Thus, **a monomial product $\Pi$ is dimensionless if and only if its exponent vector $\mathbf{x}$ lies in the kernel (null space) of the dimensional matrix $D$**:
-
-$$\mathbf{x} \in \ker(D)$$
-
-### 3.3 Rank-Nullity and the Number of $\Pi$-Groups
-
-By the fundamental **Rank-Nullity Theorem** of linear algebra, for any linear operator $D: \mathbb{R}^n \to \mathbb{R}^m$:
-
-$$\operatorname{dim}(\ker(D)) + \operatorname{rank}(D) = n \tag{6}$$
-
-Let $r = \operatorname{rank}(D) \le \min(m, n)$. The number of linearly independent dimensionless groups $p$ is precisely the nullity of $D$:
-
-$$p = \dim(\ker(D)) = n - r \tag{7}$$
+This guarantees that there exist exactly $p = n - r$ linearly independent basis vectors in $\ker(D)$. These basis vectors form the complete set of independent dimensionless parameters $\Pi_1, \dots, \Pi_{n-r}$ governing the physical system.
 
 ```{mermaid}
 %%{init: {
@@ -149,118 +235,175 @@ flowchart TD
     Pi --> Law["<b>Invariant Physical Law:</b><br>Φ(Π₁, Π₂, ..., Π_{n-r}) = 0"]
 ```
 
-### 3.4 Rigorous Statement of the Buckingham $\Pi$ Theorem
+---
 
-Let $f(q_1, q_2, \dots, q_n) = 0$ be a dimensionally homogeneous equation involving $n$ variables with a dimensional matrix of rank $r$. Then:
+## 6. Worked Example 1: The Simple Pendulum
 
-1. The relationship can be reformulated strictly in terms of $p = n - r$ independent dimensionless parameters $\Pi_1, \Pi_2, \dots, \Pi_{n-r}$:
-   $$\Phi(\Pi_1, \Pi_2, \dots, \Pi_{n-r}) = 0 \tag{8}$$
-2. If $p = 1$, the function $\Phi(\Pi_1) = 0$ implies that $\Pi_1$ must equal an absolute constant:
-   $$\Pi_1 = C \implies q_1 = C \prod_{j=2}^n q_j^{-x_j/x_1}$$
-   This allows complete closed-form deduction of physical scaling laws up to an undetermined dimensionless proportionality factor $C$.
+To see the linear algebraic machinery in action step by step, we determine the oscillation period $\tau$ of a simple pendulum:
+
+### Step 1: Enumerate Variables and Dimensions
+The governing physical variables are:
+1. Period $\tau$: $[\tau] = T$
+2. String length $\ell$: $[\ell] = L$
+3. Bob mass $m$: $[m] = M$
+4. Gravitational acceleration $g$: $[g] = L T^{-2}$
+5. Initial release angle $\theta_0$: $[\theta_0] = 1$ (dimensionless)
+
+Total variables: $n = 5$. Fundamental dimensions: $m = 3$ ($M, L, T$).
+
+### Step 2: Form the Dimensional Matrix $D$
+Arranging variables as columns $(\tau, \ell, m, g, \theta_0)$ and dimensions as rows $(M, L, T)$:
+
+$$D = \begin{array}{c|rrrrr}
+& \tau & \ell & m & g & \theta_0 \\ \hline
+M & 0 & 0 & 1 & 0 & 0 \\
+L & 0 & 1 & 0 & 1 & 0 \\
+T & 1 & 0 & 0 & -2 & 0
+\end{array} \implies D = \begin{pmatrix}
+0 & 0 & 1 & 0 & 0 \\
+0 & 1 & 0 & 1 & 0 \\
+1 & 0 & 0 & -2 & 0
+\end{pmatrix} \tag{15}$$
+
+### Step 3: Compute Rank and Nullity
+Permuting columns to place pivot variables on the left:
+* Column 3 ($m$) has pivot in Row 1.
+* Column 2 ($\ell$) has pivot in Row 2.
+* Column 1 ($\tau$) has pivot in Row 3.
+
+The rows are clearly linearly independent, so:
+$$\operatorname{rank}(D) = r = 3$$
+By Rank-Nullity:
+$$p = n - r = 5 - 3 = 2 \text{ dimensionless groups}$$
+
+### Step 4: Solve for the Kernel Basis $D\mathbf{x} = \mathbf{0}$
+We solve:
+$$\begin{cases}
+x_m = 0 \\
+x_\ell + x_g = 0 \implies x_\ell = -x_g \\
+x_\tau - 2x_g = 0 \implies x_\tau = 2x_g
+\end{cases}$$
+Free variables: $x_g$ and $x_{\theta_0}$.
+
+* **First basis vector (set $x_g = -1/2, x_{\theta_0} = 0$):**
+  $$x_\tau = -1, \quad x_\ell = 1/2, \quad x_m = 0 \implies \mathbf{x}^{(1)} = (-1, 1/2, 0, -1/2, 0)^T$$
+  $$\Pi_1 = \tau^{-1} \ell^{1/2} g^{-1/2} \implies \Pi_1 = \frac{\tau}{\sqrt{\ell/g}}$$
+* **Second basis vector (set $x_g = 0, x_{\theta_0} = 1$):**
+  $$x_\tau = 0, \quad x_\ell = 0, \quad x_m = 0, \quad x_g = 0 \implies \mathbf{x}^{(2)} = (0, 0, 0, 0, 1)^T$$
+  $$\Pi_2 = \theta_0$$
+
+### Step 5: Physical Deduction
+By Buckingham's theorem, $\Phi(\Pi_1, \Pi_2) = 0$:
+
+$$\Pi_1 = \psi(\Pi_2) \implies \tau = \sqrt{\frac{\ell}{g}} \, \psi(\theta_0) \tag{16}$$
+
+In the small-angle limit ($\theta_0 \to 0$), $\psi(0) = 2\pi$, recovering the classical harmonic relation $\tau = 2\pi\sqrt{\ell/g}$. Notice that mass $m$ was forced to exponent 0 strictly by linear algebra: $x_m = 0$ because $m$ is the only variable possessing dimension $M$.
 
 ---
 
-## 4. Algorithmic Extraction: Echelon Forms and SVD
+## 7. Worked Example 2: Rayleigh's Drag Formula for a Sphere
 
-Rather than relying on algebraic substitution, we compute the basis of $\ker(D)$ using standard numerical linear algebra algorithms.
+Consider a sphere of diameter $d$ moving at steady velocity $v$ through an incompressible fluid of density $\rho$ and dynamic shear viscosity $\mu$. We seek the aerodynamic/hydrodynamic drag force $F_d$.
 
-### 4.1 Reduced Row Echelon Form (RREF)
+### Step 1: Variables and Dimensions
+1. Drag force $F_d$: $[F_d] = M L T^{-2}$
+2. Velocity $v$: $[v] = L T^{-1}$
+3. Sphere diameter $d$: $[d] = L$
+4. Fluid density $\rho$: $[\rho] = M L^{-3}$
+5. Fluid dynamic viscosity $\mu$: $[\mu] = M L^{-1} T^{-1}$
 
-By applying Gauss-Jordan elimination to $D$, we partition the matrix columns into $r$ **pivot columns** (corresponding to repeating base variables) and $n - r$ **free columns** (corresponding to non-repeating variables):
+Total variables: $n = 5$. Base dimensions: $m = 3$ ($M, L, T$).
 
-$$D \xrightarrow{\text{RREF}} \begin{pmatrix} I_r & F \end{pmatrix} P$$
+### Step 2: Form the Dimensional Matrix $D$
+Arranging variables as columns $(F_d, v, d, \rho, \mu)$ and dimensions as rows $(M, L, T)$:
 
-where $I_r$ is the $r \times r$ identity matrix, $F \in \mathbb{R}^{r \times (n-r)}$ is the free block, and $P$ is a column permutation matrix. A basis for the null space is given immediately by:
+$$D = \begin{array}{c|rrrrr}
+& F_d & v & d & \rho & \mu \\ \hline
+M & 1 & 0 & 0 & 1 & 1 \\
+L & 1 & 1 & 1 & -3 & -1 \\
+T & -2 & -1 & 0 & 0 & -1
+\end{array} \implies D = \begin{pmatrix}
+1 & 0 & 0 & 1 & 1 \\
+1 & 1 & 1 & -3 & -1 \\
+-2 & -1 & 0 & 0 & -1
+\end{pmatrix} \tag{17}$$
 
-$$N = \begin{pmatrix} -F \\ I_{n-r} \end{pmatrix} \tag{9}$$
+### Step 3: Compute Rank and Nullity
+Let us perform Gauss-Jordan row elimination on $D$:
+1. $R_2 \to R_2 - R_1$:
+   $$\begin{pmatrix}
+   1 & 0 & 0 & 1 & 1 \\
+   0 & 1 & 1 & -4 & -2 \\
+   -2 & -1 & 0 & 0 & -1
+   \end{pmatrix}$$
+2. $R_3 \to R_3 + 2R_1$:
+   $$\begin{pmatrix}
+   1 & 0 & 0 & 1 & 1 \\
+   0 & 1 & 1 & -4 & -2 \\
+   0 & -1 & 0 & 2 & 1
+   \end{pmatrix}$$
+3. $R_3 \to R_3 + R_2$:
+   $$\begin{pmatrix}
+   1 & 0 & 0 & 1 & 1 \\
+   0 & 1 & 1 & -4 & -2 \\
+   0 & 0 & 1 & -2 & -1
+   \end{pmatrix}$$
 
-Each column of $N$ specifies the exponent vector $\mathbf{x}^{(k)}$ for an independent dimensionless group $\Pi_k$.
+The matrix has 3 non-zero pivot rows, so $\operatorname{rank}(D) = r = 3$.  
+By Rank-Nullity:
+$$p = n - r = 5 - 3 = 2 \text{ dimensionless groups}$$
 
-### 4.2 Singular Value Decomposition (SVD)
+### Step 4: Solve for the Kernel Basis
+Substituting backward from $R_3$:
+* $x_d = 2x_\rho + x_\mu$
+* From $R_2$: $x_v = 4x_\rho + 2x_\mu - x_d = 4x_\rho + 2x_\mu - (2x_\rho + x_\mu) = 2x_\rho + x_\mu$
+* From $R_1$: $x_{F_d} = -x_\rho - x_\mu$
 
-For floating-point experimental datasets where exponents might be noisy or empirically fitted, the **Singular Value Decomposition (SVD)** provides maximum numerical stability:
+Free variables: $x_\rho$ and $x_\mu$.
 
-$$D = U \Sigma V^T$$
+* **Group 1 (Set $x_\rho = -1, x_\mu = 0$):**
+  $$x_{F_d} = 1, \quad x_v = -2, \quad x_d = -2 \implies \mathbf{x}^{(1)} = (1, -2, -2, -1, 0)^T$$
+  $$\Pi_1 = \frac{F_d}{\rho v^2 d^2} \sim C_D \quad (\text{Drag Coefficient})$$
+* **Group 2 (Set $x_\rho = 1, x_\mu = -1$):**
+  $$x_{F_d} = 0, \quad x_v = 1, \quad x_d = 1 \implies \mathbf{x}^{(2)} = (0, 1, 1, 1, -1)^T$$
+  $$\Pi_2 = \frac{\rho v d}{\mu} = \mathrm{Re} \quad (\text{Reynolds Number})$$
 
-The singular values $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_{\min(m,n)}$ determine the numerical rank $r$ (by counting singular values greater than a numerical tolerance $\epsilon$). The right singular vectors $\mathbf{v}_{r+1}, \dots, \mathbf{v}_n$ in $V$ form an orthonormal basis for $\ker(D)$.
+### Step 5: Physical Deduction
+The general aerodynamic drag law must therefore take the exact form:
 
----
+$$\Pi_1 = f(\Pi_2) \implies F_d = \frac{1}{2} C_D(\mathrm{Re}) \, \rho v^2 A \tag{18}$$
 
-## 5. Advanced Techniques: Directed Dimensions and Inspectional Scaling
+where $A = \frac{\pi}{4}d^2$ is the frontal projected area, and $C_D(\mathrm{Re})$ is an invariant function of Reynolds number:
+* For **Stokes creeping flow ($\mathrm{Re} \ll 1$):** $C_D \propto 1/\mathrm{Re} \implies F_d \propto \mu v d$ (Stokes drag formula $F_d = 3\pi \mu v d$).
+* For **Newtonian turbulent flow ($\mathrm{Re} \sim 10^3 - 10^5$):** $C_D \approx \text{const} \implies F_d \propto \rho v^2 d^2$ (quadratic pressure drag).
 
-Standard dimensional analysis assigns the single dimension $L$ to all spatial displacements. While universally sound, it occasionally yields underdetermined scaling laws because it discards directional geometric information.
-
-### 5.1 Huntley's Method of Directed Dimensions
-
-In fluid dynamics and elasticity, orthogonal spatial directions frequently decouple dynamically:
-* In laminar boundary layers, momentum diffusion across the boundary layer (transverse direction $y$) does not directly couple with convective advection along the surface (streamwise direction $x$).
-* **Directed Lengths:** We replace the scalar dimension $L$ with directional vector components:
-  $$L_x, \quad L_y, \quad L_z$$
-* **Mass Partitioning:** In thermal systems, mass can be split into:
-  * **Inertial Mass ($M_i$):** Quantifying resistance to acceleration ($F = M_i a$).
-  * **Quantity Mass ($M_q$):** Quantifying matter content, density, and thermal heat capacity ($Q = M_q c \Delta T$).
-
-By splitting $L \to \{L_x, L_y, L_z\}$ and $M \to \{M_i, M_q\}$, the number of base dimensions $m$ increases. This increases the rank $r = \operatorname{rank}(D)$, reducing the nullity $p = n - r$ and uniquely resolving exponent combinations that standard isotropic dimensional analysis leaves undetermined.
-
-### 5.2 Inspectional Scaling (Differential Non-Dimensionalization)
-
-When the governing partial differential equations (PDEs) of a physical system are explicitly known, **inspectional scaling** surpasses dimensional analysis. By scaling every independent and dependent variable by a characteristic scale:
-
-$$x^* = \frac{x}{L_0}, \quad t^* = \frac{t}{T_0}, \quad u^* = \frac{u}{U_0}, \quad P^* = \frac{P}{P_0}$$
-
-and substituting into the governing equations (such as the Navier-Stokes equations), dimensionless coefficients emerge naturally as ratios of competing physical mechanisms:
-* **Reynolds Number:** $\mathrm{Re} = \frac{\rho U_0 L_0}{\mu}$ (Inertia vs. Viscosity)
-* **Mach Number:** $\mathrm{Ma} = \frac{U_0}{c_s}$ (Flow speed vs. Acoustic speed)
-* **Froude Number:** $\mathrm{Fr} = \frac{U_0}{\sqrt{g L_0}}$ (Inertia vs. Gravitational wave speed)
-
----
-
-## 6. Case Study: The Simple Pendulum
-
-To see the linear algebraic machinery in action, consider the oscillation period $\tau$ of a simple pendulum:
-
-1. **Variables:**
-   * Period $\tau$: $[\tau] = T$
-   * Length $\ell$: $[\ell] = L$
-   * Mass $m$: $[m] = M$
-   * Gravitational acceleration $g$: $[g] = L T^{-2}$
-   * Initial angle $\theta_0$: $[\theta_0] = 1$ (dimensionless)
-2. **Parameters:** $n = 5$ variables, $m = 3$ dimensions ($M, L, T$).
-3. **Dimensional Matrix:**
-   $$D = \begin{matrix} & \tau & \ell & m & g & \theta_0 \\ M & 0 & 0 & 1 & 0 & 0 \\ L & 0 & 1 & 0 & 1 & 0 \\ T & 1 & 0 & 0 & -2 & 0 \end{matrix}$$
-4. **Rank:** Row 1 has a pivot on $m$, Row 2 on $\ell$, Row 3 on $\tau$. The rank is $r = 3$.
-5. **Nullity:** $p = n - r = 5 - 3 = 2$ dimensionless groups.
-6. **Kernel Basis:**
-   Solving $D\mathbf{x} = \mathbf{0}$:
-   $$\mathbf{x}^{(1)} = \begin{pmatrix} 1 \\ -1/2 \\ 0 \\ 1/2 \\ 0 \end{pmatrix} \implies \Pi_1 = \tau \sqrt{\frac{g}{\ell}}, \quad \mathbf{x}^{(2)} = \begin{pmatrix} 0 \\ 0 \\ 0 \\ 0 \\ 1 \end{pmatrix} \implies \Pi_2 = \theta_0$$
-7. **Deduction:**
-   $$\Phi\left(\tau \sqrt{\frac{g}{\ell}}, \theta_0\right) = 0 \implies \tau = \sqrt{\frac{\ell}{g}} \, \psi(\theta_0)$$
-   For small oscillations ($\theta_0 \to 0$), $\psi(\theta_0) \to 2\pi$, recovering the classical formula $\tau = 2\pi \sqrt{\ell/g}$. Notice that the mass $m$ exponent is forced to $0$ strictly because $m$ is the sole variable carrying the dimension $M$.
-
----
-
-## 7. Connecting to Nonlinear Physics
-
-The true power of dimensional analysis emerges when coupled with nonlinear partial differential equations that possess no internal length or time scales. Under continuous scale dilations, such systems collapse from complex PDEs to ordinary differential equations along universal self-similar curves.
-
-For the definitive historical and mathematical application of this principle—where dimensional analysis cracked the classified energy yield of the atomic bomb—see our companion preprint:
-* [The Sedov-Taylor Blast Wave and Self-Similarity](../sedov-taylor-blast-wave-self-similarity/index.qmd)
-* For the abstract algebraic underpinnings of monomial rings and polynomial factorization, see [Polynomial Algebra: Theorems, Factoring Tactics, and Numerical Root-Finding](../polynomial-algebra-theorems-numerical-root-finding/index.qmd).
+Dimensional analysis extracts this universal functional dependency entirely from the null space of a $3 \times 5$ matrix!
 
 ---
 
-## 8. Foundational Terminology Glossary
+## 8. Cross-Disciplinary Connections
 
-* **Scale Invariance:** The mathematical property of an equation or law remaining invariant under continuous dilations of coordinates: $x \to \lambda^a x$, $t \to \lambda^b t$.
+* For the application of directional dimensions and inspectional non-dimensionalization of the Navier-Stokes equations, read our companion preprint:
+  * [Boundary Layer Flow, Directional Momentum Coupling, and Inspectional Analysis](../boundary-layers-inspectional-analysis-huntley/index.qmd)
+* For the canonical point-source strong explosion solved via Lie group scale dilations, see:
+  * [The Sedov-Taylor Blast Wave and Self-Similarity](../sedov-taylor-blast-wave-self-similarity/index.qmd)
+* For the abstract algebra of monomial rings, multi-indices, and numerical polynomial algorithms, see:
+  * [Polynomial Algebra: Theorems, Factoring Tactics, and Numerical Root-Finding](../polynomial-algebra-theorems-numerical-root-finding/index.qmd)
+
+---
+
+## 9. Foundational Terminology Glossary
+
+* **Algebraic Field:** A set $\mathbb{F}$ with two operations $(+, \cdot)$ where both $(\mathbb{F}, +)$ and $(\mathbb{F} \setminus \{0\}, \cdot)$ form abelian groups and multiplication distributes over addition.
+* **Fraction Field (Field of Quotients):** The smallest field containing an integral domain, formed by equivalence classes of formal quotients $a/b$ (e.g., $\mathbb{Q}$ is the fraction field of $\mathbb{Z}$).
+* **Scale Invariance:** The mathematical property of an equation remaining invariant under continuous dilations of coordinates: $x \to \lambda^a x, t \to \lambda^b t$.
 * **Monomial Product:** An algebraic expression formed strictly by multiplying indeterminates together without internal addition or subtraction: $\prod_i x_i^{\alpha_i}$.
 * **Dimensional Homogeneity:** The physical axiom requiring that every term in a valid physical law must reside in the exact same one-dimensional ray in dimension vector space.
 * **Dimensional Matrix ($D$):** The $m \times n$ matrix whose columns represent physical variables and whose rows represent fundamental base dimensions.
 * **Rank-Nullity Theorem:** The foundational theorem of linear algebra stating that for matrix $D \in \mathbb{R}^{m \times n}$, $\operatorname{rank}(D) + \operatorname{nullity}(D) = n$.
-* **Kernel (Null Space):** The subspace $\ker(D) = \{\mathbf{x} \in \mathbb{R}^n \mid D\mathbf{x} = \mathbf{0}\}$. In dimensional analysis, every vector in $\ker(D)$ defines a valid dimensionless group.
+* **Kernel (Null Space):** The subspace $\ker(D) = \{\mathbf{x} \in \mathbb{R}^n \mid D\mathbf{x} = \mathbf{0}\}$. Every vector in $\ker(D)$ defines a valid dimensionless group.
 * **Buckingham $\Pi$ Theorem:** The theorem proving that any dimensionally homogeneous law of $n$ variables with matrix rank $r$ reduces to an equivalent relationship among $p = n - r$ dimensionless groups.
-* **Huntley's Directed Dimensions:** An advanced extension of dimensional analysis that resolves isotropic spatial dimensions into directional vector components ($L_x, L_y, L_z$), increasing matrix rank to constrain previously underdetermined systems.
-* **Inspectional Scaling:** The technique of non-dimensionalizing differential equations directly using characteristic boundary and initial values to reveal fundamental dimensionless scale numbers.
+* **Dynamic Similitude:** The condition under which two physical systems with different geometric scales and fluids experience geometrically similar flow fields due to matching dimensionless numbers ($\mathrm{Re}_1 = \mathrm{Re}_2$).
 
 ---
 

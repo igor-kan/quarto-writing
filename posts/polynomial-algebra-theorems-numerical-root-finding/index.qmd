@@ -1,7 +1,7 @@
 ---
 title: "Polynomial Algebra: Theorems, Factoring Tactics, and Numerical Root-Finding"
 subtitle: "From abstract monomial rings and algebraic theorems to Horner's scheme, Aberth-Ehrlich, and companion matrix algorithms."
-description: "A comprehensive mathematical and computational exposition of polynomials: monomial products, multi-index notation, polynomial division, factoring criteria, root bounds, Sturm sequences, and high-performance root-finding implementations across C, C++, Python, and Fortran."
+description: "A comprehensive mathematical and computational exposition of polynomials: monomial products, multi-index notation, polynomial division, factoring criteria, root bounds, Sturm sequences, complete worked examples, and high-performance root-finding implementations across C, C++, Python, and Fortran."
 author: "Igor Kan"
 date: "2026-10-28"
 categories: [Preprints, Mathematics, Abstract Algebra, Numerical Analysis, Algorithms]
@@ -216,7 +216,72 @@ The characteristic polynomial of $\mathbf{C}(P)$ is identically $\det(\lambda I 
 
 ---
 
-## 6. Multi-Language Production Implementations
+## 6. Worked Examples
+
+### 6.1 Worked Example 1: Synthetic Division and Evaluation
+Divide $P(x) = 2x^4 - 5x^3 + 3x^2 - 7x + 2$ by $(x - 2)$:
+
+* Target root $c = 2$. Coefficients: $[2, -5, 3, -7, 2]$.
+* **Synthetic Division Tableau:**
+  ```
+    2 │   2   -5    3   -7    2
+      │        4   -2    2  -10
+      └─────────────────────────
+          2   -1    1   -5 │ -8
+  ```
+* **Result:**
+  * Quotient: $q(x) = 2x^3 - x^2 + x - 5$
+  * Remainder: $r = -8 \implies P(2) = -8$.
+
+### 6.2 Worked Example 2: Polynomial Euclidean Algorithm & Bézout Identity
+Find $\gcd(f, g)$ for $f(x) = x^4 - 1$ and $g(x) = x^3 - 1$:
+1. Divide $f$ by $g$:
+   $$x^4 - 1 = x(x^3 - 1) + (x - 1)$$
+   Quotient $q_1 = x$, Remainder $r_1 = x - 1$.
+2. Divide $g$ by $r_1$:
+   $$x^3 - 1 = (x^2 + x + 1)(x - 1) + 0$$
+   Remainder is zero.
+3. The last non-zero remainder is $\gcd(f, g) = x - 1$.
+4. **Bézout Identity:**
+   $$x - 1 = 1 \cdot f(x) - x \cdot g(x)$$
+
+### 6.3 Worked Example 3: Eisenstein's Irreducibility Criterion
+Examine $P(x) = 2x^4 - 6x^3 + 12x^2 - 18x + 6$:
+* Coefficients: $a_4 = 2, a_3 = -6, a_2 = 12, a_1 = -18, a_0 = 6$.
+* Choose prime $p = 3$:
+  1. $3 \mid (-6), 3 \mid 12, 3 \mid (-18), 3 \mid 6$. All coefficients except $a_4$ are divisible by 3.
+  2. $3 \nmid 2$ (leading coefficient not divisible by 3).
+  3. $3^2 = 9 \nmid 6$ (constant term not divisible by 9).
+* By Eisenstein's Criterion, $P(x)$ is **irreducible** over the field of rational numbers $\mathbb{Q}$.
+
+### 6.4 Worked Example 4: Sturm Sequence Root Counting
+Isolate the real roots of $P(x) = x^3 - 3x + 1$ on the interval $[-2, 2]$:
+1. Construct Sturm sequence:
+   * $f_0(x) = x^3 - 3x + 1$
+   * $f_1(x) = 3x^2 - 3 = 3(x^2 - 1)$
+   * Divide $f_0$ by $f_1$: $x^3 - 3x + 1 = \frac{x}{3}(3x^2 - 3) + (-2x + 1)$. Negative remainder:
+     $$f_2(x) = 2x - 1$$
+   * Divide $f_1$ by $f_2$: $3x^2 - 3 = \left(\frac{3}{2}x + \frac{3}{4}\right)(2x - 1) + \left(-\frac{9}{4}\right)$. Negative remainder:
+     $$f_3(x) = +\frac{9}{4}$$
+2. Evaluate sign sequence at $x = -2$:
+   * $f_0(-2) = -8 + 6 + 1 = -1 \quad (-)$
+   * $f_1(-2) = 12 - 3 = +9 \quad (+)$
+   * $f_2(-2) = -4 - 1 = -5 \quad (-)$
+   * $f_3(-2) = +9/4 \quad (+)$
+   * Sequence: $(-, +, -, +) \implies V(-2) = 3$ sign changes.
+3. Evaluate sign sequence at $x = 2$:
+   * $f_0(2) = 8 - 6 + 1 = +3 \quad (+)$
+   * $f_1(2) = 12 - 3 = +9 \quad (+)$
+   * $f_2(2) = 4 - 1 = +3 \quad (+)$
+   * $f_3(2) = +9/4 \quad (+)$
+   * Sequence: $(+, +, +, +) \implies V(2) = 0$ sign changes.
+4. **Conclusion:**
+   $$N_{\text{roots}} = V(-2) - V(2) = 3 - 0 = \mathbf{3 \text{ distinct real roots in } [-2, 2]}$$
+   All 3 roots of $x^3 - 3x + 1$ are real and strictly confined inside $[-2, 2]$!
+
+---
+
+## 7. Multi-Language Production Implementations
 
 Below is a complete, production-grade implementation of Horner polynomial evaluation, formal derivative calculation, and Newton-Raphson root extraction with synthetic deflation.
 
@@ -542,15 +607,15 @@ end program test_poly
 
 ---
 
-## 7. Connecting to Physics and Scale Invariance
+## 8. Cross-Disciplinary Connections
 
-The structural algebra of polynomials directly anchors physical scaling and intermediate asymptotics:
 * In [Mathematical Foundations: The Vector Space of Dimensions](../vector-space-of-dimensions-buckingham-pi/index.qmd), monomial products over base dimensions provide the coordinates for the Buckingham $\Pi$ null-space.
+* In [Boundary Layer Flow, Directional Momentum Coupling, and Inspectional Analysis](../boundary-layers-inspectional-analysis-huntley/index.qmd), multi-index scaling underpins directed length dimensions.
 * In [The Sedov-Taylor Blast Wave and Self-Similarity](../sedov-taylor-blast-wave-self-similarity/index.qmd), the self-similar collapse of the Euler PDEs relies on integrating rational polynomial functions of velocity $V(\xi)$ and density $G(\xi)$.
 
 ---
 
-## 8. Foundational Terminology Glossary
+## 9. Foundational Terminology Glossary
 
 * **Monomial:** A single-term algebraic expression formed strictly by the product of powers of variables without internal addition or subtraction: $\prod_i x_i^{\alpha_i}$.
 * **Multi-Index:** An ordered tuple of non-negative integers $\alpha = (\alpha_1, \dots, \alpha_d)$ specifying the powers in a multivariate monomial.
@@ -560,6 +625,7 @@ The structural algebra of polynomials directly anchors physical scaling and inte
 * **Bézout's Identity:** The theorem stating that for any polynomials $f, g$, there exist polynomials $u, v$ such that $u \cdot f + v \cdot g = \gcd(f, g)$.
 * **Square-Free Reduction:** The transformation $P / \gcd(P, P')$ that strips duplicate factors, producing a polynomial with identical roots having multiplicity 1.
 * **Vieta's Formulas:** Algebraic identities expressing the elementary symmetric sums and products of polynomial roots directly in terms of coefficient ratios.
+* **Sturm Sequence:** A sequence of polynomials generated via modified Euclidean division that counts the exact number of distinct real roots within any interval $(a, b]$.
 * **Horner's Method:** An $O(n)$ nested algebraic algorithm for computing polynomial values and derivatives simultaneously while generating deflated coefficients.
 * **Frobenius Companion Matrix:** A square matrix whose characteristic polynomial matches a given monic polynomial, allowing root-finding to be solved via the QR matrix eigenvalue algorithm.
 

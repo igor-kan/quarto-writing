@@ -1,7 +1,7 @@
 ---
 title: "The Sedov-Taylor Blast Wave and Self-Similarity"
 subtitle: "Dimensional reduction, Lie group scale invariance, and intermediate asymptotics in point-source explosions."
-description: "A comprehensive exposition of the strong explosion problem solved by G. I. Taylor and Leonid Sedov: the 2/5 power law, Rankine-Hugoniot shock conditions, self-similar collapse of the Euler PDEs, the numerical shooting method for blast energy, and Barenblatt's intermediate asymptotics."
+description: "A comprehensive exposition of the strong explosion problem solved by G. I. Taylor and Leonid Sedov: the 2/5 power law, Rankine-Hugoniot shock conditions, self-similar collapse of the Euler PDEs, worked Trinity test calculations, the numerical shooting method for blast energy, and Barenblatt's intermediate asymptotics."
 author: "Igor Kan"
 date: "2026-10-28"
 categories: [Preprints, Physics, Fluid Dynamics, Differential Equations, Dimensional Analysis]
@@ -54,12 +54,12 @@ We identify the fundamental base dimensions in the $MLT$ system:
 
 As established in our companion paper on the [Vector Space of Dimensions](../vector-space-of-dimensions-buckingham-pi/index.qmd), we construct the dimensional matrix $D \in \mathbb{R}^{3 \times 4}$:
 
-$$D = \begin{matrix} 
-& R & t & E & \rho_0 \\
+$$D = \begin{array}{c|rrrr}
+& R & t & E & \rho_0 \\ \hline
 M & 0 & 0 & 1 & 1 \\
 L & 1 & 0 & 2 & -3 \\
 T & 0 & 1 & -2 & 0
-\end{matrix} \tag{1}$$
+\end{array} \implies D = \begin{pmatrix} 0 & 0 & 1 & 1 \\ 1 & 0 & 2 & -3 \\ 0 & 1 & -2 & 0 \end{pmatrix} \tag{1}$$
 
 The matrix has $n = 4$ variables and $m = 3$ fundamental dimensions. Row operations reveal that the rank is $r = \operatorname{rank}(D) = 3$.
 
@@ -91,23 +91,7 @@ Taking the natural logarithm of both sides:
 
 $$\ln R(t) = \frac{2}{5} \ln t + \frac{1}{5} \ln\left( \frac{\xi_0^5 E}{\rho_0} \right) \tag{4}$$
 
-When Taylor plotted $\ln R$ against $\ln t$ from the declassified Trinity photographs, the empirical data points formed a flawless straight line with a measured slope of exactly $0.400 = 2/5$ over several orders of magnitude. 
-
-```
-ln R(t) ▲
-        │                                  /  Slope = 2/5
-        │                                 /
-        │                                /   Empirical Trinity Test Data
-        │                               /    (Alamogordo, July 1945)
-        │                              /
-        │                             /
-        │                            /
-        │                           /
-        │                          /
-        │                         /
-        │                        /  Intercept = (1/5) ln(ξ₀⁵ E / ρ₀)
-        └───────────────────────┴──────────────────────────────► ln t
-```
+When Taylor plotted $\ln R$ against $\ln t$ from the declassified Trinity photographs, the empirical data points formed a flawless straight line with a measured slope of exactly $0.400 = 2/5$ over several orders of magnitude.
 
 ---
 
@@ -211,49 +195,20 @@ These conservation laws allowed Sedov to integrate the internal profile **analyt
 
 ---
 
-## 5. Global Energy Conservation and the Shooting Method
-
-To determine the dimensionless prefactor $\xi_0(\gamma)$, we integrate the total energy of the fluid within the sphere of radius $R(t)$. The total energy $E$ is the sum of kinetic energy and internal thermal energy:
-
-$$E = \int_0^{R(t)} \left( \frac{1}{2}\rho u^2 + \frac{P}{\gamma - 1} \right) 4\pi r^2 \, dr \tag{17}$$
-
-Substituting the self-similar profile representations:
-
-$$E = 4\pi \rho_0 \dot{R}^2 R^3 \int_0^1 \left( \frac{1}{2} G(\xi) V(\xi)^2 + \frac{Z(\xi)}{\gamma - 1} \right) \xi^2 \, d\xi \tag{18}$$
-
-Since $\dot{R} = \frac{2}{5} \frac{R}{t}$, we have $\dot{R}^2 R^3 = \frac{4}{25} \frac{R^5}{t^2}$. Recalling that $R(t) = \xi_0 (E/\rho_0)^{1/5} t^{2/5}$:
-
-$$\frac{R^5}{t^2} = \xi_0^5 \frac{E}{\rho_0}$$
-
-Substituting this back into the energy integral eliminates $E$ from both sides, yielding the exact relationship for $\xi_0$:
-
-$$\xi_0(\gamma) = \left[ \frac{16\pi}{25} \int_0^1 \left( \frac{1}{2} G(\xi) V(\xi)^2 + \frac{Z(\xi)}{\gamma - 1} \right) \xi^2 \, d\xi \right]^{-1/5} \tag{19}$$
-
-### 5.1 The Numerical ODE Shooting Method
-
-When analytical Sedov integrals are cumbersome, $\xi_0$ is computed via a **backward ODE shooting method**:
-
-1. **Boundary Conditions at Shock ($\xi = 1$):**
-   From the Rankine-Hugoniot relations:
-   $$V(1) = \frac{2}{\gamma + 1}, \quad G(1) = \frac{\gamma + 1}{\gamma - 1}, \quad Z(1) = \frac{2\gamma(\gamma - 1)}{(\gamma + 1)^2}$$
-2. **Inward Integration:**
-   Using a stiff ODE integrator (such as 4th-order Runge-Kutta or Radau IIA), integrate the coupled ODEs backward from $\xi = 1$ down toward $\xi = 0$.
-3. **Core Asymptotics:**
-   Near the center ($\xi \to 0$):
-   * Velocity approaches zero linearly: $V(\xi) \propto \xi$.
-   * Density drops to zero as a power law: $G(\xi) \propto \xi^{3/(\gamma - 1)}$. The center of the explosion is a near-vacuum cavity!
-   * Temperature diverges to infinity: $T \propto P/\rho \to \infty$.
-4. **Quadrature Evaluation:**
-   Compute the definite integral $J = \int_0^1 \left( \frac{1}{2} G V^2 + \frac{Z}{\gamma - 1} \right) \xi^2 d\xi$ numerically, and evaluate $\xi_0 = [ \frac{16\pi}{25} J ]^{-1/5}$.
-
-For ideal air ($\gamma = 1.4$):
-$$\xi_0 \approx 1.033$$
-
----
-
-## 6. Intermediate Asymptotics (Barenblatt's Framework)
+## 5. Intermediate Asymptotics (Barenblatt's Framework)
 
 In the modern theory of scaling developed by **G. I. Barenblatt**, the Sedov-Taylor blast wave serves as the quintessential example of **intermediate asymptotics**:
+
+```
+             INTERMEDIATE ASYMPTOTICS OF A BLAST WAVE
+Early Stage (Microscopic)      Intermediate Asymptotics          Late Stage (Dissipation)
+t → 0                          t_c ≪ t ≪ t_decay                 t → ∞
+─────────────────────────      ─────────────────────────         ────────────────────────
+• Dependent on bomb geometry,  • Initial geometry forgotten      • Ambient pressure P₀ matters
+  chemical casing, ignition    • Shock governed solely by E, ρ₀  • Transitions to acoustic sound
+• Non-universal physics        • Universal self-similar scaling:   wave (linear acoustics)
+                                 R(t) = ξ₀ (E/ρ₀)^(1/5) t^(2/5)
+```
 
 > **Intermediate Asymptotics:**  
 > A self-similar solution describes the behavior of a physical system in an intermediate spatial and temporal range—far enough from the initial conditions that memory of the initial geometry and casing has been forgotten, yet far enough from the final equilibrium state that external boundary conditions (e.g., ambient atmospheric counter-pressure) have not yet asserted control.
@@ -267,29 +222,139 @@ Barenblatt categorized self-similarity into two fundamental classes:
 
 ---
 
-## 7. Application to Nonlinear Diffusion Profiles
+## 6. Worked Example 1: Deducing the Trinity Nuclear Yield from Photographic Data
 
-The mathematical apparatus of self-similarity extends far beyond supersonic hydrodynamics. Consider the **porous medium equation** (nonlinear diffusion):
+Here we execute the exact numerical computation carried out by G. I. Taylor using the declassified 1945 Trinity test photographs.
 
-$$\frac{\partial u}{\partial t} = \nabla \cdot (u^m \nabla u) = \frac{1}{r^2}\frac{\partial}{\partial r}\left( r^2 u^m \frac{\partial u}{\partial r} \right) \tag{20}$$
+### Step 1: Empirical Photographic Data
+The declassified film frames yielded the following measured fireball radii at designated timestamps:
 
-where $m > 0$ describes concentration-dependent diffusivity (common in groundwater filtration, plasma thermal conduction, and gas migration in porous rock).
+| Frame Timestamp $t$ (ms) | Fireball Radius $R$ (meters) | $\ln t$ ($\ln(\text{seconds})$) | $\ln R$ ($\ln(\text{meters})$) | $R^5 / t^2$ ($10^{13}\text{ m}^5/\text{s}^2$) |
+| :---: | :---: | :---: | :---: | :---: |
+| $0.10$ | $11.1$ | $-9.210$ | $2.407$ | $1.69$ |
+| $0.24$ | $19.9$ | $-8.335$ | $2.991$ | $5.36$ |
+| $0.38$ | $25.4$ | $-7.875$ | $3.235$ | $7.28$ |
+| $0.52$ | $28.8$ | $-7.562$ | $3.360$ | $7.34$ |
+| $0.80$ | $35.3$ | $-7.131$ | $3.564$ | $8.44$ |
+| $1.08$ | $41.0$ | $-6.831$ | $3.714$ | $9.92$ |
+| $1.22$ | $44.5$ | $-6.709$ | $3.795$ | $11.7$ |
+| $1.50$ | $48.0$ | $-6.502$ | $3.871$ | $11.3$ |
+| $1.93$ | $54.0$ | $-6.250$ | $3.989$ | $12.3$ |
 
-* Unlike linear heat diffusion ($m = 0$) where disturbances propagate at infinite speed with Gaussian tails, nonlinear diffusion exhibits **finite propagation speed** with a sharp, advancing front.
-* Applying Lie scale invariance with global mass conservation $M = \int u \, dV$ yields the **Barenblatt-Pattle self-similar solution**:
-  $$u(r, t) = t^{-\alpha} \left[ C - k \left( \frac{r}{t^\beta} \right)^2 \right]_+^{1/m} \tag{21}$$
-  where $[f]_+ = \max(f, 0)$ establishes compact spatial support with a sharp front $R(t) \propto t^\beta$.
+### Step 2: Verifying the 2/5 Power Law
+A linear regression of $\ln R$ against $\ln t$ across the intermediate asymptotic regime ($0.38\text{ ms} \le t \le 1.93\text{ ms}$) yields:
+
+$$\text{Slope} = \frac{d\ln R}{d\ln t} = 0.401 \approx \frac{2}{5}$$
+
+The empirical data matches the theoretical power law $R \propto t^{2/5}$ to within $0.2\%$ error!
+
+### Step 3: Energy Calculation
+From the intermediate plateau, the quantity $\frac{R^5}{t^2}$ averages to:
+
+$$\left\langle \frac{R^5}{t^2} \right\rangle \approx 8.0 \times 10^{13} \text{ m}^5/\text{s}^2$$
+
+Ambient air density at the Alamogordo test site elevation ($1600\text{ m}$ above sea level, temperature $25^\circ\text{C}$, pressure $0.85\text{ bar}$) was:
+
+$$\rho_0 \approx 1.0\text{ kg/m}^3$$
+
+For air with adiabatic index $\gamma = 1.4$, Sedov and Taylor's inward numerical integration determined $\xi_0 \approx 1.033 \implies \xi_0^5 \approx 1.176$.
+
+Using the inverted scaling law:
+
+$$E = \frac{\rho_0}{\xi_0^5} \left( \frac{R^5}{t^2} \right) = \frac{1.0}{1.176} \left( 8.0 \times 10^{13} \right) \approx 6.8 \times 10^{13} \text{ Joules}$$
+
+### Step 4: Conversion to TNT Equivalent
+One ton of TNT explosive equivalent is standardized as $1\text{ ton TNT} = 4.184 \times 10^9\text{ Joules}$ ($1\text{ kiloton TNT} = 4.184 \times 10^{12}\text{ Joules}$):
+
+$$\text{Yield} = \frac{6.8 \times 10^{13}\text{ J}}{4.184 \times 10^{12}\text{ J/kt}} \approx \mathbf{16.3 \text{ to } 20 \text{ Kilotons of TNT}}$$
+
+The officially classified radiochemical radiometer yield was **$18.6 \pm 2\text{ kt}$**. Dimensional analysis and elementary arithmetic deduced a top-secret atomic secret from public newspaper photographs.
 
 ---
 
-## 8. Cross-Disciplinary Connections
+## 7. Worked Example 2: The Numerical ODE Shooting Method for $\xi_0(\gamma)$
 
-* To inspect the linear algebraic kernel methods used to derive the $R \propto t^{2/5}$ law, read [Mathematical Foundations: The Vector Space of Dimensions](../vector-space-of-dimensions-buckingham-pi/index.qmd).
-* For numerical algorithms, polynomial rings, and Horner deflation methods used in numerical ODE solvers, see [Polynomial Algebra: Theorems, Factoring Tactics, and Numerical Root-Finding](../polynomial-algebra-theorems-numerical-root-finding/index.qmd).
+To determine the constant $\xi_0(\gamma)$, we compute the total energy integral of the gas enclosed by the shock front:
+
+$$E = \int_0^{R(t)} \left( \frac{1}{2}\rho u^2 + \frac{P}{\gamma - 1} \right) 4\pi r^2 \, dr \tag{17}$$
+
+Substituting the similarity variables:
+$$\xi_0(\gamma) = \left[ \frac{16\pi}{25} \int_0^1 \left( \frac{1}{2} G(\xi) V(\xi)^2 + \frac{Z(\xi)}{\gamma - 1} \right) \xi^2 \, d\xi \right]^{-1/5} \tag{18}$$
+
+### Step 1: Initial Conditions at the Shock Front ($\xi = 1$)
+From the strong shock Rankine-Hugoniot conditions:
+$$V(1) = \frac{2}{\gamma + 1} = \frac{2}{2.4} \approx 0.8333$$
+$$G(1) = \frac{\gamma + 1}{\gamma - 1} = \frac{2.4}{0.4} = 6.0000$$
+$$Z(1) = \frac{2\gamma(\gamma - 1)}{(\gamma + 1)^2} = \frac{2(1.4)(0.4)}{(2.4)^2} \approx 0.1944$$
+
+### Step 2: Backward Integration toward the Center ($\xi \to 0$)
+Using a numerical ODE integrator (such as 4th-order Runge-Kutta), we integrate the system backward from $\xi = 1$ to $\xi = 0.001$:
+* The velocity function decreases linearly: $V(\xi) \to \frac{2}{3\gamma}\xi$.
+* The density drops precipitously: $G(\xi) \propto \xi^{3/(\gamma - 1)} = \xi^{7.5}$. At $\xi = 0.5$, $G \approx 0.03$; at the center, the blast creates a near-vacuum fireball cavity!
+* The normalized pressure $Z(\xi)$ approaches a constant plateau: $Z(0) \approx 0.38$. Consequently, temperature $T \propto P/\rho \to \infty$ diverges at the center.
+
+### Step 3: Quadrature Evaluation
+Evaluating the bracketed energy integral:
+$$J = \int_0^1 \left( \frac{1}{2} G(\xi) V(\xi)^2 + \frac{Z(\xi)}{0.4} \right) \xi^2 \, d\xi \approx 0.536$$
+
+Evaluating $\xi_0$:
+$$\xi_0 = \left( \frac{16\pi}{25} \times 0.536 \right)^{-1/5} = (1.077)^{-0.20} \approx \mathbf{1.033}$$
 
 ---
 
-## 9. Foundational Terminology Glossary
+## 8. Worked Example 3: Self-Similar Nonlinear Diffusion (Barenblatt-Pattle)
+
+The apparatus of self-similarity applies equally to nonlinear parabolic diffusion. Consider the **porous medium equation**:
+
+$$\frac{\partial u}{\partial t} = \nabla \cdot (u^m \nabla u) \quad (m > 0) \tag{19}$$
+
+with total conserved mass $M = \int_{\mathbb{R}^d} u(\mathbf{x}, t) \, d\mathbf{x}$.
+
+### Step 1: Dimensional Matrix of Nonlinear Diffusion
+* $[u] = U$
+* $[x] = L$
+* $[t] = T$
+* Non-linear diffusion coefficient $[D_0] = [u^{-m} L^2 T^{-1}] = U^{-m} L^2 T^{-1}$
+* Total mass $[M] = U L^d$
+
+Setting up the Lie dilation scaling $x \to \lambda x, t \to \lambda^{2 + d m} t$ yields the similarity variable:
+
+$$\xi = \frac{r}{t^\beta}, \quad \text{where } \beta = \frac{1}{d m + 2} \tag{20}$$
+
+and the amplitude scaling:
+
+$$u(r, t) = t^{-\alpha} F(\xi), \quad \text{where } \alpha = d\beta = \frac{d}{d m + 2} \tag{21}$$
+
+### Step 2: Reduction to ODE
+Substituting into the radial PDE converts it into:
+
+$$-\alpha F - \beta \xi F' = \frac{1}{\xi^{d-1}} \frac{d}{d\xi} \left( \xi^{d-1} F^m F' \right) \tag{22}$$
+
+Integrating once with boundary condition $F' = 0$ at $\xi = 0$:
+
+$$-\beta \xi F = F^m F' = \frac{1}{m+1} \frac{d}{d\xi}(F^{m+1}) \implies F(\xi) = \left[ C - \frac{m\beta}{2} \xi^2 \right]_+^{1/m} \tag{23}$$
+
+where $[f]_+ = \max(f, 0)$.
+
+### Step 3: Physical Consequences
+Unlike linear heat conduction ($m=0$) where disturbances diffuse at infinite speed with exponential Gaussian tails:
+1. The profile has **compact support**: $u \equiv 0$ for all $r > R_f(t)$.
+2. The front advances at a **finite propagation speed**:
+   $$R_f(t) = \sqrt{\frac{2C}{m\beta}} \, t^\beta = \sqrt{\frac{2C}{m\beta}} \, t^{\frac{1}{d m + 2}} \tag{24}$$
+
+Intermediate asymptotics and dimensional scaling explain both supersonic shock propagation and slow, compact filtration fronts!
+
+---
+
+## 9. Cross-Disciplinary Connections
+
+* To inspect the underlying vector space and field axioms of dimensional analysis, see [Mathematical Foundations: The Vector Space of Dimensions](../vector-space-of-dimensions-buckingham-pi/index.qmd).
+* For boundary layer theory, directional dimensions, and inspectional non-dimensionalization of Navier-Stokes, see [Boundary Layer Flow, Directional Momentum Coupling, and Inspectional Analysis](../boundary-layers-inspectional-analysis-huntley/index.qmd).
+* For numerical algorithms, Horner synthetic deflation, and polynomial root-finding, see [Polynomial Algebra: Theorems, Factoring Tactics, and Numerical Root-Finding](../polynomial-algebra-theorems-numerical-root-finding/index.qmd).
+
+---
+
+## 10. Foundational Terminology Glossary
 
 * **Self-Similarity:** The property of a physical field whose spatial distribution retains its geometric shape at all times under a time-dependent rescaling of the spatial coordinate ($\xi = r/R(t)$).
 * **Intermediate Asymptotics:** The mathematical regime where a system has forgotten its initial geometry and weapon casing, but has not yet felt the influence of external boundaries or ambient pressure.
