@@ -214,6 +214,60 @@ $$\mathbf{C}(P) = \begin{pmatrix}
 
 The characteristic polynomial of $\mathbf{C}(P)$ is identically $\det(\lambda I - \mathbf{C}(P)) = P(\lambda)$. Computing the eigenvalues of $\mathbf{C}(P)$ using the backward-stable **QR algorithm with Francis shifts** yields all $n$ roots simultaneously with exceptional numerical stability.
 
+```{python}
+#| label: fig-companion-roots
+#| fig-cap: "Computer-Generated Roots in the Complex Plane via Frobenius Companion Matrix Eigenvalues. The roots of P(x) = x⁶ - 2x⁵ + 3x⁴ - 4x³ + 5x² - 6x + 7 are plotted alongside the theoretical Cauchy root bound circle |z| <= 1 + max |a_k| = 8.0, confirming that all eigenvalues are bounded inside the disk."
+#| code-fold: true
+#| code-summary: "Show Python generation code"
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Polynomial coefficients: P(x) = x^6 - 2x^5 + 3x^4 - 4x^3 + 5x^2 - 6x + 7
+coeffs = [1.0, -2.0, 3.0, -4.0, 5.0, -6.0, 7.0]
+
+# Compute companion matrix eigenvalues (np.roots)
+roots = np.roots(coeffs)
+
+# Cauchy root bound: R_Cauchy = 1 + max(|a_k / a_n|)
+a_n = coeffs[0]
+r_cauchy = 1.0 + max(abs(c / a_n) for c in coeffs[1:])
+
+fig, ax = plt.subplots(figsize=(7, 7), dpi=150)
+
+# Draw Cauchy disk
+theta = np.linspace(0, 2 * np.pi, 300)
+x_cauchy = r_cauchy * np.cos(theta)
+y_cauchy = r_cauchy * np.sin(theta)
+ax.plot(x_cauchy, y_cauchy, '--', color='#d9534f', linewidth=2.0, label=f'Cauchy Bound Circle ($R = {r_cauchy:.1f}$)')
+ax.fill(x_cauchy, y_cauchy, color='#d9534f', alpha=0.08)
+
+# Unit circle
+ax.plot(np.cos(theta), np.sin(theta), ':', color='gray', linewidth=1.2, label='Unit Circle ($|z| = 1$)')
+
+# Plot roots
+ax.plot(roots.real, roots.imag, 'o', color='#0275d8', markersize=9, label='Companion Matrix Eigenvalues (Roots)')
+for r in roots:
+    ax.annotate(f'({r.real:.2f}, {r.imag:.2f}i)',
+                xy=(r.real, r.imag), xytext=(r.real + 0.3, r.imag + 0.3),
+                fontsize=8.5, color='#0275d8')
+
+ax.axhline(0, color='black', linestyle='-', linewidth=0.8)
+ax.axvline(0, color='black', linestyle='-', linewidth=0.8)
+
+ax.set_title('Polynomial Roots in Complex Plane $\\mathbb{C}$ vs. Cauchy Bound', fontsize=11, fontweight='bold', pad=10)
+ax.set_xlabel('Real Axis $\\mathrm{Re}(z)$', fontsize=10.5)
+ax.set_ylabel('Imaginary Axis $\\mathrm{Im}(z)$', fontsize=10.5)
+ax.set_xlim(-r_cauchy - 1.5, r_cauchy + 1.5)
+ax.set_ylim(-r_cauchy - 1.5, r_cauchy + 1.5)
+ax.set_aspect('equal', 'box')
+ax.legend(loc='upper right', frameon=True, fontsize=9)
+ax.grid(True, linestyle='--', alpha=0.6)
+
+plt.tight_layout()
+plt.show()
+```
+
 ---
 
 ## 6. Worked Examples
@@ -223,12 +277,12 @@ Divide $P(x) = 2x^4 - 5x^3 + 3x^2 - 7x + 2$ by $(x - 2)$:
 
 * Target root $c = 2$. Coefficients: $[2, -5, 3, -7, 2]$.
 * **Synthetic Division Tableau:**
-  ```
-    2 │   2   -5    3   -7    2
-      │        4   -2    2  -10
-      └─────────────────────────
-          2   -1    1   -5 │ -8
-  ```
+
+| Evaluation Root ($c = 2$) | $x^4$ | $x^3$ | $x^2$ | $x^1$ | $x^0$ (Constant) |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **Dividend Coefficients** | $2$ | $-5$ | $3$ | $-7$ | $2$ |
+| **Multiply by $c = 2$** | | $4$ | $-2$ | $2$ | $-10$ |
+| **Quotient Coefficients / Remainder** | **$2$** | **$-1$** | **$1$** | **$-5$** | **$-8$ (Remainder)** |
 * **Result:**
   * Quotient: $q(x) = 2x^3 - x^2 + x - 5$
   * Remainder: $r = -8 \implies P(2) = -8$.

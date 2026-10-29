@@ -34,18 +34,64 @@ When physical phenomena exhibit directional decoupling—such as thin viscous bo
 
 A **boundary layer** is the thin region adjacent to a solid surface where fluid viscosity cannot be neglected. In high Reynolds number flows past a body, the **no-slip condition** forces fluid particles in contact with the surface to come to rest relative to the wall ($\mathbf{u}_{\text{wall}} = \mathbf{0}$). Transverse to the surface, velocity climbs steeply from zero to the outer free-stream velocity $U_0$ across a layer of characteristic thickness $\delta(x) \ll L$:
 
-```
-     y (wall-normal, Ly)
-  ▲
-  │       Outer Flow: Inviscid, Potential, u ≈ U₀ (no shear)
-  │      ────────────────────────────────────────────────────  y = δ(x)
-  │        /       /       /       /       /       /
-  │       /       /       /       /       /       /   Viscous Boundary Layer:
-  │      /       /       /       /       /       /    • u(y) varies from 0 to U₀
-  │     (       (       (       (       (       (     • ∂u/∂y is intense
-  │    (       (       (       (       (       (      • p(x, y) ≈ p_e(x)
-  └────┴───────┴───────┴───────┴───────┴───────┴─────────► x (streamwise, Lx)
-       Solid Wall: No-slip condition (u = v = 0)
+```{python}
+#| label: fig-blasius-boundary-layer
+#| fig-cap: "Computer-Generated Numerical Solution of the Laminar Blasius Boundary Layer. The velocity profile u(y)/U_0 = f'(eta) rises steeply from zero at the no-slip solid wall to 99% of free-stream velocity U_0 at eta ≈ 4.91, defining the boundary layer thickness delta(x)."
+#| code-fold: true
+#| code-summary: "Show Python generation code"
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_bvp
+
+# Blasius ODE: f''' + 0.5 * f * f'' = 0
+# State vector y = [f, f', f'']
+def blasius_derivs(eta, y):
+    return [y[1], y[2], -0.5 * y[0] * y[2]]
+
+def blasius_bc(ya, yb):
+    # At eta = 0: f(0) = 0, f'(0) = 0 (no slip)
+    # At eta = 10: f'(10) = 1 (free stream)
+    return [ya[0], ya[1], yb[1] - 1.0]
+
+eta_grid = np.linspace(0, 8.0, 100)
+y_init = np.zeros((3, eta_grid.size))
+y_init[1] = np.clip(eta_grid / 5.0, 0, 1)
+
+res = solve_bvp(blasius_derivs, blasius_bc, eta_grid, y_init)
+
+eta_dense = np.linspace(0, 8.0, 300)
+sol_dense = res.sol(eta_dense)
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5), dpi=150)
+
+# Velocity profile u / U0 = f'(eta)
+ax1.plot(sol_dense[1], eta_dense, '-', color='#0275d8', linewidth=2.5, label='Blasius Profile: $u/U_0 = f\'(\\eta)$')
+ax1.axhline(4.91, color='#d9534f', linestyle='--', linewidth=1.5, label='$\\delta_{99\\%}: \\eta \\approx 4.91$ ($u = 0.99 U_0$)')
+ax1.axvline(1.0, color='gray', linestyle=':', label='Free-stream $U_0$')
+ax1.set_title('Normalized Velocity Profile Across Boundary Layer', fontsize=11, fontweight='bold', pad=10)
+ax1.set_xlabel('Streamwise Velocity Ratio $u(y) / U_0$', fontsize=10.5)
+ax1.set_ylabel('Similarity Coordinate $\\eta = y \\sqrt{U_0 / (\\nu x)}$', fontsize=10.5)
+ax1.set_xlim(-0.05, 1.1)
+ax1.set_ylim(0, 7.5)
+ax1.legend(loc='lower right', frameon=True, fontsize=9)
+ax1.grid(True, linestyle='--', alpha=0.6)
+
+# Shear stress profile f''(eta)
+ax1_shear = ax2
+ax1_shear.plot(sol_dense[2], eta_dense, '-', color='#d9534f', linewidth=2.5, label='Shear Stress Function: $f\'\'(\\eta)$')
+ax1_shear.plot([sol_dense[2][0]], [0], 'o', color='black', markersize=6)
+ax1_shear.text(sol_dense[2][0] + 0.02, 0.2, f'Wall Shear: $f\'\'(0) \\approx {sol_dense[2][0]:.4f}$', fontsize=9, fontweight='bold')
+ax1_shear.set_title('Viscous Shear Stress Distribution', fontsize=11, fontweight='bold', pad=10)
+ax1_shear.set_xlabel('Dimensionless Shear $f\'\'(\\eta) \\propto \\tau_{xy}$', fontsize=10.5)
+ax1_shear.set_ylabel('Similarity Coordinate $\\eta$', fontsize=10.5)
+ax1_shear.set_xlim(-0.02, 0.4)
+ax1_shear.set_ylim(0, 7.5)
+ax1_shear.legend(loc='upper right', frameon=True, fontsize=9)
+ax1_shear.grid(True, linestyle='--', alpha=0.6)
+
+plt.tight_layout()
+plt.show()
 ```
 
 ### 2.1 How Spatial Directions Exchange Momentum
@@ -104,17 +150,13 @@ Spatial directions couple dynamically whenever physical phenomena force momentum
 
 In standard dimensional analysis, all masses are lumped into a single fundamental dimension $[M]$. However, in thermal and fluid physics, mass serves two completely distinct physical functions:
 
-```
-                  DUAL ROLES OF MASS
-                  
-Inertial Mass (Mᵢ)                     Thermal / Quantity Mass (Mq)
-──────────────────                     ───────────────────────────
-• Dynamical resistance to              • Measure of physical substance /
-  acceleration (Newton's 2nd Law)        heat capacity storage
-• F = Mᵢ a                             • Q = Mq c ΔT
-• Kinetic Energy: (1/2) Mᵢ v²          • Internal Energy: U = Mq u
-• Units of Force: [F] = Mᵢ L T⁻²       • Specific Heat: [c] = Mᵢ L² T⁻² Mq⁻¹ Θ⁻¹
-```
+| Mass Role | Inertial Mass ($M_i$) | Thermal / Quantity Mass ($M_q$) |
+| :--- | :--- | :--- |
+| **Physical Definition** | Dynamical resistance to acceleration (Newton's 2nd Law) | Measure of physical substance / thermal heat storage |
+| **Constitutive Equation** | $\mathbf{F} = M_i \mathbf{a}$ | $Q = M_q c \Delta T$ |
+| **Energy Expression** | Kinetic Energy: $T = \frac{1}{2} M_i v^2$ | Internal Energy: $U = M_q u$ |
+| **Derived Dimensional Units** | Force: $[F] = M_i L T^{-2}$ | Specific Heat: $[c] = M_i L^2 T^{-2} M_q^{-1} \Theta^{-1}$ |
+| **Coupling Mechanism** | Decoupled in low-speed forced convection | Coupled in supersonic shocks and intense viscous dissipation |
 
 ### 3.1 Physical Distinctions and Dimensional Identities
 

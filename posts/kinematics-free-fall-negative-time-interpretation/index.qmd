@@ -25,23 +25,12 @@ This article is published under the **Preprints** category. It represents an act
 
 Kinematics provides the fundamental mathematical language of physics: the mapping between continuous temporal intervals and spatial trajectories.
 
-```
-                     THE KINEMATIC DERIVATIVE HIERARCHY
-  ┌─────────────────────────────────────────────────────────────────────────┐
-  │  Position r(t)                                                          │
-  │    │                                                                    │
-  │    ▼ d/dt                                                               │
-  │  Velocity v(t) = ṙ(t) = dr/dt                                           │
-  │    │                                                                    │
-  │    ▼ d/dt                                                               │
-  │  Acceleration a(t) = v̇(t) = r̈(t) = d²r/dt²                             │
-  │    │                                                                    │
-  │    ▼ d/dt                                                               │
-  │  Jerk j(t) = ȧ(t) = r⃛(t) = d³r/dt³                                     │
-  │    │                                                                    │
-  │    ▼ d/dt                                                               │
-  │  Snap / Jounce s(t) = j̇(t) = r⃜(t) = d⁴r/dt⁴                            │
-  └─────────────────────────────────────────────────────────────────────────┘
+```{mermaid}
+flowchart TD
+    R["Position r(t)"] -->|"d/dt (Time Derivative)"| V["Velocity v(t) = dr/dt"]
+    V -->|"d/dt (Time Derivative)"| A["Acceleration a(t) = d²r/dt²"]
+    A -->|"d/dt (Time Derivative)"| J["Jerk j(t) = d³r/dt³"]
+    J -->|"d/dt (Time Derivative)"| S["Snap / Jounce s(t) = d⁴r/dt⁴"]
 ```
 
 In modern high-speed railway design, elevator engineering, and aerospace trajectory synthesis, higher derivatives such as **jerk** ($j = \dot{a}$) and **snap** ($s = \ddot{a}$) are critical: discontinuous acceleration produces infinite jerk, inducing severe mechanical fatigue and biological whiplash in human passengers.
@@ -89,18 +78,13 @@ When the acceleration vector is constant in magnitude and direction ($\mathbf{a}
    Because velocity changes linearly with time under constant acceleration:
    $$\bar{v} = \frac{v_0 + v(t)}{2} \implies x(t) - x_0 = \left( \frac{v_0 + v(t)}{2} \right) t \tag{8}$$
 
-```
-                   THE SUVAT SYSTEM AT A GLANCE
-  ┌────────────────────────────────┬──────────────────────────────────────────┐
-  │ Equation                       │ Missing Variable                         │
-  ├────────────────────────────────┼──────────────────────────────────────────┤
-  │ v = v₀ + a t                   │ Displacement (x - x₀)                    │
-  │ x = x₀ + v₀ t + ½ a t²         │ Final Velocity v                         │
-  │ v² = v₀² + 2 a (x - x₀)        │ Time t                                   │
-  │ x = x₀ + ½ (v₀ + v) t          │ Acceleration a                           │
-  │ x = x₀ + v t - ½ a t²          │ Initial Velocity v₀                      │
-  └────────────────────────────────┴──────────────────────────────────────────┘
-```
+| SUVAT Equation | Excluded Variable | Physical Derivation Basis |
+| :--- | :--- | :--- |
+| $v = v_0 + a t$ | Displacement $(x - x_0)$ | Direct temporal integration of acceleration $\int a\,dt$ |
+| $x = x_0 + v_0 t + \frac{1}{2} a t^2$ | Final Velocity $v$ | Double integration of acceleration $\iint a\,dt^2$ |
+| $v^2 = v_0^2 + 2 a (x - x_0)$ | Elapsed Time $t$ | Spatial chain-rule integration $v \frac{dv}{dx} = a$ |
+| $x = x_0 + \frac{1}{2} (v_0 + v) t$ | Acceleration $a$ | Mean value theorem for linear velocity profiles |
+| $x = x_0 + v t - \frac{1}{2} a t^2$ | Initial Velocity $v_0$ | Backward integration from final velocity state |
 
 ---
 
@@ -119,22 +103,6 @@ v^2(y) &= v_0^2 - 2 g (y - y_0)
 \end{aligned} \tag{10}$$
 
 ### Key Kinematic Milestones of Free Fall
-
-```
-                         FREE FALL PARABOLIC ARC
-           y ▲
-             │                     Peak: (t_apex, y_max)
-             │                          v = 0
-             │                           ●
-             │                       /       \
-             │                      /         \
-        y₀ ──┼───────●             /           \
-             │    (t=0, v₀)       /             \
-             │                   /               \
-             │                  /                 \
-         0 ──┴─────────────────●───────────────────●────────► t
-                              t_neg < 0           t_land > 0
-```
 
 1. **Time to Reach Apogee (Peak Height):**
    Setting $v(t_{\text{apex}}) = 0$:
@@ -175,23 +143,96 @@ In elementary textbooks, students are almost universally instructed:
 
 **This dismissal is fundamentally mistaken.** Mathematics does not produce "meaningless artifacts" by accident. The quadratic equation (14) does not know that a human hand released the stone at $t = 0$. The differential equation $\ddot{y} = -g$ governs a smooth, unbroken parabola extending across the entire real number line $t \in (-\infty, +\infty)$.
 
-```
-                    THE VIRTUAL CONTINUATION PARABOLA
-        y ▲
-          │                     Apex (t_apex, y_max)
-          │                          ●
-          │                       /     \
-          │                      /       \
-     h ───┼───────────●         /         \
-          │         (t=0, v₀)  /           \
-          │       (Actual Launch)           \  (Actual Descent)
-          │                   /               \
-          │                  /                 \
-        0 ┼─────────────────●───────────────────●────────► t
-          │               t₋ < 0               t₊ > 0
-          │        (Virtual Past Launch)   (Actual Landing)
-          │
-          │◄──── Δt_virtual ────►│
+```{python}
+#| label: fig-virtual-parabola
+#| fig-cap: "The Complete Free-Fall Kinematic Trajectory showing Altitude y(t) and Velocity v(t). The solid curve represents actual physical flight (t >= 0); the dashed curve represents the virtual past continuation (t < 0) originating at t_neg."
+#| code-fold: true
+#| code-summary: "Show Python generation code"
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Parameters for Cliff Benchmark
+h = 45.0      # Cliff height in meters
+v0 = 20.0     # Initial upward velocity in m/s
+g = 10.0      # Gravity in m/s^2
+
+# Calculate key roots and apex
+v_ground = np.sqrt(v0**2 + 2 * g * h)
+t_neg = (v0 - v_ground) / g   # ~ -1.61 s
+t_land = (v0 + v_ground) / g  # ~ +5.61 s
+t_apex = v0 / g               # 2.0 s
+y_apex = h + (v0**2) / (2 * g)# 65.0 m
+
+# Time domain
+t_past = np.linspace(t_neg, 0.0, 150)
+t_future = np.linspace(0.0, t_land, 350)
+t_all = np.linspace(t_neg - 0.5, t_land + 0.5, 500)
+
+y_past = h + v0 * t_past - 0.5 * g * t_past**2
+y_future = h + v0 * t_future - 0.5 * g * t_future**2
+
+v_past = v0 - g * t_past
+v_future = v0 - g * t_future
+
+# Create professional two-panel figure
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5), dpi=150)
+plt.style.use('seaborn-v0_8-whitegrid' if 'seaborn-v0_8-whitegrid' in plt.style.available else 'default')
+
+# ----------------- PANEL 1: Position y(t) -----------------
+ax1.plot(t_past, y_past, '--', color='#d9534f', linewidth=2.5, label='Virtual Past Continuation (t < 0)')
+ax1.plot(t_future, y_future, '-', color='#0275d8', linewidth=2.5, label='Actual Physical Flight (t ≥ 0)')
+ax1.axhline(0, color='gray', linestyle=':', linewidth=1)
+ax1.axvline(0, color='gray', linestyle=':', linewidth=1)
+ax1.axhline(h, color='#f0ad4e', linestyle='--', linewidth=1, label=f'Cliff Height h = {h:.0f} m')
+
+# Highlight key milestones
+ax1.plot(t_neg, 0, 'o', color='#d9534f', markersize=8)
+ax1.text(t_neg, -5, f'$t_- = {t_neg:.2f}$ s\n(Virtual Launch)', ha='center', va='top', color='#d9534f', fontweight='bold', fontsize=9)
+
+ax1.plot(0, h, 'o', color='#f0ad4e', markersize=8)
+ax1.text(0.15, h - 2, f'Actual Launch\n$(0, {h:.0f}\\text{{ m}}), v_0={v0:.0f}\\text{{ m/s}}$', ha='left', va='top', color='#8a6d3b', fontsize=9)
+
+ax1.plot(t_apex, y_apex, 'o', color='#5cb85c', markersize=8)
+ax1.text(t_apex, y_apex + 2, f'Apogee: $y_{{\\max}} = {y_apex:.0f}$ m\n$t = {t_apex:.1f}$ s ($v=0$)', ha='center', va='bottom', color='#3c763d', fontweight='bold', fontsize=9)
+
+ax1.plot(t_land, 0, 'o', color='#0275d8', markersize=8)
+ax1.text(t_land, -5, f'$t_+ = {t_land:.2f}$ s\n(Actual Impact)', ha='center', va='top', color='#0275d8', fontweight='bold', fontsize=9)
+
+ax1.set_title('Altitude Profile: Physical vs. Virtual Past Trajectory', fontsize=12, fontweight='bold', pad=10)
+ax1.set_xlabel('Time $t$ (seconds)', fontsize=11)
+ax1.set_ylabel('Altitude $y(t)$ (meters)', fontsize=11)
+ax1.set_ylim(-15, 75)
+ax1.legend(loc='lower left', frameon=True, fontsize=9)
+ax1.grid(True, linestyle='--', alpha=0.6)
+
+# ----------------- PANEL 2: Velocity v(t) -----------------
+ax2.plot(t_past, v_past, '--', color='#d9534f', linewidth=2.5, label='Virtual Velocity (t < 0)')
+ax2.plot(t_future, v_future, '-', color='#0275d8', linewidth=2.5, label='Actual Velocity (t ≥ 0)')
+ax2.axhline(0, color='gray', linestyle=':', linewidth=1)
+ax2.axvline(0, color='gray', linestyle=':', linewidth=1)
+
+# Highlight velocity states
+ax2.plot(t_neg, v_ground, 'o', color='#d9534f', markersize=8)
+ax2.text(t_neg + 0.1, v_ground - 2, f'$+v_{{\\text{{ground}}}} = +{v_ground:.1f}$ m/s', ha='left', va='top', color='#d9534f', fontsize=9)
+
+ax2.plot(0, v0, 'o', color='#f0ad4e', markersize=8)
+ax2.text(0.15, v0 + 1, f'$v_0 = +{v0:.0f}$ m/s', ha='left', va='bottom', color='#8a6d3b', fontsize=9)
+
+ax2.plot(t_apex, 0, 'o', color='#5cb85c', markersize=8)
+ax2.text(t_apex + 0.15, 2, f'$v = 0$ ($t = {t_apex:.1f}$ s)', ha='left', va='bottom', color='#3c763d', fontsize=9)
+
+ax2.plot(t_land, -v_ground, 'o', color='#0275d8', markersize=8)
+ax2.text(t_land - 0.1, -v_ground - 2, f'$-v_{{\\text{{ground}}}} = -{v_ground:.1f}$ m/s', ha='right', va='top', color='#0275d8', fontsize=9)
+
+ax2.set_title('Velocity Evolution: Linear Slope $dv/dt = -g$', fontsize=12, fontweight='bold', pad=10)
+ax2.set_xlabel('Time $t$ (seconds)', fontsize=11)
+ax2.set_ylabel('Velocity $v(t)$ (m/s)', fontsize=11)
+ax2.legend(loc='lower left', frameon=True, fontsize=9)
+ax2.grid(True, linestyle='--', alpha=0.6)
+
+plt.tight_layout()
+plt.show()
 ```
 
 ### Physical Interpretation 1: The Virtual Past Launch (Counterfactual Trajectory)
@@ -244,20 +285,15 @@ In engineering ballistics, artillery fire control, and aerospace rendezvous, the
 
 > *"If a launcher is located at ground level ($y=0$), at what time $t_{\text{launch}}$ and with what launch speed $v_L$ must an interceptor projectile be fired to match the state $(y=h, v=v_0)$ of a target at $t = 0$?"*
 
-```
-              INTERCEPTOR TIME-DELAY MATCHING TAXONOMY
-  ┌─────────────────────────┬──────────────────────────────────────────────────┐
-  │ Physical Requirement    │ Operational Mathematical Mapping                 │
-  ├─────────────────────────┼──────────────────────────────────────────────────┤
-  │ Target Position at t=0  │ y(0) = h                                         │
-  │ Target Velocity at t=0  │ v(0) = +v₀                                       │
-  │ Required Launch Time    │ t_launch = t₋ = (v₀ - √(v₀² + 2gh)) / g < 0      │
-  │ Time Delay Before t=0   │ Δt_advance = |t₋| = (√(v₀² + 2gh) - v₀) / g      │
-  │ Required Launch Speed   │ v_launch = √(v₀² + 2gh)                          │
-  │ Subsequent Landing Time │ t_land = t₊ = (v₀ + √(v₀² + 2gh)) / g > 0        │
-  │ Total Flight Duration   │ T_total = t₊ - t₋ = (2 √(v₀² + 2gh)) / g         │
-  └─────────────────────────┴──────────────────────────────────────────────────┘
-```
+| Kinematic Requirement | Mathematical Formulation | Operational Interpretation |
+| :--- | :--- | :--- |
+| Target Position at $t = 0$ | $y(0) = h$ | Altitude of the launch platform |
+| Target Velocity at $t = 0$ | $v(0) = +v_0$ | Upward release velocity |
+| Required Ground Launch Time | $t_{\text{launch}} = t_- = \frac{v_0 - \sqrt{v_0^2 + 2gh}}{g} < 0$ | Must fire prior to target release |
+| Time Advance Before $t = 0$ | $\Delta t_{\text{advance}} = \|t_-\| = \frac{\sqrt{v_0^2 + 2gh} - v_0}{g}$ | Lead time required for ground interceptor |
+| Required Ground Launch Speed | $v_{\text{launch}} = \sqrt{v_0^2 + 2gh}$ | Velocity dictated by conservation of energy |
+| Target Landing Time | $t_{\text{land}} = t_+ = \frac{v_0 + \sqrt{v_0^2 + 2gh}}{g} > 0$ | Impact time at base of cliff |
+| Total Unified Flight Duration | $\Delta T = t_+ - t_- = \frac{2\sqrt{v_0^2 + 2gh}}{g}$ | Round-trip ground-to-ground time |
 
 Notice the remarkable elegance of the total flight duration:
 
@@ -270,22 +306,6 @@ The difference between the two roots ($t_+ - t_-$) is **identically equal to the
 ## 6. Worked Numerical Example: The Cliff-Drop Benchmark
 
 Let a student stand atop a building of height $h = 45\text{ m}$. At time $t = 0$, the student throws a ball vertically upward with initial speed $v_0 = 20\text{ m/s}$. Take $g = 10\text{ m/s}^2$ for clean analytical arithmetic.
-
-```
-                      WORKED NUMERICAL TRAJECTORY
-          y (meters) ▲
-                     │                Peak: t = 2 s, y = 65 m
-                65 ──┼──────────────────────●
-                     │                     / \
-                     │                    /   \
-                45 ──┼────────● (t=0, v=+20)   \
-                     │       /                  \
-                     │      /                    \
-                     │     /                      \
-                 0 ──┴────●────────────────────────●─────► t (seconds)
-                       t = -1.61 s               t = +5.61 s
-                       v = +36.06 m/s            v = -36.06 m/s
-```
 
 1. **Calculate the Discriminant:**
    $$\sqrt{v_0^2 + 2 g h} = \sqrt{20^2 + 2(10)(45)} = \sqrt{400 + 900} = \sqrt{1300} \approx 36.0555\text{ m/s}$$
@@ -324,17 +344,88 @@ Eliminating $t = \frac{x}{v_0 \cos \theta}$ yields the spatial Cartesian traject
 
 $$y(x) = h + (\tan \theta) x - \frac{g}{2 v_0^2 \cos^2 \theta} x^2 \tag{25}$$
 
-```
-                   2D PROJECTILE WITH NEGATIVE X-INTERCEPT
-         y ▲
-           │                     Apex
-           │                       ●
-           │                    /     \
-       h ──┼──────────● (t=0)  /       \
-           │         /        /         \
-           │        /        /           \
-         0 ┼───────●────────┼─────────────●───────► x
-                 x₋ < 0     0            x₊ > 0
+```{python}
+#| label: fig-2d-projectile
+#| fig-cap: "Two-Dimensional Projectile Parabola in Space y(x). The physical launch occurs from a cliff at (0, h). The dashed curve traces the virtual trajectory backward to its ground intercept at x_neg < 0, demonstrating the virtual ground launch site."
+#| code-fold: true
+#| code-summary: "Show Python generation code"
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Launch parameters
+h = 45.0             # Cliff height (m)
+v0 = 25.0            # Initial speed (m/s)
+theta_deg = 35.0     # Angle above horizontal
+theta = np.radians(theta_deg)
+g = 9.81
+
+# Velocity components
+vx = v0 * np.cos(theta)
+vy0 = v0 * np.sin(theta)
+
+# Solve for time roots y(t) = 0
+disc = np.sqrt(vy0**2 + 2 * g * h)
+t_neg = (vy0 - disc) / g
+t_land = (vy0 + disc) / g
+
+# Spatial coordinates
+x_neg = vx * t_neg
+x_land = vx * t_land
+x_apex = vx * (vy0 / g)
+y_apex = h + (vy0**2) / (2 * g)
+
+# Generate trajectory arrays
+x_past = np.linspace(x_neg, 0.0, 150)
+x_future = np.linspace(0.0, x_land, 350)
+
+y_past = h + np.tan(theta) * x_past - (g / (2 * vx**2)) * x_past**2
+y_future = h + np.tan(theta) * x_future - (g / (2 * vx**2)) * x_future**2
+
+# Plotting
+fig, ax = plt.subplots(figsize=(10, 5), dpi=150)
+
+# Trajectories
+ax.plot(x_past, y_past, '--', color='#d9534f', linewidth=2.5, label='Virtual Ground Trajectory ($x < 0$)')
+ax.plot(x_future, y_future, '-', color='#0275d8', linewidth=2.5, label='Actual Flight Trajectory ($x \\geq 0$)')
+
+# Cliff structure
+ax.fill_between([x_neg - 10, 0], [0, 0], [h, h], color='#e0e0e0', alpha=0.7, hatch='//', label='Cliff Structure')
+ax.plot([0, 0], [0, h], color='black', linewidth=2)
+ax.axhline(0, color='black', linewidth=1.2)
+
+# Key points
+ax.plot(x_neg, 0, 'o', color='#d9534f', markersize=8)
+ax.text(x_neg, -3, f'$x_- = {x_neg:.1f}$ m\n(Virtual Origin)', ha='center', va='top', color='#d9534f', fontweight='bold', fontsize=9)
+
+ax.plot(0, h, 'o', color='#f0ad4e', markersize=8)
+ax.text(1, h + 2, f'Cliff Launch $(0, {h:.0f}\\text{{ m}})$\n$v_0 = {v0:.0f}$ m/s, $\\theta = {theta_deg}^\\circ$', ha='left', va='bottom', color='#8a6d3b', fontsize=9)
+
+ax.plot(x_apex, y_apex, 'o', color='#5cb85c', markersize=8)
+ax.text(x_apex, y_apex + 2, f'Apogee: $y_{{\\max}} = {y_apex:.1f}$ m\n$x = {x_apex:.1f}$ m', ha='center', va='bottom', color='#3c763d', fontweight='bold', fontsize=9)
+
+ax.plot(x_land, 0, 'o', color='#0275d8', markersize=8)
+ax.text(x_land, -3, f'$x_+ = {x_land:.1f}$ m\n(Landing Range)', ha='center', va='top', color='#0275d8', fontweight='bold', fontsize=9)
+
+# Tangent velocity vectors
+scale = 0.5
+ax.annotate('', xy=(vx * scale, h + vy0 * scale), xytext=(0, h),
+            arrowprops=dict(arrowstyle='->', color='#8a6d3b', lw=2))
+
+v_ground_y = np.sqrt(vy0**2 + 2 * g * h)
+ax.annotate('', xy=(x_neg + vx * scale, v_ground_y * scale), xytext=(x_neg, 0),
+            arrowprops=dict(arrowstyle='->', color='#d9534f', lw=2))
+
+ax.set_title('2D Projectile Trajectory with Spatial Negative Intercept $x_-$', fontsize=12, fontweight='bold', pad=10)
+ax.set_xlabel('Horizontal Distance $x$ (meters)', fontsize=11)
+ax.set_ylabel('Vertical Altitude $y$ (meters)', fontsize=11)
+ax.set_xlim(x_neg - 8, x_land + 8)
+ax.set_ylim(-8, y_apex + 8)
+ax.legend(loc='upper right', frameon=True, fontsize=9)
+ax.grid(True, linestyle='--', alpha=0.5)
+
+plt.tight_layout()
+plt.show()
 ```
 
 Just as in the 1D case, setting $y(x) = 0$ yields two spatial roots: $x_+ > 0$ (the forward range where the projectile hits the ground) and $x_- < 0$ (the negative horizontal distance behind the launch platform where the parabola intersects the ground plane).
