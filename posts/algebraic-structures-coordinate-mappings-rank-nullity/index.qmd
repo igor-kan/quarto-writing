@@ -451,6 +451,155 @@ Markdown(header + "\n".join([f"| **{s[0]}** | {s[1]} | {s[2]} | {s[3]} |" for s 
    Adding the two dimensions:
    $$\operatorname{nullity}(T) + \operatorname{rank}(T) = k + (n - k) = n \quad \blacksquare$$
 
+### 7.3 Gilbert Strang's "Big Picture": The Fundamental Subspace Decomposition
+
+The interaction between the four fundamental subspaces of any matrix $A \in \mathbb{F}^{m \times n}$ is encapsulated by Gilbert Strang's celebrated decomposition:
+
+```{python}
+#| label: fig-strang-fundamental-subspaces
+#| fig-cap: "The Fundamental Subspaces Decomposition of Linear Algebra (Gilbert Strang's 'Big Picture'). The matrix A decomposes the domain F^n into the row space and null space, and the codomain F^m into the column space and left null space. The restriction of A to row(A) is an invertible isomorphism (bijection) onto col(A), while ker(A) collapses entirely onto the zero vector 0."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Four Fundamental Subspaces Decomposition Diagram"
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+fig, ax = plt.subplots(figsize=(11, 4.8), dpi=200)
+ax.set_xlim(0, 11.5)
+ax.set_ylim(0, 4.8)
+ax.axis('off')
+
+# Domain Space F^n (Left decomposition into Row Space and Null Space)
+row_box = patches.FancyBboxPatch((0.5, 2.45), 3.8, 1.55, boxstyle="round,pad=0.08,rounding_size=0.15",
+                                 facecolor="#ebf8ff", edgecolor="#2b6cb0", lw=2.0)
+ker_box = patches.FancyBboxPatch((0.5, 0.55), 3.8, 1.55, boxstyle="round,pad=0.08,rounding_size=0.15",
+                                 facecolor="#f0fff4", edgecolor="#2f855a", lw=2.2)
+ax.add_patch(row_box)
+ax.add_patch(ker_box)
+
+ax.text(2.4, 4.35, r"Domain Space $\mathbb{F}^n$ ($n$ Dimensions)", fontsize=10.5, fontweight='bold', ha='center', color='#1a202c')
+ax.text(2.4, 3.45, r"Row Space $\mathrm{row}(A) = \mathrm{col}(A^T) = \mathrm{ker}(A)^\perp$", fontsize=9.2, fontweight='bold', ha='center', color='#2b6cb0')
+ax.text(2.4, 2.95, r"Dimension $= r = \mathrm{rank}(A)$" + "\n(Orthogonal Complement to Null Space)", fontsize=8.8, ha='center', color='#2d3748')
+
+ax.text(2.4, 1.55, r"Kernel / Null Space $\mathrm{ker}(A)$", fontsize=10, fontweight='bold', ha='center', color='#2f855a')
+ax.text(2.4, 1.00, r"Dimension $= p = n - r = \mathrm{nullity}(A)$" + "\n" + r"All $\mathbf{x} \in \mathbb{F}^n$ such that $A\mathbf{x} = \mathbf{0}$",
+        fontsize=8.8, ha='center', color='#1a202c')
+
+# Codomain Space F^m (Right decomposition into Column Space and Left Null Space)
+im_box = patches.FancyBboxPatch((7.1, 2.45), 3.8, 1.55, boxstyle="round,pad=0.08,rounding_size=0.15",
+                                facecolor="#faf5ff", edgecolor="#6b46c1", lw=2.0)
+left_ker_box = patches.FancyBboxPatch((7.1, 0.55), 3.8, 1.55, boxstyle="round,pad=0.08,rounding_size=0.15",
+                                      facecolor="#fffaf0", edgecolor="#dd6b20", lw=2.2)
+ax.add_patch(im_box)
+ax.add_patch(left_ker_box)
+
+ax.text(9.0, 4.35, r"Codomain Space $\mathbb{F}^m$ ($m$ Dimensions)", fontsize=10.5, fontweight='bold', ha='center', color='#1a202c')
+ax.text(9.0, 3.45, r"Image / Column Space $\mathrm{col}(A) = \mathrm{im}(A)$", fontsize=9.2, fontweight='bold', ha='center', color='#6b46c1')
+ax.text(9.0, 2.95, r"Dimension $= r = \mathrm{rank}(A)$" + "\n(Range of Linear Transformation $A$)", fontsize=8.8, ha='center', color='#2d3748')
+
+ax.text(9.0, 1.55, r"Left Null Space $\mathrm{ker}(A^T) = \mathrm{col}(A)^\perp$", fontsize=9.8, fontweight='bold', ha='center', color='#dd6b20')
+ax.text(9.0, 1.00, r"Dimension $= m - r$" + "\n" + r"Orthogonal Complement to Column Space",
+        fontsize=8.8, ha='center', color='#1a202c')
+
+# Mapping arrows across middle
+ax.annotate("", xy=(6.95, 3.25), xytext=(4.45, 3.25),
+            arrowprops=dict(arrowstyle="-|>,head_width=0.3,head_length=0.5", lw=2.2, color="#2b6cb0"))
+ax.text(5.7, 3.55, r"Bijection $A|_{\mathrm{row}(A)}$", fontsize=9.5, fontweight='bold', ha='center', color="#2b6cb0")
+ax.text(5.7, 3.05, r"Isomorphism $\cong$", fontsize=9.0, ha='center', color="#4a5568")
+
+ax.annotate("", xy=(6.95, 1.32), xytext=(4.45, 1.32),
+            arrowprops=dict(arrowstyle="-|>,head_width=0.3,head_length=0.5", lw=2.5, color="#2f855a"))
+ax.text(5.7, 1.65, r"Null Projection $A\mathbf{x} = \mathbf{0}$", fontsize=9.5, fontweight='bold', ha='center', color="#2f855a")
+
+ax.set_title("The Four Fundamental Subspaces of Linear Algebra ($A \\in \\mathbb{F}^{m \\times n}$)", fontsize=12, fontweight='bold', pad=6)
+plt.tight_layout()
+plt.show()
+```
+
+#### Detailed Breakdown of Linear Algebra Terms in the Diagram
+
+1. **Domain Space $\mathbb{F}^n$:**  
+   The $n$-dimensional vector space of all input coordinate vectors $\mathbf{x} = (x_1, \dots, x_n)^T$.
+2. **Row Space $\operatorname{row}(A) = \operatorname{col}(A^T) \subseteq \mathbb{F}^n$:**  
+   The subspace spanned by the row vectors of $A$ (or column vectors of $A^T$).  
+   * **Dimension:** $\dim(\operatorname{row}(A)) = r = \operatorname{rank}(A)$.
+   * **Orthogonal Complement:** Under the standard inner product, $\operatorname{row}(A) = \ker(A)^\perp$. That is, every vector in the row space is orthogonal to every vector in the null space:
+     $$\forall \mathbf{x}_r \in \operatorname{row}(A), \; \forall \mathbf{x}_n \in \ker(A) \implies \mathbf{x}_r^T \mathbf{x}_n = 0$$
+3. **Kernel / Null Space $\ker(A) \subseteq \mathbb{F}^n$:**  
+   The subspace of all input vectors that $A$ maps to the zero vector:
+   $$\ker(A) = \{\mathbf{x} \in \mathbb{F}^n \mid A\mathbf{x} = \mathbf{0}\}$$
+   * **Dimension:** $\dim(\ker(A)) = p = n - r = \operatorname{nullity}(A)$.
+4. **Orthogonal Direct Sum Decomposition of the Domain:**  
+   Every vector $\mathbf{x} \in \mathbb{F}^n$ can be decomposed **uniquely** into a row-space component and a null-space component:
+   $$\mathbb{F}^n = \operatorname{row}(A) \oplus \ker(A) \implies \mathbf{x} = \mathbf{x}_{\text{row}} + \mathbf{x}_{\text{null}}$$
+   where $\mathbf{x}_{\text{row}} \in \operatorname{row}(A)$ and $\mathbf{x}_{\text{null}} \in \ker(A)$.  
+   Applying the linear transformation $A$:
+   $$A\mathbf{x} = A(\mathbf{x}_{\text{row}} + \mathbf{x}_{\text{null}}) = A\mathbf{x}_{\text{row}} + A\mathbf{x}_{\text{null}} = A\mathbf{x}_{\text{row}} + \mathbf{0} = A\mathbf{x}_{\text{row}} \tag{7}$$
+   The entire null-space component is annihilated; only the row-space component governs the output!
+5. **Codomain Space $\mathbb{F}^m$:**  
+   The $m$-dimensional vector space of outputs $\mathbf{y} \in \mathbb{F}^m$.
+6. **Column Space / Image $\operatorname{col}(A) = \operatorname{im}(A) \subseteq \mathbb{F}^m$:**  
+   The subspace spanned by the column vectors of $A$, representing the reachable outputs (range) of the operator.  
+   * **Dimension:** $\dim(\operatorname{col}(A)) = r = \operatorname{rank}(A)$.
+7. **Left Null Space $\ker(A^T) \subseteq \mathbb{F}^m$:**  
+   The subspace of all vectors orthogonal to every column in $A$:
+   $$\ker(A^T) = \{\mathbf{y} \in \mathbb{F}^m \mid A^T \mathbf{y} = \mathbf{0}\} = \{\mathbf{y} \in \mathbb{F}^m \mid \mathbf{y}^T A = \mathbf{0}^T\}$$
+   * **Dimension:** $\dim(\ker(A^T)) = m - r$.
+   * **Fredholm Alternative:** A linear system $A\mathbf{x} = \mathbf{b}$ has a solution if and only if $\mathbf{b} \in \operatorname{col}(A) = \ker(A^T)^\perp$ (i.e., $\mathbf{b}$ is orthogonal to all vectors in the left null space).
+8. **The Bijective Isomorphism $A|_{\operatorname{row}(A)}: \operatorname{row}(A) \xrightarrow{\cong} \operatorname{col}(A)$:**  
+   Although $A: \mathbb{F}^n \to \mathbb{F}^m$ is not invertible whenever $n \neq m$ or $\ker(A) \neq \{\mathbf{0}\}$, its restriction to the row space is a **flawless vector space isomorphism**:
+   * **Injectivity:** Suppose $\mathbf{u}, \mathbf{w} \in \operatorname{row}(A)$ satisfy $A\mathbf{u} = A\mathbf{w}$. Then $A(\mathbf{u} - \mathbf{w}) = \mathbf{0}$, which implies $(\mathbf{u} - \mathbf{w}) \in \ker(A)$. But $(\mathbf{u} - \mathbf{w}) \in \operatorname{row}(A)$ as well. Since $\operatorname{row}(A) \cap \ker(A) = \{\mathbf{0}\}$, it follows that $\mathbf{u} - \mathbf{w} = \mathbf{0} \implies \mathbf{u} = \mathbf{w}$.
+   * **Surjectivity:** For every $\mathbf{y} \in \operatorname{col}(A)$, there exists $\mathbf{x} \in \mathbb{F}^n$ with $A\mathbf{x} = \mathbf{y}$. Decomposing $\mathbf{x} = \mathbf{x}_{\text{row}} + \mathbf{x}_{\text{null}}$ gives $A\mathbf{x}_{\text{row}} = \mathbf{y}$, where $\mathbf{x}_{\text{row}} \in \operatorname{row}(A)$.
+   * **Pseudoinverse Connection:** The Moore-Penrose pseudoinverse $A^+ \in \mathbb{F}^{n \times m}$ is the exact inverse of this restriction:
+     $$A^+ A \mathbf{x}_{\text{row}} = \mathbf{x}_{\text{row}}, \qquad A A^+ \mathbf{y} = \mathbf{y} \quad (\forall \mathbf{y} \in \operatorname{col}(A))$$
+
+---
+
+### 7.4 The Dimensional Analysis Bridge: Independent Base Dimensions and Independent $\Pi$-Groups
+
+When applied to physical systems via the Buckingham $\Pi$ Theorem, the field is $\mathbb{F} = \mathbb{Q}$, and the linear operator is the **dimensional matrix** $D \in \mathbb{Q}^{m \times n}$:
+
+$$\begin{array}{rcccl}
+\text{Domain } \mathbb{Q}^n & \xrightarrow{\quad D \quad} & \text{Codomain } \mathbb{Q}^m \\
+(n \text{ physical variables}) & & (m \text{ base dimensions})
+\end{array}$$
+
+#### 1. What Are "Independent Base Dimensions"?
+In engineering textbooks, problems are typically introduced with $m$ nominal base units (e.g., Mass $M$, Length $L$, Time $T$, so $m = 3$). However:
+
+> **The true number of independent base dimensions active in a physical problem is NOT $m$; it is precisely the matrix rank $r = \operatorname{rank}(D) = \dim(\operatorname{col}(D)) \le m$.**
+
+* **When $r = m$:** All nominal base dimensions vary independently. The columns of $D$ span the entire codomain $\mathbb{Q}^m$.
+* **When $r < m$ (Redundant / Coupled Dimensions):** Certain base dimensions never appear independently among the physical variables.  
+  * *Thermal Example:* In pure heat conduction without mechanical dissipation, heat energy $H$ and mechanical energy $M L^2 T^{-2}$ do not interconvert. If temperature $\Theta$ only appears in product with heat capacity $c_p$ ($L^2 T^{-2} \Theta^{-1}$), the dimension $\Theta$ never acts as an independent degree of freedom. The dimensional matrix has rank $r < m$.
+  * *Fluid Example:* If mass $M$ and length $L$ only enter the governing parameters via fluid density $\rho = M/L^3$ and surface tension $\sigma = M/T^2$, neither $M$ nor $L$ varies independently; the dimension ratio $M/L^3$ behaves as a single composite dimension.
+* **Huntley's Directional Dimensions:** Conversely, when physical processes are anisotropic (such as boundary layer flows where streamwise lengths $L_x$ and wall-normal lengths $L_y$ do not rotate into each other), treating length as separate directional vector dimensions $(L_x, L_y, L_z)$ increases the matrix rank $r$, shrinking the nullity $p = n - r$ and yielding more restrictive physical scaling laws!
+
+#### 2. What Are "Multiplicatively Independent $\Pi$-Groups"?
+A set of dimensionless parameters $\{\Pi_1, \Pi_2, \dots, \Pi_p\}$ is defined to be **multiplicatively independent** if no $\Pi$-group can be formed as a power product of the others:
+
+$$\prod_{k=1}^p \Pi_k^{c_k} = 1 \iff c_1 = c_2 = \cdots = c_p = 0 \tag{8}$$
+
+* **Isomorphism to Linear Independence in $\ker(D)$:**  
+  Each dimensionless group $\Pi_k = \prod_{j=1}^n q_j^{x_{jk}}$ corresponds to an exponent coordinate vector $\mathbf{x}^{(k)} \in \mathbb{Q}^n$.  
+  Taking the dimensional exponent product:
+  $$\left[ \prod_{k=1}^p \Pi_k^{c_k} \right] = \prod_{j=1}^n q_j^{\sum_{k=1}^p c_k x_{jk}} = 1 \iff \sum_{k=1}^p c_k \mathbf{x}^{(k)} = \mathbf{0}$$
+  Therefore, **multiplicative independence of $\Pi$-groups is algebraically identical to linear independence of coordinate vectors in the null space $\ker(D) \subseteq \mathbb{Q}^n$!**
+* **Completeness:** Because $\dim(\ker(D)) = p = n - r$, there exist **at most $p$** multiplicatively independent $\Pi$-groups. Any additional dimensionless group $\Pi^*$ must have its exponent vector $\mathbf{x}^* \in \ker(D)$, so:
+  $$\mathbf{x}^* = \sum_{k=1}^p \alpha_k \mathbf{x}^{(k)} \implies \Pi^* = \prod_{k=1}^p \Pi_k^{\alpha_k}$$
+* **Basis Changes in $\ker(D)$ (Why Dimensionless Numbers Multiply):**  
+  Just as an abstract vector space has infinitely many bases related by invertible change-of-basis matrices $C \in \operatorname{GL}(p, \mathbb{Q})$, the null space $\ker(D)$ has infinitely many valid $\Pi$-group bases:
+  $$\tilde{\mathbf{x}}^{(i)} = \sum_{j=1}^p C_{ij} \mathbf{x}^{(j)} \iff \tilde{\Pi}_i = \prod_{j=1}^p \Pi_j^{C_{ij}} \tag{9}$$
+  This explains why classical dimensionless groups in fluid dynamics and transport phenomena can be combined freely:
+  * Reynolds number: $\mathrm{Re} = \frac{\rho v L}{\mu}$
+  * Froude number: $\mathrm{Fr} = \frac{v}{\sqrt{g L}}$
+  * Galilei number: $\mathrm{Ga} = \frac{g L^3 \rho^2}{\mu^2} = \frac{\mathrm{Re}^2}{\mathrm{Fr}^2}$
+  * Weber number: $\mathrm{We} = \frac{\rho v^2 L}{\sigma}$
+  * Ohnesorge number: $\mathrm{Oh} = \frac{\mu}{\sqrt{\rho \sigma L}} = \frac{\sqrt{\mathrm{We}}}{\mathrm{Re}}$
+  * Capillary number: $\mathrm{Ca} = \frac{\mu v}{\sigma} = \frac{\mathrm{We}}{\mathrm{Re}}$
+  
+  These classic physical numbers are not distinct laws of nature; **they are simply alternative coordinate bases spanning the exact same kernel subspace $\ker(D)$!**
+
 ---
 
 ## 8. Worked Case Study: Coordinate Mappings on Polynomial Function Spaces
