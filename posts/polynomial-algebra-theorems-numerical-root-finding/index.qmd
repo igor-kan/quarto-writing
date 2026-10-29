@@ -276,13 +276,43 @@ plt.show()
 Divide $P(x) = 2x^4 - 5x^3 + 3x^2 - 7x + 2$ by $(x - 2)$:
 
 * Target root $c = 2$. Coefficients: $[2, -5, 3, -7, 2]$.
-* **Synthetic Division Tableau:**
+* **Programmatically Computed Synthetic Division Tableau:**
 
-| Evaluation Root ($c = 2$) | $x^4$ | $x^3$ | $x^2$ | $x^1$ | $x^0$ (Constant) |
-| :---: | :---: | :---: | :---: | :---: | :---: |
-| **Dividend Coefficients** | $2$ | $-5$ | $3$ | $-7$ | $2$ |
-| **Multiply by $c = 2$** | | $4$ | $-2$ | $2$ | $-10$ |
-| **Quotient Coefficients / Remainder** | **$2$** | **$-1$** | **$1$** | **$-5$** | **$-8$ (Remainder)** |
+```{python}
+#| label: tbl-synthetic-division
+#| code-fold: true
+#| code-summary: "Show Python code executing Horner Synthetic Division and Generating the Tableau"
+
+from IPython.display import Markdown
+
+coeffs_div = [2, -5, 3, -7, 2] # Descending powers: x^4, x^3, x^2, x^1, x^0
+c_val = 2
+
+mult_row = [""]
+quot_row = [coeffs_div[0]]
+for a_k in coeffs_div[1:]:
+    m_val = quot_row[-1] * c_val
+    mult_row.append(f"${m_val:+d}$")
+    quot_row.append(a_k + m_val)
+
+deg = len(coeffs_div) - 1
+headers = [f"Evaluation Root ($c = {c_val}$)"] + [f"$x^{d}$" for d in range(deg, 0, -1)] + ["$x^0$ (Constant)"]
+aligns = [":---:"] * len(headers)
+
+row1 = ["**Dividend Coefficients $a_k$**"] + [f"${a}$" for a in coeffs_div]
+row2 = [f"**Horner Carry ($c \\cdot b_{{k}}$)**"] + mult_row
+row3 = ["**Quotient $b_{k-1}$ / Remainder**"] + [f"**${b}$**" for b in quot_row[:-1]] + [f"**${quot_row[-1]}$ (Remainder $P({c_val})$)**"]
+
+md_tab = (
+    "| " + " | ".join(headers) + " |\n"
+    "| " + " | ".join(aligns) + " |\n"
+    "| " + " | ".join(row1) + " |\n"
+    "| " + " | ".join(row2) + " |\n"
+    "| " + " | ".join(row3) + " |"
+)
+Markdown(md_tab)
+```
+
 * **Result:**
   * Quotient: $q(x) = 2x^3 - x^2 + x - 5$
   * Remainder: $r = -8 \implies P(2) = -8$.
@@ -308,30 +338,143 @@ Examine $P(x) = 2x^4 - 6x^3 + 12x^2 - 18x + 6$:
   3. $3^2 = 9 \nmid 6$ (constant term not divisible by 9).
 * By Eisenstein's Criterion, $P(x)$ is **irreducible** over the field of rational numbers $\mathbb{Q}$.
 
-### 6.4 Worked Example 4: Sturm Sequence Root Counting
+### 6.4 Worked Example 4: Sturm Sequence Root Counting & Aberth-Ehrlich Trajectories
 Isolate the real roots of $P(x) = x^3 - 3x + 1$ on the interval $[-2, 2]$:
-1. Construct Sturm sequence:
-   * $f_0(x) = x^3 - 3x + 1$
-   * $f_1(x) = 3x^2 - 3 = 3(x^2 - 1)$
-   * Divide $f_0$ by $f_1$: $x^3 - 3x + 1 = \frac{x}{3}(3x^2 - 3) + (-2x + 1)$. Negative remainder:
-     $$f_2(x) = 2x - 1$$
-   * Divide $f_1$ by $f_2$: $3x^2 - 3 = \left(\frac{3}{2}x + \frac{3}{4}\right)(2x - 1) + \left(-\frac{9}{4}\right)$. Negative remainder:
-     $$f_3(x) = +\frac{9}{4}$$
-2. Evaluate sign sequence at $x = -2$:
-   * $f_0(-2) = -8 + 6 + 1 = -1 \quad (-)$
-   * $f_1(-2) = 12 - 3 = +9 \quad (+)$
-   * $f_2(-2) = -4 - 1 = -5 \quad (-)$
-   * $f_3(-2) = +9/4 \quad (+)$
-   * Sequence: $(-, +, -, +) \implies V(-2) = 3$ sign changes.
-3. Evaluate sign sequence at $x = 2$:
-   * $f_0(2) = 8 - 6 + 1 = +3 \quad (+)$
-   * $f_1(2) = 12 - 3 = +9 \quad (+)$
-   * $f_2(2) = 4 - 1 = +3 \quad (+)$
-   * $f_3(2) = +9/4 \quad (+)$
-   * Sequence: $(+, +, +, +) \implies V(2) = 0$ sign changes.
-4. **Conclusion:**
-   $$N_{\text{roots}} = V(-2) - V(2) = 3 - 0 = \mathbf{3 \text{ distinct real roots in } [-2, 2]}$$
-   All 3 roots of $x^3 - 3x + 1$ are real and strictly confined inside $[-2, 2]$!
+
+```{python}
+#| label: tbl-sturm-sequence
+#| code-fold: true
+#| code-summary: "Show Python + SymPy code constructing the Sturm Sequence and Root-Isolation Table"
+
+import sympy as sp
+from IPython.display import Markdown
+
+x = sp.Symbol('x')
+f0 = sp.Poly(x**3 - 3*x + 1, x, domain='QQ')
+f1 = f0.diff()
+
+# Construct Sturm chain via negative polynomial remainder: f_{k+1} = -rem(f_{k-1}, f_k)
+sturm_chain = [f0, f1]
+while sturm_chain[-1].degree() > 0:
+    _, rem = sp.div(sturm_chain[-2], sturm_chain[-1], domain='QQ')
+    sturm_chain.append(-rem)
+
+# Evaluate Sturm chain at grid points x_grid = [-2, -1, 0, 1, 2]
+x_pts = [-2, -1, 0, 1, 2]
+def count_sign_changes(vals):
+    non_zero_signs = [1 if v > 0 else -1 for v in vals if v != 0]
+    return sum(1 for i in range(len(non_zero_signs)-1) if non_zero_signs[i] != non_zero_signs[i+1])
+
+rows_sturm = []
+for idx, poly in enumerate(sturm_chain):
+    expr_str = f"${sp.latex(poly.as_expr())}$"
+    evals = []
+    for pt in x_pts:
+        v = poly.eval(pt)
+        sgn = "+" if v > 0 else ("-" if v < 0 else "0")
+        evals.append(f"${sp.latex(v)}$ ($\\mathbf{{{sgn}}}$)")
+    rows_sturm.append(f"| **$f_{idx}(x)$** | {expr_str} | " + " | ".join(evals) + " |")
+
+v_counts = [count_sign_changes([p.eval(pt) for p in sturm_chain]) for pt in x_pts]
+v_row = "| **Sign Changes $V(x)$** | — | " + " | ".join([f"**$V({pt}) = {vc}$**" for pt, vc in zip(x_pts, v_counts)]) + " |"
+
+header = (
+    "| Sturm Term | Exact Polynomial Expression | $x = -2$ | $x = -1$ | $x = 0$ | $x = 1$ | $x = 2$ |\n"
+    "| :---: | :--- | :---: | :---: | :---: | :---: | :---: |\n"
+)
+Markdown(header + "\n".join(rows_sturm) + "\n" + v_row)
+```
+
+Notice that the sign-change counts $V(-2) = 3, V(-1) = 2, V(0) = 2, V(1) = 1, V(2) = 0$ not only prove that there are $V(-2) - V(2) = 3$ distinct real roots in $[-2, 2]$, but also isolate each root into its own sub-interval:
+* One root in $(-2, -1]$ since $V(-2) - V(-1) = 3 - 2 = 1$ ($r_1 \approx -1.8794$)
+* One root in $(0, 1]$ since $V(0) - V(1) = 2 - 1 = 1$ ($r_2 \approx +0.3473$)
+* One root in $(1, 2]$ since $V(1) - V(2) = 1 - 0 = 1$ ($r_3 \approx +1.5321$)
+
+```{python}
+#| label: fig-sturm-aberth-convergence
+#| fig-cap: "Left: Programmatic Visualization of the Sturm Polynomial Sequence f_0(x), f_1(x), f_2(x), f_3(x) isolating the three real roots of P(x) = x³ - 3x + 1. Right: Simultaneous Aberth-Ehrlich electrostatic root-finding trajectories in the complex plane C converging from initial circular guesses onto the 6 eigenvalues of P(x) = x⁶ - 2x⁵ + 3x⁴ - 4x³ + 5x² - 6x + 7."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Sturm Isolation & Aberth-Ehrlich Trajectory Plots"
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5.2), dpi=200)
+
+# Panel 1: Sturm Sequence Polynomials on [-2.1, 2.1]
+x_grid = np.linspace(-2.1, 2.1, 400)
+f0_y = x_grid**3 - 3.0*x_grid + 1.0
+f1_y = 3.0*x_grid**2 - 3.0
+f2_y = 2.0*x_grid - 1.0
+f3_y = np.full_like(x_grid, 2.25)
+
+ax1.plot(x_grid, f0_y, '-', color='#2b6cb0', lw=2.5, label=r'$f_0(x) = P(x) = x^3 - 3x + 1$')
+ax1.plot(x_grid, f1_y, '--', color='#c53030', lw=2.0, label=r'$f_1(x) = P^\prime(x) = 3x^2 - 3$')
+ax1.plot(x_grid, f2_y, '-.', color='#2f855a', lw=2.0, label=r'$f_2(x) = 2x - 1$')
+ax1.plot(x_grid, f3_y, ':', color='#6b46c1', lw=2.0, label=r'$f_3(x) = +9/4$')
+ax1.axhline(0, color='black', lw=1.0)
+
+real_roots = np.roots([1.0, 0.0, -3.0, 1.0])
+ax1.plot(real_roots, np.zeros_like(real_roots), 'o', color='#dd6b20', markersize=8, zorder=5, label='Isolated Real Roots')
+for r_val in sorted(real_roots):
+    ax1.annotate(f'{r_val:.3f}', xy=(r_val, 0), xytext=(r_val, -2.5),
+                 arrowprops=dict(arrowstyle='->', color='#dd6b20', lw=1.4),
+                 fontsize=8.8, fontweight='bold', ha='center', color='#c05621')
+
+ax1.set_title("Sturm Sequence Root Isolation on $[-2, 2]$", fontsize=11.5, fontweight='bold', pad=8)
+ax1.set_xlabel("Real Coordinate $x$", fontsize=10.5)
+ax1.set_ylabel("Polynomial Value $f_k(x)$", fontsize=10.5)
+ax1.set_ylim(-6.5, 6.5)
+ax1.legend(loc='upper left', frameon=True, fontsize=8.5)
+ax1.grid(True, linestyle='--', alpha=0.6)
+
+# Panel 2: Simultaneous Aberth-Ehrlich Trajectories in the Complex Plane
+p_coeffs = np.array([1.0, -2.0, 3.0, -4.0, 5.0, -6.0, 7.0], dtype=complex)
+dp_coeffs = np.polyder(p_coeffs)
+n_deg = len(p_coeffs) - 1
+
+# Initialize 6 guesses on a circle of radius R0 = 2.2 with Golden-angle offset
+angles = np.linspace(0, 2*np.pi, n_deg, endpoint=False) + 0.25
+z = 2.2 * np.exp(1j * angles)
+history = [z.copy()]
+
+for _ in range(14):
+    P_val = np.polyval(p_coeffs, z)
+    dP_val = np.polyval(dp_coeffs, z)
+    w_newton = P_val / dP_val
+    z_new = np.zeros_like(z)
+    for j in range(n_deg):
+        repulsion = np.sum(1.0 / (z[j] - np.delete(z, j)))
+        z_new[j] = z[j] - w_newton[j] / (1.0 - w_newton[j] * repulsion)
+    z = z_new
+    history.append(z.copy())
+
+history = np.array(history) # shape: (steps, n_deg)
+colors_ae = ['#2b6cb0', '#c53030', '#2f855a', '#dd6b20', '#6b46c1', '#319795']
+
+for j in range(n_deg):
+    traj = history[:, j]
+    ax2.plot(traj.real, traj.imag, '-o', color=colors_ae[j], markersize=4, lw=1.6, alpha=0.85,
+             label=f'Trajectory $z_{j+1}^{{(k)}}$' if j < 3 else None)
+    ax2.plot(traj[0].real, traj[0].imag, 's', color=colors_ae[j], markersize=7)
+    ax2.plot(traj[-1].real, traj[-1].imag, '*', color='black', markersize=11, zorder=6)
+
+ax2.plot([], [], 's', color='gray', label='Initial Circular Guesses $z_j^{(0)}$')
+ax2.plot([], [], '*', color='black', markersize=10, label='Converged Eigenvalues $z_j^*$')
+ax2.axhline(0, color='black', lw=0.8, alpha=0.5)
+ax2.axvline(0, color='black', lw=0.8, alpha=0.5)
+ax2.set_aspect('equal', 'box')
+ax2.set_xlim(-2.6, 2.6)
+ax2.set_ylim(-2.6, 2.6)
+ax2.set_title("Aberth-Ehrlich Electrostatic Root Trajectories in $\\mathbb{C}$", fontsize=11.5, fontweight='bold', pad=8)
+ax2.set_xlabel("Real Axis $\\mathrm{Re}(z)$", fontsize=10.5)
+ax2.set_ylabel("Imaginary Axis $\\mathrm{Im}(z)$", fontsize=10.5)
+ax2.legend(loc='lower left', frameon=True, fontsize=8.5)
+ax2.grid(True, linestyle='--', alpha=0.6)
+
+plt.tight_layout()
+plt.show()
+```
 
 ---
 

@@ -25,12 +25,89 @@ This article is published under the **Preprints** category. It represents an act
 
 Kinematics provides the fundamental mathematical language of physics: the mapping between continuous temporal intervals and spatial trajectories.
 
-```{mermaid}
-flowchart TD
-    R["Position r(t)"] -->|"d/dt (Time Derivative)"| V["Velocity v(t) = dr/dt"]
-    V -->|"d/dt (Time Derivative)"| A["Acceleration a(t) = d²r/dt²"]
-    A -->|"d/dt (Time Derivative)"| J["Jerk j(t) = d³r/dt³"]
-    J -->|"d/dt (Time Derivative)"| S["Snap / Jounce s(t) = d⁴r/dt⁴"]
+```{python}
+#| label: fig-kinematic-hierarchy
+#| fig-cap: "Computer-Generated Kinematic Derivative and Integral Hierarchy. Left: Bidirectional calculus chain linking Position r(t), Velocity v(t), Acceleration a(t), Jerk j(t), and Snap s(t) via differentiation (d/dt) and integration (∫dt). Right: Normalized temporal profiles for a cubic trajectory r(t) = t³ - 3t."
+#| code-fold: true
+#| code-summary: "Show Python code generating this diagram"
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
+fig = plt.figure(figsize=(13, 5.5), dpi=200)
+gs = fig.add_gridspec(1, 2, width_ratios=[1.15, 1.0], wspace=0.18)
+
+# ----------------- LEFT PANEL: Flowchart Diagram -----------------
+ax_flow = fig.add_subplot(gs[0])
+ax_flow.set_xlim(0, 10)
+ax_flow.set_ylim(0, 10)
+ax_flow.axis('off')
+
+nodes = [
+    (5.0, 8.8, "Position  $\\mathbf{r}(t)$", "Spatial coordinates $[L]$", "#e8f4fd", "#0275d8"),
+    (5.0, 6.9, "Velocity  $\\mathbf{v}(t) = \\dot{\\mathbf{r}}(t)$", "Rate of change of position $[L T^{-1}]$", "#eafaf1", "#28a745"),
+    (5.0, 5.0, "Acceleration  $\\mathbf{a}(t) = \\ddot{\\mathbf{r}}(t)$", "Rate of change of velocity $[L T^{-2}]$", "#fef9e7", "#d39e00"),
+    (5.0, 3.1, "Jerk  $\\mathbf{j}(t) = \\dddot{\\mathbf{r}}(t)$", "Rate of change of acceleration $[L T^{-3}]$", "#fdedec", "#d9534f"),
+    (5.0, 1.2, "Snap (Jounce)  $\\mathbf{s}(t) = \\mathbf{r}^{(4)}(t)$", "Fourth time derivative $[L T^{-4}]$", "#f4ecf7", "#8e44ad")
+]
+
+box_w, box_h = 6.2, 1.15
+for cx, cy, title, sub, bg_col, edge_col in nodes:
+    box = mpatches.FancyBboxPatch(
+        (cx - box_w / 2, cy - box_h / 2), box_w, box_h,
+        boxstyle="round,pad=0.08,rounding_size=0.18",
+        facecolor=bg_col, edgecolor=edge_col, linewidth=2.0
+    )
+    ax_flow.add_patch(box)
+    ax_flow.text(cx, cy + 0.16, title, ha='center', va='center', fontsize=10.5, fontweight='bold', color='#1a1a1a')
+    ax_flow.text(cx, cy - 0.24, sub, ha='center', va='center', fontsize=8.5, color='#4a4a4a')
+
+# Downward d/dt arrows (Left side) and Upward integral arrows (Right side)
+for idx in range(len(nodes) - 1):
+    y_top = nodes[idx][1] - box_h / 2
+    y_bot = nodes[idx + 1][1] + box_h / 2
+    
+    # Downward differentiation arrow
+    ax_flow.annotate(
+        '', xy=(3.2, y_bot + 0.02), xytext=(3.2, y_top - 0.02),
+        arrowprops=dict(arrowstyle='->', color='#c0392b', lw=1.8)
+    )
+    ax_flow.text(2.9, 0.5 * (y_top + y_bot), "$\\frac{d}{dt}$", ha='right', va='center', fontsize=10, color='#c0392b', fontweight='bold')
+    
+    # Upward integration arrow
+    ax_flow.annotate(
+        '', xy=(6.8, y_top - 0.02), xytext=(6.8, y_bot + 0.02),
+        arrowprops=dict(arrowstyle='->', color='#1f618d', lw=1.8)
+    )
+    ax_flow.text(7.1, 0.5 * (y_top + y_bot), "$\\int dt$", ha='left', va='center', fontsize=9.5, color='#1f618d', fontweight='bold')
+
+ax_flow.set_title("Kinematic Calculus Chain", fontsize=12, fontweight='bold', pad=8)
+
+# ----------------- RIGHT PANEL: Derivative Profiles -----------------
+ax_plot = fig.add_subplot(gs[1])
+t = np.linspace(-1.6, 1.6, 300)
+r_t = 0.5 * t**3 - 1.2 * t
+v_t = 1.5 * t**2 - 1.2
+a_t = 3.0 * t
+j_t = np.full_like(t, 3.0)
+
+ax_plot.plot(t, r_t, '-', color='#0275d8', lw=2.3, label='Position $r(t) = \\frac{1}{2}t^3 - 1.2t$')
+ax_plot.plot(t, v_t, '--', color='#28a745', lw=2.2, label='Velocity $v(t) = \\dot{r}(t) = 1.5t^2 - 1.2$')
+ax_plot.plot(t, a_t, '-.', color='#d39e00', lw=2.2, label='Acceleration $a(t) = \\ddot{r}(t) = 3t$')
+ax_plot.plot(t, j_t, ':', color='#d9534f', lw=2.2, label='Jerk $j(t) = \\dddot{r}(t) = 3$')
+
+ax_plot.axhline(0, color='black', lw=0.8, alpha=0.5)
+ax_plot.axvline(0, color='black', lw=0.8, alpha=0.5)
+ax_plot.set_title("Successive Time Derivatives of Motion", fontsize=12, fontweight='bold', pad=8)
+ax_plot.set_xlabel("Time $t$ (s)", fontsize=10.5)
+ax_plot.set_ylabel("Kinematic Magnitude", fontsize=10.5)
+ax_plot.set_ylim(-4.5, 4.5)
+ax_plot.legend(loc='lower right', frameon=True, fontsize=8.5)
+ax_plot.grid(True, linestyle='--', alpha=0.5)
+
+plt.tight_layout()
+plt.show()
 ```
 
 In modern high-speed railway design, elevator engineering, and aerospace trajectory synthesis, higher derivatives such as **jerk** ($j = \dot{a}$) and **snap** ($s = \ddot{a}$) are critical: discontinuous acceleration produces infinite jerk, inducing severe mechanical fatigue and biological whiplash in human passengers.
@@ -78,13 +155,38 @@ When the acceleration vector is constant in magnitude and direction ($\mathbf{a}
    Because velocity changes linearly with time under constant acceleration:
    $$\bar{v} = \frac{v_0 + v(t)}{2} \implies x(t) - x_0 = \left( \frac{v_0 + v(t)}{2} \right) t \tag{8}$$
 
-| SUVAT Equation | Excluded Variable | Physical Derivation Basis |
-| :--- | :--- | :--- |
-| $v = v_0 + a t$ | Displacement $(x - x_0)$ | Direct temporal integration of acceleration $\int a\,dt$ |
-| $x = x_0 + v_0 t + \frac{1}{2} a t^2$ | Final Velocity $v$ | Double integration of acceleration $\iint a\,dt^2$ |
-| $v^2 = v_0^2 + 2 a (x - x_0)$ | Elapsed Time $t$ | Spatial chain-rule integration $v \frac{dv}{dx} = a$ |
-| $x = x_0 + \frac{1}{2} (v_0 + v) t$ | Acceleration $a$ | Mean value theorem for linear velocity profiles |
-| $x = x_0 + v t - \frac{1}{2} a t^2$ | Initial Velocity $v_0$ | Backward integration from final velocity state |
+```{python}
+#| label: tbl-suvat-system
+#| tbl-cap: "Symbolic Derivation and Verification Table of the Five Canonical SUVAT Equations"
+#| code-fold: true
+#| code-summary: "Show Python SymPy code generating this table"
+
+import sympy as sp
+from IPython.display import Markdown, display
+
+t, a, v0, v, x0, x = sp.symbols('t a v_0 v x_0 x', real=True)
+
+# Derive via symbolic integration and elimination
+v_expr = v0 + sp.integrate(a, (t, 0, t))
+x_expr = x0 + sp.integrate(v0 + a * t, (t, 0, t))
+t_sub = sp.solve(sp.Eq(v, v_expr), t)[0]
+v2_expr = sp.simplify(v0**2 + 2 * a * (x_expr.subs(t, t_sub) - x0))
+
+rows = [
+    ("1", f"$v = {sp.latex(v_expr)}$", "Displacement $(x - x_0)$", "First temporal integral $\\int_0^t a\\,dt'$"),
+    ("2", f"$x = {sp.latex(x_expr)}$", "Final Velocity $v$", "Second temporal integral $\\int_0^t v(t')\\,dt'$"),
+    ("3", f"$v^2 = v_0^2 + 2a(x - x_0)$", "Elapsed Time $t$", "Chain rule elimination $v\\,dv = a\\,dx$"),
+    ("4", f"$x = x_0 + \\frac{{1}}{{2}}(v_0 + v)t$", "Acceleration $a$", "Arithmetic mean of linear velocity profile"),
+    ("5", f"$x = x_0 + vt - \\frac{{1}}{{2}}at^2$", "Initial Velocity $v_0$", "Time-reversed backward integration from $v$")
+]
+
+md_table = "| # | SUVAT Kinematic Identity | Excluded Variable | Analytical Calculus Origin |\n"
+md_table += "| :-: | :--- | :--- | :--- |\n"
+for idx, eq, excl, basis in rows:
+    md_table += f"| **{idx}** | {eq} | {excl} | {basis} |\n"
+
+display(Markdown(md_table))
+```
 
 ---
 
@@ -167,7 +269,6 @@ y_apex = h + (v0**2) / (2 * g)# 65.0 m
 # Time domain
 t_past = np.linspace(t_neg, 0.0, 150)
 t_future = np.linspace(0.0, t_land, 350)
-t_all = np.linspace(t_neg - 0.5, t_land + 0.5, 500)
 
 y_past = h + v0 * t_past - 0.5 * g * t_past**2
 y_future = h + v0 * t_future - 0.5 * g * t_future**2
@@ -176,15 +277,15 @@ v_past = v0 - g * t_past
 v_future = v0 - g * t_future
 
 # Create professional two-panel figure
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5), dpi=150)
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5), dpi=200)
 plt.style.use('seaborn-v0_8-whitegrid' if 'seaborn-v0_8-whitegrid' in plt.style.available else 'default')
 
 # ----------------- PANEL 1: Position y(t) -----------------
-ax1.plot(t_past, y_past, '--', color='#d9534f', linewidth=2.5, label='Virtual Past Continuation (t < 0)')
-ax1.plot(t_future, y_future, '-', color='#0275d8', linewidth=2.5, label='Actual Physical Flight (t ≥ 0)')
+ax1.plot(t_past, y_past, '--', color='#d9534f', linewidth=2.5, label='Virtual Past Continuation ($t < 0$)')
+ax1.plot(t_future, y_future, '-', color='#0275d8', linewidth=2.5, label='Actual Physical Flight ($t \\geq 0$)')
 ax1.axhline(0, color='gray', linestyle=':', linewidth=1)
 ax1.axvline(0, color='gray', linestyle=':', linewidth=1)
-ax1.axhline(h, color='#f0ad4e', linestyle='--', linewidth=1, label=f'Cliff Height h = {h:.0f} m')
+ax1.axhline(h, color='#f0ad4e', linestyle='--', linewidth=1, label=f'Cliff Height $h = {h:.0f}$ m')
 
 # Highlight key milestones
 ax1.plot(t_neg, 0, 'o', color='#d9534f', markersize=8)
@@ -207,8 +308,8 @@ ax1.legend(loc='lower left', frameon=True, fontsize=9)
 ax1.grid(True, linestyle='--', alpha=0.6)
 
 # ----------------- PANEL 2: Velocity v(t) -----------------
-ax2.plot(t_past, v_past, '--', color='#d9534f', linewidth=2.5, label='Virtual Velocity (t < 0)')
-ax2.plot(t_future, v_future, '-', color='#0275d8', linewidth=2.5, label='Actual Velocity (t ≥ 0)')
+ax2.plot(t_past, v_past, '--', color='#d9534f', linewidth=2.5, label='Virtual Velocity ($t < 0$)')
+ax2.plot(t_future, v_future, '-', color='#0275d8', linewidth=2.5, label='Actual Velocity ($t \\geq 0$)')
 ax2.axhline(0, color='gray', linestyle=':', linewidth=1)
 ax2.axvline(0, color='gray', linestyle=':', linewidth=1)
 
@@ -285,15 +386,38 @@ In engineering ballistics, artillery fire control, and aerospace rendezvous, the
 
 > *"If a launcher is located at ground level ($y=0$), at what time $t_{\text{launch}}$ and with what launch speed $v_L$ must an interceptor projectile be fired to match the state $(y=h, v=v_0)$ of a target at $t = 0$?"*
 
-| Kinematic Requirement | Mathematical Formulation | Operational Interpretation |
-| :--- | :--- | :--- |
-| Target Position at $t = 0$ | $y(0) = h$ | Altitude of the launch platform |
-| Target Velocity at $t = 0$ | $v(0) = +v_0$ | Upward release velocity |
-| Required Ground Launch Time | $t_{\text{launch}} = t_- = \frac{v_0 - \sqrt{v_0^2 + 2gh}}{g} < 0$ | Must fire prior to target release |
-| Time Advance Before $t = 0$ | $\Delta t_{\text{advance}} = \|t_-\| = \frac{\sqrt{v_0^2 + 2gh} - v_0}{g}$ | Lead time required for ground interceptor |
-| Required Ground Launch Speed | $v_{\text{launch}} = \sqrt{v_0^2 + 2gh}$ | Velocity dictated by conservation of energy |
-| Target Landing Time | $t_{\text{land}} = t_+ = \frac{v_0 + \sqrt{v_0^2 + 2gh}}{g} > 0$ | Impact time at base of cliff |
-| Total Unified Flight Duration | $\Delta T = t_+ - t_- = \frac{2\sqrt{v_0^2 + 2gh}}{g}$ | Round-trip ground-to-ground time |
+```{python}
+#| label: tbl-interceptor-matching
+#| tbl-cap: "Programmatic Computation of the Interceptor Phase-Space Matching Taxonomy (Evaluated for Benchmark h = 45 m, v_0 = 20 m/s, g = 10 m/s²)"
+#| code-fold: true
+#| code-summary: "Show Python code generating this table"
+
+import numpy as np
+from IPython.display import Markdown, display
+
+h_val, v0_val, g_val = 45.0, 20.0, 10.0
+v_g = np.sqrt(v0_val**2 + 2 * g_val * h_val)
+t_m = (v0_val - v_g) / g_val
+t_p = (v0_val + v_g) / g_val
+dt_tot = t_p - t_m
+
+table_rows = [
+    ("Target Release Altitude", "$y(0) = h$", f"${h_val:.2f}\\text{{ m}}$", "Elevation of upper launch platform"),
+    ("Target Release Velocity", "$v(0) = +v_0$", f"$+{v0_val:.2f}\\text{{ m/s}}$", "Upward velocity imparted at $t = 0$"),
+    ("Ground Launch Intercept Time", "$t_- = \\frac{v_0 - \\sqrt{v_0^2 + 2gh}}{g}$", f"${t_m:.3f}\\text{{ s}}$", "Past instant when virtual projectile left $y = 0$"),
+    ("Required Lead Time Advance", "$\\Delta t_{\\text{lead}} = |t_-|$", f"${abs(t_m):.3f}\\text{{ s}}$", "Advance time ground battery must fire before $t = 0$"),
+    ("Required Ground Launch Speed", "$v_{\\text{ground}} = \\sqrt{v_0^2 + 2gh}$", f"$+{v_g:.2f}\\text{{ m/s}}$", "Initial speed at $y=0$ to crest $h$ with speed $v_0$"),
+    ("Actual Impact Time", "$t_+ = \\frac{v_0 + \\sqrt{v_0^2 + 2gh}}{g}$", f"$+{t_p:.3f}\\text{{ s}}$", "Future instant when projectile strikes $y = 0$"),
+    ("Total Unified Flight Span", "$\\Delta T = t_+ - t_- = \\frac{2v_{\\text{ground}}}{g}$", f"${dt_tot:.3f}\\text{{ s}}$", "Complete ground-to-ground parabolic duration")
+]
+
+md = "| Kinematic Parameter | Analytical Formula | Benchmark Value | Physical / Ballistic Meaning |\n"
+md += "| :--- | :--- | :---: | :--- |\n"
+for name, form, val, desc in table_rows:
+    md += f"| **{name}** | {form} | {val} | {desc} |\n"
+
+display(Markdown(md))
+```
 
 Notice the remarkable elegance of the total flight duration:
 
@@ -383,7 +507,7 @@ y_past = h + np.tan(theta) * x_past - (g / (2 * vx**2)) * x_past**2
 y_future = h + np.tan(theta) * x_future - (g / (2 * vx**2)) * x_future**2
 
 # Plotting
-fig, ax = plt.subplots(figsize=(10, 5), dpi=150)
+fig, ax = plt.subplots(figsize=(10, 5), dpi=200)
 
 # Trajectories
 ax.plot(x_past, y_past, '--', color='#d9534f', linewidth=2.5, label='Virtual Ground Trajectory ($x < 0$)')

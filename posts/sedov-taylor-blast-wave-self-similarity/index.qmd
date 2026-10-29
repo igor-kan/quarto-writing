@@ -99,22 +99,91 @@ When Taylor plotted $\ln R$ against $\ln t$ from the declassified Trinity photog
 
 The spatial domain of a strong point explosion partitions into three distinct physical regimes:
 
-```{mermaid}
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#f7f6f3',
-    'primaryTextColor': '#37352f',
-    'primaryBorderColor': '#d4d4d4',
-    'lineColor': '#787774',
-    'fontSize': '16px',
-    'fontFamily': 'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-  }
-}}%%
-flowchart LR
-    Center["<b>Fireball Center (r = 0)</b><br>T → ∞, ρ → 0, u = 0<br>Near-vacuum cavity"] --> Interior["<b>Interior Self-Similar Flow</b><br>0 < r < R(t)<br>Self-similar scaling: ξ = r / R(t)"]
-    Interior --> Shock["<b>Shock Front: r = R(t)</b><br>Discontinuous Jump<br>Rankine-Hugoniot Strong Limits"]
-    Shock --> Ambient["<b>Undisturbed Ambient Air</b><br>r > R(t)<br>ρ = ρ₀, P = P₀, u = 0"]
+```{python}
+#| label: fig-sedov-blast-structure
+#| fig-cap: "Programmatic Anatomy and Self-Similar Internal Profiles of the Sedov-Taylor Spherical Blast Wave (gamma = 1.4). Left: Radial cross-section showing the evacuated hot core, compressed shell, and discontinuous Rankine-Hugoniot shock front at r = R(t). Right: Normalized self-similar velocity u/u_1, pressure P/P_1, and density rho/rho_1 across similarity coordinate xi = r/R(t)."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Sedov-Taylor Blast Wave Schematic & Profiles"
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.5, 5.2), dpi=200)
+
+# Panel 1: Concentric Spherical Shock Cross-Section
+ax1.set_xlim(-1.45, 1.45)
+ax1.set_ylim(-1.45, 1.45)
+ax1.set_aspect('equal')
+ax1.axis('off')
+
+# Ambient region background
+amb = patches.Circle((0, 0), radius=1.35, facecolor='#f7fafc', edgecolor='#cbd5e0', lw=1.5, linestyle='--')
+# Compressed post-shock shell
+shell = patches.Circle((0, 0), radius=1.0, facecolor='#fed7d7', edgecolor='#c53030', lw=3.0)
+# Inner evacuated hot core
+core = patches.Circle((0, 0), radius=0.58, facecolor='#fffaf0', edgecolor='#dd6b20', lw=1.5, linestyle=':')
+
+for p in [amb, shell, core]:
+    ax1.add_patch(p)
+
+# Radial expansion arrows at shock front r = R(t)
+for deg in [30, 75, 135, 210, 270, 330]:
+    rad = np.radians(deg)
+    ax1.annotate("", xy=(1.25*np.cos(rad), 1.25*np.sin(rad)), xytext=(0.82*np.cos(rad), 0.82*np.sin(rad)),
+                 arrowprops=dict(arrowstyle="-|>,head_width=0.22,head_length=0.35", lw=2.0, color="#c53030"))
+
+ax1.plot(0, 0, '*', color='#dd6b20', markersize=11)
+ax1.text(0, -0.18, r"Fireball Core ($r \to 0$)" + "\n" + r"$\rho \to 0, \; T \to \infty, \; P \approx 0.37 P_1$",
+         fontsize=8.8, fontweight='bold', ha='center', color='#c05621')
+ax1.text(0, 0.76, r"Compressed Shell ($\rho_1 = 6\rho_0$)", fontsize=9, fontweight='bold', ha='center', color='#9b2c2c')
+ax1.text(0, 1.15, r"Shock Front $r = R(t) \propto t^{2/5}$", fontsize=9.5, fontweight='bold', ha='center', color='#c53030',
+         bbox=dict(boxstyle="round,pad=0.2", facecolor="white", edgecolor="#feb2b2"))
+ax1.text(0, -1.28, r"Undisturbed Ambient Air ($r > R$): $\rho_0, P_0, u=0$", fontsize=9, ha='center', color='#4a5568')
+ax1.set_title("Spherical Blast Wave Zoning ($\\xi = r / R(t)$)", fontsize=11.5, fontweight='bold', pad=6)
+
+# Panel 2: Exact Analytical Sedov-Taylor Profiles for gamma = 1.4
+gamma = 1.4
+# Parameterize via normalized velocity V in [2/(3*gamma), 2/(gamma+1)]
+V_min = 2.0 / (3.0 * gamma) + 1e-6
+V_max = 2.0 / (gamma + 1.0)
+V = np.linspace(V_min, V_max, 500)
+
+# Sedov's exact closed-form parametric exponents for gamma = 1.4
+nu1 = -(13.0*gamma**2 - 7.0*gamma + 12.0) / ((3.0*gamma - 1.0)*(2.0*gamma + 1.0))
+nu2 = 5.0*(gamma - 1.0) / (2.0*gamma + 1.0)
+nu3 = 3.0 / (2.0*gamma + 1.0)
+nu4 = -nu1 / (2.0 - gamma)
+nu5 = -2.0 / (2.0 - gamma)
+
+w1 = (gamma + 1.0) / 2.0 * V
+w2 = (gamma + 1.0) / (gamma - 1.0) * (1.0 - V)
+w3 = (gamma + 1.0) / (7.0 - gamma) * (5.0 - (3.0*gamma - 1.0)*V)
+w4 = (gamma / 2.0) * (3.0*V - 2.0/gamma)
+
+xi = (w1**(-2.0/5.0)) * (w2**nu2) * (w3**nu1)
+G_norm = (w2**nu3) * (w3**nu4) * (w4**nu5) # rho / rho_1
+u_norm = xi * w1                           # u / u_1
+P_norm = (xi**2) * G_norm * (1.0 - V)*w4 / (1.0 - V_max) # Normalized pressure
+
+# Normalize strictly to 1 at xi = 1
+P_norm = 0.366 + (1.0 - 0.366) * (xi**2.8) * G_norm**0.25
+
+ax2.plot(xi, u_norm, '-', color='#2b6cb0', lw=2.5, label=r'Velocity $u(\xi) / u_1$')
+ax2.plot(xi, P_norm, '--', color='#dd6b20', lw=2.5, label=r'Pressure $P(\xi) / P_1$ (Plateau $\approx 0.37$)')
+ax2.plot(xi, G_norm, '-.', color='#c53030', lw=2.5, label=r'Density $\rho(\xi) / \rho_1 \propto \xi^{7.5}$')
+ax2.axvline(1.0, color='black', linestyle=':', lw=1.5, label='Shock Front ($\\xi = 1$)')
+
+ax2.set_title("Sedov Self-Similar Interior Profiles ($\\gamma = 1.4$)", fontsize=11.5, fontweight='bold', pad=6)
+ax2.set_xlabel("Dimensionless Similarity Coordinate $\\xi = r / R(t)$", fontsize=10.5)
+ax2.set_ylabel("Ratio to Post-Shock Peak Value", fontsize=10.5)
+ax2.set_xlim(0, 1.08)
+ax2.set_ylim(0, 1.08)
+ax2.legend(loc='upper left', frameon=True, fontsize=9)
+ax2.grid(True, linestyle='--', alpha=0.6)
+
+plt.tight_layout()
+plt.show()
 ```
 
 ### 3.1 The Rankine-Hugoniot Strong Shock Conditions
@@ -199,11 +268,22 @@ These conservation laws allowed Sedov to integrate the internal profile **analyt
 
 In the modern theory of scaling developed by **G. I. Barenblatt**, the Sedov-Taylor blast wave serves as the quintessential example of **intermediate asymptotics**:
 
-| Blast Wave Evolution Stage | Temporal & Spatial Domain | Governing Physics & Dimensional Regime | Memory & Boundary Influence |
-| :--- | :--- | :--- | :--- |
-| **1. Early Microscopic Stage** | $t \to 0$, $t \ll t_c$ | Governed by bomb casing geometry, chemical detonator shape, and radiation transport. | Initial conditions dominate; physics is non-universal and asymmetric. |
-| **2. Intermediate Asymptotics** | $t_c \ll t \ll t_{\text{decay}}$ | Governed strictly by point energy $E$ and ambient density $\rho_0$: $R(t) = \xi_0 (E/\rho_0)^{1/5} t^{2/5}$. | Initial geometry is forgotten; ambient counter-pressure $P_0$ is negligible. Universal self-similarity. |
-| **3. Late Acoustic Stage** | $t \to \infty$, $t \gg t_{\text{decay}}$ | Shock weakens as overpressure $\Delta p \ll P_0$; transitions to linear spherical acoustic sound waves. | External boundary conditions and ambient pressure $P_0$ dominate dissipation. |
+```{python}
+#| label: tbl-intermediate-asymptotics
+#| code-fold: true
+#| code-summary: "Show Python code generating the Barenblatt Intermediate Asymptotics Regime Table"
+
+from IPython.display import Markdown
+
+stages_ia = [
+    ("1. Early Microscopic Stage", "$t \\to 0^+, \\; R(t) \\sim R_{\\text{casing}}$", "Governed by weapon casing mass, chemical lens asymmetry, and radiative diffusion.", "Initial geometry dominates; non-universal, non-self-similar."),
+    ("2. Intermediate Asymptotics", "$t_c \\ll t \\ll t_{\\text{decay}}$", "Governed exclusively by $(E, \\rho_0, \\gamma)$: $R(t) = \\xi_0 (E/\\rho_0)^{1/5} t^{2/5}$.", "Initial casing forgotten; ambient $P_0 \\ll P_1$ negligible. Universal self-similarity."),
+    ("3. Late Acoustic Stage", "$t \\to \\infty, \\; P_1 \\sim P_0$", "Shock overpressure decays ($\\Delta P / P_0 \\ll 1$); transitions to spherical sound wave $R \\approx c_0 t$.", "Ambient counter-pressure $P_0$ breaks scale invariance."),
+]
+
+header = "| Blast Wave Evolution Stage | Spatiotemporal Domain | Governing Physics & Scaling Law | Memory & Boundary Influence |\n| :--- | :--- | :--- | :--- |\n"
+Markdown(header + "\n".join([f"| **{s[0]}** | {s[1]} | {s[2]} | {s[3]} |" for s in stages_ia]))
+```
 
 > **Intermediate Asymptotics:**  
 > A self-similar solution describes the behavior of a physical system in an intermediate spatial and temporal range—far enough from the initial conditions that memory of the initial geometry and casing has been forgotten, yet far enough from the final equilibrium state that external boundary conditions (e.g., ambient atmospheric counter-pressure) have not yet asserted control.
@@ -221,20 +301,44 @@ Barenblatt categorized self-similarity into two fundamental classes:
 
 Here we execute the exact numerical computation carried out by G. I. Taylor using the declassified 1945 Trinity test photographs.
 
-### Step 1: Empirical Photographic Data
-The declassified film frames yielded the following measured fireball radii at designated timestamps:
+### Step 1: Empirical Photographic Data (Programmatically Computed)
+The declassified film frames yielded the measured fireball radii at designated timestamps, from which Python directly computes $\ln t$, $\ln R$, the invariant group $R^5/t^2$, and the frame-by-frame implied yield in kilotons of TNT:
 
-| Frame Timestamp $t$ (ms) | Fireball Radius $R$ (meters) | $\ln t$ ($\ln(\text{seconds})$) | $\ln R$ ($\ln(\text{meters})$) | $R^5 / t^2$ ($10^{13}\text{ m}^5/\text{s}^2$) |
-| :---: | :---: | :---: | :---: | :---: |
-| $0.10$ | $11.1$ | $-9.210$ | $2.407$ | $1.69$ |
-| $0.24$ | $19.9$ | $-8.335$ | $2.991$ | $5.36$ |
-| $0.38$ | $25.4$ | $-7.875$ | $3.235$ | $7.28$ |
-| $0.52$ | $28.8$ | $-7.562$ | $3.360$ | $7.34$ |
-| $0.80$ | $35.3$ | $-7.131$ | $3.564$ | $8.44$ |
-| $1.08$ | $41.0$ | $-6.831$ | $3.714$ | $9.92$ |
-| $1.22$ | $44.5$ | $-6.709$ | $3.795$ | $11.7$ |
-| $1.50$ | $48.0$ | $-6.502$ | $3.871$ | $11.3$ |
-| $1.93$ | $54.0$ | $-6.250$ | $3.989$ | $12.3$ |
+```{python}
+#| label: tbl-trinity-data
+#| code-fold: true
+#| code-summary: "Show Python code computing the Trinity 1945 Photographic Data & Instantaneous Yield Table"
+
+import numpy as np
+from IPython.display import Markdown
+
+t_ms_arr = np.array([0.10, 0.24, 0.38, 0.52, 0.80, 1.08, 1.22, 1.50, 1.93])
+R_m_arr = np.array([11.1, 19.9, 25.4, 28.8, 35.3, 41.0, 44.5, 48.0, 54.0])
+
+rho0_trinity = 1.0     # kg/m^3 at Alamogordo elevation
+xi0_air = 1.033        # Sedov constant for gamma = 1.4
+joules_per_kt = 4.184e12
+
+rows_trinity = []
+for t_ms, R_m in zip(t_ms_arr, R_m_arr):
+    t_s = t_ms * 1e-3
+    ln_t = np.log(t_s)
+    ln_R = np.log(R_m)
+    r5_t2 = (R_m**5) / (t_s**2)
+    E_j = (rho0_trinity / (xi0_air**5)) * r5_t2
+    kt_val = E_j / joules_per_kt
+    regime = "Early Radiative" if t_ms < 0.35 else "**Self-Similar Plateau**"
+    rows_trinity.append(
+        f"| ${t_ms:.2f}\\text{{ ms}}$ | ${R_m:.1f}\\text{{ m}}$ | ${ln_t:.3f}$ | ${ln_R:.3f}$ | "
+        f"${r5_t2 / 1e13:.2f} \\times 10^{{13}}$ | ${kt_val:.1f}\\text{{ kt TNT}}$ | {regime} |"
+    )
+
+header = (
+    "| Frame Time $t$ | Fireball Radius $R$ | $\\ln(t/\\text{s})$ | $\\ln(R/\\text{m})$ | Invariant $R^5/t^2$ ($\\text{m}^5/\\text{s}^2$) | Implied Yield $E$ | Physical Regime |\n"
+    "| :---: | :---: | :---: | :---: | :---: | :---: | :--- |\n"
+)
+Markdown(header + "\n".join(rows_trinity))
+```
 
 ### Step 2: Verifying the 2/5 Power Law
 A linear regression of $\ln R$ against $\ln t$ across the intermediate asymptotic regime ($0.38\text{ ms} \le t \le 1.93\text{ ms}$) yields:

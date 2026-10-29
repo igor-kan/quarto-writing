@@ -35,6 +35,70 @@ When physical phenomena exhibit directional decoupling—such as thin viscous bo
 A **boundary layer** is the thin region adjacent to a solid surface where fluid viscosity cannot be neglected. In high Reynolds number flows past a body, the **no-slip condition** forces fluid particles in contact with the surface to come to rest relative to the wall ($\mathbf{u}_{\text{wall}} = \mathbf{0}$). Transverse to the surface, velocity climbs steeply from zero to the outer free-stream velocity $U_0$ across a layer of characteristic thickness $\delta(x) \ll L$:
 
 ```{python}
+#| label: fig-boundary-layer-schematic
+#| fig-cap: "Programmatic Physical Schematic of a Developing Laminar Boundary Layer over a Flat Plate. The boundary layer thickness grows parabolically as delta(x) = 4.91 sqrt(nu x / U_0), partitioning the domain into an outer inviscid potential region and an inner viscous shear layer where x-momentum diffuses along y."
+#| code-fold: true
+#| code-summary: "Show Python code generating the 2D Boundary Layer Development Schematic"
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+fig, ax = plt.subplots(figsize=(11, 4.6), dpi=200)
+ax.set_xlim(-0.8, 10.5)
+ax.set_ylim(-0.6, 3.8)
+ax.axis('off')
+
+# Flat plate wall
+plate = patches.Rectangle((0, -0.22), 10.0, 0.22, facecolor='#4a5568', edgecolor='#1a202c', lw=2.0, hatch='///')
+ax.add_patch(plate)
+ax.text(5.0, -0.42, r"Solid Wall Boundary: No-Slip Condition ($u = 0, \; v = 0$ at $y = 0$)",
+        fontsize=9.5, fontweight='bold', ha='center', color='#1a202c')
+
+# Developing boundary layer thickness curve delta(x) = c * sqrt(x)
+x_curve = np.linspace(0, 9.8, 300)
+delta_curve = 0.82 * np.sqrt(x_curve)
+ax.fill_between(x_curve, 0, delta_curve, color='#ebf8ff', alpha=0.65)
+ax.plot(x_curve, delta_curve, '--', color='#2b6cb0', lw=2.4, label=r'$\delta(x) \propto \sqrt{\nu x / U_0}$')
+
+# Embedded self-similar velocity profiles at x1 = 1.8, x2 = 4.8, x3 = 8.2
+for x0 in [1.8, 4.8, 8.2]:
+    d_loc = 0.82 * np.sqrt(x0)
+    y_prof = np.linspace(0, d_loc * 1.25, 80)
+    eta = y_prof / d_loc
+    u_prof = np.tanh(1.8 * eta) * 1.15 # Scaled profile width
+    ax.plot([x0, x0], [0, d_loc * 1.25], ':', color='#718096', lw=1.2)
+    ax.plot(x0 + u_prof, y_prof, '-', color='#c53030', lw=2.2)
+    for y_vec in np.linspace(0.2 * d_loc, 1.1 * d_loc, 5):
+        u_vec = np.tanh(1.8 * (y_vec / d_loc)) * 1.15
+        ax.annotate("", xy=(x0 + u_vec, y_vec), xytext=(x0, y_vec),
+                    arrowprops=dict(arrowstyle="-|>,head_width=0.14,head_length=0.22", lw=1.2, color="#c53030"))
+
+# Free-stream arrows upstream
+for y_in in [0.5, 1.2, 1.9, 2.6]:
+    ax.annotate("", xy=(0.0, y_in), xytext=(-0.7, y_in),
+                arrowprops=dict(arrowstyle="-|>,head_width=0.18,head_length=0.28", lw=1.8, color="#2b6cb0"))
+ax.text(-0.75, 3.05, r"Uniform Inflow $U_0$", fontsize=9.5, fontweight='bold', color='#2b6cb0')
+
+# Annotations for regions
+ax.text(4.8, 3.15, r"Outer Inviscid Potential Flow ($y > \delta(x)$): $\quad u \approx U_0, \quad \frac{\partial u}{\partial y} \approx 0, \quad p(x,y) \approx p_e(x)$",
+        fontsize=10, fontweight='bold', color='#2b6cb0', ha='center',
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="#90cdf4"))
+
+ax.text(6.6, 0.72, r"Viscous Boundary Layer ($y \leq \delta(x)$):" + "\n" + r"Intense transverse shear $\tau_{yx} = \mu \frac{\partial u}{\partial y}$",
+        fontsize=9.5, fontweight='bold', color='#c53030', ha='center')
+
+ax.annotate(r"Boundary Layer Edge $\delta(x) = 4.91\sqrt{\frac{\nu x}{U_0}}$",
+            xy=(7.0, 0.82*np.sqrt(7.0)), xytext=(4.5, 2.35),
+            arrowprops=dict(arrowstyle="->", color="#2b6cb0", lw=1.8),
+            fontsize=9.5, fontweight='bold', color="#2b6cb0")
+
+ax.set_title("Anisotropic Length Scaling in a Developing Laminar Boundary Layer ($L_y = \\delta \\ll L_x = L$)", fontsize=11.5, fontweight='bold', pad=6)
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
 #| label: fig-blasius-boundary-layer
 #| fig-cap: "Computer-Generated Numerical Solution of the Laminar Blasius Boundary Layer. The velocity profile u(y)/U_0 = f'(eta) rises steeply from zero at the no-slip solid wall to 99% of free-stream velocity U_0 at eta ≈ 4.91, defining the boundary layer thickness delta(x)."
 #| code-fold: true
@@ -150,13 +214,24 @@ Spatial directions couple dynamically whenever physical phenomena force momentum
 
 In standard dimensional analysis, all masses are lumped into a single fundamental dimension $[M]$. However, in thermal and fluid physics, mass serves two completely distinct physical functions:
 
-| Mass Role | Inertial Mass ($M_i$) | Thermal / Quantity Mass ($M_q$) |
-| :--- | :--- | :--- |
-| **Physical Definition** | Dynamical resistance to acceleration (Newton's 2nd Law) | Measure of physical substance / thermal heat storage |
-| **Constitutive Equation** | $\mathbf{F} = M_i \mathbf{a}$ | $Q = M_q c \Delta T$ |
-| **Energy Expression** | Kinetic Energy: $T = \frac{1}{2} M_i v^2$ | Internal Energy: $U = M_q u$ |
-| **Derived Dimensional Units** | Force: $[F] = M_i L T^{-2}$ | Specific Heat: $[c] = M_i L^2 T^{-2} M_q^{-1} \Theta^{-1}$ |
-| **Coupling Mechanism** | Decoupled in low-speed forced convection | Coupled in supersonic shocks and intense viscous dissipation |
+```{python}
+#| label: tbl-mass-partitioning
+#| code-fold: true
+#| code-summary: "Show Python code generating the Inertial Mass (M_i) vs. Thermal Mass (M_q) Partitioning Table"
+
+from IPython.display import Markdown
+
+mass_rows = [
+    ("Physical Definition", "Dynamical resistance to acceleration (Newton's 2nd Law)", "Measure of matter quantity & thermal heat storage capacity"),
+    ("Constitutive Law", "$\\mathbf{F} = M_i \\mathbf{a}$", "$Q = M_q c_p \\Delta T$"),
+    ("Energy Storage Mode", "Macroscopic Kinetic Energy: $E_k = \\frac{1}{2} M_i v^2$", "Microscopic Internal Thermal Energy: $U = M_q c_v T$"),
+    ("Split Dimensional Units", "Force: $[F] = M_i L T^{-2}$; Density: $[\\rho_i] = M_i L^{-3}$", "Specific Heat: $[c_p] = M_i L^2 T^{-2} M_q^{-1} \\Theta^{-1}$"),
+    ("Decoupling Criterion", "Low-speed forced convection ($\\mathrm{Ma} \\ll 1, \\mathrm{Ec} \\to 0$)", "Couples ($M_i \\equiv M_q$) in hypersonic shocks & viscous heating ($\\mathrm{Ec} \\sim 1$)"),
+]
+
+header = "| Comparison Attribute | Inertial Mass ($M_i$) | Thermal / Quantity Mass ($M_q$) |\n| :--- | :--- | :--- |\n"
+Markdown(header + "\n".join([f"| **{r[0]}** | {r[1]} | {r[2]} |" for r in mass_rows]))
+```
 
 ### 3.1 Physical Distinctions and Dimensional Identities
 
@@ -363,11 +438,32 @@ The non-linear PDE has collapsed into a third-order ordinary differential equati
 
 ## 7. Step-by-Step Summary Table
 
-| Concept | Primary Mathematical Expression | Decoupling / Limiting Condition | Full Coupling Condition |
-| :--- | :--- | :--- | :--- |
-| **Boundary Layer Directions** | $u \partial_x u + v \partial_y u = -\frac{1}{\rho}\partial_x p + \nu \partial_{yy} u$ | High $\mathrm{Re}$, attached laminar flow ($\partial_y p \approx 0$, $L_x \neq L_y$) | Flow separation, 3D turbulence, adverse pressure gradients |
-| **Mass Dimensions ($M_i$ vs $M_q$)** | $[F] = M_i L T^{-2}, \quad [c] = M_i L^2 T^{-2} M_q^{-1} \Theta^{-1}$ | Low speed ($\mathrm{Ma} \ll 1$), zero viscous dissipation ($\mathrm{Ec} \to 0$) | Hypersonic flow, shock fronts, viscous heating ($\mathrm{Ec} \sim 1$) |
-| **Inspectional Navier-Stokes** | $\frac{D\mathbf{u}^*}{Dt^*} = -\nabla^* p^* + \frac{1}{\mathrm{Re}}{\nabla^*}^2\mathbf{u}^*$ | $\mathrm{Re} \to \infty$ outside the boundary layer (Euler potential flow) | $\mathrm{Re} \sim 1$ (Stokes flow) where viscous and inertial forces balance everywhere |
+```{python}
+#| label: tbl-huntley-summary
+#| code-fold: true
+#| code-summary: "Show Python + SymPy code verifying the Huntley Directed Null-Space Basis and Summary Table"
+
+import sympy as sp
+from IPython.display import Markdown
+
+# Verify Huntley Directed Dimensional Matrix null-space basis symbolically via SymPy
+# Columns: [delta, x, U_0, nu], Rows: [L_x, L_y, T]
+D_huntley = sp.Matrix([
+    [0, 1,  1,  0],
+    [1, 0,  0,  2],
+    [0, 0, -1, -1]
+])
+null_basis = D_huntley.nullspace()[0] # [-2, -1, 1, 1]^T ==> delta^-2 x^-1 U0^1 nu^1
+
+summary_rows = [
+    ("Boundary Layer Directions ($L_x, L_y$)", r"$u\partial_x u + v\partial_y u = \nu\partial_{yy} u$", f"Rank $= {D_huntley.rank()}$, Nullity $= 1$: $\\Pi_1 = \\delta^{-2} x^1 U_0^{-1} \\nu^1$", "Separating flow, 3D turbulence, Stokes flow ($\\mathrm{Re} \\ll 1$)"),
+    ("Mass Partitioning ($M_i, M_q$)", r"$[F] = M_i L T^{-2}, \; [c_p] = M_i L^2 T^{-2} M_q^{-1}\Theta^{-1}$", "Low Mach ($\\mathrm{Ma} \\ll 1$) & negligible viscous heating ($\\mathrm{Ec} \\to 0$)", "Compressible shocks ($\\mathrm{Ma} \\geq 1$) & viscous dissipation ($\\mathrm{Ec} \\sim 1$)"),
+    ("Inspectional Navier-Stokes", r"$\frac{D\mathbf{u}^*}{Dt^*} = -\nabla^* p^* + \frac{1}{\mathrm{Re}}{\nabla^*}^2\mathbf{u}^*$", "Outer flow $\\mathrm{Re} \\to \\infty$ reduces to inviscid Euler equations", "Boundary layer thickness $\\delta / L \\sim \\mathrm{Re}^{-1/2}$ restores viscous balance"),
+]
+
+header = "| Methodological Pillar | Governing Formulation | Decoupled / Asymptotic Regime | Full Coupling Regime |\n| :--- | :--- | :--- | :--- |\n"
+Markdown(header + "\n".join([f"| **{s[0]}** | {s[1]} | {s[2]} | {s[3]} |" for s in summary_rows]))
+```
 
 ---
 

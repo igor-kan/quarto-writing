@@ -31,13 +31,51 @@ However, inside a planetary atmosphere, **the Galilean idealization collapses**.
 
 The real physical world introduces a hierarchy of dissipative forces, thermodynamic couplings, and rotating-frame inertial effects:
 
-```{mermaid}
-flowchart TD
-    G["0. Galilean Baseline (Ideal Vacuum)<br/>m a = -m g"] --> B["1. Archimedes Buoyancy<br/>m a = -m g_eff"]
-    B --> S["2. Stokes Linear Viscous Drag (Re ≪ 1)<br/>m a = -m g_eff - b v"]
-    B --> R["3. Rayleigh Quadratic Turbulent Drag (Re ≫ 10³)<br/>m a = -m g_eff + ½ ρ C_d A v²"]
-    R --> H["4. Stratospheric Vertical Gradients<br/>Variable ρ(z) & g(z)"]
-    H --> C["5. Rotating Planetary Non-Inertial Frame<br/>Coriolis Deflection -2m (Ω × v)"]
+```{python}
+#| label: fig-freefall-hierarchy
+#| fig-cap: "Programmatic Architectural Flowchart of the 6-Tier Free-Fall Correction Hierarchy: escalating from the idealized Galilean vacuum baseline through hydrostatic buoyancy, viscous and turbulent aerodynamic dissipation, stratospheric vertical gradients, and non-inertial planetary rotation."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Free-Fall Hierarchy Flowchart"
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+fig, ax = plt.subplots(figsize=(11, 6.5), dpi=200)
+ax.set_xlim(0, 11)
+ax.set_ylim(0, 7)
+ax.axis('off')
+
+# Helper to draw styled rounded boxes
+def draw_node(ax, x, y, w, h, title, eq, facecolor, edgecolor):
+    box = patches.FancyBboxPatch((x - w/2, y - h/2), w, h,
+                                 boxstyle="round,pad=0.12,rounding_size=0.18",
+                                 facecolor=facecolor, edgecolor=edgecolor, linewidth=2.0)
+    ax.add_patch(box)
+    ax.text(x, y + 0.16, title, fontsize=10, fontweight='bold', ha='center', va='center', color='#1a1a1a')
+    ax.text(x, y - 0.18, eq, fontsize=9.5, ha='center', va='center', color='#333333')
+
+# Nodes
+draw_node(ax, 5.5, 6.2, 5.4, 0.9, "0. Galilean Vacuum Baseline", r"$m\ddot{y} = -mg \quad (\text{Ideal Vacuum})$", "#f5f7fa", "#4a5568")
+draw_node(ax, 5.5, 4.7, 5.4, 0.9, "1. Archimedes Hydrostatic Buoyancy", r"$m\ddot{y} = -mg_{\mathrm{eff}} = -mg(1 - \rho_f/\rho_b)$", "#ebf8ff", "#2b6cb0")
+
+draw_node(ax, 2.7, 3.1, 4.6, 1.0, "2a. Stokes Linear Viscous Drag", r"$\mathrm{Re} \ll 1: \quad m\dot{v} = -mg_{\mathrm{eff}} - 3\pi\mu D v$", "#fff5f5", "#c53030")
+draw_node(ax, 8.3, 3.1, 4.8, 1.0, "2b. Rayleigh Quadratic Form Drag", r"$\mathrm{Re} \gg 10^3: \quad m\dot{v} = -mg_{\mathrm{eff}} + \frac{1}{2}\rho_f C_d A v^2$", "#f0fff4", "#2f855a")
+
+draw_node(ax, 8.3, 1.6, 4.8, 0.9, "3. Stratospheric Vertical Gradients", r"$\rho(z) = \rho_0 e^{-z/H}, \quad g(z) = g_0(R_E/(R_E+z))^2$", "#faf5ff", "#6b46c1")
+draw_node(ax, 5.5, 0.4, 6.6, 0.85, "4. Rotating Planetary Frame (Coriolis & Centrifugal)", r"$m\mathbf{a} = m\mathbf{g}_{\mathrm{eff}} + \mathbf{F}_{\mathrm{drag}} - 2m(\mathbf{\Omega}\times\mathbf{v})$", "#fffaf0", "#dd6b20")
+
+# Arrows
+arrow_kw = dict(arrowstyle="-|>,head_width=0.28,head_length=0.45", lw=1.8, color="#4a5568")
+ax.annotate("", xy=(5.5, 5.18), xytext=(5.5, 5.72), arrowprops=arrow_kw)
+ax.annotate("", xy=(2.7, 3.63), xytext=(4.5, 4.22), arrowprops=arrow_kw)
+ax.annotate("", xy=(8.3, 3.63), xytext=(6.5, 4.22), arrowprops=arrow_kw)
+ax.annotate("", xy=(8.3, 2.08), xytext=(8.3, 2.57), arrowprops=arrow_kw)
+ax.annotate("", xy=(4.2, 0.85), xytext=(2.7, 2.57), arrowprops=arrow_kw)
+ax.annotate("", xy=(6.8, 0.85), xytext=(8.3, 1.12), arrowprops=arrow_kw)
+
+ax.set_title("Systematic Escalation of Real-World Free-Fall Mechanics", fontsize=12.5, fontweight='bold', pad=8)
+plt.tight_layout()
+plt.show()
 ```
 
 ---
@@ -48,14 +86,65 @@ Whenever a solid body of mass $m$, volume $V$, and average density $\rho_b = m/V
 
 $$F_{\text{buoyancy}} = +\rho_f V g \hat{\mathbf{j}} \tag{2}$$
 
-```{mermaid}
-flowchart TD
-    subgraph Body["Hydrodynamic Free-Body Equilibrium"]
-        direction TB
-        F_b["▲ Upward Buoyant Force: F_buoyancy = ρ_fluid · V · g"]
-        CG["● Center of Mass (m, V)"]
-        W["▼ Downward Gravitational Weight: W = m · g"]
-    end
+```{python}
+#| label: fig-buoyancy-fbd
+#| fig-cap: "Programmatic Free-Body Schematic of a Solid Sphere Descending Through a Viscous Fluid Column. The hydrostatic pressure gradient generates an upward Archimedes buoyant force F_buoyancy that combines with viscous/turbulent drag F_drag to oppose gravitational weight W = mg."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Hydrodynamic Free-Body Diagram"
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+fig, ax = plt.subplots(figsize=(8.5, 5.2), dpi=200)
+ax.set_xlim(-4.5, 4.5)
+ax.set_ylim(-3.2, 3.5)
+ax.set_aspect('equal')
+ax.axis('off')
+
+# Fluid background box with vertical depth shading
+bg = patches.FancyBboxPatch((-4.2, -3.0), 8.4, 6.2, boxstyle="round,pad=0.1",
+                            facecolor="#eef7fc", edgecolor="#90cdf4", linewidth=1.5)
+ax.add_patch(bg)
+
+# Streamlines around sphere
+y_grid = np.linspace(-2.8, 3.0, 120)
+for x0 in [-2.8, -2.0, -1.3, 1.3, 2.0, 2.8]:
+    r_sq = x0**2 + y_grid**2
+    x_stream = x0 * (1.0 + 0.45 / np.maximum(r_sq, 0.85))
+    ax.plot(x_stream, y_grid, '--', color='#63b3ed', alpha=0.55, lw=1.1)
+
+# Solid Sphere
+sphere = patches.Circle((0, 0), radius=0.95, facecolor='#cbd5e0', edgecolor='#2d3748', linewidth=2.2, zorder=4)
+ax.add_patch(sphere)
+ax.plot(0, 0, 'o', color='#1a202c', markersize=6, zorder=5)
+ax.text(0, -0.32, r"Body $(m, V, \rho_b)$", fontsize=9.5, fontweight='bold', ha='center', zorder=5)
+
+# Downward Gravitational Weight Vector W
+ax.annotate("", xy=(0, -2.65), xytext=(0, 0),
+            arrowprops=dict(arrowstyle="-|>,head_width=0.35,head_length=0.55", lw=2.8, color="#c53030"), zorder=6)
+ax.text(0.25, -2.35, r"Gravitational Weight: $\mathbf{W} = -m g \hat{\mathbf{j}} = -\rho_b V g \hat{\mathbf{j}}$",
+        fontsize=10, fontweight='bold', color="#c53030", va='center')
+
+# Upward Archimedes Buoyancy Vector F_b
+ax.annotate("", xy=(-0.35, 2.15), xytext=(-0.35, 0),
+            arrowprops=dict(arrowstyle="-|>,head_width=0.32,head_length=0.5", lw=2.5, color="#2b6cb0"), zorder=6)
+ax.text(-0.55, 2.35, r"Archimedes Buoyancy: $\mathbf{F}_b = +\rho_f V g \hat{\mathbf{j}}$",
+        fontsize=9.5, fontweight='bold', color="#2b6cb0", ha='right', va='center')
+
+# Upward Aerodynamic/Fluid Drag Vector F_d
+ax.annotate("", xy=(0.35, 1.85), xytext=(0.35, 0),
+            arrowprops=dict(arrowstyle="-|>,head_width=0.32,head_length=0.5", lw=2.5, color="#2f855a"), zorder=6)
+ax.text(0.55, 1.85, r"Fluid Drag: $\mathbf{F}_{\mathrm{drag}}(v)$",
+        fontsize=9.5, fontweight='bold', color="#2f855a", ha='left', va='center')
+
+# Ambient fluid annotation
+ax.text(-3.9, 2.7, r"Ambient Fluid Medium ($\rho_f, \mu$)" + "\n" + r"Hydrostatic Gradient: $\nabla P = -\rho_f g \hat{\mathbf{j}}$",
+        fontsize=9, color="#2b6cb0", bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="#90cdf4"))
+
+ax.set_title("Hydrodynamic Free-Body Force Balance on a Submerged Falling Body", fontsize=11.5, fontweight='bold', pad=6)
+plt.tight_layout()
+plt.show()
 ```
 
 Writing the net static gravitational force:
@@ -68,12 +157,39 @@ $$g_{\text{eff}} = g \left( 1 - \frac{\rho_f}{\rho_b} \right) \tag{4}$$
 
 ### When Does Buoyancy Matter?
 
-| Physical System | Body Density $\rho_b$ | Fluid Density $\rho_f$ | Effective Gravity $g_{\text{eff}}$ | Buoyancy Correction Magnitude |
-| :--- | :--- | :--- | :--- | :--- |
-| **Steel sphere in air** | $7{,}800\text{ kg/m}^3$ | $1.2\text{ kg/m}^3$ | $0.99985 \, g$ | $0.015\%$ (Completely negligible) |
-| **Styrofoam bead in air** | $15\text{ kg/m}^3$ | $1.2\text{ kg/m}^3$ | $0.92000 \, g$ | $8.0\%$ (Moderate engineering impact) |
-| **Sand grain in water** | $2{,}600\text{ kg/m}^3$ | $1{,}000\text{ kg/m}^3$ | $0.61538 \, g$ | $38.5\%$ (Dominant control of settling) |
-| **Helium balloon in air** | $0.18\text{ kg/m}^3$ | $1.2\text{ kg/m}^3$ | $-5.6667 \, g$ | Upward acceleration (Aerostat flight) |
+```{python}
+#| label: tbl-buoyancy-comparison
+#| code-fold: true
+#| code-summary: "Show Python code computing the Hydrostatic Buoyancy Correction Table"
+
+from IPython.display import Markdown
+
+g_std = 9.80665
+systems = [
+    ("Steel sphere in air", 7800.0, 1.225, "Completely negligible (ballistic regime)"),
+    ("Raindrop in air", 1000.0, 1.225, "Minor precision correction"),
+    ("Styrofoam bead in air", 15.0, 1.225, "Moderate engineering impact"),
+    ("Quartz sand grain in water", 2650.0, 1000.0, "Dominant control of sedimentation speed"),
+    ("Helium weather balloon in air", 0.18, 1.225, "Net upward acceleration (Aerostat lift)"),
+]
+
+rows = []
+for name, rho_b, rho_f, note in systems:
+    ratio = rho_f / rho_b
+    g_eff_ratio = 1.0 - ratio
+    g_eff_val = g_std * g_eff_ratio
+    pct_shift = abs(ratio) * 100.0
+    rows.append(
+        f"| **{name}** | ${rho_b:,.2f}\\text{{ kg/m}}^3$ | ${rho_f:,.3f}\\text{{ kg/m}}^3$ | "
+        f"${g_eff_ratio:+.5f}\\,g$ (${g_eff_val:+.2f}\\text{{ m/s}}^2$) | ${pct_shift:.3f}\\%$ — {note} |"
+    )
+
+header = (
+    "| Physical System | Body Density $\\rho_b$ | Fluid Density $\\rho_f$ | Effective Gravity $g_{\\text{eff}}$ | Buoyancy Shift $|\\Delta g / g|$ & Physical Regime |\n"
+    "| :--- | :--- | :--- | :--- | :--- |\n"
+)
+Markdown(header + "\n".join(rows))
+```
 
 ---
 
@@ -471,14 +587,48 @@ plt.show()
 
 ## 7. Comparative Regime Synthesis
 
-| Regime Model | Governing Differential Law | Analytical Velocity Law | Primary Physical Domain of Validity |
-| :--- | :--- | :--- | :--- |
-| **1. Galilean Vacuum** | $m \dot{v} = -m g$ | $v(t) = -g t$ | Lunar/vacuum environments; early flight times $t \ll \tau$; low drops $H \ll 100\text{ m}$. |
-| **2. Buoyant Galilean** | $m \dot{v} = -m g_{\text{eff}}$ | $v(t) = -g\left(1 - \frac{\rho_f}{\rho_b}\right) t$ | Low density-ratio materials $\rho_b / \rho_f < 100$; aerostats; sedimentation. |
-| **3. Stokes Linear Drag** | $m \dot{v} = -m g_{\text{eff}} - b v$ | $v(t) = -v_t \left(1 - e^{-t/\tau}\right)$ | Creeping flow $\mathrm{Re} \ll 1$; fog aerosols, micro-droplets, viscous lubricants. |
-| **4. Rayleigh Quadratic Drag** | $m \dot{v} = -m g_{\text{eff}} + \frac{1}{2}\rho C_d A v^2$ | $v(t) = -v_t \tanh\left(\frac{g t}{v_t}\right)$ | High Reynolds number $\mathrm{Re} \gg 10^3$; macroscopic skydivers, projectiles in troposphere. |
-| **5. Stratospheric Atmosphere** | $m \dot{v} = -m g(z) + \frac{1}{2}\rho_0 e^{-z/H} C_d A v^2$ | Numerical Integration (RK4) | High-altitude supersonic skydives $z > 10\text{ km}$; atmospheric re-entry capsules. |
-| **6. Planetary Coriolis Deflection** | $m \mathbf{a} = -m g \hat{\mathbf{k}} - 2m(\boldsymbol{\Omega} \times \mathbf{v})$ | $d_{\text{east}} = \frac{2\sqrt{2}}{3} \Omega \cos\lambda \sqrt{\frac{h^3}{g}}$ | Precision artillery, drops from towers $h \ge 50\text{ m}$; non-inertial terrestrial frames. |
+```{python}
+#| label: tbl-regime-synthesis
+#| code-fold: true
+#| code-summary: "Show Python code generating the Comparative Regime Synthesis & Numerical Benchmark Table"
+
+import numpy as np
+from IPython.display import Markdown
+
+# Compute characteristic numerical benchmarks for each physical regime
+g_val = 9.80665
+# Stokes fog droplet benchmark (D = 20 um in air, mu = 1.81e-5 Pa.s, rho_b = 1000)
+D_fog = 20e-6
+mu_air = 1.81e-5
+m_fog = (4/3) * np.pi * (D_fog/2)**3 * 1000.0
+b_fog = 3 * np.pi * mu_air * D_fog
+vt_fog = m_fog * g_val / b_fog
+tau_fog = m_fog / b_fog
+
+# Rayleigh skydiver benchmark (m = 80 kg, Cd = 0.7, A = 0.7 m^2, rho = 1.225)
+vt_sky = np.sqrt(2 * 80.0 * g_val / (1.225 * 0.7 * 0.7))
+tau_sky = vt_sky / g_val
+
+# Coriolis 100m equator drop benchmark
+Omega_e = 7.292115e-5
+d_east_100m = (2*np.sqrt(2)/3) * Omega_e * np.sqrt(100.0**3 / g_val) * 100.0 # cm
+
+regimes = [
+    ("1. Galilean Vacuum", r"$m\dot{v} = -mg$", r"$v(t) = -gt$", f"Lunar drop: $v(5\\text{{ s}}) = -{5*g_val:.1f}\\text{{ m/s}}$", "Vacuum; early times $t \\ll \\tau$"),
+    ("2. Buoyant Galilean", r"$m\dot{v} = -mg(1 - \rho_f/\rho_b)$", r"$v(t) = -g_{\mathrm{eff}} t$", "Sand in water: $g_{\\text{eff}} = 0.623\\,g$", "High fluid-to-body density ratio"),
+    ("3. Stokes Linear Drag", r"$m\dot{v} = -mg_{\mathrm{eff}} - 3\pi\mu D v$", r"$v(t) = -v_t(1 - e^{-t/\tau})$", f"$20\\,\\mu\\text{{m}}$ droplet: $v_t = {vt_fog*100:.2f}\\text{{ cm/s}}, \\tau = {tau_fog*1000:.2f}\\text{{ ms}}$", "Creeping flow $\\mathrm{Re} \\ll 1$"),
+    ("4. Rayleigh Quadratic Drag", r"$m\dot{v} = -mg_{\mathrm{eff}} + \frac{1}{2}\rho C_d A v^2$", r"$v(t) = -v_t \tanh(gt/v_t)$", f"Skydiver: $v_t = {vt_sky:.1f}\\text{{ m/s}}, \\tau = {tau_sky:.2f}\\text{{ s}}$", "Turbulent wake $\\mathrm{Re} \\gg 10^3$"),
+    ("5. Stratospheric Profile", r"$m\dot{v} = -mg(z) + \frac{1}{2}\rho_0 e^{-z/H} C_d A v^2$", "Numerical RK45 Integration", "Baumgartner $39\\text{ km}$: Peak Mach $1.25$", "Transonic high-altitude drops $z > 10\\text{ km}$"),
+    ("6. Planetary Coriolis", r"$m\mathbf{a} = m\mathbf{g} - 2m(\mathbf{\Omega}\times\mathbf{v})$", r"$d_{\mathrm{east}} = \frac{2\sqrt{2}}{3}\Omega\cos\lambda\sqrt{h^3/g}$", f"$100\\text{{ m}}$ Equator drop: $d_{{\\text{{east}}}} = {d_east_100m:.2f}\\text{{ cm}}$", "Tall drops $h \\geq 50\\text{ m}$; rotating frame"),
+]
+
+header = (
+    "| Regime Model | Governing Differential Equation | Analytical Velocity / Deflection Law | Computed Benchmark Scale | Domain of Validity |\n"
+    "| :--- | :--- | :--- | :--- | :--- |\n"
+)
+rows = [f"| **{r[0]}** | {r[1]} | {r[2]} | {r[3]} | {r[4]} |" for r in regimes]
+Markdown(header + "\n".join(rows))
+```
 
 ---
 

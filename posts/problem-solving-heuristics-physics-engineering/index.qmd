@@ -26,11 +26,53 @@ In STEM education and industrial engineering, a stark divide separates novice pr
 * **The Novice Approach (Formula Hunting):** The novice scans the problem statement for named variables ($m, v, \theta, t$), searches through reference sheets or memory for any equation containing those symbols, and immediately substitutes numbers into the formula. When equations cannot be combined linearly, or when the system departs slightly from canonical textbook configurations, progress stalls.
 * **The Expert Approach (Structural Representation & Heuristic Probing):** The expert first ignores numerical values entirely. They isolate the physical system, draw free-body or control-volume diagrams, identify active conservation laws and invariants, select coordinate frames that eliminate constraint forces, and test hypothetical solutions against asymptotic limits, symmetries, and dimensional scaling before committing to detailed algebraic or numerical computation.
 
-```{mermaid}
-flowchart TD
-    P1["1. Understand the System<br/>Define boundary, DOFs & constraints"] --> P2["2. Devise a Strategy<br/>Invariants, coordinates & dimensional scaling"]
-    P2 --> P3["3. Execute Symbolically<br/>Preserve symbols; linearize via ε ≪ 1"]
-    P3 --> P4["4. Post-Mortem Audit<br/>Torture-test limits at 0 and ∞; check units"]
+```{python}
+#| label: fig-polya-cycle
+#| fig-cap: "Programmatic Architecture of the 4-Stage Expert Problem-Solving Cycle (adapted from George Polya for Physical & Engineering Systems), illustrating forward symbolic execution and the mandatory post-mortem asymptotic audit loop."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Polya Problem-Solving Cycle Diagram"
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+fig, ax = plt.subplots(figsize=(11, 3.8), dpi=200)
+ax.set_xlim(0, 11.5)
+ax.set_ylim(0, 3.6)
+ax.axis('off')
+
+nodes = [
+    (1.5, 2.1, "1. Isolate System", "Boundary, DOFs &\nconservation laws", "#ebf8ff", "#2b6cb0"),
+    (4.3, 2.1, "2. Devise Strategy", "Symmetries, coordinates\n& Pi-scaling", "#f0fff4", "#2f855a"),
+    (7.1, 2.1, "3. Symbolic Execution", "Preserve parameters;\nexpand in epsilon << 1", "#faf5ff", "#6b46c1"),
+    (9.9, 2.1, "4. Post-Mortem Audit", "Torture-test 0 & inf\nlimits; check units", "#fffaf0", "#dd6b20"),
+]
+
+for x, y, title, sub, fc, ec in nodes:
+    box = patches.FancyBboxPatch((x - 1.15, y - 0.72), 2.3, 1.44,
+                                 boxstyle="round,pad=0.08,rounding_size=0.18",
+                                 facecolor=fc, edgecolor=ec, linewidth=2.0)
+    ax.add_patch(box)
+    ax.text(x, y + 0.25, title, fontsize=9.8, fontweight='bold', ha='center', va='center', color='#1a202c')
+    ax.text(x, y - 0.22, sub, fontsize=8.6, ha='center', va='center', color='#4a5568')
+
+arr = dict(arrowstyle="-|>,head_width=0.25,head_length=0.4", lw=2.0, color="#4a5568")
+ax.annotate("", xy=(3.08, 2.1), xytext=(2.72, 2.1), arrowprops=arr)
+ax.annotate("", xy=(5.88, 2.1), xytext=(5.52, 2.1), arrowprops=arr)
+ax.annotate("", xy=(8.68, 2.1), xytext=(8.32, 2.1), arrowprops=arr)
+
+# Feedback loop from Post-Mortem Audit back to Strategy/Execution if limit check fails
+fb = patches.FancyArrowPatch((9.9, 1.32), (4.3, 1.32),
+                             connectionstyle="arc3,rad=-0.22",
+                             arrowstyle="-|>,head_width=5,head_length=8",
+                             lw=1.8, linestyle="--", color="#c53030")
+ax.add_patch(fb)
+ax.text(7.1, 0.35, "Limit / Dimensional Failure -> Re-examine Coordinate Frame & Algebra",
+        fontsize=9, fontweight='bold', color="#c53030", ha='center',
+        bbox=dict(boxstyle="round,pad=0.25", facecolor="#fff5f5", edgecolor="#feb2b2"))
+
+ax.set_title("The 4-Stage Cognitive & Analytical Problem-Solving Architecture", fontsize=12, fontweight='bold', pad=6)
+plt.tight_layout()
+plt.show()
 ```
 
 ### The Iron Rule of Symbolic Integrity
@@ -54,17 +96,28 @@ When a closed-form symbolic solution is derived, how can you determine whether i
 
 The most powerful diagnostic weapon in analytical physics is **Extreme-Case Analysis** (also known as *asymptotic limit testing* or *torture testing*). By driving individual parameters to extreme, mathematically trivial, or physically obvious limits, the complex formula must collapse into an intuitive baseline.
 
-| Parameter Limit | Physical Interpretation | Intuitive Expected Baseline |
-| :--- | :--- | :--- |
-| **Mass $m \to 0$** | Inertia vanishes completely | Particle reacts instantaneously without lag; zero force needed. |
-| **Mass $m \to \infty$** | Immovable inertial anchor | System behaves like a rigid infinite wall or fixed boundary. |
-| **Friction $\mu \to 0$** | Completely frictionless | Conservative motion; mechanical energy $E = T + V$ strictly conserved. |
-| **Friction $\mu \to \infty$** | Absolute mechanical lock | Pure rolling without slip; contact points become stationary pivots. |
-| **Stiffness $k \to \infty$** | Completely rigid link | Elastic deformation vanishes; natural vibration frequency $\omega \to \infty$. |
-| **Stiffness $k \to 0$** | Infinitely compliant spring | Restoring force decouples; bodies move independently. |
-| **Time $t \to 0$** | Initial state / instantaneous start | Initial conditions govern; velocity/position continuity holds. |
-| **Time $t \to \infty$** | Asymptotic steady-state | Transient responses decay to zero; system settles to equilibrium. |
-| **Angle $\theta \to 0, \pi/2$** | Collinear or perpendicular limit | Recovers 1D straight-line or perpendicular projection equations. |
+```{python}
+#| label: tbl-extreme-case-limits
+#| code-fold: true
+#| code-summary: "Show Python code generating the Extreme-Case Parameter Limit Taxonomy"
+
+from IPython.display import Markdown
+
+limits_table = [
+    ("Mass $m \\to 0$", "Inertia vanishes completely", "Particle responds instantaneously without lag; zero force required."),
+    ("Mass $m \\to \\infty$", "Immovable inertial anchor", "Body acts as a rigid fixed wall or stationary boundary condition."),
+    ("Friction $\\mu \\to 0$", "Ideal frictionless surface", "Conservative dynamics; total mechanical energy $E = T + V$ conserved."),
+    ("Friction $\\mu \\to \\infty$", "Infinite mechanical grip", "Pure rolling without slip; contact points lock into instantaneous pivots."),
+    ("Stiffness $k \\to \\infty$", "Infinitely rigid link", "Elastic strain vanishes; natural oscillation frequency $\\omega_n \\to \\infty$."),
+    ("Stiffness $k \\to 0$", "Completely compliant spring", "Restoring force decouples; subsystems translate independently."),
+    ("Time $t \\to 0^+$", "Instantaneous initial state", "Recovers initial boundary conditions $(x_0, v_0)$ via continuity."),
+    ("Time $t \\to \\infty$", "Asymptotic steady state", "Transient exponentials $e^{-t/\\tau} \\to 0$ vanish; equilibrium governs."),
+    ("Angle $\\theta \\to 0, \\pi/2$", "Cardinal geometric alignment", "Recovers 1D collinear motion or orthogonal component decoupling."),
+]
+
+header = "| Parameter Limit | Physical Meaning | Intuitive Expected Baseline |\n| :--- | :--- | :--- |\n"
+Markdown(header + "\n".join([f"| **{row[0]}** | {row[1]} | {row[2]} |" for row in limits_table]))
+```
 
 ### Worked Example: The Atwood Machine with Pulley Inertia
 
@@ -72,14 +125,35 @@ Consider two masses $m_1$ and $m_2$ suspended over a real pulley of mass $M$, ra
 
 $$a = \frac{(m_2 - m_1) g}{m_1 + m_2 + \frac{I}{R^2}} = \frac{(m_2 - m_1) g}{m_1 + m_2 + \frac{1}{2} M} \tag{1}$$
 
-Let us subject Equation (1) to a four-point extreme-case torture test:
+Let us programmatically subject Equation (1) to a four-point symbolic limit torture test using `sympy`:
 
-| Limit Case | Analytical Formula Evaluation | Physical Consistency Check | Status |
-| :--- | :--- | :--- | :--- |
-| **1. Equal Masses ($m_1 = m_2 = m$)** | $a = \frac{(m - m)g}{2m + M/2} = 0$ | Perfect static balance; system remains permanently at rest. | Passed |
-| **2. Massive Load ($m_2 \gg m_1, M$)** | $\lim_{m_2 \to \infty} a = \frac{m_2}{m_2} g = g$ | Load $m_2$ is essentially in uninhibited free fall. | Passed |
-| **3. Massive Pulley ($M \to \infty$)** | $\lim_{M \to \infty} a = \frac{\Delta m g}{\infty} = 0$ | Infinite pulley inertia prevents any rotational movement. | Passed |
-| **4. Ideal Pulley ($M = 0$)** | $a = \frac{m_2 - m_1}{m_1 + m_2} g$ | Recovers the textbook frictionless massless Atwood law. | Passed |
+```{python}
+#| label: tbl-atwood-torture-test
+#| code-fold: true
+#| code-summary: "Show Python + SymPy code executing the 4-Point Symbolic Limit Torture Test"
+
+import sympy as sp
+from IPython.display import Markdown
+
+m1, m2, M, g = sp.symbols('m_1 m_2 M g', positive=True)
+a_expr = (m2 - m1) * g / (m1 + m2 + sp.Rational(1, 2) * M)
+
+# Execute symbolic limits via SymPy
+lim_equal = sp.simplify(a_expr.subs(m2, m1))
+lim_heavy_m2 = sp.limit(a_expr, m2, sp.oo)
+lim_heavy_M = sp.limit(a_expr, M, sp.oo)
+lim_ideal_M = sp.simplify(a_expr.subs(M, 0))
+
+cases = [
+    ("1. Equal Masses ($m_2 \\to m_1$)", f"${sp.latex(lim_equal)}$", "Perfect static balance; system remains at rest ($a = 0$).", "Verified"),
+    ("2. Massive Load ($m_2 \\to \\infty$)", f"${sp.latex(lim_heavy_m2)}$", "Load $m_2$ dominates inertia and falls at uninhibited free fall ($a = g$).", "Verified"),
+    ("3. Infinite Pulley Inertia ($M \\to \\infty$)", f"${sp.latex(lim_heavy_M)}$", "Infinite rotational inertia locks the pulley completely ($a = 0$).", "Verified"),
+    ("4. Massless Ideal Pulley ($M \\to 0$)", f"${sp.latex(lim_ideal_M)}$", "Recovers the canonical textbook massless Atwood formula.", "Verified"),
+]
+
+header = "| Limit Torture Case | SymPy Evaluated Limit $\\lim a$ | Physical Consistency Interpretation | Audit Status |\n| :--- | :--- | :--- | :--- |\n"
+Markdown(header + "\n".join([f"| **{c[0]}** | {c[1]} | {c[2]} | **{c[3]}** |" for c in cases]))
+```
 
 ---
 
@@ -87,21 +161,76 @@ Let us subject Equation (1) to a four-point extreme-case torture test:
 
 Before writing a single differential equation, the physical dimensions of the problem dictate the fundamental power-law structure of the solution.
 
-| Dimensionless Group | Formula Definition | Physical Ratio Represented | Operational Regime Transition |
-| :--- | :--- | :--- | :--- |
-| **Reynolds ($\mathrm{Re}$)** | $\frac{\rho U L}{\mu}$ | $\frac{\text{Inertial Momentum Transport}}{\text{Viscous Shear Transport}}$ | $\mathrm{Re} \ll 1$: Creeping Stokes flow.<br/>$\mathrm{Re} \gg 10^3$: Boundary layers and turbulence. |
-| **Froude ($\mathrm{Fr}$)** | $\frac{U}{\sqrt{g L}}$ | $\frac{\text{Inertial Flow Velocity}}{\text{Gravity Wave Speed}}$ | $\mathrm{Fr} < 1$: Subcritical open-channel flow.<br/>$\mathrm{Fr} > 1$: Supercritical hydraulic jump shocks. |
-| **Mach ($\mathrm{Ma}$)** | $\frac{U}{c_s}$ | $\frac{\text{Flow Velocity}}{\text{Acoustic Sound Speed}}$ | $\mathrm{Ma} < 0.3$: Incompressible fluid dynamics.<br/>$\mathrm{Ma} > 1.0$: Compressible supersonic shock waves. |
-| **Biot ($\mathrm{Bi}$)** | $\frac{h L_c}{k_{\text{solid}}}$ | $\frac{\text{Internal Conduction Resistance}}{\text{Surface Convection Resistance}}$ | $\mathrm{Bi} < 0.1$: Lumped uniform thermal capacitance.<br/>$\mathrm{Bi} > 0.1$: Spatial temperature gradient diffusion. |
-| **Knudsen ($\mathrm{Kn}$)** | $\frac{\lambda_{\text{mfp}}}{L}$ | $\frac{\text{Molecular Mean Free Path}}{\text{Macro Characteristic Scale}}$ | $\mathrm{Kn} < 0.01$: Navier-Stokes continuum mechanics.<br/>$\mathrm{Kn} > 10$: Free molecular kinetic Knudsen flow. |
+```{python}
+#| label: tbl-dimensionless-numbers
+#| code-fold: true
+#| code-summary: "Show Python code generating the Canonical Dimensionless Groups & Regime Transitions Table"
+
+from IPython.display import Markdown
+
+groups = [
+    ("Reynolds ($\\mathrm{Re}$)", r"$\frac{\rho U L}{\mu}$", "Inertial Momentum / Viscous Shear", "$\\mathrm{Re} \\ll 1$: Creeping Stokes flow; $\\mathrm{Re} \\gg 10^3$: Turbulent boundary layers."),
+    ("Froude ($\\mathrm{Fr}$)", r"$\frac{U}{\sqrt{g L}}$", "Flow Speed / Gravity Wave Speed", "$\\mathrm{Fr} < 1$: Subcritical tranquil flow; $\\mathrm{Fr} > 1$: Supercritical hydraulic jump."),
+    ("Mach ($\\mathrm{Ma}$)", r"$\frac{U}{c_s}$", "Flow Speed / Acoustic Sound Speed", "$\\mathrm{Ma} < 0.3$: Incompressible regime; $\\mathrm{Ma} > 1.0$: Supersonic shock cones."),
+    ("Biot ($\\mathrm{Bi}$)", r"$\frac{h L_c}{k_{\mathrm{solid}}}$", "Internal Conduction / Surface Convection Resistance", "$\\mathrm{Bi} < 0.1$: Uniform lumped capacitance; $\\mathrm{Bi} > 0.1$: Internal thermal gradients."),
+    ("Knudsen ($\\mathrm{Kn}$)", r"$\frac{\lambda_{\mathrm{mfp}}}{L}$", "Molecular Mean Free Path / Macro Length Scale", "$\\mathrm{Kn} < 0.01$: Continuum Navier-Stokes; $\\mathrm{Kn} > 10$: Free molecular ballistic gas."),
+]
+
+header = "| Dimensionless Group | Definition | Physical Force/Scale Ratio | Operational Regime Transition |\n| :--- | :--- | :--- | :--- |\n"
+Markdown(header + "\n".join([f"| **{g[0]}** | {g[1]} | {g[2]} | {g[3]} |" for g in groups]))
+```
 
 ### The Tactic of Dominant Balance
 
-```{mermaid}
-flowchart TD
-    NS["Full Navier-Stokes: ρ [∂u/∂t + (u·∇)u] = -∇p + μ ∇²u + ρ g"]
-    NS -->|Low Re ≪ 1| Stokes["Creeping Stokes Flow (Inertia ≈ 0):<br/>0 = -∇p + μ ∇²u"]
-    NS -->|High Re ≫ 1| Euler["Inviscid Outer Flow (Viscosity ≈ 0):<br/>ρ (u·∇)u = -∇p"]
+```{python}
+#| label: fig-dominant-balance
+#| fig-cap: "Programmatic Asymptotic Bifurcation of the Full Navier-Stokes Equations via Dominant Balance. Depending on the magnitude of the Reynolds number Re, opposing physical terms drop out to yield tractable linear Stokes equations (Re << 1) or inviscid Euler equations (Re >> 1)."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Dominant Balance Bifurcation Diagram"
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+fig, ax = plt.subplots(figsize=(10.5, 4.2), dpi=200)
+ax.set_xlim(0, 10.5)
+ax.set_ylim(0, 4.4)
+ax.axis('off')
+
+# Top box: Full Navier-Stokes
+top = patches.FancyBboxPatch((1.5, 2.85), 7.5, 1.15, boxstyle="round,pad=0.1,rounding_size=0.18",
+                             facecolor="#f7fafc", edgecolor="#2d3748", lw=2.2)
+ax.add_patch(top)
+ax.text(5.25, 3.62, "Full Incompressible Navier-Stokes Momentum Equation", fontsize=10.5, fontweight='bold', ha='center', color='#1a202c')
+ax.text(5.25, 3.18, r"$\rho\left[\frac{\partial\mathbf{u}}{\partial t} + (\mathbf{u}\cdot\nabla)\mathbf{u}\right] = -\nabla p + \mu\nabla^2\mathbf{u} + \rho\mathbf{g} \quad \Longleftrightarrow \quad \mathrm{Re}\,\frac{D\mathbf{u}^*}{Dt^*} = -\mathrm{Re}\,\nabla^* p^* + {\nabla^*}^2\mathbf{u}^*$",
+        fontsize=9.8, ha='center', color='#2d3748')
+
+# Left branch: Low Re Stokes
+left = patches.FancyBboxPatch((0.4, 0.35), 4.4, 1.35, boxstyle="round,pad=0.1,rounding_size=0.18",
+                              facecolor="#fff5f5", edgecolor="#c53030", lw=2.0)
+ax.add_patch(left)
+ax.text(2.6, 1.32, r"Creeping Stokes Regime ($\mathrm{Re} \ll 1$)", fontsize=10, fontweight='bold', ha='center', color='#c53030')
+ax.text(2.6, 0.90, r"Inertia negligible $\Rightarrow \mathbf{0} = -\nabla p + \mu\nabla^2\mathbf{u}$", fontsize=9.5, ha='center', color='#1a202c')
+ax.text(2.6, 0.55, "Linear, time-reversible elliptic PDE", fontsize=8.5, ha='center', color='#4a5568')
+
+# Right branch: High Re Euler
+right = patches.FancyBboxPatch((5.7, 0.35), 4.4, 1.35, boxstyle="round,pad=0.1,rounding_size=0.18",
+                               facecolor="#ebf8ff", edgecolor="#2b6cb0", lw=2.0)
+ax.add_patch(right)
+ax.text(7.9, 1.32, r"Inviscid Outer Flow Regime ($\mathrm{Re} \gg 1$)", fontsize=10, fontweight='bold', ha='center', color='#2b6cb0')
+ax.text(7.9, 0.90, r"Viscosity negligible $\Rightarrow \rho(\mathbf{u}\cdot\nabla)\mathbf{u} = -\nabla p$", fontsize=9.5, ha='center', color='#1a202c')
+ax.text(7.9, 0.55, "Nonlinear Euler flow + Prandtl boundary layer", fontsize=8.5, ha='center', color='#4a5568')
+
+# Branch arrows
+ax.annotate("", xy=(2.6, 1.75), xytext=(4.0, 2.82),
+            arrowprops=dict(arrowstyle="-|>,head_width=0.28,head_length=0.45", lw=2.2, color="#c53030"))
+ax.text(2.5, 2.35, r"Asymptotic Limit $\mathrm{Re} \to 0$", fontsize=9, fontweight='bold', color="#c53030", ha='center')
+
+ax.annotate("", xy=(7.9, 1.75), xytext=(6.5, 2.82),
+            arrowprops=dict(arrowstyle="-|>,head_width=0.28,head_length=0.45", lw=2.2, color="#2b6cb0"))
+ax.text(8.0, 2.35, r"Asymptotic Limit $\mathrm{Re} \to \infty$", fontsize=9, fontweight='bold', color="#2b6cb0", ha='center')
+
+plt.tight_layout()
+plt.show()
 ```
 
 ---
@@ -110,35 +239,127 @@ flowchart TD
 
 The difficulty of solving a physics problem is fundamentally determined by the choice of coordinate system.
 
-| Physical Geometry | Recommended Coordinates | Cyclic / Invariant Quantities | Analytical Benefit |
-| :--- | :--- | :--- | :--- |
-| **Central Force Field** | Spherical $(r, \theta, \phi)$ | Angular momentum $\mathbf{L}$; planar orbit reduction ($\theta = \pi/2$) | Reduces 3D orbital dynamics to 1D effective radial potential. |
-| **Axial Cylinder / Pipe** | Cylindrical $(r, \theta, z)$ | Axial momentum $p_z$; azimuthal invariance ($v_\theta = 0$) | Simplifies Navier-Stokes to Poiseuille parabolic profile. |
-| **Curved Streamline Path** | Natural Streamline $(s, n)$ | Bernoulli constant along $s$; normal pressure gradient $\frac{dp}{dn} = \rho \frac{v^2}{R}$ | Eliminates cross-streamline acceleration components. |
-| **Two Colliding Bodies** | Center of Mass $(\mathbf{R}_{\text{cm}}, \mathbf{r})$ | Total linear momentum $\mathbf{P}_{\text{cm}} = \text{const}$ | Collapses 6 DOFs into 1 body with reduced mass $\mu = \frac{m_1 m_2}{m_1 + m_2}$. |
+```{python}
+#| label: tbl-coordinate-symmetries
+#| code-fold: true
+#| code-summary: "Show Python code generating the Coordinate Systems & Noether Invariance Table"
+
+from IPython.display import Markdown
+
+coords = [
+    ("Central Force Field $V(r)$", "Spherical $(r, \\theta, \\phi)$", "Angular momentum $\\mathbf{L} = \\mathbf{r} \\times \\mathbf{p}$; planar orbit ($\\theta = \\pi/2$)", "Collapses 3D vector ODEs into a 1D radial effective potential $V_{\\text{eff}}(r)$."),
+    ("Axisymmetric Cylinder / Pipe", "Cylindrical $(r, \\theta, z)$", "Axial momentum $p_z$; azimuthal invariance ($\\partial_\\theta = 0$)", "Reduces 3D Navier-Stokes to exact 1D Hagen-Poiseuille parabolic profile."),
+    ("Curved Trajectory Path", "Intrinsic Frenet-Serret $(s, n, b)$", "Bernoulli constant along streamline $s$; normal balance $\\partial_n p = \\rho v^2 / R$", "Decouples tangential speed evolution from centripetal normal acceleration."),
+    ("Two Interacting Particles", "Center-of-Mass $(\\mathbf{R}_{\\text{cm}}, \\mathbf{r})$", "Total linear momentum $\\mathbf{P}_{\\text{tot}} = (m_1+m_2)\\dot{\\mathbf{R}}_{\\text{cm}}$", "Reduces 6 DOFs to a 1-body problem with reduced mass $\\mu = \\frac{m_1 m_2}{m_1 + m_2}$."),
+]
+
+header = "| Physical Geometry | Optimal Coordinate Basis | Conserved / Cyclic Invariants | Analytical Reduction Benefit |\n| :--- | :--- | :--- | :--- |\n"
+Markdown(header + "\n".join([f"| **{c[0]}** | {c[1]} | {c[2]} | {c[3]} |" for c in coords]))
+```
 
 ---
 
 ## 5. Heuristic Strategy 4: Order-of-Magnitude & Fermi Estimation
 
-| Physical Quantity | Exact Metric SI Reference | Mental Back-of-the-Envelope Rounding |
-| :--- | :--- | :--- |
-| **Gravitational Acceleration $g$** | $9.80665\text{ m/s}^2$ | $\approx 10\text{ m/s}^2$ (or $\pi^2\text{ m/s}^2$) |
-| **Density of Liquid Water** | $998\text{ kg/m}^3$ at $20^\circ\text{C}$ | $1{,}000\text{ kg/m}^3$ ($1\text{ kg/Litre}$) |
-| **Density of Atmospheric Air (STP)** | $1.204\text{ kg/m}^3$ | $\approx 1.2\text{ kg/m}^3$ |
-| **Density of Structural Steel** | $7{,}850\text{ kg/m}^3$ | $\approx 8 \times 10^3\text{ kg/m}^3$ |
-| **Atmospheric Pressure** | $101{,}325\text{ Pa}$ | $10^5\text{ Pa}$ ($1\text{ bar} \approx 10\text{ m of water}$) |
-| **Speed of Sound in Air ($20^\circ\text{C}$)** | $343\text{ m/s}$ | $\approx \frac{1}{3}\text{ km/s}$ ($3\text{ seconds per kilometer}$) |
-| **Thermal Energy at Room Temp ($300\text{ K}$)** | $k_B T = 4.14 \times 10^{-21}\text{ J}$ | $\approx 25\text{ meV}$ ($\frac{1}{40}\text{ eV}$) |
-| **Specific Heat Capacity of Water** | $4{,}184\text{ J/(kg}\cdot\text{K)}$ | $\approx 4.2\text{ kJ/(kg}\cdot\text{K)}$ |
+```{python}
+#| label: tbl-fermi-constants
+#| code-fold: true
+#| code-summary: "Show Python code generating the Fermi Order-of-Magnitude Constants Table"
 
-```{mermaid}
-flowchart TD
-    subgraph RotorDisk["Hovering Drone Rotor Actuator Disk"]
-        direction TB
-        AirIn["Stationary Ambient Air: v_ambient = 0"] --> Disk["Rotor Disk Plane (Area A)<br/>Thrust T = M · g, Induced Velocity v_i"]
-        Disk --> Wake["Accelerated Slipstream Wake:<br/>Downward Velocity v_wake = 2 v_i"]
-    end
+from IPython.display import Markdown
+
+fermi_consts = [
+    ("Gravitational Acceleration $g$", "$9.80665\\text{ m/s}^2$", "$\\approx 10\\text{ m/s}^2$ (or $\\pi^2\\text{ m/s}^2$)", "$+1.97\\%$"),
+    ("Density of Liquid Water ($20^\\circ\\text{C}$)", "$998.2\\text{ kg/m}^3$", "$1{,}000\\text{ kg/m}^3$ ($1\\text{ g/cm}^3$)", "$+0.18\\%$"),
+    ("Density of Dry Air (STP)", "$1.204\\text{ kg/m}^3$", "$\\approx 1.2\\text{ kg/m}^3$", "$-0.33\\%$"),
+    ("Density of Structural Steel", "$7{,}850\\text{ kg/m}^3$", "$\\approx 8 \\times 10^3\\text{ kg/m}^3$", "$+1.91\\%$"),
+    ("Standard Atmospheric Pressure", "$101{,}325\\text{ Pa}$", "$10^5\\text{ Pa}$ ($1\\text{ bar} \\approx 10\\text{ m H}_2\\text{O}$)", "$-1.31\\%$"),
+    ("Speed of Sound in Air ($20^\\circ\\text{C}$)", "$343.2\\text{ m/s}$", "$\\approx \\frac{1}{3}\\text{ km/s}$ ($3\\text{ s/km}$)", "$-2.87\\%$"),
+    ("Room Thermal Energy ($300\\text{ K}$)", "$k_B T = 4.142 \\times 10^{-21}\\text{ J}$", "$\\approx 25\\text{ meV}$ ($\\frac{1}{40}\\text{ eV}$)", "$-3.10\\%$"),
+    ("Specific Heat of Liquid Water", "$4{,}184\\text{ J/(kg}\\cdot\\text{K)}$", "$\\approx 4.2\\text{ kJ/(kg}\\cdot\\text{K)}$", "$+0.38\\%$"),
+]
+
+header = "| Physical Quantity | Exact SI Reference | Rapid Fermi Mental Approximation | Approximation Error |\n| :--- | :--- | :--- | :--- |\n"
+Markdown(header + "\n".join([f"| **{f[0]}** | {f[1]} | {f[2]} | {f[3]} |" for f in fermi_consts]))
+```
+
+```{python}
+#| label: fig-actuator-disk-schematic
+#| fig-cap: "Programmatic Aerodynamic Schematic of the Rankine-Froude Hovering Rotor Actuator Disk and Contracting Slipstream Control Volume. Stationary ambient air (v_0 = 0) accelerates smoothly through the rotor plane (v_i) into the far wake (v_wake = 2 v_i), while the rotor imparts a discontinuous static pressure jump Delta P = T / A."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Hovering Rotor Actuator Disk Schematic"
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.8), dpi=200, gridspec_kw={'width_ratios': [1.35, 1.0]})
+
+# Panel 1: Contracting Streamtube Control Volume
+ax1.set_xlim(-3.2, 3.2)
+ax1.set_ylim(-3.2, 3.2)
+ax1.set_aspect('equal')
+ax1.axis('off')
+
+y_stream = np.linspace(-2.8, 2.8, 200)
+# Contracting streamtube radius R(y): wider above rotor (y>0), contracts to R_disk/sqrt(2) below (y<0)
+r_disk = 1.6
+r_bound = r_disk * np.sqrt(1.0 / (1.0 - 0.5 * np.tanh(-y_stream / 1.1)))
+
+ax1.fill_betweenx(y_stream, -r_bound, r_bound, color='#ebf8ff', alpha=0.55)
+ax1.plot(-r_bound, y_stream, '--', color='#2b6cb0', lw=2.0, label='Slipstream Boundary')
+ax1.plot(r_bound, y_stream, '--', color='#2b6cb0', lw=2.0)
+
+# Rotor actuator disk at y = 0
+disk = patches.Rectangle((-r_disk, -0.08), 2*r_disk, 0.16, facecolor='#c53030', edgecolor='#1a202c', lw=1.8, zorder=5)
+ax1.add_patch(disk)
+ax1.text(r_disk + 0.15, 0.0, "Actuator Disk\nArea $A$, Thrust $T = Mg$", fontsize=9, fontweight='bold', color='#c53030', va='center')
+
+# Velocity vectors at 3 stations
+for x_pos in [-0.7, 0.0, 0.7]:
+    # Station 0: Far upstream
+    ax1.annotate("", xy=(x_pos*1.3, 1.9), xytext=(x_pos*1.3, 2.5),
+                 arrowprops=dict(arrowstyle="-|>,head_width=0.2,head_length=0.3", lw=1.5, color="#4a5568"))
+    # Station 1: Rotor plane
+    ax1.annotate("", xy=(x_pos, -0.55), xytext=(x_pos, 0.45),
+                 arrowprops=dict(arrowstyle="-|>,head_width=0.24,head_length=0.38", lw=2.0, color="#2b6cb0"))
+    # Station 2: Far wake
+    ax1.annotate("", xy=(x_pos*0.75, -2.75), xytext=(x_pos*0.75, -1.25),
+                 arrowprops=dict(arrowstyle="-|>,head_width=0.26,head_length=0.42", lw=2.4, color="#2f855a"))
+
+ax1.text(-2.95, 2.3, r"Upstream ($z \to +\infty$):" + "\n" + r"$v_0 \approx 0, \; P = P_{\mathrm{atm}}$", fontsize=8.8, color="#4a5568")
+ax1.text(-2.95, -0.5, r"Rotor Plane ($z = 0$):" + "\n" + r"$v_i = \sqrt{T/(2\rho A)}$", fontsize=8.8, fontweight='bold', color="#2b6cb0")
+ax1.text(-2.95, -2.3, r"Far Slipstream ($z \to -\infty$):" + "\n" + r"$v_{\mathrm{wake}} = 2 v_i, \; A_w = A/2$", fontsize=8.8, fontweight='bold', color="#2f855a")
+ax1.set_title("Contracting Slipstream Control Volume", fontsize=11, fontweight='bold', pad=6)
+
+# Panel 2: Axial Velocity & Pressure Jump Profiles
+z_up = np.linspace(0.01, 3.0, 100)
+z_dn = np.linspace(-3.0, -0.01, 100)
+z_all = np.linspace(-3.0, 3.0, 200)
+
+v_norm = 1.0 - np.tanh(z_all / 1.1) # 0 upstream, 1 at z=0, 2 far downstream
+p_up = -0.5 * (1.0 - np.tanh(z_up / 0.9))**2
+p_dn = 0.5 * (2.0**2 - (1.0 - np.tanh(z_dn / 0.9))**2)
+
+ax2.plot(v_norm, z_all, '-', color='#2b6cb0', lw=2.4, label=r'Velocity Ratio $v(z) / v_i$')
+ax2.plot(p_up, z_up, '--', color='#c53030', lw=2.2, label=r'Static Pressure $(P - P_{\mathrm{atm}}) / (\rho v_i^2)$')
+ax2.plot(p_dn, z_dn, '--', color='#c53030', lw=2.2)
+ax2.plot([-0.5, 1.5], [0, 0], ':', color='#c53030', lw=2.0)
+ax2.axhline(0, color='black', lw=1.0, alpha=0.5)
+ax2.axvline(0, color='gray', lw=0.8, linestyle=':')
+
+ax2.annotate(r"Pressure Jump $\Delta P = \frac{T}{A}$", xy=(0.5, 0.0), xytext=(0.45, 1.3),
+             arrowprops=dict(arrowstyle="->", color="#c53030", lw=1.5),
+             fontsize=9, fontweight='bold', color="#c53030")
+
+ax2.set_title("Axial Velocity & Static Pressure Profiles", fontsize=11, fontweight='bold', pad=6)
+ax2.set_xlabel("Normalized Magnitude", fontsize=10)
+ax2.set_ylabel("Vertical Coordinate $z / R_{\\mathrm{rotor}}$", fontsize=10)
+ax2.legend(loc='lower right', frameon=True, fontsize=8.5)
+ax2.grid(True, linestyle='--', alpha=0.5)
+
+plt.tight_layout()
+plt.show()
 ```
 
 Using actuator disk theory, ideal induced hover power is:
@@ -149,12 +370,23 @@ $$P_{\text{ideal}} = T \cdot v_i = \frac{(M g)^{3/2}}{\sqrt{2 \rho A}} \tag{2}$$
 
 ## 6. Heuristic Strategy 5: Energetic, Variational, and Global Balances vs. Vector Mechanics
 
-| Analytical Approach | Newtonian Vector Mechanics | Lagrangian & Variational Mechanics |
-| :--- | :--- | :--- |
-| **Primary Variable** | Vector quantities (Forces $\mathbf{F}$, Accelerations $\mathbf{a}$) | Scalar quantities (Kinetic Energy $T$, Potential Energy $V$) |
-| **Coordinate Dependence** | Bound to coordinate frame unit vectors ($\hat{\mathbf{i}}, \hat{\mathbf{j}}, \hat{\mathbf{k}}$) | Coordinate-free; arbitrary generalized coordinates $q_j$ |
-| **Constraint Forces** | Must explicitly solve for normal forces $N$ and cable tensions $T$ | Internal constraints that perform zero work are eliminated automatically |
-| **Multi-Body Scaling** | Requires free-body diagrams for every component; algebraic explosion | Scales cleanly via $\frac{d}{dt}\left(\frac{\partial L}{\partial \dot{q}_j}\right) - \frac{\partial L}{\partial q_j} = Q_j^{\text{non-cons}}$ |
+```{python}
+#| label: tbl-mechanics-comparison
+#| code-fold: true
+#| code-summary: "Show Python code generating the Newtonian Vector vs. Lagrangian Variational Comparison Table"
+
+from IPython.display import Markdown
+
+mech_rows = [
+    ("Primary Mathematical Object", "Vector fields (Forces $\\mathbf{F}_i$, Accelerations $\\mathbf{a}_i$)", "Scalar functionals (Kinetic $T$, Potential $V$, Action $S = \\int L\\,dt$)"),
+    ("Coordinate Frame Dependence", "Tied to vector basis $(\\hat{\\mathbf{i}}, \\hat{\\mathbf{j}}, \\hat{\\mathbf{k}})$; curved frames introduce Christoffel terms", "Coordinate-invariant; accepts arbitrary generalized coordinates $q_j$"),
+    ("Workless Constraint Forces", "Must explicitly solve for normal forces $\\mathbf{N}$ and wire tensions $\\mathbf{T}$", "Holonomic constraints ($\\delta W_c = 0$) vanish identically from equations"),
+    ("Multi-Body Scalability", "Requires coupled free-body diagrams per rigid body; algebraic explosion", "Scales systematically via $\\frac{d}{dt}\\left(\\frac{\\partial L}{\\partial \\dot{q}_j}\\right) - \\frac{\\partial L}{\\partial q_j} = Q_j$"),
+]
+
+header = "| Comparison Axis | Newtonian Vector Mechanics | Lagrangian & Variational Mechanics |\n| :--- | :--- | :--- |\n"
+Markdown(header + "\n".join([f"| **{m[0]}** | {m[1]} | {m[2]} |" for m in mech_rows]))
+```
 
 ---
 
@@ -213,16 +445,27 @@ plt.show()
 
 ## 8. Heuristic Strategy 7: The Post-Solution Audit (The 8-Gate Protocol)
 
-| Gate Number | Verification Audit Category | Operational Execution & Reality Check |
-| :--- | :--- | :--- |
-| **Gate 1** | **Dimensional Homogeneity** | Verify $[LHS] = [RHS]$ and ensure every summed term possesses identical dimensions. |
-| **Gate 2** | **Asymptotic Zero Limits** | Evaluate solution at $x \to 0, m \to 0, t \to 0, k \to 0$. Does it reproduce trivial limits? |
-| **Gate 3** | **Asymptotic Infinity Limits** | Evaluate solution at $x \to \infty, m \to \infty, t \to \infty$. Does it avoid unphysical blow-up? |
-| **Gate 4** | **Sign & Monotonicity** | If the driving input increases, does the output move in the expected physical direction? |
-| **Gate 5** | **Coordinate Invariance** | If origin is shifted or rotated, does the physical prediction remain strictly invariant? |
-| **Gate 6** | **Known Benchmark Match** | In degenerate cases, does it reproduce standard classic textbook equations? |
-| **Gate 7** | **Conservation Law Audit** | Is total mass, linear/angular momentum, and energy conserved across the domain? |
-| **Gate 8** | **Numerical Plausibility** | Are speeds $< c$? Strains $\ll 1$? Absolute temperatures $> 0\text{ K}$? Densities realistic? |
+```{python}
+#| label: tbl-post-solution-gates
+#| code-fold: true
+#| code-summary: "Show Python code generating the 8-Gate Post-Solution Verification Protocol Table"
+
+from IPython.display import Markdown
+
+gates = [
+    ("Gate 1", "Dimensional Homogeneity", "Verify $[\\text{LHS}] = [\\text{RHS}]$ and ensure all additive/transcendental arguments are dimensionless."),
+    ("Gate 2", "Asymptotic Zero Limits", "Evaluate solution as parameters $\\to 0$ ($m \\to 0, t \\to 0, k \\to 0$) to confirm baseline recovery."),
+    ("Gate 3", "Asymptotic Infinity Limits", "Evaluate solution as parameters $\\to \\infty$ ($m \\to \\infty, t \\to \\infty$) to rule out unphysical divergence."),
+    ("Gate 4", "Sign & Monotonicity", "Verify partial derivatives $\\partial y / \\partial p_i$ have the physically expected directional sign."),
+    ("Gate 5", "Coordinate & Parity Invariance", "Confirm physical observables remain invariant under origin shifts and parity reflections."),
+    ("Gate 6", "Canonical Benchmark Match", "Check that setting perturbation parameters $\\epsilon = 0$ reproduces known textbook laws."),
+    ("Gate 7", "Global Conservation Audit", "Verify integral conservation of mass, momentum, angular momentum, and energy."),
+    ("Gate 8", "Order-of-Magnitude Plausibility", "Ensure $v < c$, strains $\\epsilon \\ll 1$, absolute $T > 0\\text{ K}$, and realistic material densities."),
+]
+
+header = "| Gate | Verification Audit Category | Operational Execution & Reality Check |\n| :--- | :--- | :--- |\n"
+Markdown(header + "\n".join([f"| **{g[0]}** | **{g[1]}** | {g[2]} |" for g in gates]))
+```
 
 ---
 
@@ -371,18 +614,29 @@ plt.show()
 
 ## 10. Summary Reference Sheet of Problem-Solving Heuristics
 
-| Tactic Number | Heuristic Tactic | Primary Prescriptive Action |
-| :--- | :--- | :--- |
-| **1** | **Symbolic Shield** | Strictly prohibit early numerical substitution; simplify symbolic forms first. |
-| **2** | **Dimensional Scan** | Verify $[LHS] = [RHS]$; construct Buckingham $\Pi$ groups before setting up ODEs. |
-| **3** | **Torture Testing** | Drive parameters to $0$ and $\infty$ to verify convergence to intuitive trivial baselines. |
-| **4** | **Dominant Balance** | Compute dimensionless ratios and discard sub-dominant terms ($\epsilon \ll 1$). |
-| **5** | **Shift to CM Frame** | Decouple two-body problems into effective single-body systems via reduced mass $\mu$. |
-| **6** | **Energy vs. Vectors** | Use Lagrangian scalars to bypass non-working constraint forces (normal forces, tension). |
-| **7** | **Small Disturbances** | Taylor-expand potentials: $V \approx \frac{1}{2} V''(q_0) x^2$ guarantees simple harmonic motion. |
-| **8** | **Control Volumes** | Bypass internal turbulence/dissipation via macroscopic Reynolds transport balance. |
-| **9** | **Geometric Mean** | When bounds span multiple orders of magnitude, estimate $\bar{X} = \sqrt{a \cdot b}$. |
-| **10** | **Invariant Rest Frame** | For variable-mass systems, balance momentum in the instantaneous co-moving frame. |
+```{python}
+#| label: tbl-heuristics-cheatsheet
+#| code-fold: true
+#| code-summary: "Show Python code generating the Master Problem-Solving Heuristics Reference Sheet"
+
+from IPython.display import Markdown
+
+heuristics = [
+    ("1", "Symbolic Shield", "Strictly prohibit premature numerical substitution; simplify symbolic algebra first."),
+    ("2", "Dimensional Scan", "Verify $[\\text{LHS}] = [\\text{RHS}]$; extract Buckingham $\\Pi$-groups before solving ODEs."),
+    ("3", "Torture Testing", "Drive parameters to $0$ and $\\infty$ to verify convergence to intuitive trivial baselines."),
+    ("4", "Dominant Balance", "Compute dimensionless ratios and discard sub-dominant terms ($\\epsilon \\ll 1$)."),
+    ("5", "Shift to CM Frame", "Decouple two-body interactions into single-body motion via reduced mass $\\mu = \\frac{m_1 m_2}{m_1 + m_2}$."),
+    ("6", "Energy vs. Vectors", "Use Lagrangian scalars to eliminate workless constraint forces ($\\mathbf{N}, \\mathbf{T}$)."),
+    ("7", "Small Disturbances", "Taylor-expand smooth potentials: $V(q) \\approx V_0 + \\frac{1}{2} V''(q_0) x^2 \\implies \\omega = \\sqrt{V''(q_0)/m}$."),
+    ("8", "Control Volumes", "Bypass complex internal turbulence via macroscopic Reynolds Transport balances."),
+    ("9", "Geometric Mean", "When upper and lower Fermi bounds $[a, b]$ span orders of magnitude, estimate $\\hat{X} = \\sqrt{a b}$."),
+    ("10", "Co-Moving Frame", "For variable-mass rockets/chains, enforce $d\\mathbf{P}/dt = \\mathbf{F}_{\\text{ext}}$ in the instantaneous rest frame."),
+]
+
+header = "| # | Heuristic Tactic | Primary Prescriptive Action |\n| :--- | :--- | :--- |\n"
+Markdown(header + "\n".join([f"| **{h[0]}** | **{h[1]}** | {h[2]} |" for h in heuristics]))
+```
 
 ---
 
