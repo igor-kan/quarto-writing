@@ -404,7 +404,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<div class="quarto-title-block"><div><h1 class="title">Polynomial Algebra: Theorems, Factoring Tactics, and Numerical Root-Finding</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+<div class="quarto-title-block"><div><h1 class="title">Polynomial Algebra: Theorems, Factoring Tactics, and Numerical Root-Finding</h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
 <p class="subtitle lead">From abstract monomial rings and algebraic theorems to Horner’s scheme, Aberth-Ehrlich, and companion matrix algorithms.</p>
   <div class="quarto-categories">
     <div class="quarto-category">Preprints</div>
@@ -593,6 +593,69 @@ P(x) &amp;= a_0 + x \cdot b_1, &amp; P'(x) &amp;= d_1
 0 &amp; 0 &amp; \cdots &amp; 1 &amp; -a_{n-1}
 \end{pmatrix} \in \mathbb{R}^{n \times n} \tag{16}\]</span></p>
 <p>The characteristic polynomial of <span class="math inline">\(\mathbf{C}(P)\)</span> is identically <span class="math inline">\(\det(\lambda I - \mathbf{C}(P)) = P(\lambda)\)</span>. Computing the eigenvalues of <span class="math inline">\(\mathbf{C}(P)\)</span> using the backward-stable <strong>QR algorithm with Francis shifts</strong> yields all <span class="math inline">\(n\)</span> roots simultaneously with exceptional numerical stability.</p>
+<div id="cell-fig-companion-roots" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Show Python generation code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Polynomial coefficients: P(x) = x^6 - 2x^5 + 3x^4 - 4x^3 + 5x^2 - 6x + 7</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>coeffs <span class="op">=</span> [<span class="fl">1.0</span>, <span class="op">-</span><span class="fl">2.0</span>, <span class="fl">3.0</span>, <span class="op">-</span><span class="fl">4.0</span>, <span class="fl">5.0</span>, <span class="op">-</span><span class="fl">6.0</span>, <span class="fl">7.0</span>]</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute companion matrix eigenvalues (np.roots)</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>roots <span class="op">=</span> np.roots(coeffs)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Cauchy root bound: R_Cauchy = 1 + max(|a_k / a_n|)</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>a_n <span class="op">=</span> coeffs[<span class="dv">0</span>]</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>r_cauchy <span class="op">=</span> <span class="fl">1.0</span> <span class="op">+</span> <span class="bu">max</span>(<span class="bu">abs</span>(c <span class="op">/</span> a_n) <span class="cf">for</span> c <span class="kw">in</span> coeffs[<span class="dv">1</span>:])</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">7</span>, <span class="dv">7</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Draw Cauchy disk</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>theta <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span> <span class="op">*</span> np.pi, <span class="dv">300</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>x_cauchy <span class="op">=</span> r_cauchy <span class="op">*</span> np.cos(theta)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>y_cauchy <span class="op">=</span> r_cauchy <span class="op">*</span> np.sin(theta)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>ax.plot(x_cauchy, y_cauchy, <span class="st">'--'</span>, color<span class="op">=</span><span class="st">'#d9534f'</span>, linewidth<span class="op">=</span><span class="fl">2.0</span>, label<span class="op">=</span><span class="ss">f'Cauchy Bound Circle ($R = </span><span class="sc">{</span>r_cauchy<span class="sc">:.1f}</span><span class="ss">$)'</span>)</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>ax.fill(x_cauchy, y_cauchy, color<span class="op">=</span><span class="st">'#d9534f'</span>, alpha<span class="op">=</span><span class="fl">0.08</span>)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Unit circle</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>ax.plot(np.cos(theta), np.sin(theta), <span class="st">':'</span>, color<span class="op">=</span><span class="st">'gray'</span>, linewidth<span class="op">=</span><span class="fl">1.2</span>, label<span class="op">=</span><span class="st">'Unit Circle ($|z| = 1$)'</span>)</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot roots</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>ax.plot(roots.real, roots.imag, <span class="st">'o'</span>, color<span class="op">=</span><span class="st">'#0275d8'</span>, markersize<span class="op">=</span><span class="dv">9</span>, label<span class="op">=</span><span class="st">'Companion Matrix Eigenvalues (Roots)'</span>)</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> roots:</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    ax.annotate(<span class="ss">f'(</span><span class="sc">{</span>r<span class="sc">.</span>real<span class="sc">:.2f}</span><span class="ss">, </span><span class="sc">{</span>r<span class="sc">.</span>imag<span class="sc">:.2f}</span><span class="ss">i)'</span>,</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>                xy<span class="op">=</span>(r.real, r.imag), xytext<span class="op">=</span>(r.real <span class="op">+</span> <span class="fl">0.3</span>, r.imag <span class="op">+</span> <span class="fl">0.3</span>),</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>                fontsize<span class="op">=</span><span class="fl">8.5</span>, color<span class="op">=</span><span class="st">'#0275d8'</span>)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>ax.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">'black'</span>, linestyle<span class="op">=</span><span class="st">'-'</span>, linewidth<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>ax.axvline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">'black'</span>, linestyle<span class="op">=</span><span class="st">'-'</span>, linewidth<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'Polynomial Roots in Complex Plane $</span><span class="ch">\\</span><span class="st">mathbb</span><span class="sc">{C}</span><span class="st">$ vs. Cauchy Bound'</span>, fontsize<span class="op">=</span><span class="dv">11</span>, fontweight<span class="op">=</span><span class="st">'bold'</span>, pad<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'Real Axis $</span><span class="ch">\\</span><span class="st">mathrm</span><span class="sc">{Re}</span><span class="st">(z)$'</span>, fontsize<span class="op">=</span><span class="fl">10.5</span>)</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'Imaginary Axis $</span><span class="ch">\\</span><span class="st">mathrm</span><span class="sc">{Im}</span><span class="st">(z)$'</span>, fontsize<span class="op">=</span><span class="fl">10.5</span>)</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>ax.set_xlim(<span class="op">-</span>r_cauchy <span class="op">-</span> <span class="fl">1.5</span>, r_cauchy <span class="op">+</span> <span class="fl">1.5</span>)</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>ax.set_ylim(<span class="op">-</span>r_cauchy <span class="op">-</span> <span class="fl">1.5</span>, r_cauchy <span class="op">+</span> <span class="fl">1.5</span>)</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">'equal'</span>, <span class="st">'box'</span>)</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>ax.legend(loc<span class="op">=</span><span class="st">'upper right'</span>, frameon<span class="op">=</span><span class="va">True</span>, fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, alpha<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-companion-roots" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-companion-roots-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-companion-roots-output-1.png" width="1025" height="1033" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-companion-roots-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Computer-Generated Roots in the Complex Plane via Frobenius Companion Matrix Eigenvalues. The roots of P(x) = x⁶ - 2x⁵ + 3x⁴ - 4x³ + 5x² - 6x + 7 are plotted alongside the theoretical Cauchy root bound circle |z| &lt;= 1 + max |a_k| = 8.0, confirming that all eigenvalues are bounded inside the disk.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
 <hr>
 </section>
 </section>
@@ -602,13 +665,57 @@ P(x) &amp;= a_0 + x \cdot b_1, &amp; P'(x) &amp;= d_1
 <h3 class="anchored" data-anchor-id="worked-example-1-synthetic-division-and-evaluation">6.1 Worked Example 1: Synthetic Division and Evaluation</h3>
 <p>Divide <span class="math inline">\(P(x) = 2x^4 - 5x^3 + 3x^2 - 7x + 2\)</span> by <span class="math inline">\((x - 2)\)</span>:</p>
 <ul>
-<li><p>Target root <span class="math inline">\(c = 2\)</span>. Coefficients: <span class="math inline">\([2, -5, 3, -7, 2]\)</span>.</p></li>
-<li><p><strong>Synthetic Division Tableau:</strong></p>
-<pre><code>  2 │   2   -5    3   -7    2
-    │        4   -2    2  -10
-    └─────────────────────────
-        2   -1    1   -5 │ -8</code></pre></li>
-<li><p><strong>Result:</strong></p>
+<li>Target root <span class="math inline">\(c = 2\)</span>. Coefficients: <span class="math inline">\([2, -5, 3, -7, 2]\)</span>.</li>
+<li><strong>Synthetic Division Tableau:</strong></li>
+</ul>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Evaluation Root (<span class="math inline">\(c = 2\)</span>)</th>
+<th style="text-align: center;"><span class="math inline">\(x^4\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(x^3\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(x^2\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(x^1\)</span></th>
+<th style="text-align: center;"><span class="math inline">\(x^0\)</span> (Constant)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><strong>Dividend Coefficients</strong></td>
+<td style="text-align: center;"><span class="math inline">\(2\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(-5\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(3\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(-7\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(2\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><strong>Multiply by <span class="math inline">\(c = 2\)</span></strong></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"><span class="math inline">\(4\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(-2\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(2\)</span></td>
+<td style="text-align: center;"><span class="math inline">\(-10\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><strong>Quotient Coefficients / Remainder</strong></td>
+<td style="text-align: center;"><strong><span class="math inline">\(2\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="math inline">\(-1\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="math inline">\(1\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="math inline">\(-5\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="math inline">\(-8\)</span> (Remainder)</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Result:</strong>
 <ul>
 <li>Quotient: <span class="math inline">\(q(x) = 2x^3 - x^2 + x - 5\)</span></li>
 <li>Remainder: <span class="math inline">\(r = -8 \implies P(2) = -8\)</span>.</li>
@@ -1656,424 +1763,479 @@ P(x) &amp;= a_0 + x \cdot b_1, &amp; P'(x) &amp;= d_1
 <span id="cb6-214"><a href="#cb6-214" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-215"><a href="#cb6-215" aria-hidden="true" tabindex="-1"></a>The characteristic polynomial of $\mathbf{C}(P)$ is identically $\det(\lambda I - \mathbf{C}(P)) = P(\lambda)$. Computing the eigenvalues of $\mathbf{C}(P)$ using the backward-stable **QR algorithm with Francis shifts** yields all $n$ roots simultaneously with exceptional numerical stability.</span>
 <span id="cb6-216"><a href="#cb6-216" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-217"><a href="#cb6-217" aria-hidden="true" tabindex="-1"></a>---</span>
-<span id="cb6-218"><a href="#cb6-218" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-219"><a href="#cb6-219" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. Worked Examples</span></span>
-<span id="cb6-220"><a href="#cb6-220" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-221"><a href="#cb6-221" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.1 Worked Example 1: Synthetic Division and Evaluation</span></span>
-<span id="cb6-222"><a href="#cb6-222" aria-hidden="true" tabindex="-1"></a>Divide $P(x) = 2x^4 - 5x^3 + 3x^2 - 7x + 2$ by $(x - 2)$:</span>
-<span id="cb6-223"><a href="#cb6-223" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-224"><a href="#cb6-224" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Target root $c = 2$. Coefficients: $<span class="co">[</span><span class="ot">2, -5, 3, -7, 2</span><span class="co">]</span>$.</span>
-<span id="cb6-225"><a href="#cb6-225" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Synthetic Division Tableau:**</span>
-<span id="cb6-226"><a href="#cb6-226" aria-hidden="true" tabindex="-1"></a>  <span class="in">```</span></span>
-<span id="cb6-227"><a href="#cb6-227" aria-hidden="true" tabindex="-1"></a><span class="in">    2 │   2   -5    3   -7    2</span></span>
-<span id="cb6-228"><a href="#cb6-228" aria-hidden="true" tabindex="-1"></a><span class="in">      │        4   -2    2  -10</span></span>
-<span id="cb6-229"><a href="#cb6-229" aria-hidden="true" tabindex="-1"></a><span class="in">      └─────────────────────────</span></span>
-<span id="cb6-230"><a href="#cb6-230" aria-hidden="true" tabindex="-1"></a><span class="in">          2   -1    1   -5 │ -8</span></span>
-<span id="cb6-231"><a href="#cb6-231" aria-hidden="true" tabindex="-1"></a><span class="in">  ```</span></span>
-<span id="cb6-232"><a href="#cb6-232" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Result:**</span>
-<span id="cb6-233"><a href="#cb6-233" aria-hidden="true" tabindex="-1"></a><span class="ss">  * </span>Quotient: $q(x) = 2x^3 - x^2 + x - 5$</span>
-<span id="cb6-234"><a href="#cb6-234" aria-hidden="true" tabindex="-1"></a><span class="ss">  * </span>Remainder: $r = -8 \implies P(2) = -8$.</span>
-<span id="cb6-235"><a href="#cb6-235" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-236"><a href="#cb6-236" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.2 Worked Example 2: Polynomial Euclidean Algorithm &amp; Bézout Identity</span></span>
-<span id="cb6-237"><a href="#cb6-237" aria-hidden="true" tabindex="-1"></a>Find $\gcd(f, g)$ for $f(x) = x^4 - 1$ and $g(x) = x^3 - 1$:</span>
-<span id="cb6-238"><a href="#cb6-238" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Divide $f$ by $g$:</span>
-<span id="cb6-239"><a href="#cb6-239" aria-hidden="true" tabindex="-1"></a>   $$x^4 - 1 = x(x^3 - 1) + (x - 1)$$</span>
-<span id="cb6-240"><a href="#cb6-240" aria-hidden="true" tabindex="-1"></a>   Quotient $q_1 = x$, Remainder $r_1 = x - 1$.</span>
-<span id="cb6-241"><a href="#cb6-241" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Divide $g$ by $r_1$:</span>
-<span id="cb6-242"><a href="#cb6-242" aria-hidden="true" tabindex="-1"></a>   $$x^3 - 1 = (x^2 + x + 1)(x - 1) + 0$$</span>
-<span id="cb6-243"><a href="#cb6-243" aria-hidden="true" tabindex="-1"></a>   Remainder is zero.</span>
-<span id="cb6-244"><a href="#cb6-244" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>The last non-zero remainder is $\gcd(f, g) = x - 1$.</span>
-<span id="cb6-245"><a href="#cb6-245" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Bézout Identity:**</span>
-<span id="cb6-246"><a href="#cb6-246" aria-hidden="true" tabindex="-1"></a>   $$x - 1 = 1 \cdot f(x) - x \cdot g(x)$$</span>
-<span id="cb6-247"><a href="#cb6-247" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-248"><a href="#cb6-248" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.3 Worked Example 3: Eisenstein's Irreducibility Criterion</span></span>
-<span id="cb6-249"><a href="#cb6-249" aria-hidden="true" tabindex="-1"></a>Examine $P(x) = 2x^4 - 6x^3 + 12x^2 - 18x + 6$:</span>
-<span id="cb6-250"><a href="#cb6-250" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Coefficients: $a_4 = 2, a_3 = -6, a_2 = 12, a_1 = -18, a_0 = 6$.</span>
-<span id="cb6-251"><a href="#cb6-251" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Choose prime $p = 3$:</span>
-<span id="cb6-252"><a href="#cb6-252" aria-hidden="true" tabindex="-1"></a><span class="ss">  1. </span>$3 \mid (-6), 3 \mid 12, 3 \mid (-18), 3 \mid 6$. All coefficients except $a_4$ are divisible by 3.</span>
-<span id="cb6-253"><a href="#cb6-253" aria-hidden="true" tabindex="-1"></a><span class="ss">  2. </span>$3 \nmid 2$ (leading coefficient not divisible by 3).</span>
-<span id="cb6-254"><a href="#cb6-254" aria-hidden="true" tabindex="-1"></a><span class="ss">  3. </span>$3^2 = 9 \nmid 6$ (constant term not divisible by 9).</span>
-<span id="cb6-255"><a href="#cb6-255" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>By Eisenstein's Criterion, $P(x)$ is **irreducible** over the field of rational numbers $\mathbb{Q}$.</span>
+<span id="cb6-219"><a href="#cb6-219" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb6-220"><a href="#cb6-220" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-companion-roots</span></span>
+<span id="cb6-221"><a href="#cb6-221" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Computer-Generated Roots in the Complex Plane via Frobenius Companion Matrix Eigenvalues. The roots of P(x) = x⁶ - 2x⁵ + 3x⁴ - 4x³ + 5x² - 6x + 7 are plotted alongside the theoretical Cauchy root bound circle |z| &lt;= 1 + max |a_k| = 8.0, confirming that all eigenvalues are bounded inside the disk."</span></span>
+<span id="cb6-222"><a href="#cb6-222" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb6-223"><a href="#cb6-223" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-summary: "Show Python generation code"</span></span>
+<span id="cb6-224"><a href="#cb6-224" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-225"><a href="#cb6-225" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb6-226"><a href="#cb6-226" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb6-227"><a href="#cb6-227" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-228"><a href="#cb6-228" aria-hidden="true" tabindex="-1"></a><span class="co"># Polynomial coefficients: P(x) = x^6 - 2x^5 + 3x^4 - 4x^3 + 5x^2 - 6x + 7</span></span>
+<span id="cb6-229"><a href="#cb6-229" aria-hidden="true" tabindex="-1"></a>coeffs <span class="op">=</span> [<span class="fl">1.0</span>, <span class="op">-</span><span class="fl">2.0</span>, <span class="fl">3.0</span>, <span class="op">-</span><span class="fl">4.0</span>, <span class="fl">5.0</span>, <span class="op">-</span><span class="fl">6.0</span>, <span class="fl">7.0</span>]</span>
+<span id="cb6-230"><a href="#cb6-230" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-231"><a href="#cb6-231" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute companion matrix eigenvalues (np.roots)</span></span>
+<span id="cb6-232"><a href="#cb6-232" aria-hidden="true" tabindex="-1"></a>roots <span class="op">=</span> np.roots(coeffs)</span>
+<span id="cb6-233"><a href="#cb6-233" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-234"><a href="#cb6-234" aria-hidden="true" tabindex="-1"></a><span class="co"># Cauchy root bound: R_Cauchy = 1 + max(|a_k / a_n|)</span></span>
+<span id="cb6-235"><a href="#cb6-235" aria-hidden="true" tabindex="-1"></a>a_n <span class="op">=</span> coeffs[<span class="dv">0</span>]</span>
+<span id="cb6-236"><a href="#cb6-236" aria-hidden="true" tabindex="-1"></a>r_cauchy <span class="op">=</span> <span class="fl">1.0</span> <span class="op">+</span> <span class="bu">max</span>(<span class="bu">abs</span>(c <span class="op">/</span> a_n) <span class="cf">for</span> c <span class="kw">in</span> coeffs[<span class="dv">1</span>:])</span>
+<span id="cb6-237"><a href="#cb6-237" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-238"><a href="#cb6-238" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">7</span>, <span class="dv">7</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb6-239"><a href="#cb6-239" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-240"><a href="#cb6-240" aria-hidden="true" tabindex="-1"></a><span class="co"># Draw Cauchy disk</span></span>
+<span id="cb6-241"><a href="#cb6-241" aria-hidden="true" tabindex="-1"></a>theta <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span> <span class="op">*</span> np.pi, <span class="dv">300</span>)</span>
+<span id="cb6-242"><a href="#cb6-242" aria-hidden="true" tabindex="-1"></a>x_cauchy <span class="op">=</span> r_cauchy <span class="op">*</span> np.cos(theta)</span>
+<span id="cb6-243"><a href="#cb6-243" aria-hidden="true" tabindex="-1"></a>y_cauchy <span class="op">=</span> r_cauchy <span class="op">*</span> np.sin(theta)</span>
+<span id="cb6-244"><a href="#cb6-244" aria-hidden="true" tabindex="-1"></a>ax.plot(x_cauchy, y_cauchy, <span class="st">'--'</span>, color<span class="op">=</span><span class="st">'#d9534f'</span>, linewidth<span class="op">=</span><span class="fl">2.0</span>, label<span class="op">=</span><span class="ss">f'Cauchy Bound Circle ($R = </span><span class="sc">{</span>r_cauchy<span class="sc">:.1f}</span><span class="ss">$)'</span>)</span>
+<span id="cb6-245"><a href="#cb6-245" aria-hidden="true" tabindex="-1"></a>ax.fill(x_cauchy, y_cauchy, color<span class="op">=</span><span class="st">'#d9534f'</span>, alpha<span class="op">=</span><span class="fl">0.08</span>)</span>
+<span id="cb6-246"><a href="#cb6-246" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-247"><a href="#cb6-247" aria-hidden="true" tabindex="-1"></a><span class="co"># Unit circle</span></span>
+<span id="cb6-248"><a href="#cb6-248" aria-hidden="true" tabindex="-1"></a>ax.plot(np.cos(theta), np.sin(theta), <span class="st">':'</span>, color<span class="op">=</span><span class="st">'gray'</span>, linewidth<span class="op">=</span><span class="fl">1.2</span>, label<span class="op">=</span><span class="st">'Unit Circle ($|z| = 1$)'</span>)</span>
+<span id="cb6-249"><a href="#cb6-249" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-250"><a href="#cb6-250" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot roots</span></span>
+<span id="cb6-251"><a href="#cb6-251" aria-hidden="true" tabindex="-1"></a>ax.plot(roots.real, roots.imag, <span class="st">'o'</span>, color<span class="op">=</span><span class="st">'#0275d8'</span>, markersize<span class="op">=</span><span class="dv">9</span>, label<span class="op">=</span><span class="st">'Companion Matrix Eigenvalues (Roots)'</span>)</span>
+<span id="cb6-252"><a href="#cb6-252" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> roots:</span>
+<span id="cb6-253"><a href="#cb6-253" aria-hidden="true" tabindex="-1"></a>    ax.annotate(<span class="ss">f'(</span><span class="sc">{</span>r<span class="sc">.</span>real<span class="sc">:.2f}</span><span class="ss">, </span><span class="sc">{</span>r<span class="sc">.</span>imag<span class="sc">:.2f}</span><span class="ss">i)'</span>,</span>
+<span id="cb6-254"><a href="#cb6-254" aria-hidden="true" tabindex="-1"></a>                xy<span class="op">=</span>(r.real, r.imag), xytext<span class="op">=</span>(r.real <span class="op">+</span> <span class="fl">0.3</span>, r.imag <span class="op">+</span> <span class="fl">0.3</span>),</span>
+<span id="cb6-255"><a href="#cb6-255" aria-hidden="true" tabindex="-1"></a>                fontsize<span class="op">=</span><span class="fl">8.5</span>, color<span class="op">=</span><span class="st">'#0275d8'</span>)</span>
 <span id="cb6-256"><a href="#cb6-256" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-257"><a href="#cb6-257" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.4 Worked Example 4: Sturm Sequence Root Counting</span></span>
-<span id="cb6-258"><a href="#cb6-258" aria-hidden="true" tabindex="-1"></a>Isolate the real roots of $P(x) = x^3 - 3x + 1$ on the interval $<span class="co">[</span><span class="ot">-2, 2</span><span class="co">]</span>$:</span>
-<span id="cb6-259"><a href="#cb6-259" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Construct Sturm sequence:</span>
-<span id="cb6-260"><a href="#cb6-260" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_0(x) = x^3 - 3x + 1$</span>
-<span id="cb6-261"><a href="#cb6-261" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_1(x) = 3x^2 - 3 = 3(x^2 - 1)$</span>
-<span id="cb6-262"><a href="#cb6-262" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>Divide $f_0$ by $f_1$: $x^3 - 3x + 1 = \frac{x}{3}(3x^2 - 3) + (-2x + 1)$. Negative remainder:</span>
-<span id="cb6-263"><a href="#cb6-263" aria-hidden="true" tabindex="-1"></a>     $$f_2(x) = 2x - 1$$</span>
-<span id="cb6-264"><a href="#cb6-264" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>Divide $f_1$ by $f_2$: $3x^2 - 3 = \left(\frac{3}{2}x + \frac{3}{4}\right)(2x - 1) + \left(-\frac{9}{4}\right)$. Negative remainder:</span>
-<span id="cb6-265"><a href="#cb6-265" aria-hidden="true" tabindex="-1"></a>     $$f_3(x) = +\frac{9}{4}$$</span>
-<span id="cb6-266"><a href="#cb6-266" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Evaluate sign sequence at $x = -2$:</span>
-<span id="cb6-267"><a href="#cb6-267" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_0(-2) = -8 + 6 + 1 = -1 \quad (-)$</span>
-<span id="cb6-268"><a href="#cb6-268" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_1(-2) = 12 - 3 = +9 \quad (+)$</span>
-<span id="cb6-269"><a href="#cb6-269" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_2(-2) = -4 - 1 = -5 \quad (-)$</span>
-<span id="cb6-270"><a href="#cb6-270" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_3(-2) = +9/4 \quad (+)$</span>
-<span id="cb6-271"><a href="#cb6-271" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>Sequence: $(-, +, -, +) \implies V(-2) = 3$ sign changes.</span>
-<span id="cb6-272"><a href="#cb6-272" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>Evaluate sign sequence at $x = 2$:</span>
-<span id="cb6-273"><a href="#cb6-273" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_0(2) = 8 - 6 + 1 = +3 \quad (+)$</span>
-<span id="cb6-274"><a href="#cb6-274" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_1(2) = 12 - 3 = +9 \quad (+)$</span>
-<span id="cb6-275"><a href="#cb6-275" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_2(2) = 4 - 1 = +3 \quad (+)$</span>
-<span id="cb6-276"><a href="#cb6-276" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_3(2) = +9/4 \quad (+)$</span>
-<span id="cb6-277"><a href="#cb6-277" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>Sequence: $(+, +, +, +) \implies V(2) = 0$ sign changes.</span>
-<span id="cb6-278"><a href="#cb6-278" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Conclusion:**</span>
-<span id="cb6-279"><a href="#cb6-279" aria-hidden="true" tabindex="-1"></a>   $$N_{\text{roots}} = V(-2) - V(2) = 3 - 0 = \mathbf{3 \text{ distinct real roots in } <span class="co">[</span><span class="ot">-2, 2</span><span class="co">]</span>}$$</span>
-<span id="cb6-280"><a href="#cb6-280" aria-hidden="true" tabindex="-1"></a>   All 3 roots of $x^3 - 3x + 1$ are real and strictly confined inside $<span class="co">[</span><span class="ot">-2, 2</span><span class="co">]</span>$!</span>
-<span id="cb6-281"><a href="#cb6-281" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-282"><a href="#cb6-282" aria-hidden="true" tabindex="-1"></a>---</span>
-<span id="cb6-283"><a href="#cb6-283" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-284"><a href="#cb6-284" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. Multi-Language Production Implementations</span></span>
-<span id="cb6-285"><a href="#cb6-285" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-286"><a href="#cb6-286" aria-hidden="true" tabindex="-1"></a>Below is a complete, production-grade implementation of Horner polynomial evaluation, formal derivative calculation, and Newton-Raphson root extraction with synthetic deflation.</span>
-<span id="cb6-287"><a href="#cb6-287" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-288"><a href="#cb6-288" aria-hidden="true" tabindex="-1"></a>Choose your programming language using the tab interface below:</span>
-<span id="cb6-289"><a href="#cb6-289" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-290"><a href="#cb6-290" aria-hidden="true" tabindex="-1"></a>::: {.panel-tabset}</span>
+<span id="cb6-257"><a href="#cb6-257" aria-hidden="true" tabindex="-1"></a>ax.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">'black'</span>, linestyle<span class="op">=</span><span class="st">'-'</span>, linewidth<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb6-258"><a href="#cb6-258" aria-hidden="true" tabindex="-1"></a>ax.axvline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">'black'</span>, linestyle<span class="op">=</span><span class="st">'-'</span>, linewidth<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb6-259"><a href="#cb6-259" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-260"><a href="#cb6-260" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'Polynomial Roots in Complex Plane $</span><span class="ch">\\</span><span class="st">mathbb</span><span class="sc">{C}</span><span class="st">$ vs. Cauchy Bound'</span>, fontsize<span class="op">=</span><span class="dv">11</span>, fontweight<span class="op">=</span><span class="st">'bold'</span>, pad<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb6-261"><a href="#cb6-261" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'Real Axis $</span><span class="ch">\\</span><span class="st">mathrm</span><span class="sc">{Re}</span><span class="st">(z)$'</span>, fontsize<span class="op">=</span><span class="fl">10.5</span>)</span>
+<span id="cb6-262"><a href="#cb6-262" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'Imaginary Axis $</span><span class="ch">\\</span><span class="st">mathrm</span><span class="sc">{Im}</span><span class="st">(z)$'</span>, fontsize<span class="op">=</span><span class="fl">10.5</span>)</span>
+<span id="cb6-263"><a href="#cb6-263" aria-hidden="true" tabindex="-1"></a>ax.set_xlim(<span class="op">-</span>r_cauchy <span class="op">-</span> <span class="fl">1.5</span>, r_cauchy <span class="op">+</span> <span class="fl">1.5</span>)</span>
+<span id="cb6-264"><a href="#cb6-264" aria-hidden="true" tabindex="-1"></a>ax.set_ylim(<span class="op">-</span>r_cauchy <span class="op">-</span> <span class="fl">1.5</span>, r_cauchy <span class="op">+</span> <span class="fl">1.5</span>)</span>
+<span id="cb6-265"><a href="#cb6-265" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">'equal'</span>, <span class="st">'box'</span>)</span>
+<span id="cb6-266"><a href="#cb6-266" aria-hidden="true" tabindex="-1"></a>ax.legend(loc<span class="op">=</span><span class="st">'upper right'</span>, frameon<span class="op">=</span><span class="va">True</span>, fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb6-267"><a href="#cb6-267" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, alpha<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb6-268"><a href="#cb6-268" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-269"><a href="#cb6-269" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb6-270"><a href="#cb6-270" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb6-271"><a href="#cb6-271" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb6-272"><a href="#cb6-272" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-273"><a href="#cb6-273" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb6-274"><a href="#cb6-274" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-275"><a href="#cb6-275" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. Worked Examples</span></span>
+<span id="cb6-276"><a href="#cb6-276" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-277"><a href="#cb6-277" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.1 Worked Example 1: Synthetic Division and Evaluation</span></span>
+<span id="cb6-278"><a href="#cb6-278" aria-hidden="true" tabindex="-1"></a>Divide $P(x) = 2x^4 - 5x^3 + 3x^2 - 7x + 2$ by $(x - 2)$:</span>
+<span id="cb6-279"><a href="#cb6-279" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-280"><a href="#cb6-280" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Target root $c = 2$. Coefficients: $<span class="co">[</span><span class="ot">2, -5, 3, -7, 2</span><span class="co">]</span>$.</span>
+<span id="cb6-281"><a href="#cb6-281" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Synthetic Division Tableau:**</span>
+<span id="cb6-282"><a href="#cb6-282" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-283"><a href="#cb6-283" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Evaluation Root ($c = 2$) <span class="pp">|</span> $x^4$ <span class="pp">|</span> $x^3$ <span class="pp">|</span> $x^2$ <span class="pp">|</span> $x^1$ <span class="pp">|</span> $x^0$ (Constant) <span class="pp">|</span></span>
+<span id="cb6-284"><a href="#cb6-284" aria-hidden="true" tabindex="-1"></a><span class="pp">| :---:</span> <span class="pp">| :---:</span> <span class="pp">| :---:</span> <span class="pp">| :---:</span> <span class="pp">| :---:</span> <span class="pp">| :---:</span> <span class="pp">|</span></span>
+<span id="cb6-285"><a href="#cb6-285" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Dividend Coefficients** <span class="pp">|</span> $2$ <span class="pp">|</span> $-5$ <span class="pp">|</span> $3$ <span class="pp">|</span> $-7$ <span class="pp">|</span> $2$ <span class="pp">|</span></span>
+<span id="cb6-286"><a href="#cb6-286" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Multiply by $c = 2$** <span class="pp">|</span> <span class="pp">|</span> $4$ <span class="pp">|</span> $-2$ <span class="pp">|</span> $2$ <span class="pp">|</span> $-10$ <span class="pp">|</span></span>
+<span id="cb6-287"><a href="#cb6-287" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Quotient Coefficients / Remainder** | **$2$** | **$-1$** | **$1$** | **$-5$** | **$-8$ (Remainder)** <span class="pp">|</span></span>
+<span id="cb6-288"><a href="#cb6-288" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Result:**</span>
+<span id="cb6-289"><a href="#cb6-289" aria-hidden="true" tabindex="-1"></a><span class="ss">  * </span>Quotient: $q(x) = 2x^3 - x^2 + x - 5$</span>
+<span id="cb6-290"><a href="#cb6-290" aria-hidden="true" tabindex="-1"></a><span class="ss">  * </span>Remainder: $r = -8 \implies P(2) = -8$.</span>
 <span id="cb6-291"><a href="#cb6-291" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-292"><a href="#cb6-292" aria-hidden="true" tabindex="-1"></a><span class="fu">## C (C99 / C11)</span></span>
-<span id="cb6-293"><a href="#cb6-293" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-294"><a href="#cb6-294" aria-hidden="true" tabindex="-1"></a><span class="in">```c</span></span>
-<span id="cb6-295"><a href="#cb6-295" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></span>
-<span id="cb6-296"><a href="#cb6-296" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdlib.h&gt;</span></span>
-<span id="cb6-297"><a href="#cb6-297" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;math.h&gt;</span></span>
-<span id="cb6-298"><a href="#cb6-298" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-299"><a href="#cb6-299" aria-hidden="true" tabindex="-1"></a><span class="co">/* Evaluates P(x) and P'(x) in a single pass using Horner's method */</span></span>
-<span id="cb6-300"><a href="#cb6-300" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> horner_eval<span class="op">(</span><span class="dt">const</span> <span class="dt">double</span> <span class="op">*</span>coeffs<span class="op">,</span> <span class="dt">int</span> degree<span class="op">,</span> <span class="dt">double</span> x<span class="op">,</span> <span class="dt">double</span> <span class="op">*</span>p_val<span class="op">,</span> <span class="dt">double</span> <span class="op">*</span>dp_val<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-301"><a href="#cb6-301" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> p <span class="op">=</span> coeffs<span class="op">[</span>degree<span class="op">];</span></span>
-<span id="cb6-302"><a href="#cb6-302" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> dp <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
-<span id="cb6-303"><a href="#cb6-303" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb6-304"><a href="#cb6-304" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> degree <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> i<span class="op">--)</span> <span class="op">{</span></span>
-<span id="cb6-305"><a href="#cb6-305" aria-hidden="true" tabindex="-1"></a>        dp <span class="op">=</span> dp <span class="op">*</span> x <span class="op">+</span> p<span class="op">;</span></span>
-<span id="cb6-306"><a href="#cb6-306" aria-hidden="true" tabindex="-1"></a>        p <span class="op">=</span> p <span class="op">*</span> x <span class="op">+</span> coeffs<span class="op">[</span>i<span class="op">];</span></span>
-<span id="cb6-307"><a href="#cb6-307" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb6-308"><a href="#cb6-308" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>p_val <span class="op">=</span> p<span class="op">;</span></span>
-<span id="cb6-309"><a href="#cb6-309" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>dp_val <span class="op">=</span> dp<span class="op">;</span></span>
-<span id="cb6-310"><a href="#cb6-310" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb6-311"><a href="#cb6-311" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-312"><a href="#cb6-312" aria-hidden="true" tabindex="-1"></a><span class="co">/* Performs synthetic deflation: divides P(x) by (x - root) */</span></span>
-<span id="cb6-313"><a href="#cb6-313" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> deflate<span class="op">(</span><span class="dt">double</span> <span class="op">*</span>coeffs<span class="op">,</span> <span class="dt">int</span> <span class="op">*</span>degree<span class="op">,</span> <span class="dt">double</span> root<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-314"><a href="#cb6-314" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> n <span class="op">=</span> <span class="op">*</span>degree<span class="op">;</span></span>
-<span id="cb6-315"><a href="#cb6-315" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> <span class="op">*</span>q <span class="op">=</span> <span class="op">(</span><span class="dt">double</span> <span class="op">*)</span>malloc<span class="op">(</span>n <span class="op">*</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">double</span><span class="op">));</span></span>
-<span id="cb6-316"><a href="#cb6-316" aria-hidden="true" tabindex="-1"></a>    q<span class="op">[</span>n <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">=</span> coeffs<span class="op">[</span>n<span class="op">];</span></span>
-<span id="cb6-317"><a href="#cb6-317" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> n <span class="op">-</span> <span class="dv">2</span><span class="op">;</span> i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> i<span class="op">--)</span> <span class="op">{</span></span>
-<span id="cb6-318"><a href="#cb6-318" aria-hidden="true" tabindex="-1"></a>        q<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> coeffs<span class="op">[</span>i <span class="op">+</span> <span class="dv">1</span><span class="op">]</span> <span class="op">+</span> root <span class="op">*</span> q<span class="op">[</span>i <span class="op">+</span> <span class="dv">1</span><span class="op">];</span></span>
-<span id="cb6-319"><a href="#cb6-319" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb6-320"><a href="#cb6-320" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> n<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
-<span id="cb6-321"><a href="#cb6-321" aria-hidden="true" tabindex="-1"></a>        coeffs<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> q<span class="op">[</span>i<span class="op">];</span></span>
-<span id="cb6-322"><a href="#cb6-322" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb6-323"><a href="#cb6-323" aria-hidden="true" tabindex="-1"></a>    free<span class="op">(</span>q<span class="op">);</span></span>
-<span id="cb6-324"><a href="#cb6-324" aria-hidden="true" tabindex="-1"></a>    <span class="op">(*</span>degree<span class="op">)--;</span></span>
-<span id="cb6-325"><a href="#cb6-325" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb6-326"><a href="#cb6-326" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-327"><a href="#cb6-327" aria-hidden="true" tabindex="-1"></a><span class="co">/* Finds a single real root using Newton-Raphson */</span></span>
-<span id="cb6-328"><a href="#cb6-328" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> find_root_newton<span class="op">(</span><span class="dt">const</span> <span class="dt">double</span> <span class="op">*</span>coeffs<span class="op">,</span> <span class="dt">int</span> degree<span class="op">,</span> <span class="dt">double</span> x0<span class="op">,</span> <span class="dt">double</span> tol<span class="op">,</span> <span class="dt">int</span> max_iter<span class="op">,</span> <span class="dt">double</span> <span class="op">*</span>root<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-329"><a href="#cb6-329" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> x <span class="op">=</span> x0<span class="op">;</span></span>
-<span id="cb6-330"><a href="#cb6-330" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> iter <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> iter <span class="op">&lt;</span> max_iter<span class="op">;</span> iter<span class="op">++)</span> <span class="op">{</span></span>
-<span id="cb6-331"><a href="#cb6-331" aria-hidden="true" tabindex="-1"></a>        <span class="dt">double</span> p<span class="op">,</span> dp<span class="op">;</span></span>
-<span id="cb6-332"><a href="#cb6-332" aria-hidden="true" tabindex="-1"></a>        horner_eval<span class="op">(</span>coeffs<span class="op">,</span> degree<span class="op">,</span> x<span class="op">,</span> <span class="op">&amp;</span>p<span class="op">,</span> <span class="op">&amp;</span>dp<span class="op">);</span></span>
-<span id="cb6-333"><a href="#cb6-333" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>fabs<span class="op">(</span>p<span class="op">)</span> <span class="op">&lt;</span> tol<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-334"><a href="#cb6-334" aria-hidden="true" tabindex="-1"></a>            <span class="op">*</span>root <span class="op">=</span> x<span class="op">;</span></span>
-<span id="cb6-335"><a href="#cb6-335" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb6-336"><a href="#cb6-336" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb6-337"><a href="#cb6-337" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>fabs<span class="op">(</span>dp<span class="op">)</span> <span class="op">&lt;</span> <span class="fl">1e-14</span><span class="op">)</span> <span class="cf">break</span><span class="op">;</span></span>
-<span id="cb6-338"><a href="#cb6-338" aria-hidden="true" tabindex="-1"></a>        x <span class="op">-=</span> p <span class="op">/</span> dp<span class="op">;</span></span>
-<span id="cb6-339"><a href="#cb6-339" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb6-340"><a href="#cb6-340" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>root <span class="op">=</span> x<span class="op">;</span></span>
-<span id="cb6-341"><a href="#cb6-341" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb6-342"><a href="#cb6-342" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-292"><a href="#cb6-292" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.2 Worked Example 2: Polynomial Euclidean Algorithm &amp; Bézout Identity</span></span>
+<span id="cb6-293"><a href="#cb6-293" aria-hidden="true" tabindex="-1"></a>Find $\gcd(f, g)$ for $f(x) = x^4 - 1$ and $g(x) = x^3 - 1$:</span>
+<span id="cb6-294"><a href="#cb6-294" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Divide $f$ by $g$:</span>
+<span id="cb6-295"><a href="#cb6-295" aria-hidden="true" tabindex="-1"></a>   $$x^4 - 1 = x(x^3 - 1) + (x - 1)$$</span>
+<span id="cb6-296"><a href="#cb6-296" aria-hidden="true" tabindex="-1"></a>   Quotient $q_1 = x$, Remainder $r_1 = x - 1$.</span>
+<span id="cb6-297"><a href="#cb6-297" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Divide $g$ by $r_1$:</span>
+<span id="cb6-298"><a href="#cb6-298" aria-hidden="true" tabindex="-1"></a>   $$x^3 - 1 = (x^2 + x + 1)(x - 1) + 0$$</span>
+<span id="cb6-299"><a href="#cb6-299" aria-hidden="true" tabindex="-1"></a>   Remainder is zero.</span>
+<span id="cb6-300"><a href="#cb6-300" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>The last non-zero remainder is $\gcd(f, g) = x - 1$.</span>
+<span id="cb6-301"><a href="#cb6-301" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Bézout Identity:**</span>
+<span id="cb6-302"><a href="#cb6-302" aria-hidden="true" tabindex="-1"></a>   $$x - 1 = 1 \cdot f(x) - x \cdot g(x)$$</span>
+<span id="cb6-303"><a href="#cb6-303" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-304"><a href="#cb6-304" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.3 Worked Example 3: Eisenstein's Irreducibility Criterion</span></span>
+<span id="cb6-305"><a href="#cb6-305" aria-hidden="true" tabindex="-1"></a>Examine $P(x) = 2x^4 - 6x^3 + 12x^2 - 18x + 6$:</span>
+<span id="cb6-306"><a href="#cb6-306" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Coefficients: $a_4 = 2, a_3 = -6, a_2 = 12, a_1 = -18, a_0 = 6$.</span>
+<span id="cb6-307"><a href="#cb6-307" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Choose prime $p = 3$:</span>
+<span id="cb6-308"><a href="#cb6-308" aria-hidden="true" tabindex="-1"></a><span class="ss">  1. </span>$3 \mid (-6), 3 \mid 12, 3 \mid (-18), 3 \mid 6$. All coefficients except $a_4$ are divisible by 3.</span>
+<span id="cb6-309"><a href="#cb6-309" aria-hidden="true" tabindex="-1"></a><span class="ss">  2. </span>$3 \nmid 2$ (leading coefficient not divisible by 3).</span>
+<span id="cb6-310"><a href="#cb6-310" aria-hidden="true" tabindex="-1"></a><span class="ss">  3. </span>$3^2 = 9 \nmid 6$ (constant term not divisible by 9).</span>
+<span id="cb6-311"><a href="#cb6-311" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>By Eisenstein's Criterion, $P(x)$ is **irreducible** over the field of rational numbers $\mathbb{Q}$.</span>
+<span id="cb6-312"><a href="#cb6-312" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-313"><a href="#cb6-313" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6.4 Worked Example 4: Sturm Sequence Root Counting</span></span>
+<span id="cb6-314"><a href="#cb6-314" aria-hidden="true" tabindex="-1"></a>Isolate the real roots of $P(x) = x^3 - 3x + 1$ on the interval $<span class="co">[</span><span class="ot">-2, 2</span><span class="co">]</span>$:</span>
+<span id="cb6-315"><a href="#cb6-315" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Construct Sturm sequence:</span>
+<span id="cb6-316"><a href="#cb6-316" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_0(x) = x^3 - 3x + 1$</span>
+<span id="cb6-317"><a href="#cb6-317" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_1(x) = 3x^2 - 3 = 3(x^2 - 1)$</span>
+<span id="cb6-318"><a href="#cb6-318" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>Divide $f_0$ by $f_1$: $x^3 - 3x + 1 = \frac{x}{3}(3x^2 - 3) + (-2x + 1)$. Negative remainder:</span>
+<span id="cb6-319"><a href="#cb6-319" aria-hidden="true" tabindex="-1"></a>     $$f_2(x) = 2x - 1$$</span>
+<span id="cb6-320"><a href="#cb6-320" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>Divide $f_1$ by $f_2$: $3x^2 - 3 = \left(\frac{3}{2}x + \frac{3}{4}\right)(2x - 1) + \left(-\frac{9}{4}\right)$. Negative remainder:</span>
+<span id="cb6-321"><a href="#cb6-321" aria-hidden="true" tabindex="-1"></a>     $$f_3(x) = +\frac{9}{4}$$</span>
+<span id="cb6-322"><a href="#cb6-322" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Evaluate sign sequence at $x = -2$:</span>
+<span id="cb6-323"><a href="#cb6-323" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_0(-2) = -8 + 6 + 1 = -1 \quad (-)$</span>
+<span id="cb6-324"><a href="#cb6-324" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_1(-2) = 12 - 3 = +9 \quad (+)$</span>
+<span id="cb6-325"><a href="#cb6-325" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_2(-2) = -4 - 1 = -5 \quad (-)$</span>
+<span id="cb6-326"><a href="#cb6-326" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_3(-2) = +9/4 \quad (+)$</span>
+<span id="cb6-327"><a href="#cb6-327" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>Sequence: $(-, +, -, +) \implies V(-2) = 3$ sign changes.</span>
+<span id="cb6-328"><a href="#cb6-328" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>Evaluate sign sequence at $x = 2$:</span>
+<span id="cb6-329"><a href="#cb6-329" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_0(2) = 8 - 6 + 1 = +3 \quad (+)$</span>
+<span id="cb6-330"><a href="#cb6-330" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_1(2) = 12 - 3 = +9 \quad (+)$</span>
+<span id="cb6-331"><a href="#cb6-331" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_2(2) = 4 - 1 = +3 \quad (+)$</span>
+<span id="cb6-332"><a href="#cb6-332" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>$f_3(2) = +9/4 \quad (+)$</span>
+<span id="cb6-333"><a href="#cb6-333" aria-hidden="true" tabindex="-1"></a><span class="ss">   * </span>Sequence: $(+, +, +, +) \implies V(2) = 0$ sign changes.</span>
+<span id="cb6-334"><a href="#cb6-334" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Conclusion:**</span>
+<span id="cb6-335"><a href="#cb6-335" aria-hidden="true" tabindex="-1"></a>   $$N_{\text{roots}} = V(-2) - V(2) = 3 - 0 = \mathbf{3 \text{ distinct real roots in } <span class="co">[</span><span class="ot">-2, 2</span><span class="co">]</span>}$$</span>
+<span id="cb6-336"><a href="#cb6-336" aria-hidden="true" tabindex="-1"></a>   All 3 roots of $x^3 - 3x + 1$ are real and strictly confined inside $<span class="co">[</span><span class="ot">-2, 2</span><span class="co">]</span>$!</span>
+<span id="cb6-337"><a href="#cb6-337" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-338"><a href="#cb6-338" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb6-339"><a href="#cb6-339" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-340"><a href="#cb6-340" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. Multi-Language Production Implementations</span></span>
+<span id="cb6-341"><a href="#cb6-341" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-342"><a href="#cb6-342" aria-hidden="true" tabindex="-1"></a>Below is a complete, production-grade implementation of Horner polynomial evaluation, formal derivative calculation, and Newton-Raphson root extraction with synthetic deflation.</span>
 <span id="cb6-343"><a href="#cb6-343" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-344"><a href="#cb6-344" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">void</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-345"><a href="#cb6-345" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* P(x) = x^3 - 6x^2 + 11x - 6 = (x-1)(x-2)(x-3) */</span></span>
-<span id="cb6-346"><a href="#cb6-346" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* coeffs ordered as [a0, a1, a2, a3] */</span></span>
-<span id="cb6-347"><a href="#cb6-347" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> coeffs<span class="op">[</span><span class="dv">4</span><span class="op">]</span> <span class="op">=</span> <span class="op">{-</span><span class="fl">6.0</span><span class="op">,</span> <span class="fl">11.0</span><span class="op">,</span> <span class="op">-</span><span class="fl">6.0</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">};</span></span>
-<span id="cb6-348"><a href="#cb6-348" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> degree <span class="op">=</span> <span class="dv">3</span><span class="op">;</span></span>
-<span id="cb6-349"><a href="#cb6-349" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> root<span class="op">;</span></span>
-<span id="cb6-350"><a href="#cb6-350" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-351"><a href="#cb6-351" aria-hidden="true" tabindex="-1"></a>    printf<span class="op">(</span><span class="st">"=== C99 Horner &amp; Newton Root Finder ===</span><span class="sc">\n</span><span class="st">"</span><span class="op">);</span></span>
-<span id="cb6-352"><a href="#cb6-352" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>degree <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-353"><a href="#cb6-353" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>find_root_newton<span class="op">(</span>coeffs<span class="op">,</span> degree<span class="op">,</span> <span class="fl">0.5</span><span class="op">,</span> <span class="fl">1e-12</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="op">&amp;</span>root<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb6-354"><a href="#cb6-354" aria-hidden="true" tabindex="-1"></a>            printf<span class="op">(</span><span class="st">"Found Root: </span><span class="sc">%12.8f\n</span><span class="st">"</span><span class="op">,</span> root<span class="op">);</span></span>
-<span id="cb6-355"><a href="#cb6-355" aria-hidden="true" tabindex="-1"></a>            deflate<span class="op">(</span>coeffs<span class="op">,</span> <span class="op">&amp;</span>degree<span class="op">,</span> root<span class="op">);</span></span>
-<span id="cb6-356"><a href="#cb6-356" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb6-357"><a href="#cb6-357" aria-hidden="true" tabindex="-1"></a>            printf<span class="op">(</span><span class="st">"Convergence failed or complex root encountered.</span><span class="sc">\n</span><span class="st">"</span><span class="op">);</span></span>
-<span id="cb6-358"><a href="#cb6-358" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span><span class="op">;</span></span>
-<span id="cb6-359"><a href="#cb6-359" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb6-360"><a href="#cb6-360" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb6-361"><a href="#cb6-361" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb6-362"><a href="#cb6-362" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb6-363"><a href="#cb6-363" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb6-364"><a href="#cb6-364" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-365"><a href="#cb6-365" aria-hidden="true" tabindex="-1"></a><span class="fu">## C++ (C++17 / C++20)</span></span>
-<span id="cb6-366"><a href="#cb6-366" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-367"><a href="#cb6-367" aria-hidden="true" tabindex="-1"></a><span class="in">```cpp</span></span>
-<span id="cb6-368"><a href="#cb6-368" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
-<span id="cb6-369"><a href="#cb6-369" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
-<span id="cb6-370"><a href="#cb6-370" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cmath&gt;</span></span>
-<span id="cb6-371"><a href="#cb6-371" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;numeric&gt;</span></span>
-<span id="cb6-372"><a href="#cb6-372" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iomanip&gt;</span></span>
-<span id="cb6-373"><a href="#cb6-373" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-374"><a href="#cb6-374" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Polynomial <span class="op">{</span></span>
-<span id="cb6-375"><a href="#cb6-375" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb6-376"><a href="#cb6-376" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Coefficients ordered from lowest degree to highest: a0, a1, ..., an</span></span>
-<span id="cb6-377"><a href="#cb6-377" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> coeffs<span class="op">;</span></span>
-<span id="cb6-378"><a href="#cb6-378" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-379"><a href="#cb6-379" aria-hidden="true" tabindex="-1"></a>    Polynomial<span class="op">(</span><span class="bu">std::</span>initializer_list<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> c<span class="op">)</span> <span class="op">:</span> coeffs<span class="op">(</span>c<span class="op">)</span> <span class="op">{}</span></span>
-<span id="cb6-380"><a href="#cb6-380" aria-hidden="true" tabindex="-1"></a>    Polynomial<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> c<span class="op">)</span> <span class="op">:</span> coeffs<span class="op">(</span><span class="bu">std::</span>move<span class="op">(</span>c<span class="op">))</span> <span class="op">{}</span></span>
-<span id="cb6-381"><a href="#cb6-381" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-382"><a href="#cb6-382" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> degree<span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>coeffs<span class="op">.</span>size<span class="op">())</span> <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> <span class="op">}</span></span>
-<span id="cb6-383"><a href="#cb6-383" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-384"><a href="#cb6-384" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Evaluates P(x) and P'(x) simultaneously via Horner's Rule</span></span>
-<span id="cb6-385"><a href="#cb6-385" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>pair<span class="op">&lt;</span><span class="dt">double</span><span class="op">,</span> <span class="dt">double</span><span class="op">&gt;</span> eval_with_derivative<span class="op">(</span><span class="dt">double</span> x<span class="op">)</span> <span class="at">const</span> <span class="op">{</span></span>
-<span id="cb6-386"><a href="#cb6-386" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> n <span class="op">=</span> degree<span class="op">();</span></span>
-<span id="cb6-387"><a href="#cb6-387" aria-hidden="true" tabindex="-1"></a>        <span class="dt">double</span> p <span class="op">=</span> coeffs<span class="op">[</span>n<span class="op">];</span></span>
-<span id="cb6-388"><a href="#cb6-388" aria-hidden="true" tabindex="-1"></a>        <span class="dt">double</span> dp <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
-<span id="cb6-389"><a href="#cb6-389" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> n <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> <span class="op">--</span>i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-390"><a href="#cb6-390" aria-hidden="true" tabindex="-1"></a>            dp <span class="op">=</span> dp <span class="op">*</span> x <span class="op">+</span> p<span class="op">;</span></span>
-<span id="cb6-391"><a href="#cb6-391" aria-hidden="true" tabindex="-1"></a>            p <span class="op">=</span> p <span class="op">*</span> x <span class="op">+</span> coeffs<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb6-344"><a href="#cb6-344" aria-hidden="true" tabindex="-1"></a>Choose your programming language using the tab interface below:</span>
+<span id="cb6-345"><a href="#cb6-345" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-346"><a href="#cb6-346" aria-hidden="true" tabindex="-1"></a>::: {.panel-tabset}</span>
+<span id="cb6-347"><a href="#cb6-347" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-348"><a href="#cb6-348" aria-hidden="true" tabindex="-1"></a><span class="fu">## C (C99 / C11)</span></span>
+<span id="cb6-349"><a href="#cb6-349" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-350"><a href="#cb6-350" aria-hidden="true" tabindex="-1"></a><span class="in">```c</span></span>
+<span id="cb6-351"><a href="#cb6-351" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></span>
+<span id="cb6-352"><a href="#cb6-352" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdlib.h&gt;</span></span>
+<span id="cb6-353"><a href="#cb6-353" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;math.h&gt;</span></span>
+<span id="cb6-354"><a href="#cb6-354" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-355"><a href="#cb6-355" aria-hidden="true" tabindex="-1"></a><span class="co">/* Evaluates P(x) and P'(x) in a single pass using Horner's method */</span></span>
+<span id="cb6-356"><a href="#cb6-356" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> horner_eval<span class="op">(</span><span class="dt">const</span> <span class="dt">double</span> <span class="op">*</span>coeffs<span class="op">,</span> <span class="dt">int</span> degree<span class="op">,</span> <span class="dt">double</span> x<span class="op">,</span> <span class="dt">double</span> <span class="op">*</span>p_val<span class="op">,</span> <span class="dt">double</span> <span class="op">*</span>dp_val<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-357"><a href="#cb6-357" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> p <span class="op">=</span> coeffs<span class="op">[</span>degree<span class="op">];</span></span>
+<span id="cb6-358"><a href="#cb6-358" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> dp <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
+<span id="cb6-359"><a href="#cb6-359" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-360"><a href="#cb6-360" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> degree <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> i<span class="op">--)</span> <span class="op">{</span></span>
+<span id="cb6-361"><a href="#cb6-361" aria-hidden="true" tabindex="-1"></a>        dp <span class="op">=</span> dp <span class="op">*</span> x <span class="op">+</span> p<span class="op">;</span></span>
+<span id="cb6-362"><a href="#cb6-362" aria-hidden="true" tabindex="-1"></a>        p <span class="op">=</span> p <span class="op">*</span> x <span class="op">+</span> coeffs<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb6-363"><a href="#cb6-363" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-364"><a href="#cb6-364" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>p_val <span class="op">=</span> p<span class="op">;</span></span>
+<span id="cb6-365"><a href="#cb6-365" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>dp_val <span class="op">=</span> dp<span class="op">;</span></span>
+<span id="cb6-366"><a href="#cb6-366" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-367"><a href="#cb6-367" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-368"><a href="#cb6-368" aria-hidden="true" tabindex="-1"></a><span class="co">/* Performs synthetic deflation: divides P(x) by (x - root) */</span></span>
+<span id="cb6-369"><a href="#cb6-369" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> deflate<span class="op">(</span><span class="dt">double</span> <span class="op">*</span>coeffs<span class="op">,</span> <span class="dt">int</span> <span class="op">*</span>degree<span class="op">,</span> <span class="dt">double</span> root<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-370"><a href="#cb6-370" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> n <span class="op">=</span> <span class="op">*</span>degree<span class="op">;</span></span>
+<span id="cb6-371"><a href="#cb6-371" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> <span class="op">*</span>q <span class="op">=</span> <span class="op">(</span><span class="dt">double</span> <span class="op">*)</span>malloc<span class="op">(</span>n <span class="op">*</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">double</span><span class="op">));</span></span>
+<span id="cb6-372"><a href="#cb6-372" aria-hidden="true" tabindex="-1"></a>    q<span class="op">[</span>n <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">=</span> coeffs<span class="op">[</span>n<span class="op">];</span></span>
+<span id="cb6-373"><a href="#cb6-373" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> n <span class="op">-</span> <span class="dv">2</span><span class="op">;</span> i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> i<span class="op">--)</span> <span class="op">{</span></span>
+<span id="cb6-374"><a href="#cb6-374" aria-hidden="true" tabindex="-1"></a>        q<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> coeffs<span class="op">[</span>i <span class="op">+</span> <span class="dv">1</span><span class="op">]</span> <span class="op">+</span> root <span class="op">*</span> q<span class="op">[</span>i <span class="op">+</span> <span class="dv">1</span><span class="op">];</span></span>
+<span id="cb6-375"><a href="#cb6-375" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-376"><a href="#cb6-376" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> n<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb6-377"><a href="#cb6-377" aria-hidden="true" tabindex="-1"></a>        coeffs<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> q<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb6-378"><a href="#cb6-378" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-379"><a href="#cb6-379" aria-hidden="true" tabindex="-1"></a>    free<span class="op">(</span>q<span class="op">);</span></span>
+<span id="cb6-380"><a href="#cb6-380" aria-hidden="true" tabindex="-1"></a>    <span class="op">(*</span>degree<span class="op">)--;</span></span>
+<span id="cb6-381"><a href="#cb6-381" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-382"><a href="#cb6-382" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-383"><a href="#cb6-383" aria-hidden="true" tabindex="-1"></a><span class="co">/* Finds a single real root using Newton-Raphson */</span></span>
+<span id="cb6-384"><a href="#cb6-384" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> find_root_newton<span class="op">(</span><span class="dt">const</span> <span class="dt">double</span> <span class="op">*</span>coeffs<span class="op">,</span> <span class="dt">int</span> degree<span class="op">,</span> <span class="dt">double</span> x0<span class="op">,</span> <span class="dt">double</span> tol<span class="op">,</span> <span class="dt">int</span> max_iter<span class="op">,</span> <span class="dt">double</span> <span class="op">*</span>root<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-385"><a href="#cb6-385" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> x <span class="op">=</span> x0<span class="op">;</span></span>
+<span id="cb6-386"><a href="#cb6-386" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> iter <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> iter <span class="op">&lt;</span> max_iter<span class="op">;</span> iter<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb6-387"><a href="#cb6-387" aria-hidden="true" tabindex="-1"></a>        <span class="dt">double</span> p<span class="op">,</span> dp<span class="op">;</span></span>
+<span id="cb6-388"><a href="#cb6-388" aria-hidden="true" tabindex="-1"></a>        horner_eval<span class="op">(</span>coeffs<span class="op">,</span> degree<span class="op">,</span> x<span class="op">,</span> <span class="op">&amp;</span>p<span class="op">,</span> <span class="op">&amp;</span>dp<span class="op">);</span></span>
+<span id="cb6-389"><a href="#cb6-389" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>fabs<span class="op">(</span>p<span class="op">)</span> <span class="op">&lt;</span> tol<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-390"><a href="#cb6-390" aria-hidden="true" tabindex="-1"></a>            <span class="op">*</span>root <span class="op">=</span> x<span class="op">;</span></span>
+<span id="cb6-391"><a href="#cb6-391" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
 <span id="cb6-392"><a href="#cb6-392" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb6-393"><a href="#cb6-393" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">{</span>p<span class="op">,</span> dp<span class="op">};</span></span>
-<span id="cb6-394"><a href="#cb6-394" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb6-395"><a href="#cb6-395" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-396"><a href="#cb6-396" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Synthetic Deflation: returns quotient polynomial when divided by (x - root)</span></span>
-<span id="cb6-397"><a href="#cb6-397" aria-hidden="true" tabindex="-1"></a>    Polynomial deflated<span class="op">(</span><span class="dt">double</span> root<span class="op">)</span> <span class="at">const</span> <span class="op">{</span></span>
-<span id="cb6-398"><a href="#cb6-398" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> n <span class="op">=</span> degree<span class="op">();</span></span>
-<span id="cb6-399"><a href="#cb6-399" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> q<span class="op">(</span>n<span class="op">);</span></span>
-<span id="cb6-400"><a href="#cb6-400" aria-hidden="true" tabindex="-1"></a>        q<span class="op">[</span>n <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">=</span> coeffs<span class="op">[</span>n<span class="op">];</span></span>
-<span id="cb6-401"><a href="#cb6-401" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> n <span class="op">-</span> <span class="dv">2</span><span class="op">;</span> i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> <span class="op">--</span>i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-402"><a href="#cb6-402" aria-hidden="true" tabindex="-1"></a>            q<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> coeffs<span class="op">[</span>i <span class="op">+</span> <span class="dv">1</span><span class="op">]</span> <span class="op">+</span> root <span class="op">*</span> q<span class="op">[</span>i <span class="op">+</span> <span class="dv">1</span><span class="op">];</span></span>
-<span id="cb6-403"><a href="#cb6-403" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb6-404"><a href="#cb6-404" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Polynomial<span class="op">(</span>q<span class="op">);</span></span>
-<span id="cb6-405"><a href="#cb6-405" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-393"><a href="#cb6-393" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>fabs<span class="op">(</span>dp<span class="op">)</span> <span class="op">&lt;</span> <span class="fl">1e-14</span><span class="op">)</span> <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb6-394"><a href="#cb6-394" aria-hidden="true" tabindex="-1"></a>        x <span class="op">-=</span> p <span class="op">/</span> dp<span class="op">;</span></span>
+<span id="cb6-395"><a href="#cb6-395" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-396"><a href="#cb6-396" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>root <span class="op">=</span> x<span class="op">;</span></span>
+<span id="cb6-397"><a href="#cb6-397" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb6-398"><a href="#cb6-398" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-399"><a href="#cb6-399" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-400"><a href="#cb6-400" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">void</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-401"><a href="#cb6-401" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* P(x) = x^3 - 6x^2 + 11x - 6 = (x-1)(x-2)(x-3) */</span></span>
+<span id="cb6-402"><a href="#cb6-402" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* coeffs ordered as [a0, a1, a2, a3] */</span></span>
+<span id="cb6-403"><a href="#cb6-403" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> coeffs<span class="op">[</span><span class="dv">4</span><span class="op">]</span> <span class="op">=</span> <span class="op">{-</span><span class="fl">6.0</span><span class="op">,</span> <span class="fl">11.0</span><span class="op">,</span> <span class="op">-</span><span class="fl">6.0</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">};</span></span>
+<span id="cb6-404"><a href="#cb6-404" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> degree <span class="op">=</span> <span class="dv">3</span><span class="op">;</span></span>
+<span id="cb6-405"><a href="#cb6-405" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> root<span class="op">;</span></span>
 <span id="cb6-406"><a href="#cb6-406" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-407"><a href="#cb6-407" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Finds a real root via Newton-Raphson iteration</span></span>
-<span id="cb6-408"><a href="#cb6-408" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> solve_newton<span class="op">(</span><span class="dt">double</span> x0<span class="op">,</span> <span class="dt">double</span><span class="op">&amp;</span> root<span class="op">,</span> <span class="dt">double</span> tol <span class="op">=</span> <span class="fl">1e-12</span><span class="op">,</span> <span class="dt">int</span> max_iter <span class="op">=</span> <span class="dv">100</span><span class="op">)</span> <span class="at">const</span> <span class="op">{</span></span>
-<span id="cb6-409"><a href="#cb6-409" aria-hidden="true" tabindex="-1"></a>        <span class="dt">double</span> x <span class="op">=</span> x0<span class="op">;</span></span>
-<span id="cb6-410"><a href="#cb6-410" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> iter <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> iter <span class="op">&lt;</span> max_iter<span class="op">;</span> <span class="op">++</span>iter<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-411"><a href="#cb6-411" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> <span class="op">[</span>p<span class="op">,</span> dp<span class="op">]</span> <span class="op">=</span> eval_with_derivative<span class="op">(</span>x<span class="op">);</span></span>
-<span id="cb6-412"><a href="#cb6-412" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><span class="bu">std::</span>abs<span class="op">(</span>p<span class="op">)</span> <span class="op">&lt;</span> tol<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-413"><a href="#cb6-413" aria-hidden="true" tabindex="-1"></a>                root <span class="op">=</span> x<span class="op">;</span></span>
-<span id="cb6-414"><a href="#cb6-414" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
-<span id="cb6-415"><a href="#cb6-415" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb6-416"><a href="#cb6-416" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><span class="bu">std::</span>abs<span class="op">(</span>dp<span class="op">)</span> <span class="op">&lt;</span> <span class="fl">1e-15</span><span class="op">)</span> <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
-<span id="cb6-417"><a href="#cb6-417" aria-hidden="true" tabindex="-1"></a>            x <span class="op">-=</span> p <span class="op">/</span> dp<span class="op">;</span></span>
-<span id="cb6-418"><a href="#cb6-418" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb6-419"><a href="#cb6-419" aria-hidden="true" tabindex="-1"></a>        root <span class="op">=</span> x<span class="op">;</span></span>
-<span id="cb6-420"><a href="#cb6-420" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
-<span id="cb6-421"><a href="#cb6-421" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb6-422"><a href="#cb6-422" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
-<span id="cb6-423"><a href="#cb6-423" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-424"><a href="#cb6-424" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb6-425"><a href="#cb6-425" aria-hidden="true" tabindex="-1"></a>    <span class="co">// P(x) = (x-1)(x-2)(x-3) = x^3 - 6x^2 + 11x - 6</span></span>
-<span id="cb6-426"><a href="#cb6-426" aria-hidden="true" tabindex="-1"></a>    Polynomial poly<span class="op">{-</span><span class="fl">6.0</span><span class="op">,</span> <span class="fl">11.0</span><span class="op">,</span> <span class="op">-</span><span class="fl">6.0</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">};</span></span>
-<span id="cb6-427"><a href="#cb6-427" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb6-428"><a href="#cb6-428" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="bu">std::</span>fixed <span class="op">&lt;&lt;</span> <span class="bu">std::</span>setprecision<span class="op">(</span><span class="dv">8</span><span class="op">);</span></span>
-<span id="cb6-429"><a href="#cb6-429" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"=== C++17 Polynomial Solver ===</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span>
-<span id="cb6-430"><a href="#cb6-430" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-431"><a href="#cb6-431" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>poly<span class="op">.</span>degree<span class="op">()</span> <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-432"><a href="#cb6-432" aria-hidden="true" tabindex="-1"></a>        <span class="dt">double</span> root <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
-<span id="cb6-433"><a href="#cb6-433" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>poly<span class="op">.</span>solve_newton<span class="op">(</span><span class="fl">0.5</span><span class="op">,</span> root<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb6-434"><a href="#cb6-434" aria-hidden="true" tabindex="-1"></a>            <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Extracted Root: "</span> <span class="op">&lt;&lt;</span> root <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span>
-<span id="cb6-435"><a href="#cb6-435" aria-hidden="true" tabindex="-1"></a>            poly <span class="op">=</span> poly<span class="op">.</span>deflated<span class="op">(</span>root<span class="op">);</span></span>
-<span id="cb6-436"><a href="#cb6-436" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb6-437"><a href="#cb6-437" aria-hidden="true" tabindex="-1"></a>            <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"No further real roots found.</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span>
-<span id="cb6-438"><a href="#cb6-438" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span><span class="op">;</span></span>
-<span id="cb6-439"><a href="#cb6-439" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb6-440"><a href="#cb6-440" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb6-441"><a href="#cb6-441" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb6-442"><a href="#cb6-442" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb6-443"><a href="#cb6-443" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb6-444"><a href="#cb6-444" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-445"><a href="#cb6-445" aria-hidden="true" tabindex="-1"></a><span class="fu">## Python (Python 3.10+)</span></span>
-<span id="cb6-446"><a href="#cb6-446" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-447"><a href="#cb6-447" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
-<span id="cb6-448"><a href="#cb6-448" aria-hidden="true" tabindex="-1"></a><span class="co">#!/usr/bin/env python3</span></span>
-<span id="cb6-449"><a href="#cb6-449" aria-hidden="true" tabindex="-1"></a><span class="co">"""</span></span>
-<span id="cb6-450"><a href="#cb6-450" aria-hidden="true" tabindex="-1"></a><span class="co">Production polynomial evaluation and root-finding using Horner's rule,</span></span>
-<span id="cb6-451"><a href="#cb6-451" aria-hidden="true" tabindex="-1"></a><span class="co">Newton-Raphson with synthetic deflation, and the Companion Matrix.</span></span>
-<span id="cb6-452"><a href="#cb6-452" aria-hidden="true" tabindex="-1"></a><span class="co">"""</span></span>
-<span id="cb6-453"><a href="#cb6-453" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> Tuple, List</span>
-<span id="cb6-454"><a href="#cb6-454" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb6-455"><a href="#cb6-455" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-456"><a href="#cb6-456" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> horner_eval(coeffs: List[<span class="bu">float</span>], x: <span class="bu">float</span>) <span class="op">-&gt;</span> Tuple[<span class="bu">float</span>, <span class="bu">float</span>]:</span>
-<span id="cb6-457"><a href="#cb6-457" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
-<span id="cb6-458"><a href="#cb6-458" aria-hidden="true" tabindex="-1"></a><span class="co">    Evaluates P(x) and P'(x) in a single pass using Horner's scheme.</span></span>
-<span id="cb6-459"><a href="#cb6-459" aria-hidden="true" tabindex="-1"></a><span class="co">    coeffs is ordered [a0, a1, ..., an].</span></span>
-<span id="cb6-460"><a href="#cb6-460" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
-<span id="cb6-461"><a href="#cb6-461" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">len</span>(coeffs) <span class="op">-</span> <span class="dv">1</span></span>
-<span id="cb6-462"><a href="#cb6-462" aria-hidden="true" tabindex="-1"></a>    p <span class="op">=</span> coeffs[n]</span>
-<span id="cb6-463"><a href="#cb6-463" aria-hidden="true" tabindex="-1"></a>    dp <span class="op">=</span> <span class="fl">0.0</span></span>
-<span id="cb6-464"><a href="#cb6-464" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n <span class="op">-</span> <span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>):</span>
-<span id="cb6-465"><a href="#cb6-465" aria-hidden="true" tabindex="-1"></a>        dp <span class="op">=</span> dp <span class="op">*</span> x <span class="op">+</span> p</span>
-<span id="cb6-466"><a href="#cb6-466" aria-hidden="true" tabindex="-1"></a>        p <span class="op">=</span> p <span class="op">*</span> x <span class="op">+</span> coeffs[i]</span>
-<span id="cb6-467"><a href="#cb6-467" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> p, dp</span>
-<span id="cb6-468"><a href="#cb6-468" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-469"><a href="#cb6-469" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> synthetic_deflation(coeffs: List[<span class="bu">float</span>], root: <span class="bu">float</span>) <span class="op">-&gt;</span> List[<span class="bu">float</span>]:</span>
-<span id="cb6-470"><a href="#cb6-470" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Divides P(x) by (x - root) via synthetic division."""</span></span>
-<span id="cb6-471"><a href="#cb6-471" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">len</span>(coeffs) <span class="op">-</span> <span class="dv">1</span></span>
-<span id="cb6-472"><a href="#cb6-472" aria-hidden="true" tabindex="-1"></a>    q <span class="op">=</span> [<span class="fl">0.0</span>] <span class="op">*</span> n</span>
-<span id="cb6-473"><a href="#cb6-473" aria-hidden="true" tabindex="-1"></a>    q[n <span class="op">-</span> <span class="dv">1</span>] <span class="op">=</span> coeffs[n]</span>
-<span id="cb6-474"><a href="#cb6-474" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n <span class="op">-</span> <span class="dv">2</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>):</span>
-<span id="cb6-475"><a href="#cb6-475" aria-hidden="true" tabindex="-1"></a>        q[i] <span class="op">=</span> coeffs[i <span class="op">+</span> <span class="dv">1</span>] <span class="op">+</span> root <span class="op">*</span> q[i <span class="op">+</span> <span class="dv">1</span>]</span>
-<span id="cb6-476"><a href="#cb6-476" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> q</span>
-<span id="cb6-477"><a href="#cb6-477" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-478"><a href="#cb6-478" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_root_newton(coeffs: List[<span class="bu">float</span>], x0: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.5</span>, tol: <span class="bu">float</span> <span class="op">=</span> <span class="fl">1e-12</span>, max_iter: <span class="bu">int</span> <span class="op">=</span> <span class="dv">100</span>) <span class="op">-&gt;</span> <span class="bu">float</span>:</span>
-<span id="cb6-479"><a href="#cb6-479" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Finds a root using Newton-Raphson iteration."""</span></span>
-<span id="cb6-480"><a href="#cb6-480" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> x0</span>
-<span id="cb6-481"><a href="#cb6-481" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(max_iter):</span>
-<span id="cb6-482"><a href="#cb6-482" aria-hidden="true" tabindex="-1"></a>        p, dp <span class="op">=</span> horner_eval(coeffs, x)</span>
-<span id="cb6-483"><a href="#cb6-483" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">abs</span>(p) <span class="op">&lt;</span> tol:</span>
-<span id="cb6-484"><a href="#cb6-484" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> x</span>
-<span id="cb6-485"><a href="#cb6-485" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">abs</span>(dp) <span class="op">&lt;</span> <span class="fl">1e-15</span>:</span>
-<span id="cb6-486"><a href="#cb6-486" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ArithmeticError</span>(<span class="st">"Derivative vanished during iteration."</span>)</span>
-<span id="cb6-487"><a href="#cb6-487" aria-hidden="true" tabindex="-1"></a>        x <span class="op">-=</span> p <span class="op">/</span> dp</span>
-<span id="cb6-488"><a href="#cb6-488" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x</span>
-<span id="cb6-489"><a href="#cb6-489" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-490"><a href="#cb6-490" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
-<span id="cb6-491"><a href="#cb6-491" aria-hidden="true" tabindex="-1"></a>    <span class="co"># P(x) = (x - 1)(x - 2)(x - 3) = x^3 - 6x^2 + 11x - 6</span></span>
-<span id="cb6-492"><a href="#cb6-492" aria-hidden="true" tabindex="-1"></a>    coeffs <span class="op">=</span> [<span class="op">-</span><span class="fl">6.0</span>, <span class="fl">11.0</span>, <span class="op">-</span><span class="fl">6.0</span>, <span class="fl">1.0</span>]</span>
-<span id="cb6-493"><a href="#cb6-493" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"=== Python Horner &amp; Companion Matrix Solver ==="</span>)</span>
-<span id="cb6-494"><a href="#cb6-494" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb6-495"><a href="#cb6-495" aria-hidden="true" tabindex="-1"></a>    current_coeffs <span class="op">=</span> <span class="bu">list</span>(coeffs)</span>
-<span id="cb6-496"><a href="#cb6-496" aria-hidden="true" tabindex="-1"></a>    roots <span class="op">=</span> []</span>
-<span id="cb6-497"><a href="#cb6-497" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(coeffs) <span class="op">-</span> <span class="dv">1</span>):</span>
-<span id="cb6-498"><a href="#cb6-498" aria-hidden="true" tabindex="-1"></a>        r <span class="op">=</span> find_root_newton(current_coeffs, x0<span class="op">=</span><span class="fl">0.0</span>)</span>
-<span id="cb6-499"><a href="#cb6-499" aria-hidden="true" tabindex="-1"></a>        roots.append(r)</span>
-<span id="cb6-500"><a href="#cb6-500" aria-hidden="true" tabindex="-1"></a>        current_coeffs <span class="op">=</span> synthetic_deflation(current_coeffs, r)</span>
-<span id="cb6-501"><a href="#cb6-501" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb6-502"><a href="#cb6-502" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Roots via Horner + Newton: </span><span class="sc">{</span>roots<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb6-503"><a href="#cb6-503" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb6-504"><a href="#cb6-504" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Validation via NumPy Frobenius Companion Matrix</span></span>
-<span id="cb6-505"><a href="#cb6-505" aria-hidden="true" tabindex="-1"></a>    <span class="co"># np.roots expects coefficients in descending order [an, ..., a0]</span></span>
-<span id="cb6-506"><a href="#cb6-506" aria-hidden="true" tabindex="-1"></a>    np_roots <span class="op">=</span> np.roots(coeffs[::<span class="op">-</span><span class="dv">1</span>])</span>
-<span id="cb6-507"><a href="#cb6-507" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Roots via Companion Matrix (QR): </span><span class="sc">{</span>np_roots<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb6-508"><a href="#cb6-508" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb6-509"><a href="#cb6-509" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-510"><a href="#cb6-510" aria-hidden="true" tabindex="-1"></a><span class="fu">## Fortran (Fortran 2003 / 2008)</span></span>
+<span id="cb6-407"><a href="#cb6-407" aria-hidden="true" tabindex="-1"></a>    printf<span class="op">(</span><span class="st">"=== C99 Horner &amp; Newton Root Finder ===</span><span class="sc">\n</span><span class="st">"</span><span class="op">);</span></span>
+<span id="cb6-408"><a href="#cb6-408" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>degree <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-409"><a href="#cb6-409" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>find_root_newton<span class="op">(</span>coeffs<span class="op">,</span> degree<span class="op">,</span> <span class="fl">0.5</span><span class="op">,</span> <span class="fl">1e-12</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="op">&amp;</span>root<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb6-410"><a href="#cb6-410" aria-hidden="true" tabindex="-1"></a>            printf<span class="op">(</span><span class="st">"Found Root: </span><span class="sc">%12.8f\n</span><span class="st">"</span><span class="op">,</span> root<span class="op">);</span></span>
+<span id="cb6-411"><a href="#cb6-411" aria-hidden="true" tabindex="-1"></a>            deflate<span class="op">(</span>coeffs<span class="op">,</span> <span class="op">&amp;</span>degree<span class="op">,</span> root<span class="op">);</span></span>
+<span id="cb6-412"><a href="#cb6-412" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb6-413"><a href="#cb6-413" aria-hidden="true" tabindex="-1"></a>            printf<span class="op">(</span><span class="st">"Convergence failed or complex root encountered.</span><span class="sc">\n</span><span class="st">"</span><span class="op">);</span></span>
+<span id="cb6-414"><a href="#cb6-414" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb6-415"><a href="#cb6-415" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb6-416"><a href="#cb6-416" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-417"><a href="#cb6-417" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb6-418"><a href="#cb6-418" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-419"><a href="#cb6-419" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb6-420"><a href="#cb6-420" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-421"><a href="#cb6-421" aria-hidden="true" tabindex="-1"></a><span class="fu">## C++ (C++17 / C++20)</span></span>
+<span id="cb6-422"><a href="#cb6-422" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-423"><a href="#cb6-423" aria-hidden="true" tabindex="-1"></a><span class="in">```cpp</span></span>
+<span id="cb6-424"><a href="#cb6-424" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb6-425"><a href="#cb6-425" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
+<span id="cb6-426"><a href="#cb6-426" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cmath&gt;</span></span>
+<span id="cb6-427"><a href="#cb6-427" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;numeric&gt;</span></span>
+<span id="cb6-428"><a href="#cb6-428" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iomanip&gt;</span></span>
+<span id="cb6-429"><a href="#cb6-429" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-430"><a href="#cb6-430" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Polynomial <span class="op">{</span></span>
+<span id="cb6-431"><a href="#cb6-431" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb6-432"><a href="#cb6-432" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Coefficients ordered from lowest degree to highest: a0, a1, ..., an</span></span>
+<span id="cb6-433"><a href="#cb6-433" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> coeffs<span class="op">;</span></span>
+<span id="cb6-434"><a href="#cb6-434" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-435"><a href="#cb6-435" aria-hidden="true" tabindex="-1"></a>    Polynomial<span class="op">(</span><span class="bu">std::</span>initializer_list<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> c<span class="op">)</span> <span class="op">:</span> coeffs<span class="op">(</span>c<span class="op">)</span> <span class="op">{}</span></span>
+<span id="cb6-436"><a href="#cb6-436" aria-hidden="true" tabindex="-1"></a>    Polynomial<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> c<span class="op">)</span> <span class="op">:</span> coeffs<span class="op">(</span><span class="bu">std::</span>move<span class="op">(</span>c<span class="op">))</span> <span class="op">{}</span></span>
+<span id="cb6-437"><a href="#cb6-437" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-438"><a href="#cb6-438" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> degree<span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>coeffs<span class="op">.</span>size<span class="op">())</span> <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> <span class="op">}</span></span>
+<span id="cb6-439"><a href="#cb6-439" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-440"><a href="#cb6-440" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Evaluates P(x) and P'(x) simultaneously via Horner's Rule</span></span>
+<span id="cb6-441"><a href="#cb6-441" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>pair<span class="op">&lt;</span><span class="dt">double</span><span class="op">,</span> <span class="dt">double</span><span class="op">&gt;</span> eval_with_derivative<span class="op">(</span><span class="dt">double</span> x<span class="op">)</span> <span class="at">const</span> <span class="op">{</span></span>
+<span id="cb6-442"><a href="#cb6-442" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> n <span class="op">=</span> degree<span class="op">();</span></span>
+<span id="cb6-443"><a href="#cb6-443" aria-hidden="true" tabindex="-1"></a>        <span class="dt">double</span> p <span class="op">=</span> coeffs<span class="op">[</span>n<span class="op">];</span></span>
+<span id="cb6-444"><a href="#cb6-444" aria-hidden="true" tabindex="-1"></a>        <span class="dt">double</span> dp <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
+<span id="cb6-445"><a href="#cb6-445" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> n <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> <span class="op">--</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-446"><a href="#cb6-446" aria-hidden="true" tabindex="-1"></a>            dp <span class="op">=</span> dp <span class="op">*</span> x <span class="op">+</span> p<span class="op">;</span></span>
+<span id="cb6-447"><a href="#cb6-447" aria-hidden="true" tabindex="-1"></a>            p <span class="op">=</span> p <span class="op">*</span> x <span class="op">+</span> coeffs<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb6-448"><a href="#cb6-448" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb6-449"><a href="#cb6-449" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">{</span>p<span class="op">,</span> dp<span class="op">};</span></span>
+<span id="cb6-450"><a href="#cb6-450" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-451"><a href="#cb6-451" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-452"><a href="#cb6-452" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Synthetic Deflation: returns quotient polynomial when divided by (x - root)</span></span>
+<span id="cb6-453"><a href="#cb6-453" aria-hidden="true" tabindex="-1"></a>    Polynomial deflated<span class="op">(</span><span class="dt">double</span> root<span class="op">)</span> <span class="at">const</span> <span class="op">{</span></span>
+<span id="cb6-454"><a href="#cb6-454" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> n <span class="op">=</span> degree<span class="op">();</span></span>
+<span id="cb6-455"><a href="#cb6-455" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> q<span class="op">(</span>n<span class="op">);</span></span>
+<span id="cb6-456"><a href="#cb6-456" aria-hidden="true" tabindex="-1"></a>        q<span class="op">[</span>n <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">=</span> coeffs<span class="op">[</span>n<span class="op">];</span></span>
+<span id="cb6-457"><a href="#cb6-457" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> n <span class="op">-</span> <span class="dv">2</span><span class="op">;</span> i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> <span class="op">--</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-458"><a href="#cb6-458" aria-hidden="true" tabindex="-1"></a>            q<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> coeffs<span class="op">[</span>i <span class="op">+</span> <span class="dv">1</span><span class="op">]</span> <span class="op">+</span> root <span class="op">*</span> q<span class="op">[</span>i <span class="op">+</span> <span class="dv">1</span><span class="op">];</span></span>
+<span id="cb6-459"><a href="#cb6-459" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb6-460"><a href="#cb6-460" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Polynomial<span class="op">(</span>q<span class="op">);</span></span>
+<span id="cb6-461"><a href="#cb6-461" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-462"><a href="#cb6-462" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-463"><a href="#cb6-463" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Finds a real root via Newton-Raphson iteration</span></span>
+<span id="cb6-464"><a href="#cb6-464" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> solve_newton<span class="op">(</span><span class="dt">double</span> x0<span class="op">,</span> <span class="dt">double</span><span class="op">&amp;</span> root<span class="op">,</span> <span class="dt">double</span> tol <span class="op">=</span> <span class="fl">1e-12</span><span class="op">,</span> <span class="dt">int</span> max_iter <span class="op">=</span> <span class="dv">100</span><span class="op">)</span> <span class="at">const</span> <span class="op">{</span></span>
+<span id="cb6-465"><a href="#cb6-465" aria-hidden="true" tabindex="-1"></a>        <span class="dt">double</span> x <span class="op">=</span> x0<span class="op">;</span></span>
+<span id="cb6-466"><a href="#cb6-466" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> iter <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> iter <span class="op">&lt;</span> max_iter<span class="op">;</span> <span class="op">++</span>iter<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-467"><a href="#cb6-467" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> <span class="op">[</span>p<span class="op">,</span> dp<span class="op">]</span> <span class="op">=</span> eval_with_derivative<span class="op">(</span>x<span class="op">);</span></span>
+<span id="cb6-468"><a href="#cb6-468" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><span class="bu">std::</span>abs<span class="op">(</span>p<span class="op">)</span> <span class="op">&lt;</span> tol<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-469"><a href="#cb6-469" aria-hidden="true" tabindex="-1"></a>                root <span class="op">=</span> x<span class="op">;</span></span>
+<span id="cb6-470"><a href="#cb6-470" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb6-471"><a href="#cb6-471" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb6-472"><a href="#cb6-472" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><span class="bu">std::</span>abs<span class="op">(</span>dp<span class="op">)</span> <span class="op">&lt;</span> <span class="fl">1e-15</span><span class="op">)</span> <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb6-473"><a href="#cb6-473" aria-hidden="true" tabindex="-1"></a>            x <span class="op">-=</span> p <span class="op">/</span> dp<span class="op">;</span></span>
+<span id="cb6-474"><a href="#cb6-474" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb6-475"><a href="#cb6-475" aria-hidden="true" tabindex="-1"></a>        root <span class="op">=</span> x<span class="op">;</span></span>
+<span id="cb6-476"><a href="#cb6-476" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb6-477"><a href="#cb6-477" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-478"><a href="#cb6-478" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb6-479"><a href="#cb6-479" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-480"><a href="#cb6-480" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb6-481"><a href="#cb6-481" aria-hidden="true" tabindex="-1"></a>    <span class="co">// P(x) = (x-1)(x-2)(x-3) = x^3 - 6x^2 + 11x - 6</span></span>
+<span id="cb6-482"><a href="#cb6-482" aria-hidden="true" tabindex="-1"></a>    Polynomial poly<span class="op">{-</span><span class="fl">6.0</span><span class="op">,</span> <span class="fl">11.0</span><span class="op">,</span> <span class="op">-</span><span class="fl">6.0</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">};</span></span>
+<span id="cb6-483"><a href="#cb6-483" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-484"><a href="#cb6-484" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="bu">std::</span>fixed <span class="op">&lt;&lt;</span> <span class="bu">std::</span>setprecision<span class="op">(</span><span class="dv">8</span><span class="op">);</span></span>
+<span id="cb6-485"><a href="#cb6-485" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"=== C++17 Polynomial Solver ===</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span>
+<span id="cb6-486"><a href="#cb6-486" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-487"><a href="#cb6-487" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>poly<span class="op">.</span>degree<span class="op">()</span> <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-488"><a href="#cb6-488" aria-hidden="true" tabindex="-1"></a>        <span class="dt">double</span> root <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
+<span id="cb6-489"><a href="#cb6-489" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>poly<span class="op">.</span>solve_newton<span class="op">(</span><span class="fl">0.5</span><span class="op">,</span> root<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb6-490"><a href="#cb6-490" aria-hidden="true" tabindex="-1"></a>            <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Extracted Root: "</span> <span class="op">&lt;&lt;</span> root <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span>
+<span id="cb6-491"><a href="#cb6-491" aria-hidden="true" tabindex="-1"></a>            poly <span class="op">=</span> poly<span class="op">.</span>deflated<span class="op">(</span>root<span class="op">);</span></span>
+<span id="cb6-492"><a href="#cb6-492" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb6-493"><a href="#cb6-493" aria-hidden="true" tabindex="-1"></a>            <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"No further real roots found.</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span>
+<span id="cb6-494"><a href="#cb6-494" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb6-495"><a href="#cb6-495" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb6-496"><a href="#cb6-496" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-497"><a href="#cb6-497" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb6-498"><a href="#cb6-498" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-499"><a href="#cb6-499" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb6-500"><a href="#cb6-500" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-501"><a href="#cb6-501" aria-hidden="true" tabindex="-1"></a><span class="fu">## Python (Python 3.10+)</span></span>
+<span id="cb6-502"><a href="#cb6-502" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-503"><a href="#cb6-503" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb6-504"><a href="#cb6-504" aria-hidden="true" tabindex="-1"></a><span class="co">#!/usr/bin/env python3</span></span>
+<span id="cb6-505"><a href="#cb6-505" aria-hidden="true" tabindex="-1"></a><span class="co">"""</span></span>
+<span id="cb6-506"><a href="#cb6-506" aria-hidden="true" tabindex="-1"></a><span class="co">Production polynomial evaluation and root-finding using Horner's rule,</span></span>
+<span id="cb6-507"><a href="#cb6-507" aria-hidden="true" tabindex="-1"></a><span class="co">Newton-Raphson with synthetic deflation, and the Companion Matrix.</span></span>
+<span id="cb6-508"><a href="#cb6-508" aria-hidden="true" tabindex="-1"></a><span class="co">"""</span></span>
+<span id="cb6-509"><a href="#cb6-509" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> Tuple, List</span>
+<span id="cb6-510"><a href="#cb6-510" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb6-511"><a href="#cb6-511" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-512"><a href="#cb6-512" aria-hidden="true" tabindex="-1"></a><span class="in">```fortran</span></span>
-<span id="cb6-513"><a href="#cb6-513" aria-hidden="true" tabindex="-1"></a><span class="in">module polynomial_solver</span></span>
-<span id="cb6-514"><a href="#cb6-514" aria-hidden="true" tabindex="-1"></a><span class="in">    use, intrinsic :: iso_fortran_env, only: real64</span></span>
-<span id="cb6-515"><a href="#cb6-515" aria-hidden="true" tabindex="-1"></a><span class="in">    implicit none</span></span>
-<span id="cb6-516"><a href="#cb6-516" aria-hidden="true" tabindex="-1"></a><span class="in">    private</span></span>
-<span id="cb6-517"><a href="#cb6-517" aria-hidden="true" tabindex="-1"></a><span class="in">    public :: horner_eval, synthetic_deflate, newton_solve</span></span>
-<span id="cb6-518"><a href="#cb6-518" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-519"><a href="#cb6-519" aria-hidden="true" tabindex="-1"></a><span class="in">contains</span></span>
-<span id="cb6-520"><a href="#cb6-520" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-521"><a href="#cb6-521" aria-hidden="true" tabindex="-1"></a><span class="in">    subroutine horner_eval(coeffs, n, x, p, dp)</span></span>
-<span id="cb6-522"><a href="#cb6-522" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(in)  :: coeffs(0:n)</span></span>
-<span id="cb6-523"><a href="#cb6-523" aria-hidden="true" tabindex="-1"></a><span class="in">        integer,      intent(in)  :: n</span></span>
-<span id="cb6-524"><a href="#cb6-524" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(in)  :: x</span></span>
-<span id="cb6-525"><a href="#cb6-525" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(out) :: p, dp</span></span>
-<span id="cb6-526"><a href="#cb6-526" aria-hidden="true" tabindex="-1"></a><span class="in">        integer :: i</span></span>
-<span id="cb6-527"><a href="#cb6-527" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-528"><a href="#cb6-528" aria-hidden="true" tabindex="-1"></a><span class="in">        p = coeffs(n)</span></span>
-<span id="cb6-529"><a href="#cb6-529" aria-hidden="true" tabindex="-1"></a><span class="in">        dp = 0.0_real64</span></span>
-<span id="cb6-530"><a href="#cb6-530" aria-hidden="true" tabindex="-1"></a><span class="in">        do i = n - 1, 0, -1</span></span>
-<span id="cb6-531"><a href="#cb6-531" aria-hidden="true" tabindex="-1"></a><span class="in">            dp = dp * x + p</span></span>
-<span id="cb6-532"><a href="#cb6-532" aria-hidden="true" tabindex="-1"></a><span class="in">            p = p * x + coeffs(i)</span></span>
-<span id="cb6-533"><a href="#cb6-533" aria-hidden="true" tabindex="-1"></a><span class="in">        end do</span></span>
-<span id="cb6-534"><a href="#cb6-534" aria-hidden="true" tabindex="-1"></a><span class="in">    end subroutine horner_eval</span></span>
-<span id="cb6-535"><a href="#cb6-535" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-536"><a href="#cb6-536" aria-hidden="true" tabindex="-1"></a><span class="in">    subroutine synthetic_deflate(coeffs, n, root, q)</span></span>
-<span id="cb6-537"><a href="#cb6-537" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(in)  :: coeffs(0:n)</span></span>
-<span id="cb6-538"><a href="#cb6-538" aria-hidden="true" tabindex="-1"></a><span class="in">        integer,      intent(in)  :: n</span></span>
-<span id="cb6-539"><a href="#cb6-539" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(in)  :: root</span></span>
-<span id="cb6-540"><a href="#cb6-540" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(out) :: q(0:n-1)</span></span>
-<span id="cb6-541"><a href="#cb6-541" aria-hidden="true" tabindex="-1"></a><span class="in">        integer :: i</span></span>
-<span id="cb6-542"><a href="#cb6-542" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-543"><a href="#cb6-543" aria-hidden="true" tabindex="-1"></a><span class="in">        q(n-1) = coeffs(n)</span></span>
-<span id="cb6-544"><a href="#cb6-544" aria-hidden="true" tabindex="-1"></a><span class="in">        do i = n - 2, 0, -1</span></span>
-<span id="cb6-545"><a href="#cb6-545" aria-hidden="true" tabindex="-1"></a><span class="in">            q(i) = coeffs(i+1) + root * q(i+1)</span></span>
-<span id="cb6-546"><a href="#cb6-546" aria-hidden="true" tabindex="-1"></a><span class="in">        end do</span></span>
-<span id="cb6-547"><a href="#cb6-547" aria-hidden="true" tabindex="-1"></a><span class="in">    end subroutine synthetic_deflate</span></span>
-<span id="cb6-548"><a href="#cb6-548" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-549"><a href="#cb6-549" aria-hidden="true" tabindex="-1"></a><span class="in">    logical function newton_solve(coeffs, n, x0, tol, max_iter, root)</span></span>
-<span id="cb6-550"><a href="#cb6-550" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(in)  :: coeffs(0:n)</span></span>
-<span id="cb6-551"><a href="#cb6-551" aria-hidden="true" tabindex="-1"></a><span class="in">        integer,      intent(in)  :: n</span></span>
-<span id="cb6-552"><a href="#cb6-552" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(in)  :: x0, tol</span></span>
-<span id="cb6-553"><a href="#cb6-553" aria-hidden="true" tabindex="-1"></a><span class="in">        integer,      intent(in)  :: max_iter</span></span>
-<span id="cb6-554"><a href="#cb6-554" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(out) :: root</span></span>
-<span id="cb6-555"><a href="#cb6-555" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64) :: x, p, dp</span></span>
-<span id="cb6-556"><a href="#cb6-556" aria-hidden="true" tabindex="-1"></a><span class="in">        integer :: iter</span></span>
-<span id="cb6-557"><a href="#cb6-557" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-558"><a href="#cb6-558" aria-hidden="true" tabindex="-1"></a><span class="in">        x = x0</span></span>
-<span id="cb6-559"><a href="#cb6-559" aria-hidden="true" tabindex="-1"></a><span class="in">        newton_solve = .false.</span></span>
-<span id="cb6-560"><a href="#cb6-560" aria-hidden="true" tabindex="-1"></a><span class="in">        do iter = 1, max_iter</span></span>
-<span id="cb6-561"><a href="#cb6-561" aria-hidden="true" tabindex="-1"></a><span class="in">            call horner_eval(coeffs, n, x, p, dp)</span></span>
-<span id="cb6-562"><a href="#cb6-562" aria-hidden="true" tabindex="-1"></a><span class="in">            if (abs(p) &lt; tol) then</span></span>
-<span id="cb6-563"><a href="#cb6-563" aria-hidden="true" tabindex="-1"></a><span class="in">                root = x</span></span>
-<span id="cb6-564"><a href="#cb6-564" aria-hidden="true" tabindex="-1"></a><span class="in">                newton_solve = .true.</span></span>
-<span id="cb6-565"><a href="#cb6-565" aria-hidden="true" tabindex="-1"></a><span class="in">                return</span></span>
-<span id="cb6-566"><a href="#cb6-566" aria-hidden="true" tabindex="-1"></a><span class="in">            end if</span></span>
-<span id="cb6-567"><a href="#cb6-567" aria-hidden="true" tabindex="-1"></a><span class="in">            if (abs(dp) &lt; 1.0e-14_real64) exit</span></span>
-<span id="cb6-568"><a href="#cb6-568" aria-hidden="true" tabindex="-1"></a><span class="in">            x = x - p / dp</span></span>
-<span id="cb6-569"><a href="#cb6-569" aria-hidden="true" tabindex="-1"></a><span class="in">        end do</span></span>
-<span id="cb6-570"><a href="#cb6-570" aria-hidden="true" tabindex="-1"></a><span class="in">        root = x</span></span>
-<span id="cb6-571"><a href="#cb6-571" aria-hidden="true" tabindex="-1"></a><span class="in">    end function newton_solve</span></span>
-<span id="cb6-572"><a href="#cb6-572" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-573"><a href="#cb6-573" aria-hidden="true" tabindex="-1"></a><span class="in">end module polynomial_solver</span></span>
+<span id="cb6-512"><a href="#cb6-512" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> horner_eval(coeffs: List[<span class="bu">float</span>], x: <span class="bu">float</span>) <span class="op">-&gt;</span> Tuple[<span class="bu">float</span>, <span class="bu">float</span>]:</span>
+<span id="cb6-513"><a href="#cb6-513" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb6-514"><a href="#cb6-514" aria-hidden="true" tabindex="-1"></a><span class="co">    Evaluates P(x) and P'(x) in a single pass using Horner's scheme.</span></span>
+<span id="cb6-515"><a href="#cb6-515" aria-hidden="true" tabindex="-1"></a><span class="co">    coeffs is ordered [a0, a1, ..., an].</span></span>
+<span id="cb6-516"><a href="#cb6-516" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb6-517"><a href="#cb6-517" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">len</span>(coeffs) <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb6-518"><a href="#cb6-518" aria-hidden="true" tabindex="-1"></a>    p <span class="op">=</span> coeffs[n]</span>
+<span id="cb6-519"><a href="#cb6-519" aria-hidden="true" tabindex="-1"></a>    dp <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb6-520"><a href="#cb6-520" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n <span class="op">-</span> <span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>):</span>
+<span id="cb6-521"><a href="#cb6-521" aria-hidden="true" tabindex="-1"></a>        dp <span class="op">=</span> dp <span class="op">*</span> x <span class="op">+</span> p</span>
+<span id="cb6-522"><a href="#cb6-522" aria-hidden="true" tabindex="-1"></a>        p <span class="op">=</span> p <span class="op">*</span> x <span class="op">+</span> coeffs[i]</span>
+<span id="cb6-523"><a href="#cb6-523" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> p, dp</span>
+<span id="cb6-524"><a href="#cb6-524" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-525"><a href="#cb6-525" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> synthetic_deflation(coeffs: List[<span class="bu">float</span>], root: <span class="bu">float</span>) <span class="op">-&gt;</span> List[<span class="bu">float</span>]:</span>
+<span id="cb6-526"><a href="#cb6-526" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Divides P(x) by (x - root) via synthetic division."""</span></span>
+<span id="cb6-527"><a href="#cb6-527" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">len</span>(coeffs) <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb6-528"><a href="#cb6-528" aria-hidden="true" tabindex="-1"></a>    q <span class="op">=</span> [<span class="fl">0.0</span>] <span class="op">*</span> n</span>
+<span id="cb6-529"><a href="#cb6-529" aria-hidden="true" tabindex="-1"></a>    q[n <span class="op">-</span> <span class="dv">1</span>] <span class="op">=</span> coeffs[n]</span>
+<span id="cb6-530"><a href="#cb6-530" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n <span class="op">-</span> <span class="dv">2</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>):</span>
+<span id="cb6-531"><a href="#cb6-531" aria-hidden="true" tabindex="-1"></a>        q[i] <span class="op">=</span> coeffs[i <span class="op">+</span> <span class="dv">1</span>] <span class="op">+</span> root <span class="op">*</span> q[i <span class="op">+</span> <span class="dv">1</span>]</span>
+<span id="cb6-532"><a href="#cb6-532" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> q</span>
+<span id="cb6-533"><a href="#cb6-533" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-534"><a href="#cb6-534" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_root_newton(coeffs: List[<span class="bu">float</span>], x0: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.5</span>, tol: <span class="bu">float</span> <span class="op">=</span> <span class="fl">1e-12</span>, max_iter: <span class="bu">int</span> <span class="op">=</span> <span class="dv">100</span>) <span class="op">-&gt;</span> <span class="bu">float</span>:</span>
+<span id="cb6-535"><a href="#cb6-535" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Finds a root using Newton-Raphson iteration."""</span></span>
+<span id="cb6-536"><a href="#cb6-536" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> x0</span>
+<span id="cb6-537"><a href="#cb6-537" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(max_iter):</span>
+<span id="cb6-538"><a href="#cb6-538" aria-hidden="true" tabindex="-1"></a>        p, dp <span class="op">=</span> horner_eval(coeffs, x)</span>
+<span id="cb6-539"><a href="#cb6-539" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">abs</span>(p) <span class="op">&lt;</span> tol:</span>
+<span id="cb6-540"><a href="#cb6-540" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> x</span>
+<span id="cb6-541"><a href="#cb6-541" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">abs</span>(dp) <span class="op">&lt;</span> <span class="fl">1e-15</span>:</span>
+<span id="cb6-542"><a href="#cb6-542" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ArithmeticError</span>(<span class="st">"Derivative vanished during iteration."</span>)</span>
+<span id="cb6-543"><a href="#cb6-543" aria-hidden="true" tabindex="-1"></a>        x <span class="op">-=</span> p <span class="op">/</span> dp</span>
+<span id="cb6-544"><a href="#cb6-544" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x</span>
+<span id="cb6-545"><a href="#cb6-545" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-546"><a href="#cb6-546" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
+<span id="cb6-547"><a href="#cb6-547" aria-hidden="true" tabindex="-1"></a>    <span class="co"># P(x) = (x - 1)(x - 2)(x - 3) = x^3 - 6x^2 + 11x - 6</span></span>
+<span id="cb6-548"><a href="#cb6-548" aria-hidden="true" tabindex="-1"></a>    coeffs <span class="op">=</span> [<span class="op">-</span><span class="fl">6.0</span>, <span class="fl">11.0</span>, <span class="op">-</span><span class="fl">6.0</span>, <span class="fl">1.0</span>]</span>
+<span id="cb6-549"><a href="#cb6-549" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"=== Python Horner &amp; Companion Matrix Solver ==="</span>)</span>
+<span id="cb6-550"><a href="#cb6-550" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-551"><a href="#cb6-551" aria-hidden="true" tabindex="-1"></a>    current_coeffs <span class="op">=</span> <span class="bu">list</span>(coeffs)</span>
+<span id="cb6-552"><a href="#cb6-552" aria-hidden="true" tabindex="-1"></a>    roots <span class="op">=</span> []</span>
+<span id="cb6-553"><a href="#cb6-553" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(coeffs) <span class="op">-</span> <span class="dv">1</span>):</span>
+<span id="cb6-554"><a href="#cb6-554" aria-hidden="true" tabindex="-1"></a>        r <span class="op">=</span> find_root_newton(current_coeffs, x0<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="cb6-555"><a href="#cb6-555" aria-hidden="true" tabindex="-1"></a>        roots.append(r)</span>
+<span id="cb6-556"><a href="#cb6-556" aria-hidden="true" tabindex="-1"></a>        current_coeffs <span class="op">=</span> synthetic_deflation(current_coeffs, r)</span>
+<span id="cb6-557"><a href="#cb6-557" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb6-558"><a href="#cb6-558" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Roots via Horner + Newton: </span><span class="sc">{</span>roots<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-559"><a href="#cb6-559" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-560"><a href="#cb6-560" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Validation via NumPy Frobenius Companion Matrix</span></span>
+<span id="cb6-561"><a href="#cb6-561" aria-hidden="true" tabindex="-1"></a>    <span class="co"># np.roots expects coefficients in descending order [an, ..., a0]</span></span>
+<span id="cb6-562"><a href="#cb6-562" aria-hidden="true" tabindex="-1"></a>    np_roots <span class="op">=</span> np.roots(coeffs[::<span class="op">-</span><span class="dv">1</span>])</span>
+<span id="cb6-563"><a href="#cb6-563" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Roots via Companion Matrix (QR): </span><span class="sc">{</span>np_roots<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-564"><a href="#cb6-564" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb6-565"><a href="#cb6-565" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-566"><a href="#cb6-566" aria-hidden="true" tabindex="-1"></a><span class="fu">## Fortran (Fortran 2003 / 2008)</span></span>
+<span id="cb6-567"><a href="#cb6-567" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-568"><a href="#cb6-568" aria-hidden="true" tabindex="-1"></a><span class="in">```fortran</span></span>
+<span id="cb6-569"><a href="#cb6-569" aria-hidden="true" tabindex="-1"></a><span class="in">module polynomial_solver</span></span>
+<span id="cb6-570"><a href="#cb6-570" aria-hidden="true" tabindex="-1"></a><span class="in">    use, intrinsic :: iso_fortran_env, only: real64</span></span>
+<span id="cb6-571"><a href="#cb6-571" aria-hidden="true" tabindex="-1"></a><span class="in">    implicit none</span></span>
+<span id="cb6-572"><a href="#cb6-572" aria-hidden="true" tabindex="-1"></a><span class="in">    private</span></span>
+<span id="cb6-573"><a href="#cb6-573" aria-hidden="true" tabindex="-1"></a><span class="in">    public :: horner_eval, synthetic_deflate, newton_solve</span></span>
 <span id="cb6-574"><a href="#cb6-574" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-575"><a href="#cb6-575" aria-hidden="true" tabindex="-1"></a><span class="in">program test_poly</span></span>
-<span id="cb6-576"><a href="#cb6-576" aria-hidden="true" tabindex="-1"></a><span class="in">    use, intrinsic :: iso_fortran_env, only: real64</span></span>
-<span id="cb6-577"><a href="#cb6-577" aria-hidden="true" tabindex="-1"></a><span class="in">    use polynomial_solver</span></span>
-<span id="cb6-578"><a href="#cb6-578" aria-hidden="true" tabindex="-1"></a><span class="in">    implicit none</span></span>
-<span id="cb6-579"><a href="#cb6-579" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-580"><a href="#cb6-580" aria-hidden="true" tabindex="-1"></a><span class="in">    real(real64) :: coeffs(0:3) = [-6.0_real64, 11.0_real64, -6.0_real64, 1.0_real64]</span></span>
-<span id="cb6-581"><a href="#cb6-581" aria-hidden="true" tabindex="-1"></a><span class="in">    real(real64) :: q(0:2), q2(0:1), root</span></span>
-<span id="cb6-582"><a href="#cb6-582" aria-hidden="true" tabindex="-1"></a><span class="in">    logical :: success</span></span>
+<span id="cb6-575"><a href="#cb6-575" aria-hidden="true" tabindex="-1"></a><span class="in">contains</span></span>
+<span id="cb6-576"><a href="#cb6-576" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-577"><a href="#cb6-577" aria-hidden="true" tabindex="-1"></a><span class="in">    subroutine horner_eval(coeffs, n, x, p, dp)</span></span>
+<span id="cb6-578"><a href="#cb6-578" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(in)  :: coeffs(0:n)</span></span>
+<span id="cb6-579"><a href="#cb6-579" aria-hidden="true" tabindex="-1"></a><span class="in">        integer,      intent(in)  :: n</span></span>
+<span id="cb6-580"><a href="#cb6-580" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(in)  :: x</span></span>
+<span id="cb6-581"><a href="#cb6-581" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(out) :: p, dp</span></span>
+<span id="cb6-582"><a href="#cb6-582" aria-hidden="true" tabindex="-1"></a><span class="in">        integer :: i</span></span>
 <span id="cb6-583"><a href="#cb6-583" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-584"><a href="#cb6-584" aria-hidden="true" tabindex="-1"></a><span class="in">    print *, "=== Fortran 2008 Modular Horner Solver ==="</span></span>
-<span id="cb6-585"><a href="#cb6-585" aria-hidden="true" tabindex="-1"></a><span class="in">    </span></span>
-<span id="cb6-586"><a href="#cb6-586" aria-hidden="true" tabindex="-1"></a><span class="in">    success = newton_solve(coeffs, 3, 0.5_real64, 1.0e-12_real64, 100, root)</span></span>
-<span id="cb6-587"><a href="#cb6-587" aria-hidden="true" tabindex="-1"></a><span class="in">    if (success) then</span></span>
-<span id="cb6-588"><a href="#cb6-588" aria-hidden="true" tabindex="-1"></a><span class="in">        print '(A, F12.8)', " Found Root 1: ", root</span></span>
-<span id="cb6-589"><a href="#cb6-589" aria-hidden="true" tabindex="-1"></a><span class="in">        call synthetic_deflate(coeffs, 3, root, q)</span></span>
-<span id="cb6-590"><a href="#cb6-590" aria-hidden="true" tabindex="-1"></a><span class="in">    end if</span></span>
+<span id="cb6-584"><a href="#cb6-584" aria-hidden="true" tabindex="-1"></a><span class="in">        p = coeffs(n)</span></span>
+<span id="cb6-585"><a href="#cb6-585" aria-hidden="true" tabindex="-1"></a><span class="in">        dp = 0.0_real64</span></span>
+<span id="cb6-586"><a href="#cb6-586" aria-hidden="true" tabindex="-1"></a><span class="in">        do i = n - 1, 0, -1</span></span>
+<span id="cb6-587"><a href="#cb6-587" aria-hidden="true" tabindex="-1"></a><span class="in">            dp = dp * x + p</span></span>
+<span id="cb6-588"><a href="#cb6-588" aria-hidden="true" tabindex="-1"></a><span class="in">            p = p * x + coeffs(i)</span></span>
+<span id="cb6-589"><a href="#cb6-589" aria-hidden="true" tabindex="-1"></a><span class="in">        end do</span></span>
+<span id="cb6-590"><a href="#cb6-590" aria-hidden="true" tabindex="-1"></a><span class="in">    end subroutine horner_eval</span></span>
 <span id="cb6-591"><a href="#cb6-591" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-592"><a href="#cb6-592" aria-hidden="true" tabindex="-1"></a><span class="in">    success = newton_solve(q, 2, 1.5_real64, 1.0e-12_real64, 100, root)</span></span>
-<span id="cb6-593"><a href="#cb6-593" aria-hidden="true" tabindex="-1"></a><span class="in">    if (success) then</span></span>
-<span id="cb6-594"><a href="#cb6-594" aria-hidden="true" tabindex="-1"></a><span class="in">        print '(A, F12.8)', " Found Root 2: ", root</span></span>
-<span id="cb6-595"><a href="#cb6-595" aria-hidden="true" tabindex="-1"></a><span class="in">        call synthetic_deflate(q, 2, root, q2)</span></span>
-<span id="cb6-596"><a href="#cb6-596" aria-hidden="true" tabindex="-1"></a><span class="in">    end if</span></span>
-<span id="cb6-597"><a href="#cb6-597" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-598"><a href="#cb6-598" aria-hidden="true" tabindex="-1"></a><span class="in">    success = newton_solve(q2, 1, 2.5_real64, 1.0e-12_real64, 100, root)</span></span>
-<span id="cb6-599"><a href="#cb6-599" aria-hidden="true" tabindex="-1"></a><span class="in">    if (success) then</span></span>
-<span id="cb6-600"><a href="#cb6-600" aria-hidden="true" tabindex="-1"></a><span class="in">        print '(A, F12.8)', " Found Root 3: ", root</span></span>
-<span id="cb6-601"><a href="#cb6-601" aria-hidden="true" tabindex="-1"></a><span class="in">    end if</span></span>
-<span id="cb6-602"><a href="#cb6-602" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-603"><a href="#cb6-603" aria-hidden="true" tabindex="-1"></a><span class="in">end program test_poly</span></span>
-<span id="cb6-604"><a href="#cb6-604" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb6-605"><a href="#cb6-605" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-606"><a href="#cb6-606" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb6-607"><a href="#cb6-607" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-608"><a href="#cb6-608" aria-hidden="true" tabindex="-1"></a>---</span>
-<span id="cb6-609"><a href="#cb6-609" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-610"><a href="#cb6-610" aria-hidden="true" tabindex="-1"></a><span class="fu">## 8. Cross-Disciplinary Connections</span></span>
-<span id="cb6-611"><a href="#cb6-611" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-612"><a href="#cb6-612" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>In <span class="co">[</span><span class="ot">Mathematical Foundations: The Vector Space of Dimensions</span><span class="co">](../vector-space-of-dimensions-buckingham-pi/index.qmd)</span>, monomial products over base dimensions provide the coordinates for the Buckingham $\Pi$ null-space.</span>
-<span id="cb6-613"><a href="#cb6-613" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>In <span class="co">[</span><span class="ot">Boundary Layer Flow, Directional Momentum Coupling, and Inspectional Analysis</span><span class="co">](../boundary-layers-inspectional-analysis-huntley/index.qmd)</span>, multi-index scaling underpins directed length dimensions.</span>
-<span id="cb6-614"><a href="#cb6-614" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>In <span class="co">[</span><span class="ot">The Sedov-Taylor Blast Wave and Self-Similarity</span><span class="co">](../sedov-taylor-blast-wave-self-similarity/index.qmd)</span>, the self-similar collapse of the Euler PDEs relies on integrating rational polynomial functions of velocity $V(\xi)$ and density $G(\xi)$.</span>
-<span id="cb6-615"><a href="#cb6-615" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-616"><a href="#cb6-616" aria-hidden="true" tabindex="-1"></a>---</span>
-<span id="cb6-617"><a href="#cb6-617" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-618"><a href="#cb6-618" aria-hidden="true" tabindex="-1"></a><span class="fu">## 9. Foundational Terminology Glossary</span></span>
-<span id="cb6-619"><a href="#cb6-619" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-620"><a href="#cb6-620" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Monomial:** A single-term algebraic expression formed strictly by the product of powers of variables without internal addition or subtraction: $\prod_i x_i^{\alpha_i}$.</span>
-<span id="cb6-621"><a href="#cb6-621" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Multi-Index:** An ordered tuple of non-negative integers $\alpha = (\alpha_1, \dots, \alpha_d)$ specifying the powers in a multivariate monomial.</span>
-<span id="cb6-622"><a href="#cb6-622" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Polynomial Ring ($\mathbb{K}[x]$):** The set of all polynomials in indeterminate $x$ with coefficients in a field $\mathbb{K}$, equipped with standard addition and multiplication.</span>
-<span id="cb6-623"><a href="#cb6-623" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Euclidean Domain:** An integral domain endowed with a Euclidean function (degree for polynomials) allowing division with a remainder strictly smaller than the divisor.</span>
-<span id="cb6-624"><a href="#cb6-624" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Synthetic Division:** An optimized $O(n)$ numerical algorithm for dividing a polynomial by a linear factor $(x - c)$ while evaluating the polynomial at $c$.</span>
-<span id="cb6-625"><a href="#cb6-625" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Bézout's Identity:** The theorem stating that for any polynomials $f, g$, there exist polynomials $u, v$ such that $u \cdot f + v \cdot g = \gcd(f, g)$.</span>
-<span id="cb6-626"><a href="#cb6-626" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Square-Free Reduction:** The transformation $P / \gcd(P, P')$ that strips duplicate factors, producing a polynomial with identical roots having multiplicity 1.</span>
-<span id="cb6-627"><a href="#cb6-627" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Vieta's Formulas:** Algebraic identities expressing the elementary symmetric sums and products of polynomial roots directly in terms of coefficient ratios.</span>
-<span id="cb6-628"><a href="#cb6-628" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Sturm Sequence:** A sequence of polynomials generated via modified Euclidean division that counts the exact number of distinct real roots within any interval $(a, b]$.</span>
-<span id="cb6-629"><a href="#cb6-629" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Horner's Method:** An $O(n)$ nested algebraic algorithm for computing polynomial values and derivatives simultaneously while generating deflated coefficients.</span>
-<span id="cb6-630"><a href="#cb6-630" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Frobenius Companion Matrix:** A square matrix whose characteristic polynomial matches a given monic polynomial, allowing root-finding to be solved via the QR matrix eigenvalue algorithm.</span>
-<span id="cb6-631"><a href="#cb6-631" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-632"><a href="#cb6-632" aria-hidden="true" tabindex="-1"></a>---</span>
-<span id="cb6-633"><a href="#cb6-633" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-634"><a href="#cb6-634" aria-hidden="true" tabindex="-1"></a>© 2026 Igor Kan</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+<span id="cb6-592"><a href="#cb6-592" aria-hidden="true" tabindex="-1"></a><span class="in">    subroutine synthetic_deflate(coeffs, n, root, q)</span></span>
+<span id="cb6-593"><a href="#cb6-593" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(in)  :: coeffs(0:n)</span></span>
+<span id="cb6-594"><a href="#cb6-594" aria-hidden="true" tabindex="-1"></a><span class="in">        integer,      intent(in)  :: n</span></span>
+<span id="cb6-595"><a href="#cb6-595" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(in)  :: root</span></span>
+<span id="cb6-596"><a href="#cb6-596" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(out) :: q(0:n-1)</span></span>
+<span id="cb6-597"><a href="#cb6-597" aria-hidden="true" tabindex="-1"></a><span class="in">        integer :: i</span></span>
+<span id="cb6-598"><a href="#cb6-598" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-599"><a href="#cb6-599" aria-hidden="true" tabindex="-1"></a><span class="in">        q(n-1) = coeffs(n)</span></span>
+<span id="cb6-600"><a href="#cb6-600" aria-hidden="true" tabindex="-1"></a><span class="in">        do i = n - 2, 0, -1</span></span>
+<span id="cb6-601"><a href="#cb6-601" aria-hidden="true" tabindex="-1"></a><span class="in">            q(i) = coeffs(i+1) + root * q(i+1)</span></span>
+<span id="cb6-602"><a href="#cb6-602" aria-hidden="true" tabindex="-1"></a><span class="in">        end do</span></span>
+<span id="cb6-603"><a href="#cb6-603" aria-hidden="true" tabindex="-1"></a><span class="in">    end subroutine synthetic_deflate</span></span>
+<span id="cb6-604"><a href="#cb6-604" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-605"><a href="#cb6-605" aria-hidden="true" tabindex="-1"></a><span class="in">    logical function newton_solve(coeffs, n, x0, tol, max_iter, root)</span></span>
+<span id="cb6-606"><a href="#cb6-606" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(in)  :: coeffs(0:n)</span></span>
+<span id="cb6-607"><a href="#cb6-607" aria-hidden="true" tabindex="-1"></a><span class="in">        integer,      intent(in)  :: n</span></span>
+<span id="cb6-608"><a href="#cb6-608" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(in)  :: x0, tol</span></span>
+<span id="cb6-609"><a href="#cb6-609" aria-hidden="true" tabindex="-1"></a><span class="in">        integer,      intent(in)  :: max_iter</span></span>
+<span id="cb6-610"><a href="#cb6-610" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64), intent(out) :: root</span></span>
+<span id="cb6-611"><a href="#cb6-611" aria-hidden="true" tabindex="-1"></a><span class="in">        real(real64) :: x, p, dp</span></span>
+<span id="cb6-612"><a href="#cb6-612" aria-hidden="true" tabindex="-1"></a><span class="in">        integer :: iter</span></span>
+<span id="cb6-613"><a href="#cb6-613" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-614"><a href="#cb6-614" aria-hidden="true" tabindex="-1"></a><span class="in">        x = x0</span></span>
+<span id="cb6-615"><a href="#cb6-615" aria-hidden="true" tabindex="-1"></a><span class="in">        newton_solve = .false.</span></span>
+<span id="cb6-616"><a href="#cb6-616" aria-hidden="true" tabindex="-1"></a><span class="in">        do iter = 1, max_iter</span></span>
+<span id="cb6-617"><a href="#cb6-617" aria-hidden="true" tabindex="-1"></a><span class="in">            call horner_eval(coeffs, n, x, p, dp)</span></span>
+<span id="cb6-618"><a href="#cb6-618" aria-hidden="true" tabindex="-1"></a><span class="in">            if (abs(p) &lt; tol) then</span></span>
+<span id="cb6-619"><a href="#cb6-619" aria-hidden="true" tabindex="-1"></a><span class="in">                root = x</span></span>
+<span id="cb6-620"><a href="#cb6-620" aria-hidden="true" tabindex="-1"></a><span class="in">                newton_solve = .true.</span></span>
+<span id="cb6-621"><a href="#cb6-621" aria-hidden="true" tabindex="-1"></a><span class="in">                return</span></span>
+<span id="cb6-622"><a href="#cb6-622" aria-hidden="true" tabindex="-1"></a><span class="in">            end if</span></span>
+<span id="cb6-623"><a href="#cb6-623" aria-hidden="true" tabindex="-1"></a><span class="in">            if (abs(dp) &lt; 1.0e-14_real64) exit</span></span>
+<span id="cb6-624"><a href="#cb6-624" aria-hidden="true" tabindex="-1"></a><span class="in">            x = x - p / dp</span></span>
+<span id="cb6-625"><a href="#cb6-625" aria-hidden="true" tabindex="-1"></a><span class="in">        end do</span></span>
+<span id="cb6-626"><a href="#cb6-626" aria-hidden="true" tabindex="-1"></a><span class="in">        root = x</span></span>
+<span id="cb6-627"><a href="#cb6-627" aria-hidden="true" tabindex="-1"></a><span class="in">    end function newton_solve</span></span>
+<span id="cb6-628"><a href="#cb6-628" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-629"><a href="#cb6-629" aria-hidden="true" tabindex="-1"></a><span class="in">end module polynomial_solver</span></span>
+<span id="cb6-630"><a href="#cb6-630" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-631"><a href="#cb6-631" aria-hidden="true" tabindex="-1"></a><span class="in">program test_poly</span></span>
+<span id="cb6-632"><a href="#cb6-632" aria-hidden="true" tabindex="-1"></a><span class="in">    use, intrinsic :: iso_fortran_env, only: real64</span></span>
+<span id="cb6-633"><a href="#cb6-633" aria-hidden="true" tabindex="-1"></a><span class="in">    use polynomial_solver</span></span>
+<span id="cb6-634"><a href="#cb6-634" aria-hidden="true" tabindex="-1"></a><span class="in">    implicit none</span></span>
+<span id="cb6-635"><a href="#cb6-635" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-636"><a href="#cb6-636" aria-hidden="true" tabindex="-1"></a><span class="in">    real(real64) :: coeffs(0:3) = [-6.0_real64, 11.0_real64, -6.0_real64, 1.0_real64]</span></span>
+<span id="cb6-637"><a href="#cb6-637" aria-hidden="true" tabindex="-1"></a><span class="in">    real(real64) :: q(0:2), q2(0:1), root</span></span>
+<span id="cb6-638"><a href="#cb6-638" aria-hidden="true" tabindex="-1"></a><span class="in">    logical :: success</span></span>
+<span id="cb6-639"><a href="#cb6-639" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-640"><a href="#cb6-640" aria-hidden="true" tabindex="-1"></a><span class="in">    print *, "=== Fortran 2008 Modular Horner Solver ==="</span></span>
+<span id="cb6-641"><a href="#cb6-641" aria-hidden="true" tabindex="-1"></a><span class="in">    </span></span>
+<span id="cb6-642"><a href="#cb6-642" aria-hidden="true" tabindex="-1"></a><span class="in">    success = newton_solve(coeffs, 3, 0.5_real64, 1.0e-12_real64, 100, root)</span></span>
+<span id="cb6-643"><a href="#cb6-643" aria-hidden="true" tabindex="-1"></a><span class="in">    if (success) then</span></span>
+<span id="cb6-644"><a href="#cb6-644" aria-hidden="true" tabindex="-1"></a><span class="in">        print '(A, F12.8)', " Found Root 1: ", root</span></span>
+<span id="cb6-645"><a href="#cb6-645" aria-hidden="true" tabindex="-1"></a><span class="in">        call synthetic_deflate(coeffs, 3, root, q)</span></span>
+<span id="cb6-646"><a href="#cb6-646" aria-hidden="true" tabindex="-1"></a><span class="in">    end if</span></span>
+<span id="cb6-647"><a href="#cb6-647" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-648"><a href="#cb6-648" aria-hidden="true" tabindex="-1"></a><span class="in">    success = newton_solve(q, 2, 1.5_real64, 1.0e-12_real64, 100, root)</span></span>
+<span id="cb6-649"><a href="#cb6-649" aria-hidden="true" tabindex="-1"></a><span class="in">    if (success) then</span></span>
+<span id="cb6-650"><a href="#cb6-650" aria-hidden="true" tabindex="-1"></a><span class="in">        print '(A, F12.8)', " Found Root 2: ", root</span></span>
+<span id="cb6-651"><a href="#cb6-651" aria-hidden="true" tabindex="-1"></a><span class="in">        call synthetic_deflate(q, 2, root, q2)</span></span>
+<span id="cb6-652"><a href="#cb6-652" aria-hidden="true" tabindex="-1"></a><span class="in">    end if</span></span>
+<span id="cb6-653"><a href="#cb6-653" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-654"><a href="#cb6-654" aria-hidden="true" tabindex="-1"></a><span class="in">    success = newton_solve(q2, 1, 2.5_real64, 1.0e-12_real64, 100, root)</span></span>
+<span id="cb6-655"><a href="#cb6-655" aria-hidden="true" tabindex="-1"></a><span class="in">    if (success) then</span></span>
+<span id="cb6-656"><a href="#cb6-656" aria-hidden="true" tabindex="-1"></a><span class="in">        print '(A, F12.8)', " Found Root 3: ", root</span></span>
+<span id="cb6-657"><a href="#cb6-657" aria-hidden="true" tabindex="-1"></a><span class="in">    end if</span></span>
+<span id="cb6-658"><a href="#cb6-658" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-659"><a href="#cb6-659" aria-hidden="true" tabindex="-1"></a><span class="in">end program test_poly</span></span>
+<span id="cb6-660"><a href="#cb6-660" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb6-661"><a href="#cb6-661" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-662"><a href="#cb6-662" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb6-663"><a href="#cb6-663" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-664"><a href="#cb6-664" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb6-665"><a href="#cb6-665" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-666"><a href="#cb6-666" aria-hidden="true" tabindex="-1"></a><span class="fu">## 8. Cross-Disciplinary Connections</span></span>
+<span id="cb6-667"><a href="#cb6-667" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-668"><a href="#cb6-668" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>In <span class="co">[</span><span class="ot">Mathematical Foundations: The Vector Space of Dimensions</span><span class="co">](../vector-space-of-dimensions-buckingham-pi/index.qmd)</span>, monomial products over base dimensions provide the coordinates for the Buckingham $\Pi$ null-space.</span>
+<span id="cb6-669"><a href="#cb6-669" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>In <span class="co">[</span><span class="ot">Boundary Layer Flow, Directional Momentum Coupling, and Inspectional Analysis</span><span class="co">](../boundary-layers-inspectional-analysis-huntley/index.qmd)</span>, multi-index scaling underpins directed length dimensions.</span>
+<span id="cb6-670"><a href="#cb6-670" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>In <span class="co">[</span><span class="ot">The Sedov-Taylor Blast Wave and Self-Similarity</span><span class="co">](../sedov-taylor-blast-wave-self-similarity/index.qmd)</span>, the self-similar collapse of the Euler PDEs relies on integrating rational polynomial functions of velocity $V(\xi)$ and density $G(\xi)$.</span>
+<span id="cb6-671"><a href="#cb6-671" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-672"><a href="#cb6-672" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb6-673"><a href="#cb6-673" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-674"><a href="#cb6-674" aria-hidden="true" tabindex="-1"></a><span class="fu">## 9. Foundational Terminology Glossary</span></span>
+<span id="cb6-675"><a href="#cb6-675" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-676"><a href="#cb6-676" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Monomial:** A single-term algebraic expression formed strictly by the product of powers of variables without internal addition or subtraction: $\prod_i x_i^{\alpha_i}$.</span>
+<span id="cb6-677"><a href="#cb6-677" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Multi-Index:** An ordered tuple of non-negative integers $\alpha = (\alpha_1, \dots, \alpha_d)$ specifying the powers in a multivariate monomial.</span>
+<span id="cb6-678"><a href="#cb6-678" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Polynomial Ring ($\mathbb{K}[x]$):** The set of all polynomials in indeterminate $x$ with coefficients in a field $\mathbb{K}$, equipped with standard addition and multiplication.</span>
+<span id="cb6-679"><a href="#cb6-679" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Euclidean Domain:** An integral domain endowed with a Euclidean function (degree for polynomials) allowing division with a remainder strictly smaller than the divisor.</span>
+<span id="cb6-680"><a href="#cb6-680" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Synthetic Division:** An optimized $O(n)$ numerical algorithm for dividing a polynomial by a linear factor $(x - c)$ while evaluating the polynomial at $c$.</span>
+<span id="cb6-681"><a href="#cb6-681" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Bézout's Identity:** The theorem stating that for any polynomials $f, g$, there exist polynomials $u, v$ such that $u \cdot f + v \cdot g = \gcd(f, g)$.</span>
+<span id="cb6-682"><a href="#cb6-682" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Square-Free Reduction:** The transformation $P / \gcd(P, P')$ that strips duplicate factors, producing a polynomial with identical roots having multiplicity 1.</span>
+<span id="cb6-683"><a href="#cb6-683" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Vieta's Formulas:** Algebraic identities expressing the elementary symmetric sums and products of polynomial roots directly in terms of coefficient ratios.</span>
+<span id="cb6-684"><a href="#cb6-684" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Sturm Sequence:** A sequence of polynomials generated via modified Euclidean division that counts the exact number of distinct real roots within any interval $(a, b]$.</span>
+<span id="cb6-685"><a href="#cb6-685" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Horner's Method:** An $O(n)$ nested algebraic algorithm for computing polynomial values and derivatives simultaneously while generating deflated coefficients.</span>
+<span id="cb6-686"><a href="#cb6-686" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Frobenius Companion Matrix:** A square matrix whose characteristic polynomial matches a given monic polynomial, allowing root-finding to be solved via the QR matrix eigenvalue algorithm.</span>
+<span id="cb6-687"><a href="#cb6-687" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-688"><a href="#cb6-688" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb6-689"><a href="#cb6-689" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-690"><a href="#cb6-690" aria-hidden="true" tabindex="-1"></a>© 2026 Igor Kan</span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 <footer class="footer">
