@@ -1,0 +1,334 @@
+---
+title: "Dynamical Systems: Population Models from Ecology to Demography"
+subtitle: "From Malthusian exponential growth to logistic carrying capacity, Lotka-Volterra predator-prey cycles, age-structured Leslie matrices, and human demographic transitions."
+description: "A comprehensive mathematical and biological exposition of population dynamics: analytical solutions to Malthusian and Verhulst equations, the Allee effect extinction threshold, Hamiltonian structure of Lotka-Volterra predator-prey systems, Perron-Frobenius spectral analysis of Leslie matrices, and the five-stage human demographic transition model."
+author: "Igor Kan"
+date: "2026-10-29"
+categories: [Preprints, Applied Mathematics, Differential Equations, Ecology, Demography, Dynamical Systems]
+draft: false
+format:
+  html:
+    toc: true
+    toc-depth: 3
+---
+
+::: {.callout-note}
+### Preprint / Working Draft
+This article is published under the **Preprints** category. It explores the mathematics of population dynamics across single-species growth models, multispecies interactions, discrete age-structured matrix demography, and global human demographic shifts.
+:::
+
+---
+
+## 1. Introduction: The Calculus of Living Systems
+
+Population biology seeks to answer a fundamental question: **what mathematical laws govern the rise, stabilization, oscillation, or extinction of interacting biological organisms?**
+
+Unlike physical systems governed by universal invariants like Newton's gravitational constant $G$ or Planck's constant $\hbar$, biological populations evolve through non-linear feedbacks: density-dependent mortality, resource competition, trophic predation, and demographic momentum. 
+
+Mathematically, population dynamics bridges continuous ordinary differential equations (ODEs), non-linear dynamical systems, spectral linear algebra, and statistical demography.
+
+---
+
+## 2. Single-Species Continuous Population Models
+
+Let $N(t)$ denote the total population size or density at time $t$. The instantaneous net rate of change is governed by the balance between birth rates $b(N)$ and death rates $d(N)$:
+
+$$\frac{dN}{dt} = \Big( b(N) - d(N) \Big) N \tag{1}$$
+
+### 2.1 The Malthusian Model: Unconstrained Exponential Growth
+
+In 1798, Thomas Robert Malthus posited that in the absence of environmental limits, birth and death rates remain constant per capita ($b(N) = b_0, d(N) = d_0$). Defining the **intrinsic growth rate** $r = b_0 - d_0$:
+
+$$\frac{dN}{dt} = r N \implies N(t) = N_0 e^{rt} \tag{2}$$
+
+* If $r > 0$, the population undergoes unbounded exponential explosion.
+* If $r < 0$, the population declines asymptotically to extinction.
+* **The Malthusian Trap:** Malthus noted that while human reproduction expands geometrically ($e^{rt}$), food production historically grew at best arithmetically ($a + bt$), inevitably triggering catastrophic population crashes ("positive checks" of famine, war, and pestilence).
+
+### 2.2 The Verhulst Logistic Model: Carrying Capacity and Saturation
+
+In 1838, Pierre-François Verhulst introduced self-limiting environmental resistance. As population density increases, per-capita resource competition reduces fertility and increases mortality:
+
+$$\frac{dN}{dt} = r N \left( 1 - \frac{N}{K} \right) \tag{3}$$
+
+where:
+* $r$ is the intrinsic per-capita growth rate ($T^{-1}$).
+* $K$ is the **carrying capacity** of the environment (the maximum sustainable population).
+* The factor $\left(1 - \frac{N}{K}\right)$ represents the unused fraction of carrying capacity.
+
+#### Analytical Solution via Separation of Variables
+Separating variables in Equation (3):
+$$\frac{d N}{N \left(1 - \frac{N}{K}\right)} = r \, dt$$
+Applying partial fraction decomposition $\frac{1}{N (1 - N/K)} = \frac{1}{N} + \frac{1/K}{1 - N/K}$:
+$$\int \left( \frac{1}{N} + \frac{1}{K - N} \right) dN = \int r \, dt \implies \ln|N| - \ln|K - N| = r t + C$$
+$$\ln\left| \frac{N}{K - N} \right| = r t + C \implies \frac{N(t)}{K - N(t)} = \left(\frac{N_0}{K - N_0}\right) e^{rt}$$
+Solving for $N(t)$ yields the celebrated **sigmoid logistic curve**:
+
+$$N(t) = \frac{K N_0 e^{rt}}{K + N_0 (e^{rt} - 1)} = \frac{K}{1 + \left(\frac{K - N_0}{N_0}\right) e^{-rt}} \tag{4}$$
+
+#### Mathematical Properties of the Logistic S-Curve:
+1. **Asymptotic Convergence:** $\lim_{t \to \infty} N(t) = K$ for any initial state $N_0 > 0$.
+2. **Fixed Points & Stability:** Fixed points satisfy $\frac{dN}{dt} = 0$:
+   * $N^* = 0$ is an **unstable source** (Lyapunov exponent $f'(0) = r > 0$).
+   * $N^* = K$ is a **globally asymptotically stable sink** (Lyapunov exponent $f'(K) = -r < 0$).
+3. **Point of Maximum Growth Rate:** Differentiating $\frac{dN}{dt}$ with respect to $N$:
+   $$\frac{d^2 N}{dt^2} = r \frac{dN}{dt} \left(1 - \frac{2N}{K}\right) = 0 \implies N_{\text{inflection}} = \frac{K}{2}$$
+   The population growth velocity $\dot{N}$ is maximized exactly at **half carrying capacity** ($N = K/2$), where $\left.\frac{dN}{dt}\right|_{\max} = \frac{r K}{4}$. In fisheries management, this point defines the **Maximum Sustainable Yield (MSY)**.
+
+### 2.3 The Allee Effect: Critical Depensation and Extinction Thresholds
+
+In many biological species, sparse populations suffer from cooperative collapse: inability to locate mates, breakdown of herd vigilance against predators, or loss of communal foraging. This phenomenon, discovered by Warder Clyde Allee in 1931, introduces an unstable critical threshold $A$ ($0 < A < K$):
+
+$$\frac{dN}{dt} = r N \left( 1 - \frac{N}{K} \right) \left( \frac{N - A}{K} \right) \tag{5}$$
+
+* **Three Equilibrium States:**
+  * $N = 0$: Locally stable extinction sink ($f'(0) = 0$).
+  * $N = A$: **Unstable tipping point (Allee threshold)** ($f'(A) > 0$).
+  * $N = K$: Locally stable carrying capacity sink ($f'(K) < 0$).
+* **The Extinction Vortex:** If perturbations or over-harvesting drive population density below $A$ ($N_0 < A$), $\frac{dN}{dt} < 0$ indefinitely, driving the species into irreversible extinction ($\lim_{t \to \infty} N(t) = 0$).
+
+```{python}
+#| label: fig-single-species-trajectories
+#| fig-cap: "Programmatically Simulated Single-Species Population Trajectories. Malthusian exponential growth (dashed red) diverges; Verhulst logistic growth (blue) converges to carrying capacity K = 1000; the Allee effect (green vs. orange) exhibits bistability with an extinction vortex below A = 200."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Population Trajectories"
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Parameters
+t = np.linspace(0, 25, 400)
+r = 0.45
+K = 1000.0
+A = 200.0
+
+# 1. Malthusian trajectory
+N0 = 50.0
+N_malth = N0 * np.exp(r * t)
+
+# 2. Logistic trajectory
+N_logistic = (K * N0 * np.exp(r * t)) / (K + N0 * (np.exp(r * t) - 1.0))
+
+# 3. Allee effect numerical integration (Euler-Heun)
+dt = 0.05
+steps = int(25.0 / dt)
+t_num = np.linspace(0, 25.0, steps)
+
+def f_allee(N):
+    return r * N * (1.0 - N / K) * ((N - A) / K)
+
+N_allee_above = np.zeros(steps)
+N_allee_below = np.zeros(steps)
+N_allee_above[0] = 300.0  # Above threshold A
+N_allee_below[0] = 160.0  # Below threshold A
+
+for i in range(steps - 1):
+    N_allee_above[i+1] = N_allee_above[i] + dt * f_allee(N_allee_above[i])
+    N_allee_below[i+1] = max(0.0, N_allee_below[i] + dt * f_allee(N_allee_below[i]))
+
+fig, ax = plt.subplots(figsize=(8.5, 4.8), dpi=180)
+
+# Curves
+ax.plot(t, N_logistic, label='Verhulst Logistic ($N_0 = 50, K = 1000$)', color='#2563eb', lw=2.4)
+ax.plot(t[t <= 7.2], N_malth[t <= 7.2], '--', label='Malthusian Exponential ($N_0 e^{rt}$)', color='#dc2626', lw=2.0)
+ax.plot(t_num, N_allee_above, label=f'Allee Effect: Viable ($N_0 = 300 > A$)', color='#059669', lw=2.2)
+ax.plot(t_num, N_allee_below, ':', label=f'Allee Effect: Extinction ($N_0 = 160 < A$)', color='#d97706', lw=2.2)
+
+# Environmental thresholds
+ax.axhline(K, color='#4b5563', linestyle='--', alpha=0.7, label='Carrying Capacity $K = 1000$')
+ax.axhline(A, color='#ef4444', linestyle=':', alpha=0.8, label='Allee Critical Threshold $A = 200$')
+
+# Annotations
+ax.text(20, 1030, 'Stable Carrying Capacity $K$', color='#4b5563', fontsize=9.5, fontweight='bold', ha='right')
+ax.text(20, 220, 'Unstable Tipping Point $A$', color='#ef4444', fontsize=9.5, fontweight='bold', ha='right')
+
+ax.set_ylim(-20, 1200)
+ax.set_xlim(0, 25)
+ax.set_xlabel('Time $t$ (arbitrary units)', fontsize=11)
+ax.set_ylabel('Population Size $N(t)$', fontsize=11)
+ax.set_title('Single-Species Population Trajectories: Malthus vs. Verhulst vs. Allee', fontsize=12, fontweight='bold', pad=10)
+ax.legend(frameon=True, fontsize=9, loc='upper left')
+ax.grid(True, linestyle='--', alpha=0.45)
+
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## 3. Multispecies Interactions: Predator-Prey & Competition
+
+Populations do not exist in isolation. In ecological networks, species interact through predation, mutualism, or resource competition.
+
+### 3.1 The Lotka-Volterra Predator-Prey System
+
+In the 1920s, Alfred Lotka and Vito Volterra independently formulated the fundamental non-linear ODE system governing a prey population $N(t)$ and predator population $P(t)$:
+
+$$\begin{aligned}
+\frac{dN}{dt} &= r N - a N P \tag{6} \\
+\frac{dP}{dt} &= -m P + b N P \tag{7}
+\end{aligned}$$
+
+where:
+* $r$: prey exponential birth rate in the absence of predators.
+* $a$: predation encounter rate / attack efficiency.
+* $m$: predator natural mortality rate in the absence of prey.
+* $b$: conversion efficiency of consumed prey into predator offspring.
+
+#### Equilibrium Fixed Points
+Setting $\frac{dN}{dt} = 0$ and $\frac{dP}{dt} = 0$:
+1. **Extinction Equilibrium:** $(N^*, P^*) = (0, 0)$ (trivial saddle point).
+2. **Coexistence Equilibrium:**
+   $$N^* = \frac{m}{b}, \qquad P^* = \frac{r}{a} \tag{8}$$
+
+#### Linear Stability Analysis (Jacobian Matrix)
+The Jacobian matrix of system (6)–(7) evaluated at $(N, P)$ is:
+$$J(N, P) = \begin{pmatrix} r - aP & -aN \\ bP & -m + bN \end{pmatrix}$$
+At the coexistence point $(N^*, P^*) = (m/b, r/a)$:
+$$J(N^*, P^*) = \begin{pmatrix} 0 & -\frac{a m}{b} \\ \frac{b r}{a} & 0 \end{pmatrix}$$
+The characteristic polynomial is:
+$$\det(J - \lambda I) = \lambda^2 + \left(\frac{a m}{b}\right)\left(\frac{b r}{a}\right) = \lambda^2 + r m = 0 \implies \lambda = \pm i \sqrt{r m} \tag{9}$$
+
+Because the eigenvalues are **purely imaginary**, the linear system predicts **neutral centers**: perpetual, undamped harmonic oscillations with natural frequency $\omega = \sqrt{r m}$ and period $T = \frac{2\pi}{\sqrt{r m}}$.
+
+#### The Conserved Hamiltonian
+Remarkably, the non-linear Lotka-Volterra equations possess an exact **first integral of motion** (a conserved quantity analogous to energy in classical mechanics):
+
+$$H(N, P) = b N - m \ln N + a P - r \ln P = C \tag{10}$$
+
+Taking the total time derivative:
+$$\frac{dH}{dt} = \left(b - \frac{m}{N}\right)\frac{dN}{dt} + \left(a - \frac{r}{P}\right)\frac{dP}{dt} = \left(\frac{bN - m}{N}\right)(rN - aNP) + \left(\frac{aP - r}{P}\right)(-mP + bNP) \equiv 0$$
+Because $H(N, P) = C$ is conserved, the system's trajectories in the $(N, P)$ phase plane are **closed periodic orbits**, guaranteeing perpetual cycles!
+
+```{python}
+#| label: fig-lotka-volterra-phase-portrait
+#| fig-cap: "Programmatically Simulated Lotka-Volterra Predator-Prey Phase Portrait. Streamlines show closed, conservative orbital trajectories surrounding the neutrally stable coexistence center (m/b, r/a) = (100, 50)."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Phase Portrait"
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Ecological parameters
+r_lv, a_lv = 1.0, 0.02
+m_lv, b_lv = 0.5, 0.005
+
+# Coexistence equilibrium
+N_star = m_lv / b_lv   # 100
+P_star = r_lv / a_lv   # 50
+
+# Phase space grid
+N_grid, P_grid = np.meshgrid(np.linspace(15, 260, 30), np.linspace(8, 125, 30))
+dN = r_lv * N_grid - a_lv * N_grid * P_grid
+dP = -m_lv * P_grid + b_lv * N_grid * P_grid
+
+fig, ax = plt.subplots(figsize=(7.5, 5.2), dpi=180)
+
+# Streamline phase portrait
+ax.streamplot(N_grid, P_grid, dN, dP, color='#4338ca', density=1.1, linewidth=1.2, arrowsize=1.2)
+
+# Nullclines
+ax.axvline(N_star, color='#dc2626', linestyle='--', alpha=0.7, label=f'Predator Nullcline ($N = {N_star:.0f}$)')
+ax.axhline(P_star, color='#059669', linestyle='--', alpha=0.7, label=f'Prey Nullcline ($P = {P_star:.0f}$)')
+
+# Equilibrium point
+ax.plot(N_star, P_star, 'ro', markersize=8, zorder=5, label=f'Coexistence Center $({N_star:.0f}, {P_star:.0f})$')
+
+ax.set_xlabel('Prey Population $N$ (e.g., Hares)', fontsize=11)
+ax.set_ylabel('Predator Population $P$ (e.g., Lynxes)', fontsize=11)
+ax.set_title('Lotka-Volterra Phase Plane Dynamics: Conservative Orbits', fontsize=12, fontweight='bold', pad=10)
+ax.legend(frameon=True, fontsize=9.5, loc='upper right')
+ax.grid(True, linestyle='--', alpha=0.45)
+
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## 4. Age-Structured Demography: The Leslie Matrix Model
+
+Continuous models like Equations (3) and (6) treat all individuals as physiologically identical. However, in mammals, birds, and humans, reproductive fertility and mortality depend heavily on **chronological age**.
+
+In 1945, Patrick H. Leslie introduced discrete matrix demography. Consider a population divided into $k+1$ discrete age classes:
+
+$$\mathbf{n}_t = \begin{pmatrix} n_{0, t} \\ n_{1, t} \\ n_{2, t} \\ \vdots \\ n_{k, t} \end{pmatrix} \in \mathbb{R}^{k+1} \tag{11}$$
+
+The transition from time step $t$ to $t+1$ is governed by the **Leslie Matrix** $L$:
+
+$$\mathbf{n}_{t+1} = L \, \mathbf{n}_t \tag{12}$$
+
+$$L = \begin{pmatrix} 
+F_0 & F_1 & F_2 & \cdots & F_{k-1} & F_k \\
+P_0 & 0 & 0 & \cdots & 0 & 0 \\
+0 & P_1 & 0 & \cdots & 0 & 0 \\
+0 & 0 & P_2 & \cdots & 0 & 0 \\
+\vdots & \vdots & \vdots & \ddots & \vdots & \vdots \\
+0 & 0 & 0 & \cdots & P_{k-1} & 0
+\end{pmatrix} \tag{13}$$
+
+where:
+* **Fecundity Row ($F_i \ge 0$):** Mean number of female offspring produced per female in age class $i$.
+* **Survival Subdiagonal ($0 < P_i \le 1$):** Probability that a female in age class $i$ survives to age class $i+1$.
+
+### Spectral Decomposition and the Perron-Frobenius Theorem
+Because the Leslie matrix $L$ is non-negative and primitive (provided at least two consecutive fecundity terms are positive), the **Perron-Frobenius Theorem** dictates its asymptotic fate:
+
+1. **Dominant Real Eigenvalue $\lambda_1 > 0$:** There exists a unique, strictly positive eigenvalue $\lambda_1$ whose magnitude strictly exceeds all other eigenvalues:
+   $$\lambda_1 > |\lambda_j|, \quad \forall j \neq 1$$
+   * If $\lambda_1 > 1$, the population grows exponentially at asymptotic rate $r = \ln \lambda_1$.
+   * If $\lambda_1 < 1$, the population declines to extinction.
+   * If $\lambda_1 = 1$, the population is strictly stationary.
+2. **Stable Age Distribution (Right Eigenvector $\mathbf{u}_1$):**  
+   The right eigenvector $L \mathbf{u}_1 = \lambda_1 \mathbf{u}_1$ defines the **stable age structure** (demographic pyramid). Regardless of the initial age distribution $\mathbf{n}_0$, the proportion of individuals in each age bracket converges to $\mathbf{u}_1$:
+   $$\lim_{t \to \infty} \frac{\mathbf{n}_t}{\lambda_1^t} = c_1 \mathbf{u}_1$$
+3. **Reproductive Value (Left Eigenvector $\mathbf{v}_1^T$):**  
+   The left eigenvector $\mathbf{v}_1^T L = \lambda_1 \mathbf{v}_1^T$ quantifies Ronald Fisher's **reproductive value** across age classes—measuring how much an individual of age $i$ contributes to future generations.
+
+---
+
+## 5. Human Population Dynamics & The Demographic Transition Model (DTM)
+
+Human population growth has departed radically from classical ecological carrying capacity due to technological revolutions, sanitation, medical breakthroughs, and cultural shifts in family planning.
+
+Demographers formalize this global historical progression via the **Demographic Transition Model (DTM)**:
+
+```{python}
+#| label: tbl-demographic-stages
+#| code-fold: true
+#| code-summary: "Show Python code generating the Demographic Transition Model Table"
+
+from IPython.display import Markdown
+
+dtm_data = [
+    ("Stage 1: Pre-Industrial", "High (35–40 per 1k)", "High & Volatile (35–40 per 1k)", "Near Zero (<0.5%)", "Famine, infectious disease, infant mortality; agrarian labor demand"),
+    ("Stage 2: Early Transition", "High (30–40 per 1k)", "Plunging Rapidly (15–20 per 1k)", "Very High (>2.5–3.5%)", "Clean water, antibiotics, food security; demographic explosion"),
+    ("Stage 3: Late Transition", "Declining (15–25 per 1k)", "Low & Stable (8–12 per 1k)", "Decelerating Growth", "Urbanization, female education, ban on child labor, contraception"),
+    ("Stage 4: Post-Industrial", "Low (10–12 per 1k)", "Low (8–10 per 1k)", "Stationary (~0%)", "Service economy, high cost of child-rearing, gender equality"),
+    ("Stage 5: Sub-Replacement", "Ultra-Low (<8–10 per 1k)", "Rising slightly (10–13 per 1k)", "Negative (<0%)", "TFR below 2.1 (e.g., East Asia, S. Europe); severe population aging")
+]
+
+header = "| Demographic Stage | Crude Birth Rate (CBR) | Crude Death Rate (CDR) | Natural Increase Rate | Primary Socio-Economic Drivers |\n| :--- | :--- | :--- | :--- | :--- |\n"
+Markdown(header + "\n".join([f"| **{r[0]}** | {r[1]} | {r[2]} | {r[3]} | {r[4]} |" for r in dtm_data]))
+```
+
+### 5.1 Key Demographics Metrics
+* **Total Fertility Rate (TFR):** The average number of children a woman would bear over her lifetime given prevailing age-specific fertility rates.
+* **Replacement-Level Fertility:** For modern developed countries with low infant mortality, replacement TFR is approximately **$2.1$ children per woman** (the $0.1$ compensates for infant mortality and natural sex ratio at birth of $\sim 105$ males per $100$ females).
+* **Demographic Momentum:** Even after TFR drops below $2.1$, a population continues to grow for several decades if a disproportionate fraction of the population resides in reproductive age cohorts due to past high fertility.
+* **The Dependency Ratio:** The ratio of non-working age populations ($<15$ and $>65$) to the working-age population ($15–64$). In Stage 5, soaring elderly dependency ratios place severe strains on pension systems, healthcare infrastructure, and labor productivity.
+
+---
+
+## 6. Summary & Cross-Disciplinary Connections
+
+* For the continuous Lie group symmetries and differential equation invariants governing ODE phase portraits, see:
+  * [Continuous Lie Transformation Groups: Symmetries, Differential Equations, and Physical Invariants](../continuous-lie-groups-differential-equations-symmetries/index.qmd)
+* For the abstract spectral theory of eigenvalues, eigenvectors, and matrix decompositions underlying the Leslie matrix, see:
+  * [Algebraic Foundations: Fields, Rings, Coordinate Isomorphisms, and Rank-Nullity](../algebraic-structures-coordinate-mappings-rank-nullity/index.qmd)
+* For the mathematical formulation of set relations and mappings, see:
+  * [Mathematical Foundations: Functions, Relations, Operations, and Morphisms](../mathematical-functions-relations-operations-morphisms/index.qmd)
+
+---
+
+© 2026 Igor Kan

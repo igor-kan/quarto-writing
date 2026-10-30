@@ -1,0 +1,448 @@
+---
+title: "Mathematical Foundations: Functions, Relations, Operations, and Morphisms"
+subtitle: "Set-theoretic foundations, binary relations, mappings, algebraic operations, morphisms, and programmatic visual representations."
+description: "A rigorous mathematical exposition of functions and relations: set-theoretic graph definitions, equivalence relations and quotient sets, injections, surjections, bijections, algebraic operations, category-theoretic morphisms, and programmatic visual arrow diagrams."
+author: "Igor Kan"
+date: "2026-10-29"
+categories: [Preprints, Mathematics, Set Theory, Abstract Algebra, Category Theory]
+draft: false
+format:
+  html:
+    toc: true
+    toc-depth: 3
+---
+
+::: {.callout-note}
+### Preprint / Working Draft
+This article is published under the **Preprints** category. It explores the formal foundations of mathematical relations, mappings, algebraic operations, and category-theoretic morphisms. Executable Python diagrams illustrate set mappings, injectivity/surjectivity, and commuting diagrams.
+:::
+
+---
+
+## 1. Introduction: From Sets to Structured Mappings
+
+In pure and applied mathematics, sets alone provide merely static collections of elements. The dynamic essence of mathematics—transformation, symmetry, computation, and structural equivalence—arises only when we introduce formal rules connecting the elements of one set to those of another.
+
+Modern mathematics builds this hierarchy in three graduated stages:
+1. **Relations:** Subsets of Cartesian products establishing arbitrary pairings between elements.
+2. **Functions (Mappings):** Constrained relations ensuring that every input possesses a unique, unambiguous output.
+3. **Morphisms:** Functions between structured sets (groups, vector spaces, topological spaces) that preserve the intrinsic algebraic or geometric operations of those spaces.
+
+---
+
+## 2. Set-Theoretic Relations
+
+### 2.1 Cartesian Products and Binary Relations
+
+Let $A$ and $B$ be two non-empty sets. The **Cartesian product** $A \times B$ is the set of all ordered pairs:
+
+$$A \times B = \{(a, b) \mid a \in A, \; b \in B\} \tag{1}$$
+
+A **binary relation** $R$ from $A$ to $B$ is formally defined as any subset of the Cartesian product:
+
+$$R \subseteq A \times B \tag{2}$$
+
+If $(a, b) \in R$, we write $a \, R \, b$, signifying that $a$ is related to $b$ under $R$. If $A = B$, $R$ is termed an **endorelation** or **homogeneous relation** on $A$.
+
+### 2.2 Axiomatic Properties of Homogeneous Relations
+
+Let $R \subseteq A \times A$. The relational behavior is classified by four foundational axioms:
+
+1. **Reflexivity:** Every element is related to itself:
+   $$\forall x \in A, \quad x \, R \, x$$
+2. **Symmetry:** Directionality is reversible:
+   $$\forall x, y \in A, \quad x \, R \, y \implies y \, R \, x$$
+3. **Antisymmetry:** Mutual relation forces strict equality:
+   $$\forall x, y \in A, \quad (x \, R \, y \land y \, R \, x) \implies x = y$$
+4. **Transitivity:** Chained relations compose:
+   $$\forall x, y, z \in A, \quad (x \, R \, y \land y \, R \, z) \implies x \, R \, z$$
+
+### 2.3 Equivalence Relations, Classes, and Quotient Sets
+
+A relation $\sim$ on $A$ is an **equivalence relation** if and only if it is **reflexive**, **symmetric**, and **transitive**.
+
+For any $x \in A$, the **equivalence class** of $x$, denoted $[x]$ or $\operatorname{cl}(x)$, is the set of all elements equivalent to $x$:
+
+$$[x] = \{y \in A \mid x \sim y\} \subseteq A \tag{3}$$
+
+> **The Fundamental Theorem of Equivalence Relations:**  
+> Let $\sim$ be an equivalence relation on $A$. The equivalence classes partition $A$ into mutually disjoint non-empty subsets whose union is $A$:
+> 1. $\forall x \in A, \quad [x] \neq \emptyset$.
+> 2. $\forall x, y \in A, \quad [x] = [y] \iff x \sim y$.
+> 3. $\forall x, y \in A, \quad [x] \cap [y] = \emptyset \iff x \not\sim y$.
+> 4. $\bigcup_{x \in A} [x] = A$.
+
+The set of all equivalence classes is the **quotient set** $A / \sim$:
+
+$$A / \sim \; = \{[x] \mid x \in A\} \tag{4}$$
+
+Quotient sets form the rigorous foundation of modular arithmetic ($\mathbb{Z}/n\mathbb{Z}$), the rational numbers ($\mathbb{Q} = (\mathbb{Z} \times (\mathbb{Z} \setminus \{0\})) / \sim$), and quotient vector spaces ($V/W$).
+
+---
+
+## 3. The Rigorous Definition of a Function (Mapping)
+
+### 3.1 The Triplet Definition $(D, E, \Gamma)$
+
+In naive mathematics, a function is often casually described as an "input-output machine" or an algebraic formula $y = f(x)$. In axiomatic set theory (Zermelo-Fraenkel), a function is a specialized binary relation:
+
+> **Formal Definition of a Function:**  
+> A function $f: D \to E$ is an ordered triple $(D, E, \Gamma)$, where:
+> 1. $D$ is the **domain** (the source set).
+> 2. $E$ is the **codomain** (the target set).
+> 3. $\Gamma \subseteq D \times E$ is the **graph** of $f$, satisfying two strict conditions:
+>    * **Totality (Existence):** Every element in the domain has an image:
+>      $$\forall x \in D, \quad \exists y \in E \text{ such that } (x, y) \in \Gamma$$
+>    * **Univalence (Uniqueness):** No element in the domain maps to multiple distinct outputs:
+>      $$\forall x \in D, \; \forall y_1, y_2 \in E, \quad \left( (x, y_1) \in \Gamma \land (x, y_2) \in \Gamma \right) \implies y_1 = y_2$$
+
+When these conditions hold, we write $y = f(x)$ to denote the unique element $y \in E$ such that $(x, y) \in \Gamma$.
+
+### 3.2 Codomain vs. Range (Image)
+
+A critical distinction frequently conflated in elementary pedagogy is that between the **codomain** and the **range** (or image):
+
+* **The Codomain $E$:** The entire target space declared in the signature $f: D \to E$.
+* **The Range / Image $\operatorname{im}(f)$:** The actual subset of elements in $E$ reached by $f$:
+  $$\operatorname{im}(f) = f(D) = \{y \in E \mid \exists x \in D \text{ such that } f(x) = y\} \subseteq E \tag{5}$$
+
+For any individual element $y \in E$, the **preimage** (or fiber) is the set:
+
+$$f^{-1}(y) = \{x \in D \mid f(x) = y\} \subseteq D \tag{6}$$
+
+### 3.3 Visualizing Functions via Programmatic Arrow Diagrams
+
+Below is the executable Python code generating the canonical arrow diagram representing a mapping $f: D \to E$, showing domain elements $x, a \in D$ mapped along directed curves to their unique images $f(x), f(a) \in E$:
+
+```{python}
+#| label: fig-function-arrow-diagram
+#| fig-cap: "Programmatically Generated Set-Theoretic Arrow Diagram for a Function f: D -> E. Every element in the domain D maps via a directed arrow to exactly one unique element in the codomain E."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Arrow Diagram"
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import numpy as np
+
+fig, ax = plt.subplots(figsize=(6, 5.2), dpi=200)
+ax.set_xlim(0, 10)
+ax.set_ylim(0, 9.2)
+ax.axis('off')
+
+# Parametric curves for organic set contours
+t = np.linspace(0, 2 * np.pi, 300)
+
+# Domain D: indented bean shape
+r_D = 1.8 + 0.35 * np.cos(t) - 0.5 * np.cos(2*t) - 0.2 * np.sin(t)
+x_D = 2.3 + 1.0 * r_D * np.cos(t + 0.2)
+y_D = 5.8 + 1.5 * r_D * np.sin(t + 0.2)
+
+# Codomain E: tilted oval shape
+r_E = 1.9 + 0.25 * np.cos(t - np.pi/4) - 0.15 * np.cos(2*(t - np.pi/4))
+x_E = 7.7 + 1.1 * r_E * np.cos(t)
+y_E = 5.8 + 1.5 * r_E * np.sin(t)
+
+# Render sets with light blue fill and strong blue contour
+ax.fill(x_D, y_D, facecolor='#dbeafe', edgecolor='#1e40af', lw=2.2, zorder=2)
+ax.fill(x_E, y_E, facecolor='#dbeafe', edgecolor='#1e40af', lw=2.2, zorder=2)
+
+# Discrete points in D
+pt_x = (2.4, 7.1)
+pt_a = (2.8, 5.6)
+pt_3 = (1.9, 4.1)
+
+# Target points in E
+pt_fx = (7.7, 7.1)
+pt_fa = (7.1, 5.6)
+pt_f3 = (7.2, 4.0)
+
+# Plot dots in D
+for pt in [pt_x, pt_a, pt_3]:
+    ax.plot(pt[0], pt[1], 'o', color='#1d4ed8', markersize=6.5, zorder=4)
+ax.text(pt_x[0] - 0.45, pt_x[1] - 0.05, r'$x$', fontsize=16, fontstyle='italic', ha='right', va='center', zorder=5)
+ax.text(pt_a[0] - 0.45, pt_a[1] - 0.05, r'$a$', fontsize=16, fontstyle='italic', ha='right', va='center', zorder=5)
+
+# Plot dots in E
+for pt in [pt_fx, pt_fa, pt_f3]:
+    ax.plot(pt[0], pt[1], 'o', color='#1d4ed8', markersize=6.5, zorder=4)
+ax.text(pt_fx[0] + 0.35, pt_fx[1], r'$f(x)$', fontsize=15, fontstyle='italic', ha='left', va='center', zorder=5)
+ax.text(pt_fa[0] + 0.35, pt_fa[1], r'$f(a)$', fontsize=15, fontstyle='italic', ha='left', va='center', zorder=5)
+
+# Curved red mapping arrows
+arrow1 = patches.FancyArrowPatch(pt_x, pt_fx, connectionstyle="arc3,rad=-0.22",
+                                 color="#dc2626", lw=2.0, arrowstyle="-|>,head_length=6,head_width=4", zorder=3)
+arrow2 = patches.FancyArrowPatch(pt_a, pt_fa, connectionstyle="arc3,rad=-0.18",
+                                 color="#dc2626", lw=2.0, arrowstyle="-|>,head_length=6,head_width=4", zorder=3)
+arrow3 = patches.FancyArrowPatch(pt_3, pt_f3, connectionstyle="arc3,rad=0.20",
+                                 color="#dc2626", lw=2.0, arrowstyle="-|>,head_length=6,head_width=4", zorder=3)
+ax.add_patch(arrow1)
+ax.add_patch(arrow2)
+ax.add_patch(arrow3)
+
+# Set labels D and E
+ax.text(2.3, 2.4, r'$D$', fontsize=19, fontstyle='italic', ha='center', va='center', zorder=5)
+ax.text(7.7, 2.4, r'$E$', fontsize=19, fontstyle='italic', ha='center', va='center', zorder=5)
+
+# Bottom overarching mapping arrow D -> E
+arrow_f = patches.FancyArrowPatch((3.7, 2.0), (6.3, 2.0), color="#dc2626", lw=2.2,
+                                  arrowstyle="-|>,head_length=6,head_width=4", zorder=3)
+ax.add_patch(arrow_f)
+ax.text(5.0, 2.6, r'$f$', fontsize=18, fontstyle='italic', ha='center', va='center', zorder=5)
+
+# Classic caption block
+ax.text(1.0, 1.0, r"$\mathbf{FIGURE\ 3}$", fontsize=13, fontweight='bold', ha='left', va='center', color='#111827')
+ax.text(1.0, 0.45, r"Arrow diagram for $f$", fontsize=15, ha='left', va='center', color='#111827')
+
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## 4. Classification of Functions: Injections, Surjections, and Bijections
+
+The fundamental classification of functions depends on how the fibers $f^{-1}(y)$ behave across the codomain:
+
+### 4.1 Injective Functions (One-to-One)
+
+A function $f: X \to Y$ is **injective** (an **injection**) if distinct domain elements always map to distinct codomain elements:
+
+$$\forall x_1, x_2 \in X, \quad f(x_1) = f(x_2) \implies x_1 = x_2 \tag{7}$$
+
+* **Fiber Condition:** For every $y \in Y$, the fiber has cardinality $|f^{-1}(y)| \le 1$.
+* **Left Inverse:** If $X \neq \emptyset$, $f$ is injective if and only if there exists a **left inverse** $g: Y \to X$ such that $g \circ f = \operatorname{id}_X$.
+
+### 4.2 Surjective Functions (Onto)
+
+A function $f: X \to Y$ is **surjective** (a **surjection**) if its image equals its entire codomain:
+
+$$\forall y \in Y, \quad \exists x \in X \text{ such that } f(x) = y \iff \operatorname{im}(f) = Y \tag{8}$$
+
+* **Fiber Condition:** For every $y \in Y$, $|f^{-1}(y)| \ge 1$ (no element in $Y$ is left unmapped).
+* **Right Inverse (Section):** $f$ is surjective if and only if there exists a **right inverse** $s: Y \to X$ such that $f \circ s = \operatorname{id}_Y$. In general set theory, the guaranteed existence of a right inverse for every surjection is logically equivalent to the **Axiom of Choice (AC)**!
+
+### 4.3 Bijective Functions (One-to-One Correspondence)
+
+A function $f: X \to Y$ is **bijective** (a **bijection**) if it is both injective and surjective:
+
+$$\forall y \in Y, \quad \exists! x \in X \text{ such that } f(x) = y \tag{9}$$
+
+* **Fiber Condition:** For every $y \in Y$, the fiber has cardinality $|f^{-1}(y)| = 1$.
+* **Invertibility:** $f$ is bijective if and only if there exists a unique two-sided inverse function $f^{-1}: Y \to X$ satisfying:
+  $$f^{-1} \circ f = \operatorname{id}_X \qquad \text{and} \qquad f \circ f^{-1} = \operatorname{id}_Y$$
+
+```{python}
+#| label: fig-mapping-classifications
+#| fig-cap: "Programmatic Visual Comparison of Injective, Surjective, and Bijective Functions. Injections preserve distinctness (|f⁻¹(y)| ≤ 1), surjections cover the entire codomain (|f⁻¹(y)| ≥ 1), and bijections establish perfect isomorphisms (|f⁻¹(y)| = 1)."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Classification Diagram"
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+fig, axes = plt.subplots(1, 3, figsize=(11, 4.3), dpi=180)
+
+titles = [
+    "Injective (One-to-One)\n$f(x_1) = f(x_2) \\Rightarrow x_1 = x_2$",
+    "Surjective (Onto)\n$\\forall y \\in Y, \\exists x : f(x) = y$",
+    "Bijective (One-to-One & Onto)\nInvertible Isomorphism"
+]
+
+# Coordinate configs: (pts_X, pts_Y, edges)
+configs = [
+    # Injective: 3 domain points -> 4 codomain points (1 unhit)
+    ([(1.0, 3.2), (1.0, 2.0), (1.0, 0.8)],
+     [(3.0, 3.5), (3.0, 2.5), (3.0, 1.5), (3.0, 0.5)],
+     [(0, 0), (1, 1), (2, 2)]),
+    # Surjective: 4 domain points -> 3 codomain points (2-to-1)
+    ([(1.0, 3.5), (1.0, 2.5), (1.0, 1.5), (1.0, 0.5)],
+     [(3.0, 3.0), (3.0, 2.0), (3.0, 1.0)],
+     [(0, 0), (1, 1), (2, 2), (3, 2)]),
+    # Bijective: 3 domain points -> 3 codomain points (exact match)
+    ([(1.0, 3.0), (1.0, 2.0), (1.0, 1.0)],
+     [(3.0, 3.0), (3.0, 2.0), (3.0, 1.0)],
+     [(0, 0), (1, 1), (2, 2)])
+]
+
+for ax, title, (pts_X, pts_Y, edges) in zip(axes, titles, configs):
+    ax.set_xlim(0, 4)
+    ax.set_ylim(0, 4.5)
+    ax.axis('off')
+
+    # Domain and Codomain containers
+    box_X = patches.FancyBboxPatch((0.5, 0.2), 1.0, 3.6, boxstyle="round,pad=0.15,rounding_size=0.4",
+                                  facecolor="#eff6ff", edgecolor="#2563eb", lw=1.8)
+    box_Y = patches.FancyBboxPatch((2.5, 0.2), 1.0, 3.6, boxstyle="round,pad=0.15,rounding_size=0.4",
+                                  facecolor="#fdf2f8", edgecolor="#db2777", lw=1.8)
+    ax.add_patch(box_X)
+    ax.add_patch(box_Y)
+    ax.text(1.0, 4.15, r"$X$", fontsize=13, fontweight='bold', ha='center', color='#1e3a8a')
+    ax.text(3.0, 4.15, r"$Y$", fontsize=13, fontweight='bold', ha='center', color='#831843')
+
+    # Plot points
+    for x, y in pts_X:
+        ax.plot(x, y, 'o', color='#2563eb', markersize=6.5)
+    for x, y in pts_Y:
+        ax.plot(x, y, 'o', color='#db2777', markersize=6.5)
+
+    # Plot mapping arrows
+    for u, v in edges:
+        src = pts_X[u]
+        dst = pts_Y[v]
+        ax.annotate("", xy=dst, xytext=src,
+                    arrowprops=dict(arrowstyle="-|>,head_width=0.25,head_length=0.4",
+                                    color="#374151", lw=1.5))
+    ax.set_title(title, fontsize=10, fontweight='bold', pad=8)
+
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## 5. Algebraic Operations as Functions
+
+An **algebraic operation** is simply a function whose domain is a Cartesian power of a set $S$:
+
+### 5.1 Unary Operations ($n = 1$)
+A **unary operation** on a set $S$ is a function mapping $S$ into itself:
+$$u: S \to S$$
+* **Additive Inverse:** $x \mapsto -x$ on $\mathbb{R}$.
+* **Multiplicative Reciprocal:** $x \mapsto x^{-1}$ on $\mathbb{R} \setminus \{0\}$.
+* **Complex Conjugation:** $z \mapsto \bar{z}$ on $\mathbb{C}$.
+
+### 5.2 Binary Operations ($n = 2$)
+A **binary operation** $*$ on a set $S$ is a function from the Cartesian product $S \times S$ to $S$:
+$$*: S \times S \to S, \quad (a, b) \mapsto a * b \tag{10}$$
+Closure is automatic under this definition because the codomain is $S$.
+
+Foundational algebraic structures are classified by the axioms satisfied by their binary operations:
+
+| Property | Axiomatic Condition | Exemplar Structure |
+| :--- | :--- | :--- |
+| **Associativity** | $\forall a, b, c \in S, \quad (a * b) * c = a * (b * c)$ | Semigroup $(S, *)$ |
+| **Identity Element** | $\exists e \in S \text{ such that } \forall a \in S, \quad e * a = a * e = a$ | Monoid $(S, *, e)$ |
+| **Inverses** | $\forall a \in S, \; \exists a^{-1} \in S \text{ such that } a * a^{-1} = a^{-1} * a = e$ | Group $(G, *, e, {}^{-1})$ |
+| **Commutativity** | $\forall a, b \in S, \quad a * b = b * a$ | Abelian Group |
+
+### 5.3 $n$-ary Operations ($n \ge 3$)
+An **$n$-ary operation** is a mapping $\omega: S^n \to S$. For instance:
+* The vector triple product $\mathbf{u} \cdot (\mathbf{v} \times \mathbf{w})$ is a ternary operation on $\mathbb{R}^3 \to \mathbb{R}$.
+* The Lie bracket $[X, Y]$ in differential geometry is a bilinear binary operation on vector fields.
+
+---
+
+## 6. Morphisms: Structure-Preserving Mappings
+
+When sets are equipped with algebraic, geometric, or topological structure, arbitrary functions are insufficient. We require **morphisms**: mappings that preserve the governing operations and relations between spaces.
+
+### 6.1 Algebraic Homomorphisms
+
+Let $(G, *_G)$ and $(H, *_H)$ be two algebraic groups. A function $\phi: G \to H$ is a **group homomorphism** if it preserves the group operation:
+
+$$\forall a, b \in G, \quad \phi(a *_G b) = \phi(a) *_H \phi(b) \tag{11}$$
+
+Immediate algebraic consequences of identity (11):
+1. $\phi(e_G) = e_H$ (the identity maps to the identity).
+2. $\phi(a^{-1}) = (\phi(a))^{-1}$ (inverses are preserved).
+
+Similarly:
+* **Ring Homomorphism:** Preserves addition, multiplication, and the multiplicative identity $\phi(1_R) = 1_S$.
+* **Vector Space Linear Transformation:** Preserves vector addition and scalar multiplication:
+  $$T(c\mathbf{u} + \mathbf{v}) = c T(\mathbf{u}) + T(\mathbf{v})$$
+
+### 6.2 The Morphism Taxonomy
+
+In abstract algebra and category theory, morphisms are classified by their relational behaviors:
+
+* **Monomorphism:** An injective homomorphism (preserves distinctions).
+* **Epimorphism:** A surjective homomorphism (covers the target structure).
+* **Isomorphism ($\cong$):** A bijective homomorphism whose inverse is also a homomorphism. Two isomorphic structures are algebraically indistinguishable.
+* **Endomorphism:** A morphism from an object to itself: $f: A \to A$.
+* **Automorphism:** An isomorphic endomorphism (an internal structural symmetry). The set of all automorphisms forms the **Automorphism Group** $\operatorname{Aut}(A)$.
+
+### 6.3 Kernel, Image, and the First Isomorphism Theorem
+
+For any group homomorphism $\phi: G \to H$:
+* **Kernel:** $\ker(\phi) = \{g \in G \mid \phi(g) = e_H\} \triangleleft G$ (always a normal subgroup).
+* **Image:** $\operatorname{im}(\phi) = \{\phi(g) \mid g \in G\} \le H$ (a subgroup of $H$).
+
+> **The First Isomorphism Theorem:**  
+> The quotient group $G / \ker(\phi)$ is naturally isomorphic to the image $\operatorname{im}(\phi)$:
+> $$G / \ker(\phi) \cong \operatorname{im}(\phi) \tag{12}$$
+
+This theorem proves that the kernel measures exactly the information lost by the morphism, collapsing equivalent fibers into a single point.
+
+---
+
+## 7. Morphisms in Category Theory
+
+In the modern foundation of mathematics pioneered by Samuel Eilenberg and Saunders Mac Lane (1945), mathematical structures are unified through **Category Theory**:
+
+A **category** $\mathcal{C}$ consists of:
+1. A collection of **objects** $\operatorname{Ob}(\mathcal{C})$ (e.g., all groups, all topological spaces, all vector spaces).
+2. A collection of **morphisms** (or arrows) $\operatorname{Hom}(A, B)$ for every pair of objects $A, B$.
+3. A **composition law**:
+   $$\circ: \operatorname{Hom}(B, C) \times \operatorname{Hom}(A, B) \to \operatorname{Hom}(A, C), \quad (g, f) \mapsto g \circ f$$
+satisfying two fundamental axioms:
+* **Associativity:** $h \circ (g \circ f) = (h \circ g) \circ f$.
+* **Identity:** For every object $A$, there exists an identity morphism $\operatorname{id}_A \in \operatorname{Hom}(A, A)$ such that for any $f: A \to B$, $f \circ \operatorname{id}_A = f = \operatorname{id}_B \circ f$.
+
+### 7.1 Commutative Diagrams
+
+In category theory, equations between composite morphisms are expressed geometrically through **commutative diagrams**. A diagram commutes if all directed paths between any two objects yield identical compositions:
+
+```{python}
+#| label: fig-commutative-triangle
+#| fig-cap: "Programmatically Rendered Commutative Diagram for Morphism Composition in a Category. The diagonal morphism h equals the composition g ∘ f, satisfying h = g ∘ f."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Commutative Diagram"
+
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(5.5, 4.0), dpi=180)
+ax.set_xlim(0, 6)
+ax.set_ylim(0, 5)
+ax.axis('off')
+
+# Objects A, B, C
+ax.text(1.0, 3.8, r"$\mathcal{A}$", fontsize=18, fontweight='bold', ha='center', va='center', color='#1e3a8a')
+ax.text(5.0, 3.8, r"$\mathcal{B}$", fontsize=18, fontweight='bold', ha='center', va='center', color='#1e3a8a')
+ax.text(3.0, 1.0, r"$\mathcal{C}$", fontsize=18, fontweight='bold', ha='center', va='center', color='#1e3a8a')
+
+# Arrow f: A -> B
+ax.annotate("", xy=(4.6, 3.8), xytext=(1.4, 3.8),
+            arrowprops=dict(arrowstyle="-|>,head_width=0.3,head_length=0.45", lw=2.0, color="#2563eb"))
+ax.text(3.0, 4.15, r"$f$", fontsize=15, fontstyle='italic', ha='center', va='center', color="#1d4ed8")
+
+# Arrow g: B -> C
+ax.annotate("", xy=(3.3, 1.3), xytext=(4.7, 3.5),
+            arrowprops=dict(arrowstyle="-|>,head_width=0.3,head_length=0.45", lw=2.0, color="#2563eb"))
+ax.text(4.3, 2.3, r"$g$", fontsize=15, fontstyle='italic', ha='center', va='center', color="#1d4ed8")
+
+# Arrow h = g ∘ f: A -> C (dashed pink)
+ax.annotate("", xy=(2.7, 1.3), xytext=(1.3, 3.5),
+            arrowprops=dict(arrowstyle="-|>,head_width=0.3,head_length=0.45", lw=2.0, color="#db2777", linestyle="--"))
+ax.text(1.4, 2.3, r"$h = g \circ f$", fontsize=14, fontstyle='italic', ha='center', va='center', color="#be185d")
+
+# Commutative indicator label
+ax.text(3.0, 2.6, r"$\mathrm{commutes}$", fontsize=11, fontstyle='italic', ha='center', va='center', color="#6b7280")
+
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## 8. Cross-Disciplinary Connections
+
+* For the linear algebraic application of morphisms as linear maps, coordinate isomorphisms, and rank-nullity projections, see:
+  * [Algebraic Foundations: Fields, Rings, Coordinate Isomorphisms, and Rank-Nullity](../algebraic-structures-coordinate-mappings-rank-nullity/index.qmd)
+* For the continuous Lie group symmetries and differential equation invariants arising from group actions, see:
+  * [Continuous Lie Transformation Groups: Symmetries, Differential Equations, and Physical Invariants](../continuous-lie-groups-differential-equations-symmetries/index.qmd)
+* For the coordinate isomorphism between physical dimension monomials and rational vector spaces, see:
+  * [Mathematical Foundations: The Vector Space of Dimensions](../vector-space-of-dimensions-buckingham-pi/index.qmd)
+
+---
+
+© 2026 Igor Kan
