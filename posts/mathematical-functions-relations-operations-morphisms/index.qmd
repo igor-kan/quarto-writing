@@ -1,7 +1,7 @@
 ---
 title: "Mathematical Foundations: Functions, Relations, Operations, and Morphisms"
-subtitle: "Set-theoretic foundations, multi-representational paradigms, infinite-dimensional functional analysis, scientific computing representations, and category-theoretic morphisms."
-description: "A comprehensive mathematical and computational treatise on functions: set-theoretic graph definitions, the Rule of Four representations (verbal, algebraic, tabular, graphical), explicit vs. implicit and open vs. closed forms, calculus on tabular data, functional programming paradigms, infinite-dimensional functional analysis (Banach, Hilbert, Sobolev spaces), computational representations in scientific computing (Chebyshev nodes, splines, autodiff DAGs, neural operators), and the cross-field taxonomy of morphisms from group theory to topology."
+subtitle: "Set-theoretic foundations, multi-representational paradigms, function approximation & curve fitting, interpolation vs. extrapolation, infinite-dimensional functional analysis, and category-theoretic morphisms."
+description: "A comprehensive mathematical and computational treatise on functions: set-theoretic graph definitions, the Rule of Four representations, explicit vs. implicit and open vs. closed forms, calculus on tabular data, non-linear curve fitting (Levenberg-Marquardt), interpolation (splines, PCHIP) vs. extrapolation hazards, functional programming paradigms, infinite-dimensional functional analysis (Banach, Hilbert, Sobolev spaces), scientific computing representations (Chebyshev nodes, autodiff DAGs, neural operators), and the cross-field taxonomy of morphisms from group theory to topology."
 author: "Igor Kan"
 date: "2026-10-29"
 categories: [Preprints, Mathematics, Set Theory, Abstract Algebra, Functional Analysis, Scientific Computing, Category Theory]
@@ -14,7 +14,7 @@ format:
 
 ::: {.callout-note}
 ### Preprint / Working Draft
-This article is published under the **Preprints** category. It explores the formal foundations of mathematical relations, mappings, algebraic operations, infinite-dimensional functional analysis, scientific computing representations, and category-theoretic morphisms. Executable Python diagrams illustrate set mappings, injectivity/surjectivity, Runge's phenomenon vs. Chebyshev minimax interpolation, calculus on discrete tabular data, and commuting diagrams.
+This article is published under the **Preprints** category. It explores the formal foundations of mathematical relations, mappings, algebraic operations, model approximation, interpolation vs. extrapolation, infinite-dimensional functional analysis, scientific computing representations, and category-theoretic morphisms. Executable Python diagrams illustrate set mappings, injectivity/surjectivity, non-linear curve fitting, interpolation vs. extrapolation hazards, Runge's phenomenon vs. Chebyshev minimax interpolation, calculus on discrete tabular data, and commuting diagrams.
 :::
 
 ---
@@ -29,11 +29,13 @@ Modern mathematics builds this hierarchy in graduated stages:
 3. **Multi-Representational Paradigms:** The diverse cognitive, physical, and computational forms a function can assume: verbal descriptions, algebraic equations, discrete data tables, geometric graphs, and algorithmic subroutines.
 4. **Explicit vs. Implicit & Closed vs. Open Forms:** Distinguishing isolated closed-form formulas from intertwined constraints, non-elementary integrals, and empirical models approximating discrete tabular data.
 5. **Calculus on Tabular and Implicit Functions:** How differentiation and integration operate when no symbolic formula exists.
-6. **Programming Paradigms:** How functions transition from imperative mutating subroutines to first-class, pure mathematical entities in functional programming.
-7. **Operations:** Functions mapping Cartesian powers of a set back into the set ($S^n \to S$).
-8. **The Cross-Field Taxonomy of Morphisms:** Structure-preserving mappings across abstract algebra, linear algebra, topology, complex analysis, and category theory.
-9. **Functional Analysis:** Treating functions not as dynamic processes, but as static **points or vectors in infinite-dimensional Hilbert and Banach spaces**.
-10. **Scientific Computing:** How finite digital silicon approximates continuous, infinite mathematical functions through meshes, Chebyshev spectral expansions, splines, computational graphs, and neural operators.
+6. **Function Approximation & Model Fitting:** How explicit mathematical formulas are fitted to empirical datasets via linear and non-linear least squares.
+7. **Interpolation vs. Extrapolation:** Reconstructing continuous curves within the convex hull of data versus the perils of predicting beyond the observed domain.
+8. **Programming Paradigms:** How functions transition from imperative mutating subroutines to first-class, pure mathematical entities in functional programming.
+9. **Operations:** Functions mapping Cartesian powers of a set back into the set ($S^n \to S$).
+10. **The Cross-Field Taxonomy of Morphisms:** Structure-preserving mappings across abstract algebra, linear algebra, topology, complex analysis, and category theory.
+11. **Functional Analysis:** Treating functions not as dynamic processes, but as static **points or vectors in infinite-dimensional Hilbert and Banach spaces**.
+12. **Scientific Computing:** How finite digital silicon approximates continuous, infinite mathematical functions through meshes, Chebyshev spectral expansions, splines, computational graphs, and neural operators.
 
 ---
 
@@ -391,16 +393,6 @@ In computer graphics, 3D shapes are frequently represented as implicit **Signed 
   2. **Infinite Power Series:** $f(x) = \sum_{n=0}^\infty a_n x^n$ (e.g., Bessel functions $J_\alpha(x)$, hypergeometric functions ${}_2F_1$).
   3. **Roots of Quintic Polynomials:** By the Abel-Ruffini theorem, roots of general degree $\ge 5$ polynomials cannot be expressed in radicals (closed form), defining algebraic functions that can only be evaluated numerically (Bring radicals).
 
-### 6.4 Explicit Functions as Mathematical Models Approximating Tabular Data
-In science and engineering, empirical measurements always arrive as discrete tabular pairs $(x_i, y_i)_{i=1}^M$. A central task of applied mathematics is **mathematical modeling**: constructing an explicit, parsimonious function $\hat{f}(x; \boldsymbol{\theta})$ that approximates the tabular data:
-
-$$y_i = \hat{f}(x_i; \boldsymbol{\theta}) + \epsilon_i \tag{11}$$
-
-* **Mechanistic (First-Principles) Models:** The functional form is derived from governing differential equations or conservation laws (e.g., exponential radioactive decay $N(t) = N_0 e^{-\lambda t}$, or Michaelis-Menten enzyme kinetics $v = \frac{V_{\max} [S]}{K_m + [S]}$).
-* **Phenomenological / Empirical Models:** Polynomials, splines, or neural networks fit parameters $\boldsymbol{\theta}$ by minimizing a loss function (Non-linear Least Squares):
-  $$\boldsymbol{\theta}^* = \arg\min_{\boldsymbol{\theta}} \sum_{i=1}^M \left( y_i - \hat{f}(x_i; \boldsymbol{\theta}) \right)^2$$
-* **The Bias-Variance Tradeoff (Occam's Razor):** An explicit function must balance fidelity to data (low bias) against structural simplicity (low variance) to avoid overfitting experimental measurement noise.
-
 ---
 
 ## 7. Calculus on Tabular Data and Functions Without Closed-Form Formulas
@@ -477,11 +469,161 @@ plt.show()
 
 ---
 
-## 8. Functions Across Programming Paradigms: From Subroutines to Pure Lambda Calculus
+## 8. Function Approximation, Curve Fitting, and Mathematical Modeling
+
+In empirical science, we are rarely handed symbolic functions by nature; we receive discrete, noisy tabular data $(x_i, y_i)_{i=1}^M$. The goal of **mathematical modeling** is to find a function $\hat{f}(x; \boldsymbol{\theta})$ parameterized by a finite vector $\boldsymbol{\theta}$ that best approximates the underlying data-generating process:
+
+$$y_i = \hat{f}(x_i; \boldsymbol{\theta}) + \epsilon_i \tag{11}$$
+
+### 8.1 The Best Approximation Problem in Normed Spaces
+In functional analysis, the approximation problem is formalized as minimizing the distance between the target data $y$ and a candidate subspace of functions $\mathcal{V}_n \subset \mathcal{F}$:
+$$\hat{f}^* = \arg\min_{\hat{f} \in \mathcal{V}_n} \|y - \hat{f}\|$$
+* **Minimax Approximation ($L^\infty$ Norm):** Minimizes the maximum deviation $\max_i |y_i - \hat{f}(x_i)|$. Solved via Chebyshev polynomials and the Remez exchange algorithm.
+* **Least Squares Approximation ($L^2$ Norm):** Minimizes the sum of squared residuals $\sum_{i=1}^M (y_i - \hat{f}(x_i))^2$.
+
+### 8.2 Linear Least Squares and the Normal Equations
+When the candidate model is linear in the parameters $\boldsymbol{\theta} = (\theta_1, \dots, \theta_p)^T$:
+$$\hat{f}(x; \boldsymbol{\theta}) = \sum_{j=1}^p \theta_j \phi_j(x)$$
+the problem maps to matrix linear algebra $X \boldsymbol{\theta} \approx \mathbf{y}$, where $X_{ij} = \phi_j(x_i)$ is the **design matrix**. Minimizing the residual norm $\|\mathbf{y} - X\boldsymbol{\theta}\|_2^2$ yields the **Normal Equations**:
+$$X^T X \boldsymbol{\theta} = X^T \mathbf{y} \implies \hat{\boldsymbol{\theta}} = (X^T X)^{-1} X^T \mathbf{y} \tag{12}$$
+In computational practice, forming $X^T X$ directly squares the condition number $\kappa(X^T X) = \kappa(X)^2$, leading to numerical instability. Robust algorithms compute $\hat{\boldsymbol{\theta}}$ via **QR Factorization** ($X = QR$) or the **Singular Value Decomposition (SVD)** Moore-Penrose pseudoinverse ($X^+ = V \Sigma^+ U^T$).
+
+### 8.3 Non-Linear Least Squares & The Levenberg-Marquardt Algorithm
+When the model depends non-linearly on parameters (such as saturating kinetics $\hat{f}(x) = \frac{V_{\max} x}{K_m + x}$ or exponential decay $\hat{f}(x) = A e^{-k x}$), the normal equations become non-linear.
+
+The standard optimization engine is the **Levenberg-Marquardt Algorithm (LMA)**, which dynamically interpolates between the **Gauss-Newton method** and **gradient descent**:
+$$(J^T J + \lambda \, \operatorname{diag}(J^T J)) \, \Delta \boldsymbol{\theta} = J^T (\mathbf{y} - \hat{\mathbf{y}}) \tag{13}$$
+where $J_{ij} = \frac{\partial \hat{f}(x_i)}{\partial \theta_j}$ is the parameter Jacobian matrix, and $\lambda$ is an adaptive damping factor:
+* When $\lambda \to 0$, LMA behaves as Gauss-Newton (quadratic convergence near the minimum).
+* When $\lambda \to \infty$, LMA behaves as gradient descent (robust global convergence far from the minimum).
+
+```{python}
+#| label: fig-curve-fitting
+#| fig-cap: "Programmatically Demonstrating Non-Linear Model Fitting via Levenberg-Marquardt (scipy.optimize.curve_fit). Noisy discrete data points fitted with a physically grounded saturating exponential model f(x) = a(1 - exp(-bx)), accurately extracting parameters and enabling robust physical extrapolation."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Non-Linear Model Fit"
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+np.random.seed(42)
+x_obs = np.array([0.5, 1.2, 2.0, 3.1, 4.0, 5.2, 6.0])
+f_law = lambda x, a, b: a * (1.0 - np.exp(-b * x))
+y_obs = f_law(x_obs, 10.0, 0.6) + 0.3 * np.random.randn(len(x_obs))
+
+# Fit non-linear model
+popt, pcov = curve_fit(f_law, x_obs, y_obs, p0=[8.0, 0.5])
+perr = np.sqrt(np.diag(pcov))
+
+x_model = np.linspace(0, 8.5, 300)
+
+fig, ax = plt.subplots(figsize=(8.5, 4.5), dpi=180)
+ax.plot(x_model, f_law(x_model, 10.0, 0.6), 'k--', lw=1.5, label='Underlying Physical Ground Truth ($a=10, b=0.6$)')
+ax.plot(x_model, f_law(x_model, *popt), '-', color='#7c3aed', lw=2.2,
+        label=f'Fitted Model: $\\hat{{y}} = {popt[0]:.2f}(1 - e^{{-{popt[1]:.2f}x}})$')
+ax.plot(x_obs, y_obs, 'ro', markersize=6.5, label='Empirical Noisy Observations')
+
+ax.axvline(6.0, color='#6b7280', linestyle='-.', lw=1.4)
+ax.text(7.2, 8.5, 'Stable Physical\nExtrapolation', color='#7c3aed', fontsize=9.5, fontweight='bold', ha='center')
+
+ax.set_ylim(0, 12)
+ax.set_xlim(0, 8.5)
+ax.set_xlabel('$x$', fontsize=11)
+ax.set_ylabel('$y$', fontsize=11)
+ax.set_title('Non-Linear Parameter Estimation via Levenberg-Marquardt (scipy.optimize.curve_fit)',
+             fontsize=12, fontweight='bold', pad=10)
+ax.legend(frameon=True, fontsize=9, loc='lower right')
+ax.grid(True, linestyle='--', alpha=0.45)
+
+plt.tight_layout()
+plt.show()
+```
+
+### 8.4 Regularization & Model Selection: Ridge, Lasso, and Information Criteria
+To prevent overfitting when fitting high-dimensional models:
+* **Ridge Regression ($L_2$ Tikhonov):** Adds penalty $\lambda \|\boldsymbol{\theta}\|_2^2$, shrinking coefficients and conditioning ill-posed inverses: $\hat{\boldsymbol{\theta}} = (X^T X + \lambda I)^{-1} X^T \mathbf{y}$.
+* **Lasso Regression ($L_1$ Penalty):** Adds penalty $\lambda \|\boldsymbol{\theta}\|_1$, driving non-essential coefficients strictly to zero (sparse feature selection).
+* **Information Criteria:** Balancing goodness of fit against parameter count $k$:
+  $$\text{AIC} = 2k - 2\ln(\hat{L}), \qquad \text{BIC} = k\ln(M) - 2\ln(\hat{L})$$
+  Lower AIC/BIC identifies the most parsimonious mathematical model.
+
+---
+
+## 9. Interpolation vs. Extrapolation: Techniques, Bounds, and Pitfalls
+
+A critical conceptual distinction in scientific computing separates **interpolation** from **extrapolation**:
+
+* **Interpolation:** Estimating function values **within the convex hull** of known sample points: $x^* \in [\min(x_i), \max(x_i)]$.
+* **Extrapolation:** Projecting function values **outside the domain of observation**: $x^* > \max(x_i)$ or $x^* < \min(x_i)$.
+
+### 9.1 1D Interpolation Architectures: Splines vs. Monotonicity Preservation
+1. **Piecewise Linear Interpolation:** Connects adjacent points with straight lines ($C^0$ continuity). Simple, but derivatives are discontinuous step functions.
+2. **Cubic Splines:** Connects points with piecewise cubic polynomials enforcing $C^2$ continuity (matching value, slope, and curvature at all internal knots). Produces visually pleasing smooth curves, but can introduce **artificial overshoot** (oscillating above local maxima or below minima).
+3. **PCHIP (Piecewise Cubic Hermite Interpolating Polynomial):** Preserves shape and **monotonicity**. If the empirical data is monotonically increasing, PCHIP guarantees the interpolant is strictly monotonic without non-physical oscillations.
+
+### 9.2 The Catastrophic Perils of Extrapolation
+Why is polynomial extrapolation notoriously dangerous?
+By the fundamental theorem of algebra, an $N$-degree polynomial possesses $N$ roots and behaves asymptotically as $x^N$ as $|x| \to \infty$. Even if a 5th-degree polynomial matches data points inside $[0, 6]$ with near-zero error, evaluating it at $x = 8$ will violently diverge toward $\pm \infty$!
+
+> **The Golden Rule of Numerical Modeling:**  
+> **Never extrapolate using empirical high-degree polynomials or unconstrained splines.**  
+> Extrapolation is valid only when guided by **mechanistic, physics-informed asymptotic laws** (e.g., conservation principles, saturation bounds, or power-law scaling).
+
+```{python}
+#| label: fig-interp-extrap
+#| fig-cap: "Programmatic Comparison of Interpolation and Extrapolation Architectures. Inside the observed data domain [0, 6] (blue shading), Cubic Spline (dashed blue), PCHIP (solid green), and Degree-5 Polynomial (dotted red) interpolate cleanly. Outside the domain [6, 8.5] (red danger zone), the polynomial violently diverges, the spline overshoots, while PCHIP provides stable clamped extrapolation."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Interpolation vs Extrapolation Comparison"
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.interpolate import CubicSpline, PchipInterpolator
+
+np.random.seed(42)
+x_data = np.array([0.5, 1.2, 2.0, 3.1, 4.0, 5.2, 6.0])
+f_true = lambda x: 10.0 * (1.0 - np.exp(-0.6 * x))
+y_data = f_true(x_data) + 0.25 * np.random.randn(len(x_data))
+
+# Interpolators
+cs = CubicSpline(x_data, y_data)
+pchip = PchipInterpolator(x_data, y_data)
+poly5 = np.poly1d(np.polyfit(x_data, y_data, deg=5))
+
+x_eval = np.linspace(0.0, 8.5, 350)
+
+fig, ax = plt.subplots(figsize=(9.5, 4.8), dpi=180)
+
+ax.plot(x_eval, f_true(x_eval), 'k-', lw=2.2, label=r'True Physical Law: $f(x) = 10(1 - e^{-0.6x})$')
+ax.plot(x_eval, cs(x_eval), '--', color='#2563eb', lw=1.8, label='Cubic Spline ($C^2$ smooth, wild extrapolation)')
+ax.plot(x_eval, pchip(x_eval), '-', color='#059669', lw=2.0, label='PCHIP (Monotone, clamped extrapolation)')
+ax.plot(x_eval, poly5(x_eval), ':', color='#dc2626', lw=2.0, label='Degree 5 Polynomial (Explosive extrapolation!)')
+ax.plot(x_data, y_data, 'ro', markersize=6.5, label='Observed Tabular Points $(x_i, y_i)$')
+
+# Separation boundary
+ax.axvline(6.0, color='#4b5563', linestyle='-.', lw=1.5)
+ax.axvspan(0.0, 6.0, color='#eff6ff', alpha=0.35, label='Interpolation Domain (Within Convex Hull)')
+ax.axvspan(6.0, 8.5, color='#fef2f2', alpha=0.35, label='Extrapolation Domain (The Danger Zone)')
+
+ax.set_ylim(-2, 14)
+ax.set_xlim(0, 8.5)
+ax.set_xlabel('Input $x$', fontsize=11)
+ax.set_ylabel('$y = f(x)$', fontsize=11)
+ax.set_title('Interpolation vs. Extrapolation: Spline, PCHIP, and Polynomial Explosion', fontsize=12, fontweight='bold', pad=10)
+ax.legend(frameon=True, fontsize=8.8, loc='upper left')
+ax.grid(True, linestyle='--', alpha=0.45)
+
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## 10. Functions Across Programming Paradigms: From Subroutines to Pure Lambda Calculus
 
 In computer science, the term "function" is used across disparate paradigms with radically different semantic meanings:
 
-### 8.1 Procedural / Imperative Paradigm: Functions as Subroutines
+### 10.1 Procedural / Imperative Paradigm: Functions as Subroutines
 In C, Pascal, or Fortran, a function is a named sequence of instructions compiled to a memory subroutine. Crucially, procedural functions are **state-mutating**:
 ```c
 int counter = 0;
@@ -492,7 +634,7 @@ int increment() {
 ```
 Calling `increment()` multiple times yields different outputs ($1, 2, 3$). Procedural functions violate mathematical univalence ($x \mapsto y$ is not constant!).
 
-### 8.2 Object-Oriented Paradigm: Functions as Methods
+### 10.2 Object-Oriented Paradigm: Functions as Methods
 In Java, C++, or Python, functions attached to classes are **methods**. They implicitly take the instance reference (`this` or `self`) as an argument and encapsulate state mutation:
 ```python
 class BankAccount:
@@ -501,7 +643,7 @@ class BankAccount:
         return self.balance
 ```
 
-### 8.3 Functional Programming Paradigm: Pure Functions & Lambda Calculus
+### 10.3 Functional Programming Paradigm: Pure Functions & Lambda Calculus
 Pioneered by Alonzo Church’s **$\lambda$-calculus** (1936) and realized in languages like Haskell, OCaml, and modern Python/Rust:
 
 * **First-Class Functions:** Functions are treated as ordinary data values: they can be assigned to variables, passed as arguments, and returned from other functions.
@@ -523,20 +665,20 @@ Pioneered by Alonzo Church’s **$\lambda$-calculus** (1936) and realized in lan
 
 ---
 
-## 9. Algebraic Operations as Functions
+## 11. Algebraic Operations as Functions
 
 An **algebraic operation** is simply a function whose domain is a Cartesian power of a set $S$:
 
-### 9.1 Unary Operations ($n = 1$)
+### 11.1 Unary Operations ($n = 1$)
 A **unary operation** on a set $S$ is a function mapping $S$ into itself:
 $$u: S \to S$$
 * **Additive Inverse:** $x \mapsto -x$ on $\mathbb{R}$.
 * **Multiplicative Reciprocal:** $x \mapsto x^{-1}$ on $\mathbb{R} \setminus \{0\}$.
 * **Complex Conjugation:** $z \mapsto \bar{z}$ on $\mathbb{C}$.
 
-### 9.2 Binary Operations ($n = 2$)
+### 11.2 Binary Operations ($n = 2$)
 A **binary operation** $*$ on a set $S$ is a function from the Cartesian product $S \times S$ to $S$:
-$$*: S \times S \to S, \quad (a, b) \mapsto a * b \tag{12}$$
+$$*: S \times S \to S, \quad (a, b) \mapsto a * b \tag{14}$$
 Closure is automatic under this definition because the codomain is $S$.
 
 Foundational algebraic structures are classified by the axioms satisfied by their binary operations:
@@ -548,14 +690,14 @@ Foundational algebraic structures are classified by the axioms satisfied by thei
 | **Inverses** | $\forall a \in S, \; \exists a^{-1} \in S \text{ such that } a * a^{-1} = a^{-1} * a = e$ | Group $(G, *, e, {}^{-1})$ |
 | **Commutativity** | $\forall a, b \in S, \quad a * b = b * a$ | Abelian Group |
 
-### 9.3 $n$-ary Operations ($n \ge 3$)
+### 11.3 $n$-ary Operations ($n \ge 3$)
 An **$n$-ary operation** is a mapping $\omega: S^n \to S$. For instance:
 * The vector triple product $\mathbf{u} \cdot (\mathbf{v} \times \mathbf{w})$ is a ternary operation on $\mathbb{R}^3 \to \mathbb{R}$.
 * The Lie bracket $[X, Y]$ in differential geometry is a bilinear binary operation on vector fields.
 
 ---
 
-## 10. The Universal Taxonomy of Functions Across Mathematical Fields
+## 12. The Universal Taxonomy of Functions Across Mathematical Fields
 
 Every branch of mathematics studies sets equipped with specific structures. Consequently, every branch defines its own specialized classes of structure-preserving functions:
 
@@ -581,29 +723,29 @@ header = "| Mathematical Field | Canonical Terminology | Governing Domain & Codo
 Markdown(header + "\n".join([f"| **{r[0]}** | {r[1]} | {r[2]} | {r[3]} | {r[4]} |" for r in tax_data]))
 ```
 
-### 10.1 Algebraic Homomorphisms and Isomorphisms
+### 12.1 Algebraic Homomorphisms and Isomorphisms
 Let $(G, *_G)$ and $(H, *_H)$ be groups. A function $\phi: G \to H$ is a **group homomorphism** if:
 $$\phi(a *_G b) = \phi(a) *_H \phi(b)$$
 * **Kernel & Image:** $\ker(\phi) = \{g \in G \mid \phi(g) = e_H\} \triangleleft G$, $\operatorname{im}(\phi) \le H$.
 * **The First Isomorphism Theorem:** $G / \ker(\phi) \cong \operatorname{im}(\phi)$.
 * **Automorphisms:** $\operatorname{Aut}(G)$ forms the symmetry group of the algebraic object itself.
 
-### 10.2 Linear Transformations
+### 12.2 Linear Transformations
 In linear algebra, a function $T: V \to W$ between vector spaces over a field $\mathbb{F}$ preserves scaling and addition:
 $$T(\alpha \mathbf{u} + \mathbf{v}) = \alpha T(\mathbf{u}) + T(\mathbf{v})$$
 Representable as matrix multiplication $T(\mathbf{x}) = A \mathbf{x}$. Governed by the **Rank-Nullity Theorem**: $\dim(\ker(T)) + \dim(\operatorname{im}(T)) = \dim(V)$.
 
-### 10.3 Topology: Continuous Mappings and Homeomorphisms
+### 12.3 Topology: Continuous Mappings and Homeomorphisms
 In topology, distance metrics are abstracted away. A function $f: X \to Y$ is **continuous** if and only if:
 $$\forall U \text{ open in } Y, \quad f^{-1}(U) \text{ is open in } X$$
 A **homeomorphism** is a continuous bijection with a continuous inverse. Two spaces are homeomorphic ($X \approx Y$) if one can be continuously deformed into the other without tearing or gluing (e.g., a coffee mug and a donut).
 
-### 10.4 Complex Analysis: Holomorphic and Conformal Mappings
+### 12.4 Complex Analysis: Holomorphic and Conformal Mappings
 A function $f: \mathbb{C} \to \mathbb{C}$ with $f(x + iy) = u(x, y) + i v(x, y)$ is **holomorphic** (complex differentiable) if it satisfies the **Cauchy-Riemann equations**:
 $$\frac{\partial u}{\partial x} = \frac{\partial v}{\partial y}, \qquad \frac{\partial u}{\partial y} = -\frac{\partial v}{\partial x}$$
 Every holomorphic function with $f'(z) \neq 0$ is a **conformal map**: it preserves both the magnitude and orientation of angles between intersecting curves, finding deep applications in fluid aerodynamics (Joukowsky aerofoil transformation) and electrostatics.
 
-### 10.5 Category Theory: Morphisms, Functors, and Commutative Diagrams
+### 12.5 Category Theory: Morphisms, Functors, and Commutative Diagrams
 A category $\mathcal{C}$ abstracts all mathematical structures into **objects** and **morphisms (arrows)** satisfying associativity and identity axioms. 
 
 Equations between composite morphisms are expressed geometrically via **commutative diagrams**:
@@ -652,16 +794,16 @@ Morphisms between categories themselves are called **Functors** ($F: \mathcal{C}
 
 ---
 
-## 11. Functions in Functional Analysis: Points in Infinite-Dimensional Spaces
+## 13. Functions in Functional Analysis: Points in Infinite-Dimensional Spaces
 
 In calculus, a function $f(x)$ is viewed as an active rule transforming numbers $x \mapsto y$. In **functional analysis**, we take a profound conceptual leap: **we treat the entire function $f$ as a static point or vector inside an infinite-dimensional vector space $\mathcal{F}$**.
 
-### 11.1 Vector Spaces of Functions
+### 13.1 Vector Spaces of Functions
 Let $\mathcal{F}(X, \mathbb{R})$ denote the set of all real-valued functions on a set $X$. Defining addition and scalar multiplication pointwise:
 $$(f + g)(x) \equiv f(x) + g(x), \qquad (c \cdot f)(x) \equiv c \cdot f(x)$$
 $\mathcal{F}(X, \mathbb{R})$ satisfies all vector space axioms. But unlike $\mathbb{R}^n$, function spaces are typically **infinite-dimensional**.
 
-### 11.2 Normed Spaces and Banach Spaces
+### 13.2 Normed Spaces and Banach Spaces
 To discuss limits, convergence, and continuity of sequences of functions $(f_n)$, the function space must be equipped with a **norm** $\|f\|$:
 
 * **The Space $C[a, b]$ with Supremum Norm:**
@@ -671,10 +813,10 @@ To discuss limits, convergence, and continuity of sequences of functions $(f_n)$
   $$\|f\|_{L^p} = \left( \int_\Omega |f(x)|^p \, d\mu \right)^{1/p}$$
   Crucially, elements of $L^p$ are **not individual functions, but equivalence classes of functions** that are equal almost everywhere (modulo sets of Lebesgue measure zero). If $f(x) = g(x)$ except on a set of measure zero, $\|f - g\|_{L^p} = 0 \implies [f] = [g]$.
 
-### 11.3 Inner Product Spaces and Hilbert Spaces ($L^2$)
+### 13.3 Inner Product Spaces and Hilbert Spaces ($L^2$)
 When $p = 2$, the Banach space $L^2(\Omega)$ possesses an **inner product**:
 
-$$\langle f, g \rangle = \int_\Omega f(x) \overline{g(x)} \, dx \tag{13}$$
+$$\langle f, g \rangle = \int_\Omega f(x) \overline{g(x)} \, dx \tag{15}$$
 
 which induces the norm $\|f\|_{L^2} = \sqrt{\langle f, f \rangle}$. A complete inner product space is a **Hilbert Space**. Hilbert spaces are the closest infinite-dimensional analogue to Euclidean space $\mathbb{R}^n$:
 * **Orthogonality:** $f \perp g \iff \langle f, g \rangle = 0$.
@@ -682,13 +824,13 @@ which induces the norm $\|f\|_{L^2} = \sqrt{\langle f, f \rangle}$. A complete i
   $$f = \sum_{k=1}^\infty \langle f, e_k \rangle e_k, \qquad \|f\|^2 = \sum_{k=1}^\infty |\langle f, e_k \rangle|^2 \quad (\text{Parseval's Identity})$$
   This is the foundation of Fourier analysis, spherical harmonics, and quantum wavefunctions ($\psi \in L^2$).
 
-### 11.4 Sobolev Spaces $W^{k, p}$ and Weak Derivatives
+### 13.4 Sobolev Spaces $W^{k, p}$ and Weak Derivatives
 In modern partial differential equations (PDEs), physical solutions (such as shock waves in aerodynamics or cracks in solid mechanics) are not continuously differentiable. **Sobolev Spaces** $W^{k, p}(\Omega)$ and $H^s(\Omega) = W^{s, 2}(\Omega)$ define functions possessing **weak derivatives** up to order $k$:
 
 $$\int_\Omega u \, D^\alpha \phi \, dx = (-1)^{|\alpha|} \int_\Omega v \, \phi \, dx, \quad \forall \phi \in C_c^\infty(\Omega)$$
 If such a $v \in L^p$ exists, $v$ is the weak derivative $D^\alpha u$. Sobolev spaces provide the natural setting for the finite element method (FEM) and the Lax-Milgram theorem.
 
-### 11.5 Functionals and Operators
+### 13.5 Functionals and Operators
 * **Linear Functionals:** Mappings from a function space to its scalar field: $\phi: \mathcal{F} \to \mathbb{R}$.
   * *The Riesz Representation Theorem:* In any Hilbert space $\mathcal{H}$, every continuous linear functional $\phi \in \mathcal{H}^*$ can be represented uniquely as an inner product with a fixed vector $g_\phi \in \mathcal{H}$: $\phi(f) = \langle f, g_\phi \rangle$.
   * *Dirac Delta Distribution:* $\delta_x(f) = f(x)$ is a linear functional, but it has no representation as an ordinary $L^2$ function; it is a **generalized function (distribution)** residing in the dual space $(C_c^\infty)^*$.
@@ -698,13 +840,13 @@ If such a $v \in L^p$ exists, $v$ is the weak derivative $D^\alpha u$. Sobolev s
 
 ---
 
-## 12. Functions in Scientific Computing & Numerical Algorithms: How Computers Represent Functions
+## 14. Functions in Scientific Computing & Numerical Algorithms: How Computers Represent Functions
 
 A computer is a discrete, finite machine with finite memory and 64-bit IEEE-754 floating-point arithmetic. It cannot store an uncountably infinite mathematical continuum $f: [a, b] \to \mathbb{R}$. 
 
 How does computational science bridge this chasm?
 
-### 12.1 Pointwise Mesh Discretization (The Grid Paradigm)
+### 14.1 Pointwise Mesh Discretization (The Grid Paradigm)
 The simplest representation samples $f$ on a discrete spatial grid:
 
 $$\mathbf{x} = (x_0, x_1, \dots, x_N)^T \implies \mathbf{y} = (f(x_0), f(x_1), \dots, f(x_N))^T \in \mathbb{R}^{N+1}$$
@@ -713,7 +855,7 @@ In Finite Difference Methods (FDM), derivatives are replaced by discrete algebra
 $$f'(x_i) \approx \frac{y_{i+1} - y_{i-1}}{2h}, \qquad f''(x_i) \approx \frac{y_{i+1} - 2y_i + y_{i-1}}{h^2}$$
 While direct and intuitive, grid arrays do not store values between nodes; evaluating $f(x^*)$ for $x^* \notin \{x_i\}$ requires interpolation.
 
-### 12.2 Polynomial Interpolation, Runge's Phenomenon, and Chebyshev Nodes
+### 14.2 Polynomial Interpolation, Runge's Phenomenon, and Chebyshev Nodes
 
 Given $N+1$ points $(x_i, y_i)$, there exists a unique polynomial $P_N(x)$ of degree at most $N$ passing through all points.
 
@@ -726,7 +868,7 @@ The interpolation error formula is:
 $$f(x) - P_N(x) = \frac{f^{(N+1)}(\xi)}{(N+1)!} \prod_{i=0}^N (x - x_i)$$
 To minimize the nodal product $\max_{x \in [-1, 1]} |\prod_{i=0}^N (x - x_i)|$, the nodes must not be spaced equally! They must cluster near the boundaries. The optimal points are the roots of the **Chebyshev polynomial of the first kind $T_{N+1}(x)$**:
 
-$$x_k = \cos\left( \frac{2k - 1}{2(N+1)} \pi \right), \quad k = 1, 2, \dots, N+1 \tag{14}$$
+$$x_k = \cos\left( \frac{2k - 1}{2(N+1)} \pi \right), \quad k = 1, 2, \dots, N+1 \tag{16}$$
 
 Interpolating at Chebyshev nodes eliminates Runge's phenomenon completely, yielding near-optimal minimax polynomial approximation!
 
@@ -780,21 +922,21 @@ plt.tight_layout()
 plt.show()
 ```
 
-### 12.3 Piecewise Splines and CAD Geometry
+### 14.3 Piecewise Splines and CAD Geometry
 Rather than using a single global high-degree polynomial, engineering algorithms use **piecewise cubic splines**:
 $$S_i(x) = a_i + b_i(x - x_i) + c_i(x - x_i)^2 + d_i(x - x_i)^3, \quad x \in [x_i, x_{i+1}]$$
 enforcing $C^2$ continuity (continuous position, first derivative, and second derivative/curvature across knots). In computer graphics and CAD, **B-splines** and **Non-Uniform Rational B-Splines (NURBS)** represent complex 3D aerodynamic surfaces and automotive hulls.
 
-### 12.4 Spectral & Coefficient Expansions (The Chebfun Paradigm)
+### 14.4 Spectral & Coefficient Expansions (The Chebfun Paradigm)
 In spectral methods, a computer represents a function $f(x)$ not by its spatial values, but by a finite vector of coefficients $\mathbf{c} = (c_0, c_1, \dots, c_N)^T$ in an orthogonal basis:
 
-$$f(x) \approx \sum_{k=0}^N c_k \phi_k(x) \tag{15}$$
+$$f(x) \approx \sum_{k=0}^N c_k \phi_k(x) \tag{17}$$
 
 * **Fourier Spectral Methods:** $\phi_k(x) = e^{i k x}$. The Fast Fourier Transform (FFT) transitions between physical grid values and frequency coefficients in $\mathcal{O}(N \log N)$ operations.
 * **Chebyshev Expansions:** $\phi_k(x) = T_k(x) = \cos(k \arccos x)$.
 * **The Chebfun Paradigm (Trefethen, Oxford):** An open-source mathematical computing system that performs arithmetic, root-finding, integration, and differential equation solving on functions with machine precision ($\approx 10^{-16}$) by dynamically truncating Chebyshev series!
 
-### 12.5 Procedural Code: Callables, Closures, and Function Pointers
+### 14.5 Procedural Code: Callables, Closures, and Function Pointers
 In computer programming languages:
 * **Function Pointers / Lambdas:** In C/C++, a function is an executable memory address `double (*f)(double)`.
 * **Closures (Callables with State):** In Python or JavaScript, closures bundle the function logic with captured lexical environment variables:
@@ -804,14 +946,14 @@ In computer programming languages:
   ```
 * **Hardware Evaluation of Transcendental Functions:** Silicon FPUs do not compute infinite series. Functions like $\sin(x)$ and $\exp(x)$ are evaluated in hardware using **minimax Padé rational approximants** (Remez exchange algorithm) combined with **CORDIC** (Coordinate Rotation Digital Computer) shift-and-add hardware registers.
 
-### 12.6 Computational Graphs and Automatic Differentiation (Autodiff)
+### 14.6 Computational Graphs and Automatic Differentiation (Autodiff)
 In modern deep learning and scientific machine learning (PyTorch, JAX), functions are compiled into **Directed Acyclic Graphs (DAGs)** of elementary mathematical operations.
 
 Unlike numerical finite differences (which suffer from truncation and roundoff errors) or symbolic differentiation (which suffers from exponential algebraic expression swell), **Automatic Differentiation (Autodiff)** applies the chain rule algorithmically to the computational graph:
 * **Forward-Mode Autodiff:** Propagates directional derivatives using dual numbers ($a + b\epsilon, \epsilon^2 = 0$). Ideal for functions with few inputs and many outputs ($f: \mathbb{R} \to \mathbb{R}^m$).
 * **Reverse-Mode Autodiff (Backpropagation):** Computes the gradient of a scalar loss with respect to millions of parameters in a single backward pass ($\nabla_\theta L$, $f: \mathbb{R}^n \to \mathbb{R}$).
 
-### 12.7 Neural Function Approximators and Neural Operators
+### 14.7 Neural Function Approximators and Neural Operators
 * **The Universal Approximation Theorem (Cybenko 1989, Hornik 1991):** Proves that a feedforward neural network with a single hidden layer and non-linear activation $\sigma$ can approximate any continuous function $f \in C(K)$ on a compact domain to arbitrary precision $\epsilon > 0$:
   $$f_\theta(x) = \sum_{i=1}^M w_i \sigma(\mathbf{v}_i \cdot \mathbf{x} + b_i)$$
 * **Implicit Neural Representations (INRs / NeRFs):** Continuous coordinate networks where continuous images, 3D scenes, or physical fields are parameterized as weights $\theta$ of a multi-layer perceptron.
@@ -819,7 +961,7 @@ Unlike numerical finite differences (which suffer from truncation and roundoff e
 
 ---
 
-## 13. Cross-Disciplinary Connections
+## 15. Cross-Disciplinary Connections
 
 * For the linear algebraic application of morphisms as linear maps, coordinate isomorphisms, and rank-nullity projections, see:
   * [Algebraic Foundations: Fields, Rings, Coordinate Isomorphisms, and Rank-Nullity](../algebraic-structures-coordinate-mappings-rank-nullity/index.qmd)
