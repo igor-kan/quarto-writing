@@ -1,7 +1,7 @@
 ---
 title: "Mathematical Foundations: Functions, Relations, Operations, and Morphisms"
 subtitle: "Set-theoretic foundations, multi-representational paradigms, infinite-dimensional functional analysis, scientific computing representations, and category-theoretic morphisms."
-description: "A rigorous mathematical exposition of functions and relations: set-theoretic graph definitions, the Rule of Four representations (verbal, algebraic, tabular, graphical), infinite-dimensional functional analysis (Banach, Hilbert, Sobolev spaces), computational representations in scientific computing (Chebyshev nodes, splines, autodiff DAGs, neural operators), algebraic operations, and category-theoretic morphisms."
+description: "A comprehensive mathematical and computational treatise on functions: set-theoretic graph definitions, the Rule of Four representations (verbal, algebraic, tabular, graphical), explicit vs. implicit and open vs. closed forms, calculus on tabular data, functional programming paradigms, infinite-dimensional functional analysis (Banach, Hilbert, Sobolev spaces), computational representations in scientific computing (Chebyshev nodes, splines, autodiff DAGs, neural operators), and the cross-field taxonomy of morphisms from group theory to topology."
 author: "Igor Kan"
 date: "2026-10-29"
 categories: [Preprints, Mathematics, Set Theory, Abstract Algebra, Functional Analysis, Scientific Computing, Category Theory]
@@ -14,7 +14,7 @@ format:
 
 ::: {.callout-note}
 ### Preprint / Working Draft
-This article is published under the **Preprints** category. It explores the formal foundations of mathematical relations, mappings, algebraic operations, infinite-dimensional functional analysis, scientific computing representations, and category-theoretic morphisms. Executable Python diagrams illustrate set mappings, injectivity/surjectivity, Runge's phenomenon vs. Chebyshev minimax interpolation, and commuting diagrams.
+This article is published under the **Preprints** category. It explores the formal foundations of mathematical relations, mappings, algebraic operations, infinite-dimensional functional analysis, scientific computing representations, and category-theoretic morphisms. Executable Python diagrams illustrate set mappings, injectivity/surjectivity, Runge's phenomenon vs. Chebyshev minimax interpolation, calculus on discrete tabular data, and commuting diagrams.
 :::
 
 ---
@@ -26,15 +26,18 @@ In pure and applied mathematics, sets alone provide merely static collections of
 Modern mathematics builds this hierarchy in graduated stages:
 1. **Relations:** Subsets of Cartesian products establishing arbitrary pairings between elements.
 2. **Functions (Mappings):** Constrained relations ensuring that every input possesses a unique, unambiguous output.
-3. **Multi-Representational Paradigms:** The diverse cognitive and computational forms a function can assume: verbal descriptions, algebraic equations, discrete data tables, geometric graphs, and algorithmic subroutines.
-4. **Operations:** Functions mapping Cartesian powers of a set back into the set ($S^n \to S$).
-5. **Morphisms:** Structure-preserving mappings between algebraic or topological spaces.
-6. **Functional Analysis:** Treating functions not as dynamic processes, but as static **points or vectors in infinite-dimensional Hilbert and Banach spaces**.
-7. **Scientific Computing:** How finite digital silicon approximates continuous, infinite mathematical functions through meshes, Chebyshev spectral expansions, splines, computational graphs, and neural operators.
+3. **Multi-Representational Paradigms:** The diverse cognitive, physical, and computational forms a function can assume: verbal descriptions, algebraic equations, discrete data tables, geometric graphs, and algorithmic subroutines.
+4. **Explicit vs. Implicit & Closed vs. Open Forms:** Distinguishing isolated closed-form formulas from intertwined constraints, non-elementary integrals, and empirical models approximating discrete tabular data.
+5. **Calculus on Tabular and Implicit Functions:** How differentiation and integration operate when no symbolic formula exists.
+6. **Programming Paradigms:** How functions transition from imperative mutating subroutines to first-class, pure mathematical entities in functional programming.
+7. **Operations:** Functions mapping Cartesian powers of a set back into the set ($S^n \to S$).
+8. **The Cross-Field Taxonomy of Morphisms:** Structure-preserving mappings across abstract algebra, linear algebra, topology, complex analysis, and category theory.
+9. **Functional Analysis:** Treating functions not as dynamic processes, but as static **points or vectors in infinite-dimensional Hilbert and Banach spaces**.
+10. **Scientific Computing:** How finite digital silicon approximates continuous, infinite mathematical functions through meshes, Chebyshev spectral expansions, splines, computational graphs, and neural operators.
 
 ---
 
-## 2. Set-Theoretic Relations
+## 2. Set-Theoretic Relations & Equivalence Classes
 
 ### 2.1 Cartesian Products and Binary Relations
 
@@ -102,7 +105,7 @@ In naive mathematics, a function is often casually described as an "input-output
 
 When these conditions hold, we write $y = f(x)$ to denote the unique element $y \in E$ such that $(x, y) \in \Gamma$.
 
-### 3.2 Codomain vs. Range (Image)
+### 3.2 Codomain vs. Range (Image) and Preimages
 
 A critical distinction frequently conflated in elementary pedagogy is that between the **codomain** and the **range** (or image):
 
@@ -252,7 +255,6 @@ titles = [
     "Bijective (One-to-One & Onto)\nInvertible Isomorphism"
 ]
 
-# Coordinate configs: (pts_X, pts_Y, edges)
 configs = [
     # Injective: 3 domain points -> 4 codomain points (1 unhit)
     ([(1.0, 3.2), (1.0, 2.0), (1.0, 0.8)],
@@ -273,7 +275,6 @@ for ax, title, (pts_X, pts_Y, edges) in zip(axes, titles, configs):
     ax.set_ylim(0, 4.5)
     ax.axis('off')
 
-    # Domain and Codomain containers
     box_X = patches.FancyBboxPatch((0.5, 0.2), 1.0, 3.6, boxstyle="round,pad=0.15,rounding_size=0.4",
                                   facecolor="#eff6ff", edgecolor="#2563eb", lw=1.8)
     box_Y = patches.FancyBboxPatch((2.5, 0.2), 1.0, 3.6, boxstyle="round,pad=0.15,rounding_size=0.4",
@@ -283,13 +284,11 @@ for ax, title, (pts_X, pts_Y, edges) in zip(axes, titles, configs):
     ax.text(1.0, 4.15, r"$X$", fontsize=13, fontweight='bold', ha='center', color='#1e3a8a')
     ax.text(3.0, 4.15, r"$Y$", fontsize=13, fontweight='bold', ha='center', color='#831843')
 
-    # Plot points
     for x, y in pts_X:
         ax.plot(x, y, 'o', color='#2563eb', markersize=6.5)
     for x, y in pts_Y:
         ax.plot(x, y, 'o', color='#db2777', markersize=6.5)
 
-    # Plot mapping arrows
     for u, v in edges:
         src = pts_X[u]
         dst = pts_Y[v]
@@ -308,7 +307,7 @@ plt.show()
 
 A mathematical function is an abstract mathematical object. In education, cognitive science, and applied mathematics, mathematicians recognize that no single representation captures all aspects of a function. The **"Rule of Four"** (pioneered by the Harvard Calculus Consortium) posits that every mathematical concept must be approached through four interconnected representations: **Verbal**, **Algebraic**, **Tabular**, and **Graphical**.
 
-In modern computing, we extend this to the **Rule of Six**, adding **Procedural/Algorithmic** and **Infinite-Dimensional Functional** representations.
+In modern computing and functional analysis, this expands to the **Rule of Six**, adding **Procedural/Algorithmic** and **Infinite-Dimensional Functional** representations.
 
 ### 5.1 Verbal / Semantic Representation
 A function expressed through natural language rules, descriptive physical conditions, or semantic predicates:
@@ -358,20 +357,186 @@ Markdown(header + "\n".join([f"| **{r[0]}** | {r[1]} | {r[2]} | {r[3]} | {r[4]} 
 
 ---
 
-## 6. Algebraic Operations as Functions
+## 6. Explicit vs. Implicit, and Closed-Form vs. Open-Form Functions
+
+A deep divide in mathematical analysis separates functions that can be written down explicitly in a single line from those defined implicitly or through infinite limiting processes.
+
+### 6.1 Explicit Functions ($y = f(x)$)
+A function is **explicit** when the dependent variable $y$ is isolated entirely on one side of the equation:
+$$y = f(x)$$
+Evaluating $y$ for a given $x$ requires direct forward evaluation of the expression.
+
+### 6.2 Implicit Functions and the Implicit Function Theorem (IFT)
+A function is **implicit** when the relationship between $x$ and $y$ is intertwined inside an equation:
+$$F(x, y) = 0 \tag{10}$$
+For example, the unit circle $x^2 + y^2 - 1 = 0$ does not define a single global explicit function (failing the vertical line test). However, locally near any point $(x_0, y_0)$ where $y_0 \neq 0$, it uniquely defines the explicit function $y = \pm \sqrt{1 - x^2}$.
+
+> **The Implicit Function Theorem (IFT):**  
+> Let $F: \mathbb{R}^n \times \mathbb{R}^m \to \mathbb{R}^m$ be continuously differentiable ($C^1$), and suppose $F(\mathbf{x}_0, \mathbf{y}_0) = \mathbf{0}$. If the Jacobian matrix with respect to $\mathbf{y}$ is invertible:
+> $$\det\left( \frac{\partial F}{\partial \mathbf{y}}(\mathbf{x}_0, \mathbf{y}_0) \right) \neq 0$$
+> then there exists an open neighborhood $U$ of $\mathbf{x}_0$ and a unique $C^1$ function $\mathbf{g}: U \to \mathbb{R}^m$ such that $\mathbf{g}(\mathbf{x}_0) = \mathbf{y}_0$ and:
+> $$F(\mathbf{x}, \mathbf{g}(\mathbf{x})) = \mathbf{0}, \quad \forall \mathbf{x} \in U$$
+> Furthermore, the derivative of the implicit function is given by:
+> $$\frac{\partial \mathbf{g}}{\partial \mathbf{x}} = - \left( \frac{\partial F}{\partial \mathbf{y}} \right)^{-1} \frac{\partial F}{\partial \mathbf{x}}$$
+
+In computer graphics, 3D shapes are frequently represented as implicit **Signed Distance Functions (SDFs)** $F(x, y, z) = 0$, evaluated via sphere-tracing and marching cubes.
+
+### 6.3 Closed-Form vs. Open-Form Functions
+
+* **Closed-Form Functions:** Can be expressed in a **finite number** of standard operations: addition, subtraction, multiplication, division, integer/rational roots, exponentials, logarithms, and trigonometric functions.
+* **Open-Form Functions:** Cannot be written using a finite combination of elementary symbols. They require **infinite limiting operations**:
+  1. **Non-Elementary Integrals (Liouville's Theorem & Risch Algorithm):** By Liouville's theorem (1835), the antiderivative $\int e^{-x^2} dx$ cannot be expressed in elementary closed form. We define the **Error Function**:
+     $$\operatorname{erf}(x) \equiv \frac{2}{\sqrt{\pi}} \int_0^x e^{-t^2} \, dt$$
+     Similarly, elliptic integrals of the first kind $K(k) = \int_0^{\pi/2} \frac{d\theta}{\sqrt{1 - k^2 \sin^2\theta}}$ govern pendulum motion and planetary orbits without closed forms.
+  2. **Infinite Power Series:** $f(x) = \sum_{n=0}^\infty a_n x^n$ (e.g., Bessel functions $J_\alpha(x)$, hypergeometric functions ${}_2F_1$).
+  3. **Roots of Quintic Polynomials:** By the Abel-Ruffini theorem, roots of general degree $\ge 5$ polynomials cannot be expressed in radicals (closed form), defining algebraic functions that can only be evaluated numerically (Bring radicals).
+
+### 6.4 Explicit Functions as Mathematical Models Approximating Tabular Data
+In science and engineering, empirical measurements always arrive as discrete tabular pairs $(x_i, y_i)_{i=1}^M$. A central task of applied mathematics is **mathematical modeling**: constructing an explicit, parsimonious function $\hat{f}(x; \boldsymbol{\theta})$ that approximates the tabular data:
+
+$$y_i = \hat{f}(x_i; \boldsymbol{\theta}) + \epsilon_i \tag{11}$$
+
+* **Mechanistic (First-Principles) Models:** The functional form is derived from governing differential equations or conservation laws (e.g., exponential radioactive decay $N(t) = N_0 e^{-\lambda t}$, or Michaelis-Menten enzyme kinetics $v = \frac{V_{\max} [S]}{K_m + [S]}$).
+* **Phenomenological / Empirical Models:** Polynomials, splines, or neural networks fit parameters $\boldsymbol{\theta}$ by minimizing a loss function (Non-linear Least Squares):
+  $$\boldsymbol{\theta}^* = \arg\min_{\boldsymbol{\theta}} \sum_{i=1}^M \left( y_i - \hat{f}(x_i; \boldsymbol{\theta}) \right)^2$$
+* **The Bias-Variance Tradeoff (Occam's Razor):** An explicit function must balance fidelity to data (low bias) against structural simplicity (low variance) to avoid overfitting experimental measurement noise.
+
+---
+
+## 7. Calculus on Tabular Data and Functions Without Closed-Form Formulas
+
+A pervasive misconception among students is that calculus requires a symbolic formula $f(x)$ with pencil and paper. In the real world, **calculus is routinely applied directly to discrete tabular data or functions defined solely as black-box simulation solvers**.
+
+### 7.1 How Calculus Operates on Empirical Tables
+Suppose an autonomous vehicle or aircraft records discrete sensor telemetry of velocity $v(t_i)$ at discrete timestamps $t_i$. How do we compute acceleration $a(t) = \frac{dv}{dt}$ or position $x(t) = \int v(t) dt$?
+
+### 7.2 Numerical Differentiation & The Catastrophe of Noise Amplification
+Differentiating discrete tabular data using standard finite differences:
+$$f'(x_i) \approx \frac{y_{i+1} - y_{i-1}}{2h}$$
+suffers from **severe noise amplification**. If the tabular data contains noise of magnitude $\epsilon$, the error in the derivative scales as:
+$$\text{Error} \sim \mathcal{O}(h^2) + \frac{\epsilon}{h}$$
+As step size $h \to 0$, the noise term $\epsilon / h \to \infty$ explodes!
+
+To perform calculus on noisy tabular data, computational mathematicians use:
+1. **Regularized Smoothing Splines:** Fitting a cubic spline $\hat{f}$ that minimizes $\sum (y_i - \hat{f}(x_i))^2 + \lambda \int (\hat{f}''(x))^2 dx$, and analytically differentiating the spline.
+2. **Savitzky-Golay Filtering:** Fitting local low-degree polynomials via moving window least squares to simultaneously smooth data and compute stable derivatives.
+
+### 7.3 Numerical Quadrature & Integration
+Unlike differentiation (which amplifies high-frequency noise), **integration is a smoothing operation**:
+* **Trapezoidal Rule:** $\int_a^b f(x) dx \approx \sum_{i=0}^{N-1} \frac{y_i + y_{i+1}}{2} \Delta x_i$ ($\mathcal{O}(h^2)$ error).
+* **Simpson's Rule:** Fits piecewise parabolas across three points: $\frac{h}{3} (y_0 + 4y_1 + 2y_2 + \dots + y_N)$ ($\mathcal{O}(h^4)$ error).
+* **Gauss-Legendre Quadrature:** Chooses optimal non-uniform evaluation points (roots of Legendre polynomials), achieving exact integration for polynomials of degree up to $2N - 1$ using only $N$ function evaluations!
+
+```{python}
+#| label: fig-discrete-calculus
+#| fig-cap: "Programmatically Demonstrating Calculus on Tabular Data. Left: Discrete noisy tabular data points fitted with a regularized smoothing cubic spline. Right: Numerical derivative computed via naive finite differences (red dashed, showing catastrophic noise amplification) versus the regularized spline derivative (blue), closely matching the exact analytical derivative."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Discrete Calculus Simulation"
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.interpolate import UnivariateSpline
+
+np.random.seed(42)
+x = np.linspace(0, 2 * np.pi, 30)
+y_true = np.sin(x)
+y_noisy = y_true + 0.05 * np.random.randn(len(x))
+
+dx = x[1] - x[0]
+dy_naive = np.gradient(y_noisy, dx)
+
+spl = UnivariateSpline(x, y_noisy, s=0.08)
+x_dense = np.linspace(0, 2 * np.pi, 250)
+dy_spline = spl.derivative()(x)
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.5, 4.4), dpi=180)
+
+# Left: Data and Model
+ax1.plot(x_dense, np.sin(x_dense), 'k-', lw=1.6, label='True Underlying $f(x) = \\sin(x)$')
+ax1.plot(x, y_noisy, 'ro', markersize=5.5, label='Discrete Tabular Points $(x_i, y_i)$')
+ax1.plot(x_dense, spl(x_dense), 'b-', lw=2.2, label='Cubic Spline Model $\\hat{f}(x)$')
+ax1.set_title('Tabular Data & Continuous Model Fit', fontsize=11, fontweight='bold', pad=8)
+ax1.set_xlabel('$x$', fontsize=10.5)
+ax1.set_ylabel('$y$', fontsize=10.5)
+ax1.legend(fontsize=8.5, frameon=True, loc='upper right')
+ax1.grid(True, linestyle='--', alpha=0.45)
+
+# Right: Calculus on Tabular Data
+ax2.plot(x_dense, np.cos(x_dense), 'k-', lw=1.8, label=r'Exact Derivative $\frac{d}{dx}\sin(x) = \cos(x)$')
+ax2.plot(x, dy_naive, 'r--', lw=1.3, label='Naive Finite Difference (Noise Amplification)')
+ax2.plot(x, dy_spline, 'b-', lw=2.2, label='Regularized Spline Derivative')
+ax2.set_title('Calculus on Tabular Data: Numerical Derivatives', fontsize=11, fontweight='bold', pad=8)
+ax2.set_xlabel('$x$', fontsize=10.5)
+ax2.set_ylabel(r"$f'(x)$", fontsize=10.5)
+ax2.legend(fontsize=8.5, frameon=True, loc='upper right')
+ax2.grid(True, linestyle='--', alpha=0.45)
+
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## 8. Functions Across Programming Paradigms: From Subroutines to Pure Lambda Calculus
+
+In computer science, the term "function" is used across disparate paradigms with radically different semantic meanings:
+
+### 8.1 Procedural / Imperative Paradigm: Functions as Subroutines
+In C, Pascal, or Fortran, a function is a named sequence of instructions compiled to a memory subroutine. Crucially, procedural functions are **state-mutating**:
+```c
+int counter = 0;
+int increment() {
+    counter++; // Side effect: mutates global state!
+    return counter;
+}
+```
+Calling `increment()` multiple times yields different outputs ($1, 2, 3$). Procedural functions violate mathematical univalence ($x \mapsto y$ is not constant!).
+
+### 8.2 Object-Oriented Paradigm: Functions as Methods
+In Java, C++, or Python, functions attached to classes are **methods**. They implicitly take the instance reference (`this` or `self`) as an argument and encapsulate state mutation:
+```python
+class BankAccount:
+    def withdraw(self, amount):
+        self.balance -= amount # Mutates internal state
+        return self.balance
+```
+
+### 8.3 Functional Programming Paradigm: Pure Functions & Lambda Calculus
+Pioneered by Alonzo Church’s **$\lambda$-calculus** (1936) and realized in languages like Haskell, OCaml, and modern Python/Rust:
+
+* **First-Class Functions:** Functions are treated as ordinary data values: they can be assigned to variables, passed as arguments, and returned from other functions.
+* **Higher-Order Functions:** Functions that accept or return other functions:
+  * `map(f, [x1, x2, ...])` $\implies [f(x_1), f(x_2), \dots]$
+  * `filter(p, [x1, x2, ...])` $\implies$ keeps elements where $p(x) == \text{True}$.
+  * `reduce(*, [x1, x2, x3])` $\implies ((x_1 * x_2) * x_3)$.
+* **Pure Functions and Referential Transparency:**  
+  A function is **pure** if:
+  1. For identical inputs, it always returns the exact same output.
+  2. It causes **zero observable side effects** (no I/O, no network calls, no mutation of external memory).
+  > **Referential Transparency:** A pure function call can be replaced by its evaluated value at any point without altering the program's behavior:  
+  > `f(x) + f(x) == 2 * f(x)`  
+  > This guarantees compiler **memoization**, dead-code elimination, and safe multithreaded parallel execution without race conditions!
+* **Currying and Partial Application:**  
+  Transforming a multivariable function $f: (A \times B) \to C$ into a chained sequence of single-variable functions $f: A \to (B \to C)$. In category theory, this is the canonical adjunction of Cartesian closed categories:
+  $$\operatorname{Hom}(A \times B, C) \cong \operatorname{Hom}(A, C^B)$$
+* **Function Composition & Pipelines:** Combining pure functions via $(g \circ f)(x) = g(f(x))$, expressed cleanly in modern syntax via pipeline operators: `x |> f |> g`.
+
+---
+
+## 9. Algebraic Operations as Functions
 
 An **algebraic operation** is simply a function whose domain is a Cartesian power of a set $S$:
 
-### 6.1 Unary Operations ($n = 1$)
+### 9.1 Unary Operations ($n = 1$)
 A **unary operation** on a set $S$ is a function mapping $S$ into itself:
 $$u: S \to S$$
 * **Additive Inverse:** $x \mapsto -x$ on $\mathbb{R}$.
 * **Multiplicative Reciprocal:** $x \mapsto x^{-1}$ on $\mathbb{R} \setminus \{0\}$.
 * **Complex Conjugation:** $z \mapsto \bar{z}$ on $\mathbb{C}$.
 
-### 6.2 Binary Operations ($n = 2$)
+### 9.2 Binary Operations ($n = 2$)
 A **binary operation** $*$ on a set $S$ is a function from the Cartesian product $S \times S$ to $S$:
-$$*: S \times S \to S, \quad (a, b) \mapsto a * b \tag{10}$$
+$$*: S \times S \to S, \quad (a, b) \mapsto a * b \tag{12}$$
 Closure is automatic under this definition because the codomain is $S$.
 
 Foundational algebraic structures are classified by the axioms satisfied by their binary operations:
@@ -383,72 +548,65 @@ Foundational algebraic structures are classified by the axioms satisfied by thei
 | **Inverses** | $\forall a \in S, \; \exists a^{-1} \in S \text{ such that } a * a^{-1} = a^{-1} * a = e$ | Group $(G, *, e, {}^{-1})$ |
 | **Commutativity** | $\forall a, b \in S, \quad a * b = b * a$ | Abelian Group |
 
-### 6.3 $n$-ary Operations ($n \ge 3$)
+### 9.3 $n$-ary Operations ($n \ge 3$)
 An **$n$-ary operation** is a mapping $\omega: S^n \to S$. For instance:
 * The vector triple product $\mathbf{u} \cdot (\mathbf{v} \times \mathbf{w})$ is a ternary operation on $\mathbb{R}^3 \to \mathbb{R}$.
 * The Lie bracket $[X, Y]$ in differential geometry is a bilinear binary operation on vector fields.
 
 ---
 
-## 7. Morphisms: Structure-Preserving Mappings
+## 10. The Universal Taxonomy of Functions Across Mathematical Fields
 
-When sets are equipped with algebraic, geometric, or topological structure, arbitrary functions are insufficient. We require **morphisms**: mappings that preserve the governing operations and relations between spaces.
+Every branch of mathematics studies sets equipped with specific structures. Consequently, every branch defines its own specialized classes of structure-preserving functions:
 
-### 7.1 Algebraic Homomorphisms
+```{python}
+#| label: tbl-cross-field-taxonomy
+#| code-fold: true
+#| code-summary: "Show Python code generating the Cross-Field Function Taxonomy Table"
 
-Let $(G, *_G)$ and $(H, *_H)$ be two algebraic groups. A function $\phi: G \to H$ is a **group homomorphism** if it preserves the group operation:
+from IPython.display import Markdown
 
-$$\forall a, b \in G, \quad \phi(a *_G b) = \phi(a) *_H \phi(b) \tag{11}$$
+tax_data = [
+    ("Set Theory", "Function / Mapping", "Sets ($A, B$)", "Preimage fibers, graphs $\\Gamma \\subseteq A \\times B$", "Injections, surjections, bijections"),
+    ("Abstract Algebra", "Homomorphism", "Groups, Rings, Fields", "Preserves algebraic operation: $\\phi(a * b) = \\phi(a) \\cdot \\phi(b)$", "Isomorphisms ($G \\cong H$), automorphisms, endomorphisms"),
+    ("Linear Algebra", "Linear Map / Transformation", "Vector Spaces ($V, W$)", "Preserves linear combinations: $T(c\\mathbf{u}+\\mathbf{v})=cT(\\mathbf{u})+T(\\mathbf{v})$", "Projections, orthogonal/unitary operators, rank-nullity"),
+    ("General Topology", "Continuous Mapping", "Topological Spaces ($(X, \\tau_X)$)", "Preimage of open set is open: $f^{-1}(U) \\in \\tau_X$", "Homeomorphisms (topological equivalence), homotopy"),
+    ("Differential Geometry", "Diffeomorphism / Smooth Map", "Differentiable Manifolds ($M, N$)", "$C^\\infty$ smoothness; smooth invertible Jacobian matrix", "Immersions, submersions, coordinate chart atlases"),
+    ("Complex Analysis", "Holomorphic / Meromorphic Map", "Complex Domains ($\\Omega \\subseteq \\mathbb{C}$)", "Complex differentiable; Cauchy-Riemann equations", "Conformal mappings, Riemann surfaces, analytic continuation"),
+    ("Functional Analysis", "Operator / Functional", "Function Spaces ($L^p, H^s, C[a,b]$)", "Linearity, norm boundedness $\\|Tf\\| \\le C \\|f\\|$, compactness", "Differential operators ($D$), Fourier transform, Dirac delta"),
+    ("Category Theory", "Morphism / Functor", "Categories ($\\mathcal{C}, \\mathcal{D}$)", "Preserves composition $F(g \\circ f) = F(g) \\circ F(f)$ & identities", "Arrows, natural transformations, adjoint functors")
+]
 
-Immediate algebraic consequences of identity (11):
-1. $\phi(e_G) = e_H$ (the identity maps to the identity).
-2. $\phi(a^{-1}) = (\phi(a))^{-1}$ (inverses are preserved).
+header = "| Mathematical Field | Canonical Terminology | Governing Domain & Codomain | Invariant Preserved by Function | Exemplar Classifications |\n| :--- | :--- | :--- | :--- | :--- |\n"
+Markdown(header + "\n".join([f"| **{r[0]}** | {r[1]} | {r[2]} | {r[3]} | {r[4]} |" for r in tax_data]))
+```
 
-Similarly:
-* **Ring Homomorphism:** Preserves addition, multiplication, and the multiplicative identity $\phi(1_R) = 1_S$.
-* **Vector Space Linear Transformation:** Preserves vector addition and scalar multiplication:
-  $$T(c\mathbf{u} + \mathbf{v}) = c T(\mathbf{u}) + T(\mathbf{v})$$
+### 10.1 Algebraic Homomorphisms and Isomorphisms
+Let $(G, *_G)$ and $(H, *_H)$ be groups. A function $\phi: G \to H$ is a **group homomorphism** if:
+$$\phi(a *_G b) = \phi(a) *_H \phi(b)$$
+* **Kernel & Image:** $\ker(\phi) = \{g \in G \mid \phi(g) = e_H\} \triangleleft G$, $\operatorname{im}(\phi) \le H$.
+* **The First Isomorphism Theorem:** $G / \ker(\phi) \cong \operatorname{im}(\phi)$.
+* **Automorphisms:** $\operatorname{Aut}(G)$ forms the symmetry group of the algebraic object itself.
 
-### 7.2 The Morphism Taxonomy
+### 10.2 Linear Transformations
+In linear algebra, a function $T: V \to W$ between vector spaces over a field $\mathbb{F}$ preserves scaling and addition:
+$$T(\alpha \mathbf{u} + \mathbf{v}) = \alpha T(\mathbf{u}) + T(\mathbf{v})$$
+Representable as matrix multiplication $T(\mathbf{x}) = A \mathbf{x}$. Governed by the **Rank-Nullity Theorem**: $\dim(\ker(T)) + \dim(\operatorname{im}(T)) = \dim(V)$.
 
-In abstract algebra and category theory, morphisms are classified by their relational behaviors:
+### 10.3 Topology: Continuous Mappings and Homeomorphisms
+In topology, distance metrics are abstracted away. A function $f: X \to Y$ is **continuous** if and only if:
+$$\forall U \text{ open in } Y, \quad f^{-1}(U) \text{ is open in } X$$
+A **homeomorphism** is a continuous bijection with a continuous inverse. Two spaces are homeomorphic ($X \approx Y$) if one can be continuously deformed into the other without tearing or gluing (e.g., a coffee mug and a donut).
 
-* **Monomorphism:** An injective homomorphism (preserves distinctions).
-* **Epimorphism:** A surjective homomorphism (covers the target structure).
-* **Isomorphism ($\cong$):** A bijective homomorphism whose inverse is also a homomorphism. Two isomorphic structures are algebraically indistinguishable.
-* **Endomorphism:** A morphism from an object to itself: $f: A \to A$.
-* **Automorphism:** An isomorphic endomorphism (an internal structural symmetry). The set of all automorphisms forms the **Automorphism Group** $\operatorname{Aut}(A)$.
+### 10.4 Complex Analysis: Holomorphic and Conformal Mappings
+A function $f: \mathbb{C} \to \mathbb{C}$ with $f(x + iy) = u(x, y) + i v(x, y)$ is **holomorphic** (complex differentiable) if it satisfies the **Cauchy-Riemann equations**:
+$$\frac{\partial u}{\partial x} = \frac{\partial v}{\partial y}, \qquad \frac{\partial u}{\partial y} = -\frac{\partial v}{\partial x}$$
+Every holomorphic function with $f'(z) \neq 0$ is a **conformal map**: it preserves both the magnitude and orientation of angles between intersecting curves, finding deep applications in fluid aerodynamics (Joukowsky aerofoil transformation) and electrostatics.
 
-### 7.3 Kernel, Image, and the First Isomorphism Theorem
+### 10.5 Category Theory: Morphisms, Functors, and Commutative Diagrams
+A category $\mathcal{C}$ abstracts all mathematical structures into **objects** and **morphisms (arrows)** satisfying associativity and identity axioms. 
 
-For any group homomorphism $\phi: G \to H$:
-* **Kernel:** $\ker(\phi) = \{g \in G \mid \phi(g) = e_H\} \triangleleft G$ (always a normal subgroup).
-* **Image:** $\operatorname{im}(\phi) = \{\phi(g) \mid g \in G\} \le H$ (a subgroup of $H$).
-
-> **The First Isomorphism Theorem:**  
-> The quotient group $G / \ker(\phi)$ is naturally isomorphic to the image $\operatorname{im}(\phi)$:
-> $$G / \ker(\phi) \cong \operatorname{im}(\phi) \tag{12}$$
-
-This theorem proves that the kernel measures exactly the information lost by the morphism, collapsing equivalent fibers into a single point.
-
----
-
-## 8. Morphisms in Category Theory
-
-In the modern foundation of mathematics pioneered by Samuel Eilenberg and Saunders Mac Lane (1945), mathematical structures are unified through **Category Theory**:
-
-A **category** $\mathcal{C}$ consists of:
-1. A collection of **objects** $\operatorname{Ob}(\mathcal{C})$ (e.g., all groups, all topological spaces, all vector spaces).
-2. A collection of **morphisms** (or arrows) $\operatorname{Hom}(A, B)$ for every pair of objects $A, B$.
-3. A **composition law**:
-   $$\circ: \operatorname{Hom}(B, C) \times \operatorname{Hom}(A, B) \to \operatorname{Hom}(A, C), \quad (g, f) \mapsto g \circ f$$
-satisfying two fundamental axioms:
-* **Associativity:** $h \circ (g \circ f) = (h \circ g) \circ f$.
-* **Identity:** For every object $A$, there exists an identity morphism $\operatorname{id}_A \in \operatorname{Hom}(A, A)$ such that for any $f: A \to B$, $f \circ \operatorname{id}_A = f = \operatorname{id}_B \circ f$.
-
-### 8.1 Commutative Diagrams
-
-In category theory, equations between composite morphisms are expressed geometrically through **commutative diagrams**. A diagram commutes if all directed paths between any two objects yield identical compositions:
+Equations between composite morphisms are expressed geometrically via **commutative diagrams**:
 
 ```{python}
 #| label: fig-commutative-triangle
@@ -490,18 +648,20 @@ plt.tight_layout()
 plt.show()
 ```
 
+Morphisms between categories themselves are called **Functors** ($F: \mathcal{C} \to \mathcal{D}$), and morphisms between functors are **Natural Transformations**.
+
 ---
 
-## 9. Functions in Functional Analysis: Points in Infinite-Dimensional Spaces
+## 11. Functions in Functional Analysis: Points in Infinite-Dimensional Spaces
 
 In calculus, a function $f(x)$ is viewed as an active rule transforming numbers $x \mapsto y$. In **functional analysis**, we take a profound conceptual leap: **we treat the entire function $f$ as a static point or vector inside an infinite-dimensional vector space $\mathcal{F}$**.
 
-### 9.1 Vector Spaces of Functions
+### 11.1 Vector Spaces of Functions
 Let $\mathcal{F}(X, \mathbb{R})$ denote the set of all real-valued functions on a set $X$. Defining addition and scalar multiplication pointwise:
 $$(f + g)(x) \equiv f(x) + g(x), \qquad (c \cdot f)(x) \equiv c \cdot f(x)$$
 $\mathcal{F}(X, \mathbb{R})$ satisfies all vector space axioms. But unlike $\mathbb{R}^n$, function spaces are typically **infinite-dimensional**.
 
-### 9.2 Normed Spaces and Banach Spaces
+### 11.2 Normed Spaces and Banach Spaces
 To discuss limits, convergence, and continuity of sequences of functions $(f_n)$, the function space must be equipped with a **norm** $\|f\|$:
 
 * **The Space $C[a, b]$ with Supremum Norm:**
@@ -511,7 +671,7 @@ To discuss limits, convergence, and continuity of sequences of functions $(f_n)$
   $$\|f\|_{L^p} = \left( \int_\Omega |f(x)|^p \, d\mu \right)^{1/p}$$
   Crucially, elements of $L^p$ are **not individual functions, but equivalence classes of functions** that are equal almost everywhere (modulo sets of Lebesgue measure zero). If $f(x) = g(x)$ except on a set of measure zero, $\|f - g\|_{L^p} = 0 \implies [f] = [g]$.
 
-### 9.3 Inner Product Spaces and Hilbert Spaces ($L^2$)
+### 11.3 Inner Product Spaces and Hilbert Spaces ($L^2$)
 When $p = 2$, the Banach space $L^2(\Omega)$ possesses an **inner product**:
 
 $$\langle f, g \rangle = \int_\Omega f(x) \overline{g(x)} \, dx \tag{13}$$
@@ -522,13 +682,13 @@ which induces the norm $\|f\|_{L^2} = \sqrt{\langle f, f \rangle}$. A complete i
   $$f = \sum_{k=1}^\infty \langle f, e_k \rangle e_k, \qquad \|f\|^2 = \sum_{k=1}^\infty |\langle f, e_k \rangle|^2 \quad (\text{Parseval's Identity})$$
   This is the foundation of Fourier analysis, spherical harmonics, and quantum wavefunctions ($\psi \in L^2$).
 
-### 9.4 Sobolev Spaces $W^{k, p}$ and Weak Derivatives
+### 11.4 Sobolev Spaces $W^{k, p}$ and Weak Derivatives
 In modern partial differential equations (PDEs), physical solutions (such as shock waves in aerodynamics or cracks in solid mechanics) are not continuously differentiable. **Sobolev Spaces** $W^{k, p}(\Omega)$ and $H^s(\Omega) = W^{s, 2}(\Omega)$ define functions possessing **weak derivatives** up to order $k$:
 
 $$\int_\Omega u \, D^\alpha \phi \, dx = (-1)^{|\alpha|} \int_\Omega v \, \phi \, dx, \quad \forall \phi \in C_c^\infty(\Omega)$$
 If such a $v \in L^p$ exists, $v$ is the weak derivative $D^\alpha u$. Sobolev spaces provide the natural setting for the finite element method (FEM) and the Lax-Milgram theorem.
 
-### 9.5 Functionals and Operators
+### 11.5 Functionals and Operators
 * **Linear Functionals:** Mappings from a function space to its scalar field: $\phi: \mathcal{F} \to \mathbb{R}$.
   * *The Riesz Representation Theorem:* In any Hilbert space $\mathcal{H}$, every continuous linear functional $\phi \in \mathcal{H}^*$ can be represented uniquely as an inner product with a fixed vector $g_\phi \in \mathcal{H}$: $\phi(f) = \langle f, g_\phi \rangle$.
   * *Dirac Delta Distribution:* $\delta_x(f) = f(x)$ is a linear functional, but it has no representation as an ordinary $L^2$ function; it is a **generalized function (distribution)** residing in the dual space $(C_c^\infty)^*$.
@@ -538,13 +698,13 @@ If such a $v \in L^p$ exists, $v$ is the weak derivative $D^\alpha u$. Sobolev s
 
 ---
 
-## 10. Functions in Scientific Computing & Numerical Algorithms: How Computers Represent Functions
+## 12. Functions in Scientific Computing & Numerical Algorithms: How Computers Represent Functions
 
 A computer is a discrete, finite machine with finite memory and 64-bit IEEE-754 floating-point arithmetic. It cannot store an uncountably infinite mathematical continuum $f: [a, b] \to \mathbb{R}$. 
 
 How does computational science bridge this chasm?
 
-### 10.1 Pointwise Mesh Discretization (The Grid Paradigm)
+### 12.1 Pointwise Mesh Discretization (The Grid Paradigm)
 The simplest representation samples $f$ on a discrete spatial grid:
 
 $$\mathbf{x} = (x_0, x_1, \dots, x_N)^T \implies \mathbf{y} = (f(x_0), f(x_1), \dots, f(x_N))^T \in \mathbb{R}^{N+1}$$
@@ -553,7 +713,7 @@ In Finite Difference Methods (FDM), derivatives are replaced by discrete algebra
 $$f'(x_i) \approx \frac{y_{i+1} - y_{i-1}}{2h}, \qquad f''(x_i) \approx \frac{y_{i+1} - 2y_i + y_{i-1}}{h^2}$$
 While direct and intuitive, grid arrays do not store values between nodes; evaluating $f(x^*)$ for $x^* \notin \{x_i\}$ requires interpolation.
 
-### 10.2 Polynomial Interpolation, Runge's Phenomenon, and Chebyshev Nodes
+### 12.2 Polynomial Interpolation, Runge's Phenomenon, and Chebyshev Nodes
 
 Given $N+1$ points $(x_i, y_i)$, there exists a unique polynomial $P_N(x)$ of degree at most $N$ passing through all points.
 
@@ -579,20 +739,17 @@ Interpolating at Chebyshev nodes eliminates Runge's phenomenon completely, yield
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Runge function
 f_runge = lambda x: 1.0 / (1.0 + 25.0 * x**2)
 x_dense = np.linspace(-1, 1, 600)
 y_true = f_runge(x_dense)
 
 N = 11  # Degree 10 polynomial
 
-# 1. Equidistant nodes
 x_eq = np.linspace(-1, 1, N)
 y_eq = f_runge(x_eq)
 poly_eq = np.polyfit(x_eq, y_eq, N - 1)
 y_poly_eq = np.polyval(poly_eq, x_dense)
 
-# 2. Chebyshev nodes
 k = np.arange(1, N + 1)
 x_cheb = np.cos((2 * k - 1) / (2 * N) * np.pi)
 y_cheb = f_runge(x_cheb)
@@ -623,12 +780,12 @@ plt.tight_layout()
 plt.show()
 ```
 
-### 10.3 Piecewise Splines and CAD Geometry
+### 12.3 Piecewise Splines and CAD Geometry
 Rather than using a single global high-degree polynomial, engineering algorithms use **piecewise cubic splines**:
 $$S_i(x) = a_i + b_i(x - x_i) + c_i(x - x_i)^2 + d_i(x - x_i)^3, \quad x \in [x_i, x_{i+1}]$$
 enforcing $C^2$ continuity (continuous position, first derivative, and second derivative/curvature across knots). In computer graphics and CAD, **B-splines** and **Non-Uniform Rational B-Splines (NURBS)** represent complex 3D aerodynamic surfaces and automotive hulls.
 
-### 10.4 Spectral & Coefficient Expansions (The Chebfun Paradigm)
+### 12.4 Spectral & Coefficient Expansions (The Chebfun Paradigm)
 In spectral methods, a computer represents a function $f(x)$ not by its spatial values, but by a finite vector of coefficients $\mathbf{c} = (c_0, c_1, \dots, c_N)^T$ in an orthogonal basis:
 
 $$f(x) \approx \sum_{k=0}^N c_k \phi_k(x) \tag{15}$$
@@ -637,7 +794,7 @@ $$f(x) \approx \sum_{k=0}^N c_k \phi_k(x) \tag{15}$$
 * **Chebyshev Expansions:** $\phi_k(x) = T_k(x) = \cos(k \arccos x)$.
 * **The Chebfun Paradigm (Trefethen, Oxford):** An open-source mathematical computing system that performs arithmetic, root-finding, integration, and differential equation solving on functions with machine precision ($\approx 10^{-16}$) by dynamically truncating Chebyshev series!
 
-### 10.5 Procedural Code: Callables, Closures, and Function Pointers
+### 12.5 Procedural Code: Callables, Closures, and Function Pointers
 In computer programming languages:
 * **Function Pointers / Lambdas:** In C/C++, a function is an executable memory address `double (*f)(double)`.
 * **Closures (Callables with State):** In Python or JavaScript, closures bundle the function logic with captured lexical environment variables:
@@ -647,14 +804,14 @@ In computer programming languages:
   ```
 * **Hardware Evaluation of Transcendental Functions:** Silicon FPUs do not compute infinite series. Functions like $\sin(x)$ and $\exp(x)$ are evaluated in hardware using **minimax Padé rational approximants** (Remez exchange algorithm) combined with **CORDIC** (Coordinate Rotation Digital Computer) shift-and-add hardware registers.
 
-### 10.6 Computational Graphs and Automatic Differentiation (Autodiff)
+### 12.6 Computational Graphs and Automatic Differentiation (Autodiff)
 In modern deep learning and scientific machine learning (PyTorch, JAX), functions are compiled into **Directed Acyclic Graphs (DAGs)** of elementary mathematical operations.
 
 Unlike numerical finite differences (which suffer from truncation and roundoff errors) or symbolic differentiation (which suffers from exponential algebraic expression swell), **Automatic Differentiation (Autodiff)** applies the chain rule algorithmically to the computational graph:
 * **Forward-Mode Autodiff:** Propagates directional derivatives using dual numbers ($a + b\epsilon, \epsilon^2 = 0$). Ideal for functions with few inputs and many outputs ($f: \mathbb{R} \to \mathbb{R}^m$).
 * **Reverse-Mode Autodiff (Backpropagation):** Computes the gradient of a scalar loss with respect to millions of parameters in a single backward pass ($\nabla_\theta L$, $f: \mathbb{R}^n \to \mathbb{R}$).
 
-### 10.7 Neural Function Approximators and Neural Operators
+### 12.7 Neural Function Approximators and Neural Operators
 * **The Universal Approximation Theorem (Cybenko 1989, Hornik 1991):** Proves that a feedforward neural network with a single hidden layer and non-linear activation $\sigma$ can approximate any continuous function $f \in C(K)$ on a compact domain to arbitrary precision $\epsilon > 0$:
   $$f_\theta(x) = \sum_{i=1}^M w_i \sigma(\mathbf{v}_i \cdot \mathbf{x} + b_i)$$
 * **Implicit Neural Representations (INRs / NeRFs):** Continuous coordinate networks where continuous images, 3D scenes, or physical fields are parameterized as weights $\theta$ of a multi-layer perceptron.
@@ -662,7 +819,7 @@ Unlike numerical finite differences (which suffer from truncation and roundoff e
 
 ---
 
-## 11. Cross-Disciplinary Connections
+## 13. Cross-Disciplinary Connections
 
 * For the linear algebraic application of morphisms as linear maps, coordinate isomorphisms, and rank-nullity projections, see:
   * [Algebraic Foundations: Fields, Rings, Coordinate Isomorphisms, and Rank-Nullity](../algebraic-structures-coordinate-mappings-rank-nullity/index.qmd)
