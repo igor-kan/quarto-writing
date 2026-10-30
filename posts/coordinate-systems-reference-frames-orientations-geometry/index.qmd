@@ -1,0 +1,393 @@
+---
+title: "Geometric Foundations: Coordinate Systems, Reference Frames, Orientations, Planes, and Projections"
+subtitle: "From affine spaces and vector bases to hyperplanes, orthogonal projections, rotation matrices in SO(3), active vs. passive transformations, and observer kinematics."
+description: "A comprehensive, first-principles guide to the geometric architecture of space: the distinction between affine and vector spaces, point-normal and parametric equations of planes, linear and orthogonal projection operators, curvilinear coordinate systems, active versus passive rotations, and moving reference frames."
+author: "Igor Kan"
+date: "2026-10-30"
+categories: [Preprints, Mathematics, Geometry, Linear Algebra, Classical Mechanics, Physics]
+draft: false
+format:
+  html:
+    toc: true
+    toc-depth: 3
+---
+
+::: {.callout-note}
+### Preprint / Foundational Mathematical Monograph
+This monograph develops the geometric and linear-algebraic foundations of spatial modeling. Designed to be accessible from first principles, it clarifies the subtle boundaries between abstract spaces, physical coordinates, and moving observers: distinguishing points from displacement vectors, formulating the geometry of planes and orthogonal projection operators, exploring active versus passive rotations in $\mathrm{SO}(3)$, and analyzing the kinematics of rotating reference frames.
+:::
+
+---
+
+## 1. Introduction: Disentangling Geometry, Numbers, and Observers
+
+In elementary science and engineering, terms like **space**, **coordinate system**, and **frame of reference** are frequently conflated as mere synonyms for a grid of numbers drawn on a page. 
+
+However, in physics and mathematics, these concepts belong to distinctly different levels of abstraction:
+1. **The Space ($\mathbb{A}^n$ or $\mathbb{E}^n$):** The geometric stage itself. A physical room exists whether or not anyone chooses to draw axes across the floor.
+2. **The Plane or Subspace ($\mathcal{P}$):** A flat two-dimensional geometric object living inside that space, characterized by normal vectors and linear constraints.
+3. **The Projection Operator ($\mathbf{P}$):** The geometric action of collapsing higher-dimensional points onto lower-dimensional flats (casting shadows).
+4. **The Coordinate System ($\phi$):** An artificial linguistic tool—a dictionary that translates geometric points into tuples of numbers (addresses).
+5. **The Orientation and Reference Frame ($\mathbf{R}(t)$):** An actual physical observer equipped with a clock and an orientation (a set of directional rulers), who may be moving, accelerating, or rotating relative to the space.
+
+Failing to distinguish these concepts causes deep confusion—such as confusing an artificial coordinate singularity (like the North Pole on a latitude-longitude map) with a physical tear in space, or mistaking a fictitious inertia force for a real physical interaction.
+
+---
+
+## 2. The Hierarchy of Spaces: Points vs. Vectors
+
+Before drawing coordinate axes, what kind of space do we live in?
+
+### 2.1 The Affine Space: Positions Are Not Vectors
+In elementary physics, instructors often say "the position vector $\mathbf{r}$ of a particle." In rigorous mathematics, **positions are points, not vectors**:
+* An **Affine Space** $\mathbb{A}^n$ is a collection of points with **no privileged origin**. All locations in empty space are created equal; the universe has no golden center $(0, 0, 0)$ marked by nature.
+* A **Vector Space** $V$, by contrast, requires an absolute zero vector $\mathbf{0}$. Vectors represent **displacements** (movements from one place to another), not places.
+
+#### The Grammar of Affine Arithmetic:
+1. **Subtracting two points yields a vector:**
+   $$Q - P = \mathbf{v} \in V$$
+   The displacement from Toronto to Montreal is a vector (distance and direction).
+2. **Adding a vector to a point yields a new point:**
+   $$P + \mathbf{v} = Q \in \mathbb{A}^n$$
+   Starting at Toronto and driving along the displacement vector brings you to Montreal.
+3. **Adding two points is mathematically meaningless:**
+   $$P + Q = \text{Undefined!}$$
+   What does "Toronto $+$ Montreal" mean? It has no physical or mathematical sense.
+4. **Affine combinations (weighted averages) are meaningful:**
+   $$(1 - t)P + tQ \in \mathbb{A}^n \quad (t \in [0, 1])$$
+   This traces the straight line segment connecting point $P$ to point $Q$.
+
+### 2.2 From Affine Space to Euclidean Space
+To turn an affine space into familiar **Euclidean space** $\mathbb{E}^n$, we equip its associated vector displacement space $V$ with an **inner product** (the dot product $\mathbf{u} \cdot \mathbf{v}$):
+* **Length / Norm:** $\|\mathbf{v}\| = \sqrt{\mathbf{v} \cdot \mathbf{v}}$.
+* **Distance:** $d(P, Q) = \|Q - P\|$.
+* **Angle:** $\cos\theta = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\| \|\mathbf{v}\|}$.
+
+Only after we arbitrarily select an anchor point $O \in \mathbb{A}^n$ as our **origin** does every point $P$ inherit a unique "position vector" $\mathbf{r}_P = P - O$.
+
+---
+
+## 3. Planes and Hyperplanes in 3D Space
+
+A plane is a flat, two-dimensional affine subspace living inside three-dimensional space $\mathbb{R}^3$.
+
+### 3.1 The Point-Normal Form
+The cleanest, most powerful way to define a plane does not use $x, y, z$ coordinates; it uses geometry:
+1. A known base point $\mathbf{p}_0$ on the plane.
+2. A non-zero **normal vector** $\mathbf{n} = (a, b, c)$ perpendicular to the plane.
+
+A variable point $\mathbf{r} = (x, y, z)$ lies on the plane if and only if the displacement vector $\mathbf{r} - \mathbf{p}_0$ is perpendicular to $\mathbf{n}$:
+
+$$\mathbf{n} \cdot (\mathbf{r} - \mathbf{p}_0) = 0 \tag{1}$$
+
+Expanding the dot product in components:
+
+$$a(x - x_0) + b(y - y_0) + c(z - z_0) = 0 \implies ax + by + cz = d \tag{2}$$
+
+where $d = \mathbf{n} \cdot \mathbf{p}_0 = ax_0 + by_0 + cz_0$.
+
+> **Physical Significance:**  
+> The coefficients $(a, b, c)$ in the Cartesian equation $ax + by + cz = d$ are literally the direction numbers of the stick sticking perpendicular out of the plane!
+
+### 3.2 The Parametric Form (Two Direction Vectors)
+Alternatively, a plane can be generated by starting at point $\mathbf{p}_0$ and sweeping out all linear combinations of two non-parallel direction vectors $\mathbf{u}$ and $\mathbf{v}$ parallel to the surface:
+
+$$\mathbf{r}(s, t) = \mathbf{p}_0 + s\mathbf{u} + t\mathbf{v}, \qquad (s, t \in \mathbb{R}) \tag{3}$$
+
+The normal vector is recovered instantly via the cross product:
+
+$$\mathbf{n} = \mathbf{u} \times \mathbf{v} \tag{4}$$
+
+### 3.3 Distance from an Arbitrary Point to a Plane
+Given an arbitrary point $Q = (x_1, y_1, z_1)$ outside the plane, the perpendicular distance $D$ from $Q$ to the plane is the scalar projection of the displacement $Q - \mathbf{p}_0$ onto the unit normal vector $\mathbf{\hat{n}} = \frac{\mathbf{n}}{\|\mathbf{n}\|}$:
+
+$$D = |(Q - \mathbf{p}_0) \cdot \mathbf{\hat{n}}| = \frac{|a x_1 + b y_1 + c z_1 - d|}{\sqrt{a^2 + b^2 + c^2}} \tag{5}$$
+
+---
+
+## 4. Projections: Casting Geometric Shadows
+
+A projection is an idempotent geometric operation that maps points or vectors from a higher-dimensional space into a lower-dimensional subspace.
+
+### 4.1 Orthogonal Projection of a Vector onto a Line
+Given an arbitrary vector $\mathbf{a}$ and a directional axis defined by non-zero vector $\mathbf{b}$:
+* The component of $\mathbf{a}$ parallel to $\mathbf{b}$ is its **orthogonal projection**:
+  $$\operatorname{proj}_{\mathbf{b}}(\mathbf{a}) = \mathbf{a}_\parallel = \left( \frac{\mathbf{a} \cdot \mathbf{b}}{\|\mathbf{b}\|^2} \right) \mathbf{b} \tag{6}$$
+* The component of $\mathbf{a}$ perpendicular to $\mathbf{b}$ is the **orthogonal rejection**:
+  $$\mathbf{a}_\perp = \mathbf{a} - \mathbf{a}_\parallel = \mathbf{a} - \left( \frac{\mathbf{a} \cdot \mathbf{b}}{\|\mathbf{b}\|^2} \right) \mathbf{b} \tag{7}$$
+
+By construction, $\mathbf{a}_\parallel \cdot \mathbf{a}_\perp = 0$, forming a right triangle where $\|\mathbf{a}\|^2 = \|\mathbf{a}_\parallel\|^2 + \|\mathbf{a}_\perp\|^2$ (the Pythagorean Theorem).
+
+### 4.2 Orthogonal Projection onto a Plane
+If a plane passes through the origin with unit normal $\mathbf{\hat{n}}$, any vector $\mathbf{v}$ can be decomposed into a part perpendicular to the plane and a part lying inside the plane:
+
+$$\mathbf{v}_\perp = (\mathbf{v} \cdot \mathbf{\hat{n}})\mathbf{\hat{n}}$$
+
+$$\mathbf{v}_\parallel = \mathbf{v} - \mathbf{v}_\perp = \mathbf{v} - (\mathbf{v} \cdot \mathbf{\hat{n}})\mathbf{\hat{n}} \tag{8}$$
+
+In matrix operator form, using the outer product dyad $\mathbf{\hat{n}}\mathbf{\hat{n}}^T$:
+
+$$\mathbf{v}_\parallel = (\mathbf{I} - \mathbf{\hat{n}}\mathbf{\hat{n}}^T) \mathbf{v} = \mathbf{P}_{\text{plane}} \mathbf{v} \tag{9}$$
+
+### 4.3 General Subspace Projection Matrix
+Let subspace $\mathcal{S} \subset \mathbb{R}^n$ be spanned by the linearly independent columns of matrix $\mathbf{A} \in \mathbb{R}^{n \times k}$. The orthogonal projection matrix that projects any vector in $\mathbb{R}^n$ onto $\mathcal{S}$ is:
+
+$$\mathbf{P} = \mathbf{A}(\mathbf{A}^T \mathbf{A})^{-1} \mathbf{A}^T \tag{10}$$
+
+#### The Two Universal Axioms of Orthogonal Projections:
+1. **Idempotence (Projecting Twice Changes Nothing):**
+   $$\mathbf{P}^2 = \mathbf{P}$$
+   Once a vector's shadow hits the floor, projecting the shadow again leaves it unchanged.
+2. **Symmetry (Self-Adjointness):**
+   $$\mathbf{P}^T = \mathbf{P}$$
+   Ensures that the error vector $\mathbf{e} = (\mathbf{I} - \mathbf{P})\mathbf{x}$ is strictly orthogonal to the subspace.
+
+```{python}
+#| label: fig-plane-projection-3d
+#| fig-cap: "3D Visualization of Orthogonal Projection onto a Plane. The plane (cyan) has unit normal vector n (red). An arbitrary vector v (blue) is projected orthogonally onto the plane, yielding v_parallel (green). The perpendicular drop line v_perp (purple dashed) is strictly parallel to n."
+#| code-fold: true
+#| code-summary: "Show Python code generating the 3D Projection Plot"
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+fig = plt.figure(figsize=(8.5, 5.5), dpi=180)
+ax = fig.add_subplot(1, 1, 1, projection='3d')
+
+# Plane: 2x + y + 2z = 0 (Normal n = [2, 1, 2])
+n = np.array([2.0, 1.0, 2.0])
+n_unit = n / np.linalg.norm(n)
+
+# Surface mesh
+xx, yy = np.meshgrid(np.linspace(-2.2, 2.2, 25), np.linspace(-2.2, 2.2, 25))
+zz = (-n[0]*xx - n[1]*yy) / n[2]
+
+ax.plot_surface(xx, yy, zz, alpha=0.30, color='#38bdf8', edgecolor='none')
+
+# Arbitrary vector v
+v = np.array([1.5, 2.2, 2.8])
+
+# Projection calculations
+v_perp = np.dot(v, n_unit) * n_unit
+v_proj = v - v_perp
+
+# Plot vectors as 3D quivers
+ax.quiver(0, 0, 0, n_unit[0]*1.8, n_unit[1]*1.8, n_unit[2]*1.8, 
+          color='#dc2626', lw=2.4, arrow_length_ratio=0.15, label=r'Normal Vector $\mathbf{\hat{n}}$')
+ax.quiver(0, 0, 0, v[0], v[1], v[2], 
+          color='#2563eb', lw=2.6, arrow_length_ratio=0.12, label=r'Original Vector $\mathbf{v}$')
+ax.quiver(0, 0, 0, v_proj[0], v_proj[1], v_proj[2], 
+          color='#059669', lw=2.6, arrow_length_ratio=0.12, label=r'Projected Vector $\mathbf{v}_\parallel$')
+
+# Dashed orthogonal error line
+ax.plot([v[0], v_proj[0]], [v[1], v_proj[1]], [v[2], v_proj[2]], 
+        color='#7c3aed', linestyle='--', lw=2.0, label=r'Normal Component $\mathbf{v}_\perp$')
+
+ax.set_title("Orthogonal Projection of a Vector onto a Plane in 3D", fontsize=11, fontweight='bold', pad=12)
+ax.set_xlabel("X Axis", fontsize=9.5)
+ax.set_ylabel("Y Axis", fontsize=9.5)
+ax.set_zlabel("Z Axis", fontsize=9.5)
+ax.set_xlim(-2.5, 2.5)
+ax.set_ylim(-2.5, 2.5)
+ax.set_zlim(-2.5, 3.2)
+ax.legend(frameon=True, fontsize=8.8, loc='upper left')
+
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## 5. Coordinate Systems: How We Map Reality
+
+A **coordinate system** is a smooth, invertible mathematical function (a **chart** $\phi$) that maps open patches of physical space into tuples of real numbers in $\mathbb{R}^n$.
+
+### 5.1 Canonical 3D Systems
+Different coordinate grids are chosen to mirror the natural physical symmetry of a problem:
+
+| Coordinate System | Coordinates | Coordinate Transformations | Position Vector $\mathbf{r}$ |
+| :--- | :--- | :--- | :--- |
+| **Cartesian** | $(x, y, z)$ | $x, y, z \in (-\infty, \infty)$ | $x\mathbf{e}_x + y\mathbf{e}_y + z\mathbf{e}_z$ |
+| **Cylindrical** | $(\rho, \phi, z)$ | $x = \rho\cos\phi,\; y = \rho\sin\phi,\; z = z$ | $\rho\mathbf{e}_\rho + z\mathbf{e}_z$ |
+| **Spherical** | $(r, \theta, \phi)$ | $x = r\sin\theta\cos\phi,\; y = r\sin\theta\sin\phi,\; z = r\cos\theta$ | $r\mathbf{e}_r$ |
+
+### 5.2 Moving Basis Vectors in Curvilinear Systems
+In Cartesian space, the basis vectors $\mathbf{e}_x, \mathbf{e}_y, \mathbf{e}_z$ are constant everywhere. 
+
+In curvilinear systems (like polar or spherical coordinates), the basis vectors **depend on position**:
+* At the equator ($	heta = \pi/2, \phi = 0$), the radial unit vector $\mathbf{e}_r$ points along the $+X$ axis.
+* At the North Pole ($	heta = 0$), $\mathbf{e}_r$ points along $+Z$.
+
+When differentiating vectors in curvilinear coordinates, one must differentiate both the scalar components and the moving basis vectors:
+
+$$\frac{d\mathbf{r}}{dt} = \frac{d}{dt}(r\mathbf{e}_r) = \dot{r}\mathbf{e}_r + r\dot{\mathbf{e}}_r = \dot{r}\mathbf{e}_r + r\dot{\theta}\mathbf{e}_\theta + r\dot{\phi}\sin\theta\mathbf{e}_\phi \tag{11}$$
+
+This position-dependence of basis vectors is what produces centrifugal and Coriolis kinematic acceleration terms in polar calculus!
+
+---
+
+## 6. Orientations, Rotations, and the Special Orthogonal Group $\mathrm{SO}(3)$
+
+What is a rotation? Mathematically, a rotation is an orientation-preserving isometric linear transformation:
+* It leaves the origin fixed.
+* It preserves lengths: $\|\mathbf{R}\mathbf{v}\| = \|\mathbf{v}\|$.
+* It preserves dot products and angles: $(\mathbf{R}\mathbf{u}) \cdot (\mathbf{R}\mathbf{v}) = \mathbf{u} \cdot \mathbf{v}$.
+* It preserves handedness (orientation): $\det(\mathbf{R}) = +1$ (reflections have $\det = -1$).
+
+The set of all such $3 \times 3$ matrices forms the **Special Orthogonal Group** $\mathrm{SO}(3)$, satisfying:
+
+$$\mathbf{R}^T \mathbf{R} = \mathbf{I}, \qquad \det(\mathbf{R}) = +1 \tag{12}$$
+
+### 6.1 Euler's Rotation Theorem
+> **Euler's Theorem (1776):**  
+> Every arbitrary rotation $\mathbf{R} \in \mathrm{SO}(3)$ of a three-dimensional body fixes a unique one-dimensional line passing through the origin. That line is the **axis of rotation**.
+
+Any 3D rotation can be parameterized by an axis unit vector $\mathbf{\hat{u}}$ and a rotation angle $\theta$ around that axis (Rodrigues' Rotation Formula):
+
+$$\mathbf{R}(\mathbf{\hat{u}}, \theta) = \mathbf{I} + (\sin\theta) \mathbf{K} + (1 - \cos\theta) \mathbf{K}^2 \tag{13}$$
+
+where $\mathbf{K}$ is the skew-symmetric cross-product matrix of $\mathbf{\hat{u}}$.
+
+### 6.2 Active vs. Passive Transformations (Alibi vs. Alias)
+One of the most frequent sources of sign errors in physics is confusing active and passive rotations:
+
+1. **Active Rotation (Alibi — "Elsewhere"):**  
+   The coordinate axes remain stationary, while the physical object or vector is rotated to a new physical location:
+   $$\mathbf{v}' = \mathbf{R} \mathbf{v}$$
+2. **Passive Rotation (Alias — "By another name"):**  
+   The physical object remains completely stationary in space, but the observer rotates their coordinate measuring axes:
+   $$\mathbf{v}'_{\text{coords}} = \mathbf{R}^T \mathbf{v}_{\text{coords}} = \mathbf{R}^{-1} \mathbf{v}_{\text{coords}}$$
+
+> **Rule of Thumb:**  
+> Rotating an object counterclockwise by $+45^\circ$ relative to fixed axes produces the exact same coordinate numbers as leaving the object stationary and rotating your coordinate axes clockwise by $-45^\circ$!
+
+```{python}
+#| label: fig-active-passive-rotation
+#| fig-cap: "Active vs. Passive Rotation. Left: Active rotation turns a physical vector v (blue) into v' (orange) by +45 degrees while coordinate axes remain fixed. Right: Passive rotation keeps the physical vector stationary while rotating the coordinate axes by +45 degrees (gold), changing the vector's coordinate components."
+#| code-fold: true
+#| code-summary: "Show Python code generating the Active vs Passive Diagram"
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4.8), dpi=180)
+
+theta = np.radians(45)
+R_act = np.array([[np.cos(theta), -np.sin(theta)],
+                  [np.sin(theta),  np.cos(theta)]])
+
+v = np.array([2.0, 0.5])
+v_rot = R_act @ v
+
+# --- Panel 1: Active Rotation ---
+ax1.axhline(0, color='gray', linestyle=':', lw=1.2)
+ax1.axvline(0, color='gray', linestyle=':', lw=1.2)
+
+ax1.quiver(0, 0, v[0], v[1], angles='xy', scale_units='xy', scale=1, 
+           color='#2563eb', lw=2.5, label=r'Original Vector $\mathbf{v}$')
+ax1.quiver(0, 0, v_rot[0], v_rot[1], angles='xy', scale_units='xy', scale=1, 
+           color='#dc2626', lw=2.5, label=r'Active Rotated $\mathbf{v}^\prime = \mathbf{R}\mathbf{v}$')
+
+arc_angles = np.linspace(np.arctan2(v[1], v[0]), np.arctan2(v_rot[1], v_rot[0]), 30)
+ax1.plot(1.2 * np.cos(arc_angles), 1.2 * np.sin(arc_angles), color='#7c3aed', lw=1.8, linestyle='--')
+ax1.text(1.35 * np.cos(arc_angles[15]), 1.35 * np.sin(arc_angles[15]), r'$+45^\circ$', color='#7c3aed', fontweight='bold')
+
+ax1.set_xlim(-1.5, 2.8)
+ax1.set_ylim(-0.5, 2.5)
+ax1.set_aspect('equal')
+ax1.set_title("Active Rotation (Object Turns in Fixed Space)", fontsize=10.5, fontweight='bold')
+ax1.legend(frameon=True, fontsize=8.5, loc='upper left')
+ax1.grid(True, linestyle='--', alpha=0.4)
+
+# --- Panel 2: Passive Rotation ---
+ax2.axhline(0, color='gray', linestyle=':', lw=1.2, label='Old Frame ($X, Y$)')
+ax2.axvline(0, color='gray', linestyle=':', lw=1.2)
+
+# Rotated axes
+axis_x = R_act @ np.array([2.5, 0])
+axis_y = R_act @ np.array([0, 2.5])
+ax2.plot([-axis_x[0], axis_x[0]], [-axis_x[1], axis_x[1]], color='#d97706', lw=1.8, linestyle='--', label=r'Rotated Frame ($X^\prime, Y^\prime$)')
+ax2.plot([-axis_y[0], axis_y[0]], [-axis_y[1], axis_y[1]], color='#d97706', lw=1.8, linestyle='--')
+
+ax2.quiver(0, 0, v[0], v[1], angles='xy', scale_units='xy', scale=1, 
+           color='#2563eb', lw=2.8, label=r'Fixed Physical Vector $\mathbf{v}$')
+
+ax2.set_xlim(-1.5, 2.8)
+ax2.set_ylim(-0.5, 2.5)
+ax2.set_aspect('equal')
+ax2.set_title(r"Passive Rotation (Axes Turn by $+45^\circ$)", fontsize=10.5, fontweight='bold')
+ax2.legend(frameon=True, fontsize=8.5, loc='upper left')
+ax2.grid(True, linestyle='--', alpha=0.4)
+
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## 7. Reference Frames and Moving Observers
+
+What distinguishes a coordinate system from a **reference frame**?
+* A **coordinate system** is a mathematical choice of grid (Cartesian, polar, spherical).
+* A **reference frame** is a physical observer equipped with a clock, a state of motion (velocity $\mathbf{v}$, acceleration $\mathbf{a}$), and an orientation triad.
+
+You can use spherical coordinates inside a moving train, or Cartesian coordinates on a spinning merry-go-round.
+
+### 7.1 Inertial vs. Non-Inertial Reference Frames
+1. **Inertial Reference Frame:** A frame in which Newton's First Law holds true without external modifications: free bodies move in straight lines at constant velocity. Any two inertial frames are related by a **Galilean transformation**:
+   $$\mathbf{r}' = \mathbf{r} - \mathbf{v}_0 t - \mathbf{r}_0, \qquad t' = t$$
+2. **Non-Inertial (Accelerating / Rotating) Frame:** An observer undergoing acceleration or rotation. In such frames, Newton's Second Law fails unless we introduce **apparent (fictitious) d'Alembert forces**.
+
+### 7.2 The Transport Theorem and Fictitious Forces
+Let frame $\mathcal{S}$ be inertial and frame $\mathcal{S}'$ rotate with instantaneous angular velocity vector $\boldsymbol{\omega}(t)$.
+
+For any arbitrary physical vector $\mathbf{A}(t)$, its time derivative in the inertial frame is related to its time derivative observed in the rotating frame by the fundamental **Transport Theorem**:
+
+$$\left(\frac{d\mathbf{A}}{dt}\right)_{\text{inertial}} = \left(\frac{d\mathbf{A}}{dt}\right)_{\text{rotating}} + \boldsymbol{\omega} \times \mathbf{A} \tag{14}$$
+
+Applying this twice to position vector $\mathbf{r}(t)$ yields the acceleration observed by a rotating observer:
+
+$$\mathbf{a}_{\text{inertial}} = \mathbf{a}_{\text{rot}} + 2(\boldsymbol{\omega} \times \mathbf{v}_{\text{rot}}) + \boldsymbol{\omega} \times (\boldsymbol{\omega} \times \mathbf{r}) + \dot{\boldsymbol{\omega}} \times \mathbf{r} \tag{15}$$
+
+Multiplying by mass $m$ and rearranging:
+
+$$m\mathbf{a}_{\text{rot}} = \mathbf{F}_{\text{real}} + \mathbf{F}_{\text{Coriolis}} + \mathbf{F}_{\text{Centrifugal}} + \mathbf{F}_{\text{Euler}} \tag{16}$$
+
+where the fictitious forces are:
+* **Centrifugal Force:** $\mathbf{F}_{\text{cent}} = -m \boldsymbol{\omega} \times (\boldsymbol{\omega} \times \mathbf{r})$ (directed radially outward).
+* **Coriolis Force:** $\mathbf{F}_{\text{cor}} = -2m (\boldsymbol{\omega} \times \mathbf{v}_{\text{rot}})$ (acts perpendicular to velocity, curving cyclones on Earth).
+* **Euler Force:** $\mathbf{F}_{\text{euler}} = -m (\dot{\boldsymbol{\omega}} \times \mathbf{r})$ (arises only when angular rotation rate changes).
+
+---
+
+## 8. Summary & Concept Synthesis Matrix
+
+The relationships between geometric structures, equations, and physical applications are summarized in @tbl-geometric-foundations-matrix.
+
+| Concept | Mathematical Structure | Defining Equation | Key Physical / Computational Application |
+| :--- | :--- | :--- | :--- |
+| **Affine Space** | Points + Vector action | $(P - O) + \mathbf{v} = Q$ | Positions in spacetime without privileged origin |
+| **Plane in 3D** | 2D flat affine subspace | $\mathbf{n} \cdot (\mathbf{r} - \mathbf{p}_0) = 0$ | Boundaries, fault rupture surfaces, mirrors |
+| **Vector Projection** | Idempotent projection $\mathbf{P}^2 = \mathbf{P}$ | $\mathbf{a}_\parallel = \frac{\mathbf{a}\cdot\mathbf{b}}{\|\mathbf{b}\|^2}\mathbf{b}$ | Least squares, Gram-Schmidt orthogonalization |
+| **Curvilinear Grid** | Coordinate chart $\phi: U \to \mathbb{R}^n$ | $\mathbf{r} = \mathbf{r}(u_1, u_2, u_3)$ | Separating PDEs with spherical/cylindrical symmetry |
+| **Rotation Matrix** | Lie group $\mathrm{SO}(3)$ | $\mathbf{R}^T\mathbf{R} = \mathbf{I}, \; \det(\mathbf{R}) = 1$ | Rigid body kinematics, robotics, 3D computer graphics |
+| **Rotating Frame** | Non-inertial observer $\boldsymbol{\omega}$ | Transport theorem $\frac{d}{dt} = \frac{d'}{dt} + \boldsymbol{\omega}\times$ | Ocean currents, atmospheric cyclones, seismometry |
+
+: Universal Matrix of Spatial and Geometric Structures {#tbl-geometric-foundations-matrix}
+
+---
+
+## 9. Cross-Disciplinary Connections
+
+* For the complete mathematical theory of functions, domain mappings, and transformations, see:
+  * [The Mathematical Architecture of Functions: Relations, Operations, and Morphisms](../mathematical-functions-relations-operations-morphisms/index.qmd)
+* For vector space isomorphisms and Strang's fundamental subspaces, see:
+  * [Algebraic Foundations: Fields, Rings, Coordinate Isomorphisms, and Rank-Nullity](../algebraic-structures-coordinate-mappings-rank-nullity/index.qmd)
+* For how inertial frames and fictitious forces govern sensor proof masses, see:
+  * [Classical and Analytical Mechanics: The Complete Theory of Harmonic Oscillators](../harmonic-oscillators-damped-driven-coupled-mechanics/index.qmd)
+* For continuous rotation Lie groups and invariant differential equations, see:
+  * [Continuous Lie Transformation Groups: Symmetries, Differential Equations, and Physical Invariants](../continuous-lie-groups-differential-equations-symmetries/index.qmd)
+
+---
+
+© 2026 Igor Kan
