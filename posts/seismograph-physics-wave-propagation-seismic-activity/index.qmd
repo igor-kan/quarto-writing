@@ -1,7 +1,7 @@
 ---
-title: "Geophysical Mechanics: Seismograph Physics, Wave Propagation, and Seismic Activity"
-subtitle: "Inertial pendulums, damped harmonic oscillators, elastodynamics of seismic body and surface waves, fault rupture mechanics, and magnitude scaling."
-description: "A rigorous mathematical and physical exposition of seismology: the mechanics of inertial seismometers as damped driven harmonic oscillators, Navier-Cauchy elastodynamics of P and S body waves, Helmholtz decomposition, surface wave dispersion, fault rupture kinematics, and logarithmic moment magnitude scaling laws."
+title: "Geophysical Mechanics: Seismograph Physics, Wave Propagation, and Deep Earth Imaging"
+subtitle: "Inertial pendulums, dashpot viscous damping, real-world seismic data analysis, instrumental limits, global shadow zones, and core-mantle tomography."
+description: "A comprehensive mathematical and geophysical exposition: the physics of inertial seismometers, fluid dashpot viscosity mechanics, broadband instrumental limits and Peterson noise models, real-world data analysis techniques, and how global seismic wave propagation revealed Earth's layered internal structure from the Moho to the solid inner core."
 author: "Igor Kan"
 date: "2026-10-29"
 categories: [Preprints, Geophysics, Physics, Classical Mechanics, Wave Mechanics, Seismology]
@@ -13,8 +13,8 @@ format:
 ---
 
 ::: {.callout-note}
-### Preprint / Working Draft
-This article is published under the **Preprints** category. It explores the classical mechanics and continuum elastodynamics of seismology: sensor physics, wave mechanics through solid Earth, epicenter triangulation, and fault rupture energetics.
+### Preprint / Foundational Geophysical Monograph
+This monograph explores the classical mechanics, instrumental sensor physics, and continuum elastodynamics of seismology. It details how inertial proof-mass sensors function under base excitation, analyzes fluid dashpot shear mechanics, explores the physical noise limits of seismographs, outlines real-world data analysis techniques (phase picking, receiver functions, focal mechanisms, tomography), and reconstructs how global seismic wavefields image the Earth's layered interior from the crust to the solid inner core.
 :::
 
 ---
@@ -23,13 +23,13 @@ This article is published under the **Preprints** category. It explores the clas
 
 How can an instrument firmly bolted to the Earth measure the movement of the very ground beneath it?
 
-Because every physical object attached to the Earth moves with the ground, an observer cannot measure ground displacement directly against an external fixed reference frame. Seismometry solves this fundamental problem through the physics of **inertia**: suspending a proof mass that resists motion when the instrument frame accelerates.
+Because every physical object attached to the Earth moves with the ground, an observer cannot measure ground displacement directly against an external fixed reference frame. Seismometry solves this fundamental physical challenge through the physics of **inertia**: suspending a proof mass that resists motion when the instrument frame accelerates.
 
-By combining the mechanics of damped driven harmonic oscillators with continuum elastodynamics, seismologists can not only detect earthquakes thousands of kilometers away, but also image the internal layer structure of our planet—including the molten liquid outer core and the solid inner core.
+By combining the mechanics of damped driven harmonic oscillators with continuum elastodynamics, seismologists can not only detect earthquakes thousands of kilometers away, but also image the internal layer structure of our planet—including the crust-mantle boundary (Moho), the mantle transition zone, the molten liquid outer core, and the solid inner core.
 
 ---
 
-## 2. Physics of the Seismometer: Sensor Mechanics
+## 2. Physics of the Seismometer: Sensor Mechanics and Instrumentation
 
 ### 2.1 The Damped Driven Inertial Pendulum
 
@@ -37,7 +37,7 @@ Consider a classic vertical seismometer consisting of:
 1. A rigid instrument housing and frame securely anchored to bedrock, moving with ground displacement $u_g(t)$.
 2. An internal proof mass $m$ suspended by a spring with stiffness $k$ and a viscous dashpot with damping coefficient $c$.
 
-Let $x(t)$ denote the absolute displacement of the proof mass relative to an inertial reference frame, and let:
+Let $x(t)$ denote the absolute displacement of the proof mass relative to an external inertial reference frame, and let:
 
 $$z(t) \equiv x(t) - u_g(t) \tag{1}$$
 
@@ -55,10 +55,150 @@ Dividing by $m$ and introducing the natural frequency $\omega_0 = \sqrt{k/m}$ an
 
 $$\ddot{z}(t) + 2\zeta \omega_0 \dot{z}(t) + \omega_0^2 z(t) = -\ddot{u}_g(t) \tag{4}$$
 
-> **Key Physical Insight:**  
-> The inertial mass is driven **not by ground displacement $u_g(t)$ or velocity $\dot{u}_g(t)$, but strictly by ground acceleration $\ddot{u}_g(t)$**. The minus sign reflects inertial resistance: when the ground accelerates upward, the mass lags behind, compressing the spring.
+> **Fundamental Physical Principle:**  
+> The proof mass inside a seismometer is driven **neither by ground displacement $u_g(t)$ nor by ground velocity $\dot{u}_g(t)$, but strictly by ground acceleration $\ddot{u}_g(t)$**. The term $-m \ddot{u}_g(t)$ is a fictitious d'Alembert inertial force arising from observing the mass within the non-inertial accelerating reference frame of the Earth's surface.
 
-### 2.2 Frequency Response and Operational Regimes
+### 2.2 Programmatic Schematic of the Inertial Seismometer
+
+The physical interaction between the bedrock, instrument frame, suspension spring, fluid dashpot, and displacement transducer is illustrated in @fig-seismometer-schematic.
+
+```{python}
+#| label: fig-seismometer-schematic
+#| fig-cap: 'Mechanical Schematic Architecture of an Inertial Seismometer. The instrument frame is rigidly bolted to bedrock. Ground acceleration $\ddot{u}_g(t)$ induces an inertial reaction force $-m\ddot{u}_g(t)$ on the proof mass $m$, which is suspended by spring $k$ and viscous dashpot $c$. A displacement transducer records the relative displacement $z(t) = x(t) - u_g(t)$.'
+#| code-fold: true
+#| code-summary: "Show Python code generating the Seismometer Schematic Diagram"
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+fig, ax = plt.subplots(figsize=(8.5, 7.2), dpi=180)
+ax.set_xlim(-4, 4)
+ax.set_ylim(-3, 6.5)
+ax.set_aspect('equal')
+ax.axis('off')
+
+# 1. Bedrock base
+bedrock = patches.Rectangle((-3.8, -2.8), 7.6, 1.2, facecolor='#f1f5f9', edgecolor='#475569', lw=2.0, hatch='//')
+ax.add_patch(bedrock)
+ax.text(0, -2.2, "Rigid Bedrock Foundation (Coupled to Ground Motion $u_g(t)$)", 
+        ha='center', va='center', fontsize=10, fontweight='bold', color='#1e293b')
+
+# Bedrock Anchor Bolts
+for bx in [-2.5, 2.5]:
+    ax.plot([bx, bx], [-1.6, -1.3], color='#334155', lw=3)
+    ax.plot([bx-0.2, bx+0.2], [-1.3, -1.3], color='#0f172a', lw=3)
+    ax.text(bx, -1.0, "Anchor Bolt", ha='center', fontsize=8, color='#475569')
+
+# 2. Instrument Housing / Outer Frame
+frame_x = [-3.0, 3.0, 3.0, -3.0, -3.0]
+frame_y = [-1.6, -1.6, 5.5, 5.5, -1.6]
+ax.plot(frame_x, frame_y, color='#1e293b', lw=3.0)
+ax.text(-2.8, 5.8, r"Instrument Housing / Rigid Frame (Accelerates at $\ddot{u}_g$)", fontsize=10, fontweight='bold', color='#0f172a')
+
+# 3. Upper Suspension Ceiling
+ax.plot([-1.5, 1.5], [5.5, 5.5], color='#0f172a', lw=4.0)
+
+# 4. Spring (stiffness k)
+sy_top, sy_bot, sx = 5.5, 2.6, -1.2
+n_coils = 8
+sy_vals = np.linspace(sy_top - 0.4, sy_bot + 0.4, n_coils * 2 + 1)
+sx_vals = [sx]
+for i in range(1, n_coils * 2):
+    dx = 0.28 if i % 2 == 1 else -0.28
+    sx_vals.append(sx + dx)
+sx_vals.append(sx)
+
+ax.plot([sx, sx], [sy_top, sy_top - 0.4], color='#2563eb', lw=2.2)
+ax.plot(sx_vals, sy_vals, color='#2563eb', lw=2.2)
+ax.plot([sx, sx], [sy_bot + 0.4, sy_bot], color='#2563eb', lw=2.2)
+ax.text(sx - 0.5, (sy_top + sy_bot)/2, "Suspension Spring\n(Stiffness $k$)", 
+        ha='right', va='center', fontsize=9.5, fontweight='bold', color='#2563eb')
+
+# 5. Viscous Dashpot Damper
+cx, cy_bot, cy_top, cw = 1.2, -1.6, 0.8, 0.7
+ax.plot([cx - cw/2, cx - cw/2, cx + cw/2, cx + cw/2], [cy_top, cy_bot, cy_bot, cy_top], color='#475569', lw=2.5)
+
+fluid = patches.Rectangle((cx - cw/2 + 0.04, cy_bot + 0.04), cw - 0.08, cy_top - cy_bot - 0.15,
+                          facecolor='#cbd5e1', edgecolor='none', alpha=0.7)
+ax.add_patch(fluid)
+
+py_pos = 0.1
+ax.plot([cx, cx], [1.4, py_pos], color='#b45309', lw=2.8) # Piston rod
+ax.plot([cx - cw/2 + 0.1, cx + cw/2 - 0.1], [py_pos, py_pos], color='#b45309', lw=4.0) # Piston head
+ax.text(cx + 0.55, -0.4, "Viscous Dashpot\nDamper (Coeff $c$)\n$c = \\frac{\\eta A}{d}$", 
+        ha='left', va='center', fontsize=9.5, fontweight='bold', color='#b45309')
+ax.text(cx + 0.55, -1.1, "Fluid Viscosity $\\eta$\nClearance Gap $d$", 
+        ha='left', va='center', fontsize=8.5, color='#64748b')
+
+# 6. Inertial Proof Mass (m)
+mass_rect = patches.FancyBboxPatch((-1.8, 1.4), 3.6, 1.2, boxstyle="round,pad=0.08",
+                                  facecolor='#3b82f6', edgecolor='#1d4ed8', lw=2.5, alpha=0.9)
+ax.add_patch(mass_rect)
+ax.text(0, 2.0, "Inertial Proof Mass ($m$)\nInertial Force: $-m\\ddot{u}_g(t)$", 
+        ha='center', va='center', fontsize=10, fontweight='bold', color='#ffffff')
+
+# 7. Relative Displacement Transducer
+ax.plot([-3.0, -2.2], [2.0, 2.0], color='#059669', lw=2.0, linestyle='--')
+ax.plot([-2.2, -1.8], [2.0, 2.0], color='#059669', lw=2.0)
+transducer = patches.Rectangle((-2.5, 1.7), 0.6, 0.6, facecolor='#d1fae5', edgecolor='#059669', lw=1.8)
+ax.add_patch(transducer)
+ax.text(-2.2, 1.2, "Displacement\nTransducer (LVDT)\nMeasures $z(t) = x - u_g$", 
+        ha='center', va='top', fontsize=8.5, fontweight='bold', color='#065f46')
+
+# 8. Coordinate Arrows
+ax.annotate('', xy=(2.3, 3.2), xytext=(2.3, 2.0),
+            arrowprops=dict(arrowstyle='->', color='#2563eb', lw=2.2))
+ax.text(2.45, 2.6, "Proof Mass\nAbsolute Disp. $x(t)$", fontsize=9, color='#2563eb', fontweight='bold')
+
+ax.annotate('', xy=(-3.4, -0.6), xytext=(-3.4, -2.4),
+            arrowprops=dict(arrowstyle='->', color='#dc2626', lw=3.0))
+ax.text(-3.45, -1.5, "Bedrock Ground\nAcceleration $\\ddot{u}_g(t)$", 
+        ha='right', va='center', fontsize=9.5, fontweight='bold', color='#dc2626')
+
+plt.tight_layout()
+plt.show()
+```
+
+### 2.3 The Fluid Dashpot: Viscosity and Damping Mechanics
+
+How does the dashpot generate the mechanical damping coefficient $c$, and how is $c$ physically related to the fluid's viscosity $\eta$?
+
+In a fluid dashpot, a piston of surface area $A$ moves vertically at velocity $\dot{z}$ inside a stationary fluid-filled cylinder. The narrow annular gap between the piston and the cylinder wall has radial clearance $d \ll R$.
+
+#### 1. Fluid Shear and Couette Flow
+Assuming Newtonian fluid behavior, the fluid layer within the clearance gap undergoes laminar planar shear flow (Couette flow). By Newton's law of viscosity, the shear stress $\tau$ exerted by the viscous fluid on the piston surface is:
+
+$$\tau = \eta \frac{\partial v}{\partial y} \approx \eta \frac{\dot{z}}{d} \tag{5}$$
+
+where:
+* $\eta$ is the dynamic shear viscosity of the damping fluid (measured in $\text{Pa}\cdot\text{s} = \text{kg}/(\text{m}\cdot\text{s})$).
+* $d$ is the clearance gap between the moving piston and the inner cylinder wall.
+* $\dot{z}$ is the relative velocity of the piston with respect to the cylinder.
+
+#### 2. Damping Force and Damping Coefficient $c$
+Integrating the shear stress over the total effective surface area $A$ of the piston:
+
+$$F_{\text{damping}} = -\tau A = -\left( \frac{\eta A}{d} \right) \dot{z} \tag{6}$$
+
+Comparing Equation (6) directly with the linear damping model $F_{\text{damping}} = -c \dot{z}$, we obtain the physical damping coefficient:
+
+$$c = \frac{\eta A}{d} \tag{7}$$
+
+If fluid must also be forced through small bypass orifices in the piston head (Poiseuille pipe flow), the pressure drop $\Delta P$ scales with the Hagen-Poiseuille equation ($\Delta P \propto \frac{\eta L}{r^4} \dot{z}$), which adds an additional term proportional to viscosity $\eta$. In all laminar cases:
+
+$$c \propto \eta$$
+
+#### 3. Limitations of Fluid Dashpots and Modern Alternatives
+While mechanical fluid dashpots were standard in classical seismographs (such as Wiechert and Milne-Shaw instruments), they suffer from significant practical limitations:
+* **Temperature Sensitivity**: The dynamic viscosity of oils drops exponentially with temperature according to the Arrhenius relation $\eta(T) \propto \exp(E_a / RT)$. A shift of just $5^\circ\text{C}$ can alter the damping ratio $\zeta$ by $15\%$, destabilizing instrument calibration.
+* **Fluid Evaporation and Aging**: Over years of deployment, fluid degradation changes the damping characteristics.
+
+**Modern Solutions:**
+1. **Electromagnetic Eddy-Current Damping**: A copper or aluminum vane attached to the proof mass moves through the magnetic field of a permanent magnet. The induced eddy currents dissipate energy resistively via Joule heating ($P = I^2 R$), creating a drag force $F \propto -B^2 \dot{z}$. This yields a completely temperature-stable damping coefficient $c \propto B^2 / \rho_{\text{elec}}$ with no mechanical fluids.
+2. **Force-Balance / Force-Feedback Seismometers**: In modern broadband seismometers (e.g., Streckeisen STS-2, Nanometrics Trillium), the proof mass is kept essentially stationary ($z(t) \approx 0$) by an active electronic feedback loop. A capacitive transducer senses any microscopic displacement ($< 1\text{ nm}$) and feeds an error current into an electromagnetic coil that exerts an equal and opposite Lorentz force on the mass. The recorded seismic output is the feedback current required to hold the mass motionless, providing a flat response over four decades of frequency ($0.008\text{ Hz}$ to $50\text{ Hz}$).
+
+### 2.4 Frequency Response and Operational Regimes
 
 Assuming harmonic ground motion $u_g(t) = U_0 e^{i\omega t}$ (so $\ddot{u}_g = -\omega^2 U_0 e^{i\omega t}$), the steady-state relative displacement is $z(t) = Z_0 e^{i\omega t}$. Substituting into Equation (4):
 
@@ -66,18 +206,18 @@ $$(-\omega^2 + 2i\zeta \omega_0 \omega + \omega_0^2) Z_0 = \omega^2 U_0$$
 
 The complex transfer function relating relative sensor displacement to ground displacement is:
 
-$$H(\omega) = \frac{Z_0(\omega)}{U_0(\omega)} = \frac{\omega^2}{\omega_0^2 - \omega^2 + 2i\zeta \omega_0 \omega} = \frac{\left(\frac{\omega}{\omega_0}\right)^2}{1 - \left(\frac{\omega}{\omega_0}\right)^2 + 2i\zeta \left(\frac{\omega}{\omega_0}\right)} \tag{5}$$
+$$H(\omega) = \frac{Z_0(\omega)}{U_0(\omega)} = \frac{\omega^2}{\omega_0^2 - \omega^2 + 2i\zeta \omega_0 \omega} = \frac{\left(\frac{\omega}{\omega_0}\right)^2}{1 - \left(\frac{\omega}{\omega_0}\right)^2 + 2i\zeta \left(\frac{\omega}{\omega_0}\right)} \tag{8}$$
 
 Defining the normalized frequency ratio $u = \omega / \omega_0$:
 
-$$|H(\omega)| = \frac{u^2}{\sqrt{(1 - u^2)^2 + (2\zeta u)^2}}, \qquad \phi(\omega) = \arctan\left( \frac{2\zeta u}{1 - u^2} \right) \tag{6}$$
+$$|H(\omega)| = \frac{u^2}{\sqrt{(1 - u^2)^2 + (2\zeta u)^2}}, \qquad \phi(\omega) = \arctan\left( \frac{2\zeta u}{1 - u^2} \right) \tag{9}$$
 
-Equation (6) reveals three distinct operational regimes:
+Equation (9) reveals three distinct operational regimes:
 
 1. **Displacement Seismometer ($\omega \gg \omega_0$, $u \gg 1$):**  
-   When ground motion frequency is much higher than the natural frequency, $u^2$ dominates:
+   When the ground motion frequency is much higher than the natural frequency, $u^2$ dominates:
    $$\lim_{u \to \infty} |H(\omega)| = 1 \implies z(t) \approx -u_g(t)$$
-   The proof mass remains stationary in the inertial frame while the ground moves around it. The recorded signal directly tracks **ground displacement**. This requires a very soft spring (long period pendulum, $T_0 > 20\text{ s}$).
+   The proof mass remains stationary in the inertial frame while the ground moves around it. The recorded signal directly tracks **ground displacement**. This requires a very soft suspension (long period pendulum, $T_0 > 20\text{ s}$).
 2. **Velocity Seismometer / Geophone ($\omega \approx \omega_0$):**  
    In moving-coil electromagnetic geophones, the induced voltage $V(t) \propto \dot{z}(t)$ is proportional to **ground velocity** $\dot{u}_g(t)$ over a wide band.
 3. **Accelerometer ($\omega \ll \omega_0$, $u \ll 1$):**  
@@ -85,15 +225,16 @@ Equation (6) reveals three distinct operational regimes:
    $$|H(\omega)| \approx \frac{\omega^2}{\omega_0^2} \implies z(t) \approx -\frac{\ddot{u}_g(t)}{\omega_0^2}$$
    Relative displacement is directly proportional to **ground acceleration**. Accelerometers require a very stiff spring (high natural frequency, $f_0 > 50\text{ Hz}$).
 
-### 2.3 The Optimal Damping Factor ($\zeta = 1/\sqrt{2} \approx 0.707$)
-Why do modern seismometers employ damping ratio $\zeta \approx 0.707$?
-* If underdamped ($\zeta < 0.5$), the system resonates violently near $\omega = \omega_0$, ringing long after the wave passes and corrupting subsequent wave arrivals.
-* If overdamped ($\zeta > 1$), high-frequency sensitivity is heavily attenuated.
-* At critical damping $\zeta = 1/\sqrt{2} \approx 0.707$ (the maximally flat Butterworth response), amplitude response is flat across the broadest frequency band with linear phase distortion.
+### 2.5 The Optimal Damping Factor ($\zeta = 1/\sqrt{2} \approx 0.707$)
+
+Why do seismologists calibrate instruments to damping ratio $\zeta = 1/\sqrt{2} \approx 0.707$?
+* If underdamped ($\zeta < 0.5$), the system resonates violently near $\omega = \omega_0$, ringing long after the seismic wave passes and obscuring subsequent phase arrivals.
+* If overdamped ($\zeta > 1$), high-frequency sensitivity is heavily attenuated, and transient onset times are blurred.
+* At $\zeta = 1/\sqrt{2} \approx 0.707$ (the Butterworth maximally flat response), the amplitude transfer function $|H(\omega)|$ is maximally flat with zero resonant peaking, and the phase response is nearly linear across the passband, preserving waveform fidelity.
 
 ```{python}
 #| label: fig-seismometer-response
-#| fig-cap: "Inertial Seismometer Frequency Response Function. Top: Amplitude ratio |Z/U_g| vs. frequency ratio ω/ω_0 across damping ratios ζ. At high frequencies (ω ≫ ω_0), the instrument operates as a displacement meter; at low frequencies (ω ≪ ω_0), it operates as an accelerometer. Optimal damping ζ = 0.707 (blue) provides the flattest passband."
+#| fig-cap: "Inertial Seismometer Frequency Transfer Function. Top: Amplitude ratio |Z/U_g| vs. frequency ratio omega/omega_0 across damping ratios zeta. At high frequencies, the instrument operates as a displacement meter; at low frequencies, it operates as an accelerometer. Optimal damping zeta = 0.707 (blue) provides the maximally flat passband."
 #| code-fold: true
 #| code-summary: "Show Python code generating the Frequency Response Curves"
 
@@ -139,56 +280,272 @@ plt.show()
 
 ---
 
-## 3. Elastodynamics and Seismic Wave Propagation
+## 3. Practical Seismology: Real-World Data and Analytical Techniques
+
+### 3.1 Multi-Component Recordings: $Z$, $R$, and $T$ Coordinate Rotation
+
+A standard seismic station records ground motion in three orthogonal geographic components: Vertical ($Z$), North-South ($N$), and East-West ($E$).
+
+However, seismic wave propagation is polarized relative to the great-circle path connecting the earthquake epicenter to the receiver. Seismologists rotate the horizontal components through the back-azimuth angle $\theta$ (the geographic direction from station to epicenter) into **Radial ($R$)** and **Transverse ($T$)** components:
+
+$$\begin{bmatrix} R(t) \\ T(t) \end{bmatrix} = \begin{bmatrix} \cos\theta & \sin\theta \\ -\sin\theta & \cos\theta \end{bmatrix} \begin{bmatrix} N(t) \\ E(t) \end{bmatrix} \tag{10}$$
+
+#### Physical Meaning of the Rotated Components:
+* **Vertical ($Z$)**: Captures purely longitudinal $P$-waves and vertically polarized retrograde elliptical Rayleigh waves.
+* **Radial ($R$)**: Aligned directly along the wave propagation direction. Contains the horizontal components of $P$-waves, $SV$-waves, and Rayleigh waves.
+* **Transverse ($T$)**: Perpendicular to the propagation direction. **Completely isolates horizontally polarized shear waves ($SH$) and Love waves!** Pure $P$-waves and Rayleigh waves produce zero motion on the transverse component.
+
+### 3.2 Real-World Analytical Techniques in Modern Seismology
+
+How do geologists and seismologists extract physical meaning from raw seismograms? Modern seismic analysis employs six core methodologies:
+
+#### 1. Phase Picking and Travel-Time Inversion
+Seismologists identify the onset arrival times of distinct wave phases ($P$, $S$, $PP$, $SS$, $PKIKP$). Using global travel-time reference models (such as IASP91 or AK135), the observed travel times constrain the earthquake origin time $t_0$ and hypocentral coordinates $(x_0, y_0, z_0)$.
+* **Wadati Diagram**: Plotting $t_S - t_P$ against $t_P$ yields a straight line with slope $(v_P/v_S - 1)$. The x-intercept gives the exact origin time $t_0$ directly, without requiring any prior knowledge of hypocenter depth or crustal velocity!
+* **Geiger's Method**: Solves the overdetermined non-linear system of travel-time residuals across a global network using iteratively reweighted Gauss-Newton least squares.
+
+#### 2. Fourier Spectral Analysis and Spectrograms
+Seismic signals span frequencies from $0.001\text{ Hz}$ (Earth free oscillations following $M_w > 8$ quakes) to $100\text{ Hz}$ (local micro-earthquakes). Computing short-time Fourier transforms (STFT) or continuous wavelet transforms reveals:
+* High-frequency impulsive onsets ($>3\text{ Hz}$) characteristic of compressional body waves.
+* Dispersion curves of surface waves, where phase velocity varies with frequency, revealing vertical shear-velocity profiles of the crust and upper mantle.
+
+#### 3. Focal Mechanisms and Moment Tensor Inversion
+By recording whether the initial $P$-wave onset pushes the ground upward (compression) or pulls it downward (dilatation) across hundreds of global stations, seismologists plot the first-motion polarities on a stereographic projection of the focal sphere.
+* This generates the classic **"beachball" diagram**, which resolves the strike, dip, and rake of the fault plane.
+* Full **Centroid Moment Tensor (CMT) inversion** decomposes the seismic source into a double-couple component (pure shear faulting) and non-double-couple components (compensated linear vector dipole [CLVD] or isotropic volume changes indicative of volcanic magma movement or nuclear detonations).
+
+#### 4. Receiver Function Analysis
+When an incoming teleseismic $P$-wave encounters a sharp velocity discontinuity beneath a recording station (such as the Moho), part of its energy converts into a transmitted shear wave ($Ps$).
+* By deconvolving the vertical component (which records the incoming $P$-wave) from the radial horizontal component (which records the converted $Ps$-wave), the earthquake source time function is eliminated.
+* What remains is the **receiver function**: a pure local impulse response of the crust and upper mantle beneath that specific station, directly imaging the depth of the Moho and crustal layering.
+
+#### 5. Ambient Noise Cross-Correlation (Seismic Interferometry)
+Traditionally, seismologists had to wait for earthquakes to occur to image the subsurface. In the early 2000s, researchers demonstrated that cross-correlating continuous ambient background noise (generated by ocean waves crashing on coastlines) between two distant seismometers extracts the **Green's function** (impulse response) between those two stations.
+* Today, ambient noise tomography provides high-resolution 3D velocity maps of the continental crust in tectonically quiet regions (such as central North America or Europe) entirely without earthquakes!
+
+#### 6. Seismic Tomography and Full Waveform Inversion (FWI)
+Similar to medical CT scans, seismic tomography inverts millions of travel-time residuals along crossing raypaths to construct 3D volumetric images of Earth's mantle.
+* **Full Waveform Inversion (FWI)** solves the 3D elastodynamic wave equation forward in time and uses the adjoint-state method to match the entire wiggle-for-wiggle seismogram, resolving subducting oceanic slabs plunging into the deep mantle and hot mantle plumes rising from the core-mantle boundary.
+
+```{python}
+#| label: fig-seismic-data-analysis
+#| fig-cap: "Three-Component Seismic Data and Time-Frequency Spectrogram. Simulated high-fidelity 3-component recording (Z, R, T) showing arrival of high-frequency compressional P-waves, shear S-waves, purely horizontal Love waves on Transverse, and retrograde elliptical Rayleigh waves on Vertical/Radial. Bottom: Spectrogram of vertical trace illustrating spectral frequency evolution from high-frequency body waves to low-frequency dispersive surface waves."
+#| code-fold: true
+#| code-summary: "Show Python code generating the 3-Component Seismogram and Spectrogram"
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import spectrogram
+
+np.random.seed(42)
+fs = 20.0
+duration = 180.0
+t = np.linspace(0, duration, int(fs * duration))
+
+ambient_noise = 0.015 * np.random.randn(len(t))
+microseism = 0.03 * np.sin(2 * np.pi * 0.14 * t + np.random.uniform(0, 2*np.pi))
+noise = ambient_noise + microseism
+
+# P-wave (25s): High frequency 3.2 Hz, mostly Z and R
+t_P = 25.0
+p_env = np.where(t >= t_P, np.exp(-(t - t_P) / 8.0), 0.0)
+p_sig = p_env * np.sin(2 * np.pi * 3.2 * (t - t_P))
+
+# S-wave (58s): Intermediate frequency 1.4 Hz
+t_S = 58.0
+s_env = np.where(t >= t_S, np.exp(-(t - t_S) / 14.0), 0.0)
+s_sig = s_env * np.sin(2 * np.pi * 1.4 * (t - t_S) + 0.4)
+
+# Love wave (85s): Dispersive, pure Transverse
+t_Love = 85.0
+love_env = np.where(t >= t_Love, np.exp(-(t - t_Love) / 22.0), 0.0)
+disp_freq = 0.4 - 0.25 * ((t - t_Love) / 50.0).clip(0, 1)
+love_sig = love_env * np.sin(2 * np.pi * disp_freq * (t - t_Love))
+
+# Rayleigh wave (95s): Dispersive, Vertical and Radial in quadrature
+t_Ray = 95.0
+ray_env = np.where(t >= t_Ray, np.exp(-(t - t_Ray) / 28.0), 0.0)
+ray_freq = 0.25 - 0.15 * ((t - t_Ray) / 60.0).clip(0, 1)
+ray_sig_Z = ray_env * np.sin(2 * np.pi * ray_freq * (t - t_Ray))
+ray_sig_R = ray_env * np.cos(2 * np.pi * ray_freq * (t - t_Ray))
+
+# Synthesize 3 components
+trace_Z = 0.6 * p_sig + 0.3 * s_sig + 1.8 * ray_sig_Z + noise
+trace_R = 0.4 * p_sig + 0.5 * s_sig + 1.5 * ray_sig_R + noise + 0.01 * np.random.randn(len(t))
+trace_T = 1.2 * s_sig + 2.2 * love_sig + noise + 0.01 * np.random.randn(len(t))
+
+fig = plt.figure(figsize=(9.5, 8.0), dpi=180, layout='constrained')
+gs = fig.add_gridspec(4, 1, height_ratios=[1, 1, 1, 1.4])
+
+ax_z = fig.add_subplot(gs[0])
+ax_r = fig.add_subplot(gs[1], sharex=ax_z)
+ax_t = fig.add_subplot(gs[2], sharex=ax_z)
+ax_spec = fig.add_subplot(gs[3], sharex=ax_z)
+
+ax_z.plot(t, trace_Z, color='#1e3a8a', lw=0.9)
+ax_z.set_ylabel("Vertical ($Z$)", fontsize=9, fontweight='bold')
+ax_z.text(0.01, 0.82, "Vertical ($Z$): P-wave & Retrograde Rayleigh wave", transform=ax_z.transAxes, fontsize=8.5, color='#1e3a8a')
+ax_z.grid(True, linestyle='--', alpha=0.4)
+
+ax_r.plot(t, trace_R, color='#047857', lw=0.9)
+ax_r.set_ylabel("Radial ($R$)", fontsize=9, fontweight='bold')
+ax_r.text(0.01, 0.82, "Radial ($R$): P-wave, SV-wave & Horizontal Rayleigh", transform=ax_r.transAxes, fontsize=8.5, color='#047857')
+ax_r.grid(True, linestyle='--', alpha=0.4)
+
+ax_t.plot(t, trace_T, color='#b91c1c', lw=0.9)
+ax_t.set_ylabel("Transverse ($T$)", fontsize=9, fontweight='bold')
+ax_t.text(0.01, 0.82, "Transverse ($T$): Pure SH-wave & Love wave (Zero P / Rayleigh)", transform=ax_t.transAxes, fontsize=8.5, color='#b91c1c')
+ax_t.grid(True, linestyle='--', alpha=0.4)
+
+for ax in [ax_z, ax_r, ax_t]:
+    ax.axvline(t_P, color='#2563eb', linestyle=':', lw=1.5)
+    ax.axvline(t_S, color='#dc2626', linestyle=':', lw=1.5)
+    ax.axvline(t_Love, color='#b45309', linestyle=':', lw=1.2)
+    ax.axvline(t_Ray, color='#7c3aed', linestyle=':', lw=1.2)
+
+ax_z.text(t_P + 1, ax_z.get_ylim()[1]*0.65, "P arrival", color='#2563eb', fontsize=8.5, fontweight='bold')
+ax_z.text(t_S + 1, ax_z.get_ylim()[1]*0.65, "S arrival", color='#dc2626', fontsize=8.5, fontweight='bold')
+ax_t.text(t_Love + 1, ax_t.get_ylim()[1]*0.65, "Love onset", color='#b45309', fontsize=8.5, fontweight='bold')
+ax_z.text(t_Ray + 1, ax_z.get_ylim()[1]*0.65, "Rayleigh onset", color='#7c3aed', fontsize=8.5, fontweight='bold')
+
+f, t_spec, Sxx = spectrogram(trace_Z, fs=fs, nperseg=128, noverlap=110)
+pcm = ax_spec.pcolormesh(t_spec, f, 10 * np.log10(Sxx + 1e-9), cmap='viridis', shading='gouraud', vmin=-40, vmax=5)
+ax_spec.set_ylabel("Freq [Hz]", fontsize=9.5, fontweight='bold')
+ax_spec.set_xlabel("Time elapsed since fault rupture [seconds]", fontsize=10)
+ax_spec.set_ylim(0.0, 5.0)
+
+cbar = fig.colorbar(pcm, ax=ax_spec, orientation='horizontal', shrink=0.6, pad=0.18)
+cbar.set_label("Relative Spectral Power [dB]", fontsize=8)
+
+plt.show()
+```
+
+---
+
+## 4. The Physical Limits of Seismographs
+
+Seismographs operate at the extreme frontier of physical measurement, attempting to record displacements ranging from sub-nanometers ($10^{-10}\text{ m}$) during distant micro-earthquakes up to several meters ($>2\text{ m}$) near major fault ruptures. What physical constraints govern the ultimate limits of seismometry?
+
+### 4.1 Dynamic Range and Instrumental Clipping
+The dynamic range of a sensor is the ratio between the maximum unclipped signal it can record and its minimum detectable noise floor:
+
+$$\text{Dynamic Range (dB)} = 20 \log_{10} \left( \frac{A_{\max}}{A_{\text{noise}}} \right)$$
+
+* **Broadband Seismometers**: Designed for extreme weak-motion sensitivity (dynamic range $\sim 140\text{ dB}$, 24-bit ADC). However, when a major earthquake ($M_w > 7.0$) occurs within $50\text{ km}$ of the station, peak ground acceleration exceeds the restoring force of the feedback coil. The proof mass hits its mechanical limit stops, resulting in **clipping (saturation)** and permanent loss of the peak ground acceleration data.
+* **Strong-Motion Accelerometers**: Employ stiff mechanical flexures with natural frequencies $>50\text{ Hz}$ and low electronic gain. They cannot detect teleseismic events, but can record accelerations up to $\pm 2g$ ($20\text{ m/s}^2$) directly on top of a rupturing fault without clipping.
+
+### 4.2 Instrumental Self-Noise
+Even inside an acoustically sealed vacuum chamber, a seismometer generates internal physical noise:
+1. **Brownian Thermal Noise**: Air molecules or fluid particles continuously buffet the proof mass. By the equipartition theorem, the thermal kinetic energy $\frac{1}{2} k_B T$ per degree of freedom exerts a fluctuating thermal Nyquist force:
+   $$S_F(f) = 4 k_B T c \quad [\text{N}^2/\text{Hz}]$$
+   where $c$ is the dashpot damping coefficient. Minimizing thermal noise requires large proof masses ($m > 1\text{ kg}$) and ultra-high quality factor suspensions.
+2. **Johnson-Nyquist Electronic Noise**: Thermal agitation of charge carriers inside the sensor's inductive pick-up coils and preamplifier feedback resistors produces voltage noise $V_n = \sqrt{4 k_B T R \Delta f}$.
+3. **$1/f$ Flicker Noise**: Dominates semiconductor junctions at ultra-low frequencies ($f < 0.01\text{ Hz}$), setting the long-period limit of electronic seismometers.
+
+### 4.3 Earth's Ambient Noise Floor: Peterson's Models and Oceanic Microseisms
+The Earth is never truly silent. Jon Peterson (1993) analyzed recordings from worldwide seismic networks to define the **New High Noise Model (NHNM)** and **New Low Noise Model (NLNM)**, which define the empirical bounds of terrestrial seismic noise.
+
+The global noise spectrum is universally dominated by two massive humps known as **oceanic microseisms**:
+1. **Primary Microseism ($T \approx 12 - 16\text{ s}$, $f \approx 0.07\text{ Hz}$):** Generated when ocean swell waves directly approach shallow coastlines and shoal, converting kinetic water energy directly into acoustic ground motion.
+2. **Secondary Microseism ($T \approx 5 - 8\text{ s}$, $f \approx 0.14\text{ Hz}$):** Produces a noise peak **$10\times$ larger** than the primary microseism! In 1950, Longuet-Higgins proved that when opposing ocean storm waves of equal frequency collide, non-linear wave interference creates unattenuated standing waves. The second-order pressure fluctuations oscillate at **twice the wave frequency** ($2f$) and propagate without attenuation to the deep ocean floor, exciting continuous global Rayleigh waves!
+
+### 4.4 Atmospheric Pressure Perturbations and Horizontal Ground Tilt
+Why are horizontal seismometers always substantially noisier at long periods ($T > 30\text{ s}$) than vertical seismometers?
+
+Moving atmospheric weather fronts, wind turbulence, and barometric pressure fluctuations deform the elastic crust locally. A local ground tilt through an angle $\theta$ tilts the seismometer:
+* In a vertical sensor, a tilt $\theta$ changes the perceived gravity component by $g(1 - \cos\theta) \approx g \frac{\theta^2}{2}$, which is second-order and negligible.
+* In a horizontal sensor, a tilt $\theta$ projects the full gravitational acceleration $g$ onto the horizontal measuring axis:
+  $$a_{\text{horizontal}} = g \sin\theta \approx g \theta$$
+  Because $g \approx 9.81\text{ m/s}^2$ is enormous, a microscopic ground tilt of just $10^{-8}\text{ radians}$ (one-hundredth of a micro-radian) produces an apparent horizontal acceleration of $10^{-7}\text{ m/s}^2$, completely masking long-period horizontal seismic waves! For this reason, broadband stations are buried in deep subterranean boreholes ($>100\text{ m}$) or retired mine shafts.
+
+---
+
+## 5. Deep Earth Imaging: How Seismology Discovered the Planet's Interior
+
+Seismometers detect earthquakes thousands of kilometers away because the Earth acts as a spherical acoustic wave guide. As seismic rays dive into the planet, increasing pressure with depth raises rock density and elastic moduli, causing seismic velocities to increase and refracting wave paths back toward the surface according to Snell's Law.
+
+By mapping global travel times, early 20th-century geophysicists deciphered the layered architecture of the Earth:
+
+### 5.1 The Crust-Mantle Boundary: The Moho Discontinuity (1909)
+In 1909, Croatian meteorologist Andrija Mohorovičić analyzed seismograms from an earthquake near Zagreb. At stations within $200\text{ km}$, he observed a single $P$-wave onset ($P_g$) traveling directly through crustal granites at $v_P \approx 5.6\text{ km/s}$.
+
+However, at stations farther than $200\text{ km}$, a second, faster $P$-wave arrival ($P_n$) arrived **before** the direct wave! Mohorovičić deduced that $P_n$ rays had dived steeply, refracted critically along a deeper, much faster rock layer ($v_P \approx 8.0\text{ km/s}$), and ascended back to the surface.
+* This interface—the **Mohorovičić Discontinuity (Moho)**—marks the boundary between the crust (silicic/mafic rocks) and the underlying solid peridotite mantle (depth $\sim 5-10\text{ km}$ under oceans, $\sim 35\text{ km}$ under continents, up to $70\text{ km}$ under the Himalayas).
+
+### 5.2 The Mantle Transition Zone (410 km and 660 km Discontinuities)
+Between $410\text{ km}$ and $660\text{ km}$ depth, mantle seismic velocities exhibit two sharp step-function jumps. These discontinuities are not compositional boundaries, but rather **pressure-induced solid-state mineral phase transitions**:
+* **$410\text{ km}$**: $\alpha$-olivine transforms into the denser wadsleyite ($\beta$-spinel phase), releasing latent heat.
+* **$660\text{ km}$**: Ringwoodite ($\gamma$-spinel) breaks down into bridgmanite (silicate perovskite) plus ferropericlase, marking the boundary between the upper mantle and the lower mantle.
+
+### 5.3 The Gutenberg Discontinuity and the Molten Liquid Outer Core (1906, 1913)
+The most dramatic boundary inside the planet occurs at $2,891\text{ km}$ depth: the **Core-Mantle Boundary (CMB)**.
+* In 1906, Richard Dixon Oldham noticed that direct shear waves ($S$-waves) were never detected at stations located more than $104^\circ$ away from an earthquake epicenter. Because fluids possess zero shear modulus ($\mu = 0 \implies v_S = \sqrt{\mu/\rho} = 0$), shear waves cannot travel through liquids. This established that the Earth possesses a **molten liquid outer core**!
+* In 1913, Beno Gutenberg precisely determined the depth of this boundary ($2,891\text{ km}$) by observing the **$P$-Wave Shadow Zone**:
+  * At the CMB, compressional velocity abruptly plummets from $v_P \approx 13.7\text{ km/s}$ in the solid mantle to $v_P \approx 8.1\text{ km/s}$ in the liquid iron core.
+  * By Snell's Law, this massive velocity drop refracts compressional waves sharply downward toward the center of the Earth.
+  * This sharp bending creates a global shadow zone between angular epicentral distances **$\Delta = 104^\circ$ and $\Delta = 143^\circ$** where no direct $P$-waves can emerge!
+
+### 5.4 The Solid Inner Core: Inge Lehmann's Discovery (1936)
+If the entire core were molten iron, the $P$-wave shadow zone ($104^\circ - 143^\circ$) would be completely devoid of direct compressional arrivals.
+
+However, in 1936, Danish seismologist Inge Lehmann scrutinized high-gain seismograms from earthquakes near New Zealand recorded in Europe. Inside the shadow zone, she detected faint, distinct $P$-wave arrivals that conventional models could not explain.
+
+Lehmann hypothesized that deep within the molten outer core lies a **solid inner core** with a higher compressional velocity ($v_P \approx 11.2\text{ km/s}$):
+* Rays entering the core graze this boundary, refract into the inner core, and emerge inside the shadow zone.
+* These raypaths—designated **$PKIKP$** (where $P$ is crust/mantle compressional, $K$ is outer core compressional, and $I$ is inner core compressional)—proved that despite temperatures exceeding $5,500\text{ K}$ (hotter than the surface of the Sun), hydrostatic pressures exceeding $330\text{ GPa}$ force iron atoms to crystallize into a solid hexagonal close-packed (hcp) lattice!
+
+---
+
+## 6. Elastodynamics and Seismic Wave Propagation
 
 When a tectonic fault ruptures, stored elastic strain energy is released as seismic waves propagating through the Earth's interior and along its surface.
 
-### 3.1 The Navier-Cauchy Equation of Motion
+### 6.1 The Navier-Cauchy Equation of Motion
 In an isotropic, linearly elastic continuum, the balance of momentum yields the **Navier-Cauchy equation**:
 
-$$\rho \frac{\partial^2 \mathbf{u}}{\partial t^2} = (\lambda + \mu)\nabla(\nabla \cdot \mathbf{u}) + \mu \nabla^2 \mathbf{u} \tag{7}$$
+$$\rho \frac{\partial^2 \mathbf{u}}{\partial t^2} = (\lambda + \mu)\nabla(\nabla \cdot \mathbf{u}) + \mu \nabla^2 \mathbf{u} \tag{11}$$
 
 where $\mathbf{u}(\mathbf{x}, t)$ is the 3D displacement vector field, $\rho$ is rock density, and $\lambda, \mu$ are Lamé's elastic moduli ($\mu$ is the shear modulus or rigidity).
 
-### 3.2 Helmholtz Decomposition: $P$ and $S$ Body Waves
+### 6.2 Helmholtz Decomposition: $P$ and $S$ Body Waves
 By the Helmholtz theorem, any smooth vector field $\mathbf{u}$ can be decomposed into a curl-free scalar potential $\Phi$ and a divergence-free vector potential $\boldsymbol{\Psi}$:
 
-$$\mathbf{u} = \nabla \Phi + \nabla \times \boldsymbol{\Psi}, \quad \text{with } \nabla \cdot \boldsymbol{\Psi} = 0 \tag{8}$$
+$$\mathbf{u} = \nabla \Phi + \nabla \times \boldsymbol{\Psi}, \quad \text{with } \nabla \cdot \boldsymbol{\Psi} = 0 \tag{12}$$
 
-Substituting Equation (8) into (7) decouples the elastodynamic field into two independent wave equations:
+Substituting Equation (12) into (11) decouples the elastodynamic field into two independent wave equations:
 
 #### 1. Primary Compressional Waves ($P$-Waves)
-$$\nabla^2 \Phi = \frac{1}{v_P^2} \frac{\partial^2 \Phi}{\partial t^2}, \qquad v_P = \sqrt{\frac{\lambda + 2\mu}{\rho}} = \sqrt{\frac{K + \frac{4}{3}\mu}{\rho}} \tag{9}$$
+$$\nabla^2 \Phi = \frac{1}{v_P^2} \frac{\partial^2 \Phi}{\partial t^2}, \qquad v_P = \sqrt{\frac{\lambda + 2\mu}{\rho}} = \sqrt{\frac{K + \frac{4}{3}\mu}{\rho}} \tag{13}$$
 * **Particle Motion:** Longitudinal (alternating compression and dilation parallel to wave propagation direction).
 * **Speed:** Fastest seismic wave ($\sim 5.5–8.0\text{ km/s}$ in crust, $>13\text{ km/s}$ in deep mantle).
 * **Propagation Media:** Solids, liquids, and gases (since bulk modulus $K > 0$).
 
 #### 2. Secondary Shear Waves ($S$-Waves)
-$$\nabla^2 \boldsymbol{\Psi} = \frac{1}{v_S^2} \frac{\partial^2 \boldsymbol{\Psi}}{\partial t^2}, \qquad v_S = \sqrt{\frac{\mu}{\rho}} \tag{10}$$
+$$\nabla^2 \boldsymbol{\Psi} = \frac{1}{v_S^2} \frac{\partial^2 \boldsymbol{\Psi}}{\partial t^2}, \qquad v_S = \sqrt{\frac{\mu}{\rho}} \tag{14}$$
 * **Particle Motion:** Transverse shear perpendicular to wave propagation direction (polarized into vertical $SV$ and horizontal $SH$ components).
 * **Speed:** Slower than $P$-waves ($\sim 3.0–4.8\text{ km/s}$ in crust).
-* **Fluid Inability:** Fluids possess zero shear modulus ($\mu = 0 \implies v_S = 0$). In 1906, Richard Dixon Oldham proved that the Earth possesses a **liquid outer core** by observing the global shadow zone where direct $S$-waves completely vanish!
+* **Fluids:** Vanishes in liquids ($\mu = 0 \implies v_S = 0$), forming the basis of Oldham's liquid core discovery.
 
 #### The Universal Wave Speed Ratio
 For a standard **Poisson solid** (where Poisson's ratio $\nu = 0.25$, so $\lambda = \mu$):
 
-$$\frac{v_P}{v_S} = \sqrt{\frac{\lambda + 2\mu}{\mu}} = \sqrt{\frac{3\mu}{\mu}} = \sqrt{3} \approx 1.732 \tag{11}$$
+$$\frac{v_P}{v_S} = \sqrt{\frac{\lambda + 2\mu}{\mu}} = \sqrt{\frac{3\mu}{\mu}} = \sqrt{3} \approx 1.732 \tag{15}$$
 
 $P$-waves consistently travel roughly $1.73$ times faster than $S$-waves!
 
-### 3.3 Surface Waves: Rayleigh and Love
+### 6.3 Surface Waves: Rayleigh and Love
 At the free surface boundary ($z = 0$), boundary conditions trap acoustic energy into dispersive surface waves whose amplitude decays exponentially with depth:
 1. **Rayleigh Waves:** Result from coupled $P-SV$ interference at the free surface. Particle motion is **retrograde elliptical** in the vertical plane. Propagation speed $v_R \approx 0.92 v_S$.
 2. **Love Waves:** Horizontally polarized shear waves ($SH$) trapped by total internal reflection in a low-velocity surface layer over a higher-velocity halfspace.
-Because surface waves spread in 2D ($1/r$ geometrical spreading) rather than 3D ($1/r^2$), they carry the largest amplitudes and cause the catastrophic destruction in major earthquakes.
+Because surface waves spread in 2D ($1/r$ geometrical spreading) rather than 3D ($1/r^2$), they carry the largest amplitudes and cause the primary destruction during major earthquakes.
 
-### 3.4 Epicenter Triangulation via the $S-P$ Travel-Time Lag
+### 6.4 Epicenter Triangulation via the $S-P$ Travel-Time Lag
 
 Because $v_P > v_S$, the time delay between the initial arrival of the $P$-wave ($t_P$) and the $S$-wave ($t_S$) increases linearly with distance $\Delta$ from the hypocenter:
 
 $$\Delta t_{S-P} = t_S - t_P = \frac{\Delta}{v_S} - \frac{\Delta}{v_P} = \Delta \left( \frac{v_P - v_S}{v_P v_S} \right)$$
 
-$$\Delta = \left( \frac{v_P v_S}{v_P - v_S} \right) \Delta t_{S-P} \tag{12}$$
+$$\Delta = \left( \frac{v_P v_S}{v_P - v_S} \right) \Delta t_{S-P} \tag{16}$$
 
 For typical crustal velocities ($v_P \approx 6.0\text{ km/s}, v_S \approx 3.5\text{ km/s}$):
 $$\Delta \approx 8.4\text{ km/s} \times \Delta t_{S-P}$$
@@ -209,19 +566,16 @@ seis = np.zeros_like(t)
 np.random.seed(42)
 noise = 0.035 * np.random.randn(len(t))
 
-# P-wave arrival at t = 15 s (high frequency ~3 Hz, sharp onset)
 t_P = 15.0
 mask_P = (t >= t_P) & (t <= 55)
 env_P = np.exp(-(t[mask_P] - t_P) / 6.0)
 seis[mask_P] += 0.35 * env_P * np.sin(2 * np.pi * 3.0 * (t[mask_P] - t_P))
 
-# S-wave arrival at t = 32 s (intermediate frequency ~1.2 Hz, larger amplitude)
 t_S = 32.0
 mask_S = (t >= t_S) & (t <= 75)
 env_S = np.exp(-(t[mask_S] - t_S) / 10.0)
 seis[mask_S] += 0.95 * env_S * np.sin(2 * np.pi * 1.2 * (t[mask_S] - t_S) + 0.5)
 
-# Surface wave arrival at t = 48 s (low frequency ~0.4 Hz, massive amplitude)
 t_Surf = 48.0
 mask_Surf = (t >= t_Surf) & (t <= 95)
 env_Surf = np.exp(-(t[mask_Surf] - t_Surf) / 15.0)
@@ -232,12 +586,10 @@ seis += noise
 fig, ax = plt.subplots(figsize=(10, 4.2), dpi=180)
 ax.plot(t, seis, color='#0f172a', lw=1.1)
 
-# Phase arrival markers
 ax.axvline(t_P, color='#2563eb', linestyle='--', lw=1.8, label=f'$P$-wave Arrival ($t_P = {t_P:.0f}$ s)')
 ax.axvline(t_S, color='#dc2626', linestyle='--', lw=1.8, label=f'$S$-wave Arrival ($t_S = {t_S:.0f}$ s)')
 ax.axvline(t_Surf, color='#d97706', linestyle='--', lw=1.8, label=f'Surface Waves ($t_R = {t_Surf:.0f}$ s)')
 
-# S-P Lag annotation
 ax.annotate('', xy=(t_S, 1.9), xytext=(t_P, 1.9),
             arrowprops=dict(arrowstyle='<->', color='#7c3aed', lw=2.0))
 ax.text((t_P + t_S)/2, 2.2, f'$S-P$ Lag = {t_S - t_P:.0f} s\n($\\Delta \\propto \\Delta t_{{S-P}}$)',
@@ -257,14 +609,14 @@ plt.show()
 
 ---
 
-## 4. Fault Rupture Mechanics, Seismic Moment, and Magnitude Scaling
+## 7. Fault Rupture Mechanics, Seismic Moment, and Magnitude Scaling
 
-### 4.1 Elastic Rebound Theory and Seismic Moment $M_0$
+### 7.1 Elastic Rebound Theory and Seismic Moment $M_0$
 In 1910, following the 1906 San Francisco earthquake, Harry Fielding Reid formulated **Elastic Rebound Theory**: tectonic plates steadily accumulate elastic shear strain along locked frictional faults until static friction is overcome, releasing stored strain in a sudden dynamic rupture.
 
-The fundamental physical measure of an earthquake's size is the **scalar seismic moment** $M_0$, representing the mechanical torque work done by the fault dislocation:
+The fundamental physical measure of an earthquake's size is the **scalar seismic moment** $M_0$, representing the mechanical work done by the fault dislocation:
 
-$$M_0 = \mu A \bar{D} \tag{13}$$
+$$M_0 = \mu A \bar{D} \tag{17}$$
 
 where:
 * $\mu$ is the shear modulus of crustal rock ($\approx 3 \times 10^{10}\text{ Pa}$).
@@ -273,18 +625,18 @@ where:
 
 $M_0$ carries exact physical dimensions of energy / torque ($[M_0] = \text{N}\cdot\text{m} = M L^2 T^{-2}$).
 
-### 4.2 The Moment Magnitude Scale ($M_w$)
+### 7.2 The Moment Magnitude Scale ($M_w$)
 
 Charles Richter's original 1935 magnitude scale ($M_L$) measured peak trace amplitude on a Wood-Anderson seismograph. However, for massive earthquakes ($M > 7.5$), $M_L$ suffers from severe **instrumental saturation**: rupture dimensions exceed the 1-second period of the seismometer, making a magnitude 8.5 quake look no larger than a 7.5.
 
 In 1979, Thomas C. Hanks and Hiroo Kanamori defined the modern **Moment Magnitude Scale** ($M_w$), tied directly to the physical seismic moment without saturation:
 
-$$M_w = \frac{2}{3} \log_{10}(M_0) - 6.07 \quad (M_0 \text{ in }\mathrm{N}\cdot\mathrm{m}) \tag{14}$$
+$$M_w = \frac{2}{3} \log_{10}(M_0) - 6.07 \quad (M_0 \text{ in }\mathrm{N}\cdot\mathrm{m}) \tag{18}$$
 
-### 4.3 Exponential Energy Scaling Laws
-Because $M_w \propto \frac{2}{3} \log_{10} M_0$, rearranging Equation (14) shows that seismic moment scales with an exponent of $1.5$:
+### 7.3 Exponential Energy Scaling Laws
+Because $M_w \propto \frac{2}{3} \log_{10} M_0$, rearranging Equation (18) shows that seismic moment scales with an exponent of $1.5$:
 
-$$M_0 = 10^{\frac{3}{2} M_w + 9.1} \implies \frac{M_0(M_w + 1)}{M_0(M_w)} = 10^{1.5} \approx 31.62 \tag{15}$$
+$$M_0 = 10^{\frac{3}{2} M_w + 9.1} \implies \frac{M_0(M_w + 1)}{M_0(M_w)} = 10^{1.5} \approx 31.62 \tag{19}$$
 
 * **Increase of 1 Magnitude Unit:** $\Delta M_w = 1 \implies 10^{1.5} \approx \mathbf{31.62\times}$ greater energy release.
 * **Increase of 2 Magnitude Units:** $\Delta M_w = 2 \implies 10^{3.0} = \mathbf{1000\times}$ greater energy release!
@@ -299,30 +651,32 @@ from IPython.display import Markdown
 eq_data = [
     ("4.0 (Minor)", "$1.1 \\times 10^{15}\\text{ N}\\cdot\\text{m}$", "$2.0 \\times 10^{10}\\text{ J}$", "$1\\text{ km} \\times 1\\text{ km}$", "0.03 m", "4.8 tons TNT"),
     ("5.0 (Moderate)", "$3.5 \\times 10^{16}\\text{ N}\\cdot\\text{m}$", "$6.3 \\times 10^{11}\\text{ J}$", "$4\\text{ km} \\times 3\\text{ km}$", "0.10 m", "150 tons TNT"),
-    ("6.0 (Strong)", "$1.1 \\times 10^{18}\\text{ N}\\cdot\\text{m}$", "$2.0 \\times 10^{13}\\text{ J}$", "$15\\text{ km} \\times 10\\text{ km}$", "0.25 m", "4.8 kilotons TNT"),
-    ("7.0 (Major)", "$3.5 \\times 10^{19}\\text{ N}\\cdot\\text{m}$", "$6.3 \\times 10^{14}\\text{ J}$", "$50\\text{ km} \\times 20\\text{ km}$", "1.20 m", "150 kilotons TNT"),
-    ("8.0 (Great)", "$1.1 \\times 10^{21}\\text{ N}\\cdot\\text{m}$", "$2.0 \\times 10^{16}\\text{ J}$", "$200\\text{ km} \\times 50\\text{ km}$", "4.00 m", "4.8 megatons TNT"),
-    ("9.0 (Cataclysmic)", "$3.5 \\times 10^{22}\\text{ N}\\cdot\\text{m}$", "$6.3 \\times 10^{17}\\text{ J}$", "$500\\text{ km} \\times 150\\text{ km}$", "15.0 m", "150 megatons TNT (Tohoku 2011)"),
-    ("9.5 (Largest Recorded)", "$2.0 \\times 10^{23}\\text{ N}\\cdot\\text{m}$", "$3.5 \\times 10^{18}\\text{ J}$", "$1000\\text{ km} \\times 200\\text{ km}$", "20.0 m", "835 megatons TNT (Valdivia 1960)")
+    ("6.0 (Strong)", "$1.1 \\times 10^{18}\\text{ N}\\cdot\\text{m}$", "$15\\text{ km} \\times 10\\text{ km}$", "0.25 m", "$2.0 \\times 10^{13}\\text{ J}$", "4.8 kilotons TNT"),
+    ("7.0 (Major)", "$3.5 \\times 10^{19}\\text{ N}\\cdot\\text{m}$", "$50\\text{ km} \\times 20\\text{ km}$", "1.20 m", "$6.3 \\times 10^{14}\\text{ J}$", "150 kilotons TNT"),
+    ("8.0 (Great)", "$1.1 \\times 10^{21}\\text{ N}\\cdot\\text{m}$", "$200\\text{ km} \\times 50\\text{ km}$", "4.00 m", "$2.0 \\times 10^{16}\\text{ J}$", "4.8 megatons TNT"),
+    ("9.0 (Cataclysmic)", "$3.5 \\times 10^{22}\\text{ N}\\cdot\\text{m}$", "$500\\text{ km} \\times 150\\text{ km}$", "15.0 m", "$6.3 \\times 10^{17}\\text{ J}$", "150 megatons TNT (Tohoku 2011)"),
+    ("9.5 (Largest Recorded)", "$2.0 \\times 10^{23}\\text{ N}\\cdot\\text{m}$", "$1000\\text{ km} \\times 200\\text{ km}$", "20.0 m", "$3.5 \\times 10^{18}\\text{ J}$", "835 megatons TNT (Valdivia 1960)")
 ]
 
-header = "| Moment Magnitude ($M_w$) | Seismic Moment ($M_0$) | Radiated Energy ($E_s$) | Typical Rupture ($L \\times W$) | Average Slip ($\\bar{D}$) | TNT Equivalent |\n| :--- | :--- | :--- | :--- | :--- | :--- |\n"
+header = "| Moment Magnitude ($M_w$) | Seismic Moment ($M_0$) | Typical Rupture ($L \\times W$) | Average Slip ($\\bar{D}$) | Radiated Energy ($E_s$) | TNT Equivalent |\n| :--- | :--- | :--- | :--- | :--- | :--- |\n"
 Markdown(header + "\n".join([f"| **{r[0]}** | {r[1]} | {r[2]} | {r[3]} | {r[4]} | {r[5]} |" for r in eq_data]))
 ```
 
-### 4.4 The Gutenberg-Richter Recurrence Law
+### 7.4 The Gutenberg-Richter Recurrence Law
 Globally, the frequency of earthquakes follows a self-similar power-law distribution known as the **Gutenberg-Richter Law**:
 
-$$\log_{10} N = a - b M \tag{16}$$
+$$\log_{10} N = a - b M \tag{20}$$
 
 where $N$ is the cumulative number of earthquakes having magnitude $\ge M$, $a$ reflects the regional tectonic activity level, and $b$ is a universal physical constant typically very close to **$1.0$**.
 * When $b = 1$, for every magnitude 7 earthquake, there occur approximately 10 magnitude 6 quakes, 100 magnitude 5 quakes, and 1,000 magnitude 4 quakes!
 
 ---
 
-## 5. Summary & Cross-Disciplinary Connections
+## 8. Summary & Cross-Disciplinary Connections
 
-* For the physical derivation of the blast wave scaling laws analogous to point-source energy releases, see:
+* For the complete physical and analytical mechanics of oscillators, base excitation, d'Alembert fictitious forces, damping regimes, and coupled normal modes, see:
+  * [Classical and Analytical Mechanics: The Complete Theory of Harmonic Oscillators](../harmonic-oscillators-damped-driven-coupled-mechanics/index.qmd)
+* For the physical derivation of blast wave scaling laws analogous to point-source energy releases, see:
   * [The Sedov-Taylor Blast Wave and Self-Similarity](../sedov-taylor-blast-wave-self-similarity/index.qmd)
 * For the vector space of physical dimensions and dimensional scaling of wave equations, see:
   * [Mathematical Foundations: The Vector Space of Dimensions](../vector-space-of-dimensions-buckingham-pi/index.qmd)
