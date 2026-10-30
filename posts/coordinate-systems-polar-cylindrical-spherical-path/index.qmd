@@ -1,0 +1,530 @@
+---
+title: "Physical Coordinate Systems: Cartesian, Polar, Cylindrical, Spherical, and Natural Path Coordinates"
+subtitle: "A first-principles guide to spatial coordinates, moving orthonormal bases, velocity and acceleration derivations, the Frenet-Serret frame, and curvature kinematics."
+description: "An exhaustive, beginner-accessible guide to coordinate systems in physics and engineering: comparing Cartesian, 2D polar, 3D cylindrical, spherical polar, and intrinsic path coordinates (arc length, curvature, and the Frenet-Serret triad) with complete velocity and acceleration derivations."
+author: "Igor Kan"
+date: "2026-10-30"
+categories: [Preprints, Physics, Mathematics, Classical Mechanics, Kinematics, Vector Calculus, Differential Geometry]
+draft: false
+format:
+  html:
+    toc: true
+    toc-depth: 4
+    math: true
+    code-fold: show
+jupyter: python3
+---
+
+::: {.callout-note}
+### Preprint / Foundational Mechanics Monograph
+In physics and engineering, the laws of nature are invariant under changes of coordinates. However, the mathematical tractability of any problem depends crucially on choosing a coordinate system that reflects the underlying physical symmetries or constraints. This monograph develops the five essential coordinate systems of classical mechanics and vector calculus: Cartesian, 2D Polar, 3D Cylindrical, 3D Spherical, and Intrinsic Path (Frenet-Serret) Coordinates.
+:::
+
+---
+
+## 1. Introduction: Why Do We Need Different Coordinate Systems?
+
+Every student begins mechanics in **Cartesian coordinates** $(x, y, z)$. Rectangular grids are simple, intuitive, and have constant basis vectors. Why, then, do physicists and engineers spend so much effort learning polar, cylindrical, spherical, and path coordinates?
+
+The answer is **symmetry**:
+* If a planet orbits the Sun under a central gravitational force $\mathbf{F} = -\frac{GMm}{r^2}\mathbf{\hat{r}}$, writing Newton's second law in Cartesian coordinates produces three coupled, non-linear differential equations:
+  $$\ddot{x} = -\frac{GMx}{(x^2 + y^2 + z^2)^{3/2}}, \quad \ddot{y} = -\frac{GMy}{(x^2 + y^2 + z^2)^{3/2}}, \quad \ddot{z} = -\frac{GMz}{(x^2 + y^2 + z^2)^{3/2}}$$
+* But in **polar coordinates** $(r, \theta)$, angular momentum conservation immediately reduces the problem to a simple single-variable radial equation:
+  $$\ddot{r} - \frac{L^2}{m^2 r^3} = -\frac{GM}{r^2}, \quad r^2 \dot{\theta} = \frac{L}{m} = \text{const}$$
+
+Coordinate systems are computational lenses. Choosing the right coordinate system aligns with the boundaries or forces of the problem, decoupling complex partial differential equations into solvable independent pieces.
+
+---
+
+## 2. The Rectilinear Benchmark: Cartesian Coordinates $(x, y, z)$
+
+Cartesian coordinates serve as the baseline against which all other systems are measured.
+
+```
+       Z
+       ▲
+       │       P(x, y, z)
+       │      •
+       │     /│
+       │    / │
+       │   /  │
+       └──/───┼──────► Y
+         /    │
+        /     │
+       ▼
+       X
+```
+
+### 2.1 Basis Vectors and Invariance
+In Cartesian space $\mathbb{R}^3$, the position of a point is given by:
+$$\mathbf{r} = x\mathbf{\hat{i}} + y\mathbf{\hat{j}} + z\mathbf{\hat{k}} \tag{1}$$
+
+The unit basis vectors $(\mathbf{\hat{i}}, \mathbf{\hat{j}}, \mathbf{\hat{k}})$ are:
+1. **Mutually orthogonal**: $\mathbf{\hat{i}} \cdot \mathbf{\hat{j}} = \mathbf{\hat{j}} \cdot \mathbf{\hat{k}} = \mathbf{\hat{i}} \cdot \mathbf{\hat{k}} = 0$.
+2. **Normalized**: $\|\mathbf{\hat{i}}\| = \|\mathbf{\hat{j}}\| = \|\mathbf{\hat{k}}\| = 1$.
+3. **Spatially and temporally invariant**: They point in the exact same direction everywhere in space and at all times:
+   $$\frac{d\mathbf{\hat{i}}}{dt} = \mathbf{0}, \quad \frac{d\mathbf{\hat{j}}}{dt} = \mathbf{0}, \quad \frac{d\mathbf{\hat{k}}}{dt} = \mathbf{0} \tag{2}$$
+
+### 2.2 Kinematics: Velocity and Acceleration
+Because the basis vectors are constant, taking derivatives is trivial:
+$$\mathbf{v} = \frac{d\mathbf{r}}{dt} = \dot{x}\mathbf{\hat{i}} + \dot{y}\mathbf{\hat{j}} + \dot{z}\mathbf{\hat{k}} \tag{3}$$
+$$\mathbf{a} = \frac{d\mathbf{v}}{dt} = \ddot{x}\mathbf{\hat{i}} + \ddot{y}\mathbf{\hat{j}} + \ddot{z}\mathbf{\hat{k}} \tag{4}$$
+
+### 2.3 Differential Elements
+* **Line element vector**: $d\mathbf{r} = dx\mathbf{\hat{i}} + dy\mathbf{\hat{j}} + dz\mathbf{\hat{k}}$
+* **Arc length squared**: $ds^2 = dx^2 + dy^2 + dz^2$
+* **Volume element**: $dV = dx \, dy \, dz$
+
+**When to use:** Projectile motion under uniform downward gravity, rectangular boxes, flat boundary problems, and rectilinear motion.
+
+---
+
+## 3. 2D Polar Coordinates $(r, \theta)$ & Moving Orthonormal Bases
+
+When motion is planar and exhibits rotational symmetry or central forces (such as a mass on a string, a spinning wheel, or planetary orbits), planar polar coordinates are the natural choice.
+
+### 3.1 Coordinate Definition and Transformations
+A point $P$ in the plane is identified by:
+* $r \in [0, \infty)$: radial distance from origin.
+* $\theta \in [0, 2\pi)$ (or $(-\pi, \pi]$): counter-clockwise angle from the positive $x$-axis.
+
+$$\begin{cases} x = r\cos\theta \\ y = r\sin\theta \end{cases} \iff \begin{cases} r = \sqrt{x^2 + y^2} \\ \theta = \operatorname{atan2}(y, x) \end{cases} \tag{5}$$
+
+### 3.2 Moving Basis Vectors
+Unlike Cartesian unit vectors, polar unit vectors **move with the particle**:
+* $\mathbf{\hat{e}}_r$: Points from origin radially outward toward $P$.
+* $\mathbf{\hat{e}}_\theta$: Points perpendicular to $\mathbf{\hat{e}}_r$ in the direction of increasing $\theta$ (counter-clockwise).
+
+Expressing them in terms of the fixed Cartesian basis:
+$$\mathbf{\hat{e}}_r = \cos\theta\mathbf{\hat{i}} + \sin\theta\mathbf{\hat{j}} \tag{6}$$
+$$\mathbf{\hat{e}}_\theta = -\sin\theta\mathbf{\hat{i}} + \cos\theta\mathbf{\hat{j}} \tag{7}$$
+
+Notice that both $\mathbf{\hat{e}}_r$ and $\mathbf{\hat{e}}_\theta$ depend explicitly on $\theta(t)$. As the particle circles the origin, its coordinate axes rotate!
+
+### 3.3 Derivatives of the Moving Basis Vectors
+Differentiating with respect to time $t$ using the chain rule:
+
+$$\frac{d\mathbf{\hat{e}}_r}{dt} = \left(-\sin\theta\mathbf{\hat{i}} + \cos\theta\mathbf{\hat{j}}\right)\dot{\theta} = \dot{\theta} \mathbf{\hat{e}}_\theta$$ {#eq-8}
+
+$$\frac{d\mathbf{\hat{e}}_\theta}{dt} = \left(-\cos\theta\mathbf{\hat{i}} - \sin\theta\mathbf{\hat{j}}\right)\dot{\theta} = -\dot{\theta} \mathbf{\hat{e}}_r$$ {#eq-9}
+
+> [!IMPORTANT]
+> The time derivative of a unit vector is always perpendicular to itself. Rotating $\mathbf{\hat{e}}_r$ gives $\mathbf{\hat{e}}_\theta$; rotating $\mathbf{\hat{e}}_\theta$ gives $-\mathbf{\hat{e}}_r$.
+
+### 3.4 Velocity in Polar Coordinates
+The position vector is simply:
+$$\mathbf{r} = r \mathbf{\hat{e}}_r \tag{10}$$
+
+Differentiating with the product rule:
+$$\mathbf{v} = \frac{d\mathbf{r}}{dt} = \dot{r}\mathbf{\hat{e}}_r + r\frac{d\mathbf{\hat{e}}_r}{dt} = \dot{r}\mathbf{\hat{e}}_r + r\dot{\theta}\mathbf{\hat{e}}_\theta \tag{11}$$
+
+* $v_r = \dot{r}$: **Radial velocity** (rate at which distance from origin is changing).
+* $v_\theta = r\dot{\theta}$: **Transverse/azimuthal velocity** (tangential speed around the circle).
+
+### 3.5 Acceleration in Polar Coordinates
+Differentiating velocity $\mathbf{v}$ with respect to time:
+$$\mathbf{a} = \frac{d\mathbf{v}}{dt} = \frac{d}{dt}\left(\dot{r}\mathbf{\hat{e}}_r + r\dot{\theta}\mathbf{\hat{e}}_\theta\right)$$
+$$\mathbf{a} = \ddot{r}\mathbf{\hat{e}}_r + \dot{r}\frac{d\mathbf{\hat{e}}_r}{dt} + \left(\dot{r}\dot{\theta} + r\ddot{\theta}\right)\mathbf{\hat{e}}_\theta + r\dot{\theta}\frac{d\mathbf{\hat{e}}_\theta}{dt}$$
+
+Substitute @eq-8 and @eq-9:
+$$\mathbf{a} = \ddot{r}\mathbf{\hat{e}}_r + \dot{r}(\dot{\theta}\mathbf{\hat{e}}_\theta) + (\dot{r}\dot{\theta} + r\ddot{\theta})\mathbf{\hat{e}}_\theta + r\dot{\theta}(-\dot{\theta}\mathbf{\hat{e}}_r)$$
+
+Grouping components:
+$$\mathbf{a} = \underbrace{(\ddot{r} - r\dot{\theta}^2)}_{a_r}\mathbf{\hat{e}}_r + \underbrace{(r\ddot{\theta} + 2\dot{r}\dot{\theta})}_{a_\theta}\mathbf{\hat{e}}_\theta \tag{12}$$
+
+#### Physical Dissection of Terms:
+1. $\ddot{r}$: **Direct radial acceleration** (speeding up away from or toward origin).
+2. $-r\dot{\theta}^2$: **Centripetal acceleration** (directed inward toward the center, $\omega^2 r = v_\theta^2 / r$).
+3. $r\ddot{\theta}$: **Euler / angular acceleration** (tangential speeding up due to angular acceleration $\alpha = \ddot{\theta}$).
+4. $2\dot{r}\dot{\theta}$: **Coriolis acceleration** (arises because the radial motion $\dot{r}$ carries the particle into regions of larger radius where the linear tangential speed $r\dot{\theta}$ is higher, while the rotating basis changes direction).
+
+---
+
+## 4. 3D Cylindrical Coordinates $(\rho, \phi, z)$
+
+Cylindrical coordinates extend 2D polar coordinates into 3D by adding a rectilinear vertical coordinate $z$.
+
+```
+           Z
+           ▲
+           │        P(ρ, φ, z)
+           │       •
+           │      /│
+         z │     / │ z
+           │    /  │
+           └───┼───┼──────► Y
+              /│  /
+           ρ / │ / ρ
+            /  │/
+           ▼   • (ρ, φ, 0)
+           X    \
+                 \ φ
+```
+
+### 4.1 Transformations
+* $\rho \in [0, \infty)$: perpendicular distance from the $z$-axis.
+* $\phi \in [0, 2\pi)$: azimuthal angle in the $xy$-plane from $+x$.
+* $z \in (-\infty, \infty)$: height along the vertical axis.
+
+$$\begin{cases} x = \rho\cos\phi \\ y = \rho\sin\phi \\ z = z \end{cases} \iff \begin{cases} \rho = \sqrt{x^2 + y^2} \\ \phi = \operatorname{atan2}(y, x) \\ z = z \end{cases} \tag{13}$$
+
+### 4.2 Scale Factors and Differential Geometry
+The Lamé scale factors $h_i = \|\frac{\partial \mathbf{r}}{\partial u^i}\|$ are:
+$$h_\rho = 1, \quad h_\phi = \rho, \quad h_z = 1 \tag{14}$$
+
+* **Differential displacement**:
+  $$d\mathbf{r} = d\rho \mathbf{\hat{e}}_\rho + \rho d\phi \mathbf{\hat{e}}_\phi + dz \mathbf{\hat{e}}_z \tag{15}$$
+* **Metric line element**:
+  $$ds^2 = d\rho^2 + \rho^2 d\phi^2 + dz^2 \tag{16}$$
+* **Volume element**:
+  $$dV = \rho \, d\rho \, d\phi \, dz \tag{17}$$
+
+### 4.3 Kinematics
+$$\mathbf{v} = \dot{\rho}\mathbf{\hat{e}}_\rho + \rho\dot{\phi}\mathbf{\hat{e}}_\phi + \dot{z}\mathbf{\hat{e}}_z \tag{18}$$
+$$\mathbf{a} = (\ddot{\rho} - \rho\dot{\phi}^2)\mathbf{\hat{e}}_\rho + (\rho\ddot{\phi} + 2\dot{\rho}\dot{\phi})\mathbf{\hat{e}}_\phi + \ddot{z}\mathbf{\hat{e}}_z \tag{19}$$
+
+**When to use:** Pipes, solenoids, electric currents along straight wires, rotating shafts, and cylindrical tanks.
+
+---
+
+## 5. 3D Spherical Polar Coordinates $(r, \theta, \phi)$
+
+Spherical coordinates are the universal language for point sources, central gravity, planetary mechanics, and atomic physics.
+
+### 5.1 The Physics (ISO 80000-2) Convention
+Be aware: Mathematics textbooks and physics textbooks often swap the definitions of $\theta$ and $\phi$. We adopt the standard **physics convention**:
+
+* $r \in [0, \infty)$: distance from the origin.
+* $\theta \in [0, \pi]$: **polar angle (colatitude)** measured from $+z$ downward ($0$ at North Pole, $\pi/2$ at equator, $\pi$ at South Pole).
+* $\phi \in [0, 2\pi)$: **azimuthal angle** in $xy$-plane measured from $+x$ counter-clockwise toward $+y$.
+
+$$\begin{cases} 
+x = r \sin\theta \cos\phi \\ 
+y = r \sin\theta \sin\phi \\ 
+z = r \cos\theta 
+\end{cases} \iff 
+\begin{cases} 
+r = \sqrt{x^2 + y^2 + z^2} \\ 
+\theta = \arccos(z / r) \\ 
+\phi = \operatorname{atan2}(y, x) 
+\end{cases} \tag{20}$$
+
+### 5.2 Scale Factors and Volume Element
+Calculating partial derivatives $\mathbf{e}_i = \frac{\partial \mathbf{r}}{\partial u^i}$:
+$$\mathbf{e}_r = \sin\theta\cos\phi\mathbf{\hat{i}} + \sin\theta\sin\phi\mathbf{\hat{j}} + \cos\theta\mathbf{\hat{k}} \implies h_r = \|\mathbf{e}_r\| = 1$$
+$$\mathbf{e}_\theta = r\cos\theta\cos\phi\mathbf{\hat{i}} + r\cos\theta\sin\phi\mathbf{\hat{j}} - r\sin\theta\mathbf{\hat{k}} \implies h_\theta = \|\mathbf{e}_\theta\| = r$$
+$$\mathbf{e}_\phi = -r\sin\theta\sin\phi\mathbf{\hat{i}} + r\sin\theta\cos\phi\mathbf{\hat{j}} + 0\mathbf{\hat{k}} \implies h_\phi = \|\mathbf{e}_\phi\| = r\sin\theta$$
+
+* **Metric line element**:
+  $$ds^2 = dr^2 + r^2 d\theta^2 + r^2 \sin^2\theta \, d\phi^2 \tag{21}$$
+* **Volume element**:
+  $$dV = h_r h_\theta h_\phi \, dr \, d\theta \, d\phi = r^2 \sin\theta \, dr \, d\theta \, d\phi \tag{22}$$
+
+### 5.3 3D Visualization of the Spherical Basis Triad
+
+The local basis vectors $(\mathbf{\hat{e}}_r, \mathbf{\hat{e}}_\theta, \mathbf{\hat{e}}_\phi)$ form a right-handed orthonormal triad that re-orients at every point in space:
+
+```{python}
+#| label: fig-spherical-basis-3d
+#| fig-cap: "3D representation of spherical coordinates and the local orthonormal basis triad."
+import numpy as np
+import matplotlib.pyplot as plt
+
+r_val = 2.0
+theta_val = np.radians(45.0)  # 45 deg colatitude
+phi_val = np.radians(60.0)    # 60 deg azimuth
+
+# Point position in Cartesian coordinates
+x = r_val * np.sin(theta_val) * np.cos(phi_val)
+y = r_val * np.sin(theta_val) * np.sin(phi_val)
+z = r_val * np.cos(theta_val)
+
+# Orthonormal basis vectors
+e_r = np.array([np.sin(theta_val)*np.cos(phi_val), np.sin(theta_val)*np.sin(phi_val), np.cos(theta_val)])
+e_theta = np.array([np.cos(theta_val)*np.cos(phi_val), np.cos(theta_val)*np.sin(phi_val), -np.sin(theta_val)])
+e_phi = np.array([-np.sin(phi_val), np.cos(phi_val), 0.0])
+
+fig = plt.figure(figsize=(8, 7))
+ax = fig.add_subplot(111, projection='3d')
+
+# Draw coordinate axes
+axis_len = 2.4
+ax.quiver(0, 0, 0, axis_len, 0, 0, color='gray', linestyle='--', arrow_length_ratio=0.08)
+ax.quiver(0, 0, 0, 0, axis_len, 0, color='gray', linestyle='--', arrow_length_ratio=0.08)
+ax.quiver(0, 0, 0, 0, 0, axis_len, color='gray', linestyle='--', arrow_length_ratio=0.08)
+ax.text(axis_len+0.1, 0, 0, '$X$', fontweight='bold')
+ax.text(0, axis_len+0.1, 0, '$Y$', fontweight='bold')
+ax.text(0, 0, axis_len+0.1, '$Z$', fontweight='bold')
+
+# Position vector
+ax.quiver(0, 0, 0, x, y, z, color='black', lw=2, arrow_length_ratio=0.08, label=r'$\mathbf{r}$')
+ax.scatter([x], [y], [z], color='black', s=50)
+
+# Local basis triad (scaled for visibility)
+scale = 0.9
+ax.quiver(x, y, z, scale*e_r[0], scale*e_r[1], scale*e_r[2], color='#e63946', lw=2.5, label=r'$\mathbf{\hat{e}}_r$ (Radial)')
+ax.quiver(x, y, z, scale*e_theta[0], scale*e_theta[1], scale*e_theta[2], color='#1d3557', lw=2.5, label=r'$\mathbf{\hat{e}}_\theta$ (Polar)')
+ax.quiver(x, y, z, scale*e_phi[0], scale*e_phi[1], scale*e_phi[2], color='#2a9d8f', lw=2.5, label=r'$\mathbf{\hat{e}}_\phi$ (Azimuthal)')
+
+# Coordinate projections
+ax.plot([x, x], [y, y], [0, z], 'k:', alpha=0.5)
+ax.plot([0, x], [0, y], [0, 0], 'k:', alpha=0.5)
+ax.plot([x, 0], [y, y], [0, 0], 'k:', alpha=0.5)
+ax.plot([x, x], [y, 0], [0, 0], 'k:', alpha=0.5)
+
+ax.set_xlim(-0.5, 2.5)
+ax.set_ylim(-0.5, 2.5)
+ax.set_zlim(-0.5, 2.5)
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+ax.set_title('Orthogonal Spherical Basis Triad $(\mathbf{\hat{e}}_r, \mathbf{\hat{e}}_\theta, \mathbf{\hat{e}}_\phi)$', fontsize=12, fontweight='bold')
+ax.legend(loc='upper left')
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## 6. The Path / Distance Coordinate System (Natural / Intrinsic Coordinates)
+
+In many engineering problems, motion is not shaped by fixed axes at all. A roller coaster car travels along a predetermined steel rail; an automobile navigates a winding highway; a fluid parcel moves along a streamline; a charged particle bends through a magnetic track.
+
+For such trajectories, fixing axes at some arbitrary origin $(0, 0, 0)$ is awkward. What we care about is:
+1. **How far along the track has the object traveled?** (Distance coordinate $s$)
+2. **How sharp is the turn?** (Curvature $\kappa$ and radius of curvature $\rho$)
+3. **Is the car speeding up along the track or being pushed sideways into the door?** (Tangential vs. Normal acceleration)
+
+This is the domain of **Natural / Path Coordinates** and the **Frenet-Serret Frame**.
+
+```
+                ▲  ^B (Binormal = T x N)
+                │
+                │     ▲ ^T (Tangent = dr/ds)
+                │    /
+                │   /
+                │  /
+                │ /  Trajectory r(s)
+                ┼────────────────►
+                 \               ^N (Principal Normal)
+                  \
+                   ▼ Center of Curvature
+```
+
+### 6.1 The Intrinsic Parameter: Arc Length $s(t)$
+Let a particle's trajectory in space be parameterized by time: $\mathbf{r}(t)$. The **distance traveled along the curve** (arc length) from time $t_0$ to $t$ is:
+$$s(t) = \int_{t_0}^t \|\mathbf{v}(t')\| \, dt' = \int_{t_0}^t \sqrt{\dot{x}^2 + \dot{y}^2 + \dot{z}^2} \, dt' \tag{23}$$
+
+By the Fundamental Theorem of Calculus:
+$$\frac{ds}{dt} = \dot{s} = v(t) = \|\mathbf{v}(t)\| \tag{24}$$
+The time derivative of the path coordinate $s$ is simply the **instantaneous scalar speed** $v$!
+
+### 6.2 The Frenet-Serret Moving Trihedron $(\mathbf{\hat{T}}, \mathbf{\hat{N}}, \mathbf{\hat{B}})$
+
+Instead of using fixed Cartesian directions, we attach a moving right-handed coordinate frame that rides along with the particle:
+
+#### 1. Unit Tangent Vector $\mathbf{\hat{T}}$
+The unit vector pointing tangent to the curve in the direction of motion:
+$$\mathbf{\hat{T}} = \frac{d\mathbf{r}}{ds} = \frac{d\mathbf{r}/dt}{ds/dt} = \frac{\mathbf{v}}{v} \tag{25}$$
+
+#### 2. Curvature $\kappa$ and Principal Normal $\mathbf{\hat{N}}$
+Because $\mathbf{\hat{T}}$ is a unit vector, its length is constantly 1: $\mathbf{\hat{T}} \cdot \mathbf{\hat{T}} = 1$. Differentiating with respect to arc length $s$:
+$$\frac{d}{ds}(\mathbf{\hat{T}} \cdot \mathbf{\hat{T}}) = 2\mathbf{\hat{T}} \cdot \frac{d\mathbf{\hat{T}}}{ds} = 0 \implies \mathbf{\hat{T}} \perp \frac{d\mathbf{\hat{T}}}{ds} \tag{26}$$
+
+The derivative $\frac{d\mathbf{\hat{T}}}{ds}$ measures **how rapidly the direction of motion is changing per meter of track**:
+* Its magnitude is defined as the **curvature $\kappa(s)$**:
+  $$\kappa(s) = \left\|\frac{d\mathbf{\hat{T}}}{ds}\right\| = \frac{1}{\rho(s)} \tag{27}$$
+  where $\rho(s)$ is the **radius of curvature** of the osculating circle fitting the track at that point.
+* The normalized direction is the **unit principal normal $\mathbf{\hat{N}}$**:
+  $$\frac{d\mathbf{\hat{T}}}{ds} = \kappa \mathbf{\hat{N}} \iff \mathbf{\hat{N}} = \frac{1}{\kappa}\frac{d\mathbf{\hat{T}}}{ds} = \rho \frac{d\mathbf{\hat{T}}}{ds} \tag{28}$$
+
+> [!NOTE]
+> The principal normal $\mathbf{\hat{N}}$ **always points toward the inside of the turn** (toward the center of curvature). For a straight line, $\kappa = 0$ and $\rho = \infty$.
+
+#### 3. Unit Binormal Vector $\mathbf{\hat{B}}$
+The binormal completes the right-handed orthonormal triad:
+$$\mathbf{\hat{B}} = \mathbf{\hat{T}} \times \mathbf{\hat{N}} \tag{29}$$
+The plane spanned by $\mathbf{\hat{T}}$ and $\mathbf{\hat{N}}$ is called the **osculating plane** (the instantaneous plane of the turn). The binormal $\mathbf{\hat{B}}$ is normal to this plane.
+
+#### 4. The Frenet-Serret Formulas
+The rates of change of this triad along the trajectory are governed by the celebrated Frenet-Serret system:
+$$\frac{d}{ds} \begin{bmatrix} \mathbf{\hat{T}} \\ \mathbf{\hat{N}} \\ \mathbf{\hat{B}} \end{bmatrix} = \begin{bmatrix} 0 & \kappa & 0 \\ -\kappa & 0 & \tau \\ 0 & -\tau & 0 \end{bmatrix} \begin{bmatrix} \mathbf{\hat{T}} \\ \mathbf{\hat{N}} \\ \mathbf{\hat{B}} \end{bmatrix} \tag{30}$$
+
+where $\tau(s)$ is the **torsion**, measuring how rapidly the curve twists out of its osculating plane. If a trajectory is purely planar, $\tau(s) \equiv 0$.
+
+---
+
+### 6.3 Kinematics in Path Coordinates: Velocity and Acceleration
+
+Now we arrive at the profound payoff of path coordinates for kinematics.
+
+#### Velocity in Path Coordinates:
+Using the chain rule:
+$$\mathbf{v} = \frac{d\mathbf{r}}{dt} = \frac{d\mathbf{r}}{ds}\frac{ds}{dt} = v \mathbf{\hat{T}} \tag{31}$$
+
+> [!IMPORTANT]
+> **Velocity is ALWAYS purely tangential!** By definition, an object never has any instantaneous velocity along $\mathbf{\hat{N}}$ or $\mathbf{\hat{B}}$. In path coordinates:
+> $$v_t = v, \quad v_n = 0, \quad v_b = 0$$
+
+#### Acceleration in Path Coordinates:
+Differentiating $\mathbf{v} = v\mathbf{\hat{T}}$ with respect to time:
+$$\mathbf{a} = \frac{d\mathbf{v}}{dt} = \frac{d}{dt}(v \mathbf{\hat{T}}) = \dot{v}\mathbf{\hat{T}} + v\frac{d\mathbf{\hat{T}}}{dt}$$
+
+Using the chain rule $\frac{d\mathbf{\hat{T}}}{dt} = \frac{d\mathbf{\hat{T}}}{ds}\frac{ds}{dt} = (\kappa\mathbf{\hat{N}})v = \frac{v}{\rho}\mathbf{\hat{N}}$:
+$$\mathbf{a} = \dot{v}\mathbf{\hat{T}} + \frac{v^2}{\rho}\mathbf{\hat{N}} \tag{32}$$
+
+We write this as:
+$$\mathbf{a} = a_t \mathbf{\hat{T}} + a_n \mathbf{\hat{N}} \tag{33}$$
+
+where:
+* **Tangential acceleration**:
+  $$a_t = \dot{v} = \frac{dv}{dt} = \ddot{s}$$
+  Measures the rate of change of **speed** (magnitude of velocity). Controlled by the accelerator or brake pedal.
+* **Normal (centripetal) acceleration**:
+  $$a_n = \frac{v^2}{\rho} = \kappa v^2$$
+  Measures the rate of change of **direction**. Controlled by the steering wheel. Always points inward toward the center of curvature.
+* **Binormal acceleration**:
+  $$a_b = 0$$
+  Acceleration **never has a binormal component**! Even for complex 3D helical trajectories, the instantaneous acceleration vector lies strictly in the 2D osculating plane spanned by $\mathbf{\hat{T}}$ and $\mathbf{\hat{N}}$.
+
+The total magnitude of acceleration is:
+$$\|\mathbf{a}\| = \sqrt{a_t^2 + a_n^2} = \sqrt{\dot{v}^2 + \left(\frac{v^2}{\rho}\right)^2} \tag{34}$$
+
+---
+
+### 6.4 Real-World Engineering Applications of Path Coordinates
+
+#### 1. Roller Coasters and the Teardrop Clothoid Loop
+In early amusement parks, roller coaster vertical loops were built as perfect circles ($\rho = R = \text{const}$). 
+* As the train enters the loop from a straight track ($\rho = \infty \implies a_n = 0$), the radius instantly drops to $R$.
+* The normal acceleration instantaneously jumps:
+  $$\Delta a_n = \frac{v^2}{R}$$
+* This infinite time-derivative of acceleration ($\frac{d\mathbf{a}}{dt}$, called **jerk**) caused neck fractures and whiplash among passengers!
+* Modern loops use **Euler spirals (clothoids)**, where curvature varies linearly with distance along the track:
+  $$\kappa(s) = \frac{1}{\rho(s)} \propto s$$
+  Because $\kappa(s)$ increases smoothly from zero, normal acceleration $a_n(t)$ ramps up smoothly, eliminating dangerous jerk.
+
+#### 2. Highway and Railway Transitions
+Civil engineers never connect a straight road directly to a circular turn. They insert a clothoid transition curve between them so that a driver traveling at speed $v$ can turn the steering wheel at a constant angular rate $\frac{d\theta_{\text{wheel}}}{dt} = \text{const}$ without experiencing sudden sideways jolts.
+
+#### 3. Racing Lines in Motorsports
+When a racing driver approaches a corner, their tires provide a maximum frictional grip $F_{\max} = \mu m g$. By Newton's second law:
+$$m \sqrt{a_t^2 + a_n^2} \le \mu m g \implies a_t^2 + \left(\frac{v^2}{\rho}\right)^2 \le (\mu g)^2$$
+To maximize cornering speed $v = \sqrt{\rho \sqrt{(\mu g)^2 - a_t^2}}$, the driver must maximize the radius of curvature $\rho$. This explains the classic racing line: entering wide ("outside"), cutting through the apex ("inside"), and exiting wide ("outside") to create the largest possible geometric radius $\rho$.
+
+---
+
+### 6.5 3D Visualization of the Frenet-Serret Frame on a Helical Path
+
+The script below generates a 3D visualization of a helical path $\mathbf{r}(s)$ and displays the moving Frenet-Serret triad $(\mathbf{\hat{T}}, \mathbf{\hat{N}}, \mathbf{\hat{B}})$ alongside the velocity vector:
+
+```{python}
+#| label: fig-frenet-serret-3d
+#| fig-cap: "3D visualization of a trajectory showing the moving Frenet-Serret frame: Unit Tangent (red), Principal Normal (blue), and Binormal (green)."
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Parameterize a 3D helix
+t = np.linspace(0, 3 * np.pi, 300)
+a = 1.2   # radius
+b = 0.35  # pitch factor
+
+x = a * np.cos(t)
+y = a * np.sin(t)
+z = b * t
+
+# Select evaluation point
+t_p = 1.4 * np.pi
+p = np.array([a * np.cos(t_p), a * np.sin(t_p), b * t_p])
+
+# Derivatives with respect to t
+c = np.sqrt(a**2 + b**2)
+T = np.array([-a * np.sin(t_p), a * np.cos(t_p), b]) / c
+N = np.array([-np.cos(t_p), -np.sin(t_p), 0.0])
+B = np.cross(T, N)
+
+fig = plt.figure(figsize=(8, 7))
+ax = fig.add_subplot(111, projection='3d')
+
+# Plot trajectory
+ax.plot(x, y, z, color='#333333', lw=2.2, label=r'Trajectory $\mathbf{r}(s)$')
+ax.scatter([p[0]], [p[1]], [p[2]], color='black', s=60, zorder=5)
+
+# Plot Frenet-Serret triad
+triad_scale = 1.0
+ax.quiver(p[0], p[1], p[2], triad_scale*T[0], triad_scale*T[1], triad_scale*T[2], 
+          color='#e63946', lw=2.8, label=r'$\mathbf{\hat{T}}$ (Unit Tangent $\propto \mathbf{v}$)')
+ax.quiver(p[0], p[1], p[2], triad_scale*N[0], triad_scale*N[1], triad_scale*N[2], 
+          color='#1d3557', lw=2.8, label=r'$\mathbf{\hat{N}}$ (Principal Normal $\propto \mathbf{a}_n$)')
+ax.quiver(p[0], p[1], p[2], triad_scale*B[0], triad_scale*B[1], triad_scale*B[2], 
+          color='#2a9d8f', lw=2.8, label=r'$\mathbf{\hat{B}}$ (Binormal $\mathbf{\hat{T}} \times \mathbf{\hat{N}}$)')
+
+# Draw center of curvature ray
+rho = (a**2 + b**2) / a
+center_of_curvature = p + rho * N
+ax.scatter([center_of_curvature[0]], [center_of_curvature[1]], [center_of_curvature[2]], 
+           color='#1d3557', s=40, marker='x')
+ax.plot([p[0], center_of_curvature[0]], [p[1], center_of_curvature[1]], [p[2], center_of_curvature[2]], 
+        '--', color='#1d3557', alpha=0.6, label=r'Radius of Curvature $\rho$')
+
+ax.set_xlim(-1.8, 1.8)
+ax.set_ylim(-1.8, 1.8)
+ax.set_zlim(0, 3.5)
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+ax.set_title('Natural Path Coordinates: Frenet-Serret Moving Trihedron', fontsize=12, fontweight='bold')
+ax.legend(loc='upper left', fontsize=9)
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## 7. Master Comparison Matrix of Coordinate Systems
+
+The table below provides a comprehensive comparison of all five coordinate systems, summarizing their coordinates, basis vector properties, kinematic equations, and primary use cases.
+
+| Coordinate System | Coordinates | Basis Vectors | Velocity $\mathbf{v}$ | Acceleration $\mathbf{a}$ | Key Advantage / Symmetry |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Cartesian** | $(x, y, z)$ | Fixed $(\mathbf{\hat{i}}, \mathbf{\hat{j}}, \mathbf{\hat{k}})$ | $\dot{x}\mathbf{\hat{i}} + \dot{y}\mathbf{\hat{j}} + \dot{z}\mathbf{\hat{k}}$ | $\ddot{x}\mathbf{\hat{i}} + \ddot{y}\mathbf{\hat{j}} + \ddot{z}\mathbf{\hat{k}}$ | Uniform fields, rectangular boxes, simplest math |
+| **2D Polar** | $(r, \theta)$ | Moving $(\mathbf{\hat{e}}_r, \mathbf{\hat{e}}_\theta)$ | $\dot{r}\mathbf{\hat{e}}_r + r\dot{\theta}\mathbf{\hat{e}}_\theta$ | $(\ddot{r} - r\dot{\theta}^2)\mathbf{\hat{e}}_r + (r\ddot{\theta} + 2\dot{r}\dot{\theta})\mathbf{\hat{e}}_\theta$ | Central forces, planar orbits, rotating disks |
+| **Cylindrical** | $(\rho, \phi, z)$ | Moving $(\mathbf{\hat{e}}_\rho, \mathbf{\hat{e}}_\phi, \mathbf{\hat{e}}_z)$ | $\dot{\rho}\mathbf{\hat{e}}_\rho + \rho\dot{\phi}\mathbf{\hat{e}}_\phi + \dot{z}\mathbf{\hat{e}}_z$ | $(\ddot{\rho} - \rho\dot{\phi}^2)\mathbf{\hat{e}}_\rho + (\rho\ddot{\phi} + 2\dot{\rho}\dot{\phi})\mathbf{\hat{e}}_\phi + \ddot{z}\mathbf{\hat{e}}_z$ | Axial symmetry, solenoids, pipes, vortices |
+| **Spherical** | $(r, \theta, \phi)$ | Moving $(\mathbf{\hat{e}}_r, \mathbf{\hat{e}}_\theta, \mathbf{\hat{e}}_\phi)$ | $\dot{r}\mathbf{\hat{e}}_r + r\dot{\theta}\mathbf{\hat{e}}_\theta + r\sin\theta\dot{\phi}\mathbf{\hat{e}}_\phi$ | Multi-component radial, polar, and Coriolis terms | Point symmetry, Coulomb fields, gravity, atoms |
+| **Natural Path** | Arc length $s(t)$ | Moving $(\mathbf{\hat{T}}, \mathbf{\hat{N}}, \mathbf{\hat{B}})$ | $v\mathbf{\hat{T}}$ *(strictly tangential)* | $\dot{v}\mathbf{\hat{T}} + \frac{v^2}{\rho}\mathbf{\hat{N}}$ *(zero binormal acceleration)* | Constrained tracks, roller coasters, race cars, highways |
+
+: Universal Comparison Matrix of Physical Coordinate Systems {#tbl-coordinates-comparison-matrix}
+
+---
+
+## 8. Summary: Decision Flowchart for Choosing Coordinates
+
+When faced with a new physics or engineering problem, use this decision heuristic:
+
+1. **Is the path physically constrained (e.g. tracks, rails, road)?**
+   * $\implies$ **Use Natural Path Coordinates $(s, \mathbf{\hat{T}}, \mathbf{\hat{N}}, \mathbf{\hat{B}})$**. Velocity is simply speed along $\mathbf{\hat{T}}$, and acceleration cleanly separates into tangential $a_t = \dot{v}$ and centripetal $a_n = v^2/\rho$.
+2. **Is there spherical / point symmetry about a single center?**
+   * $\implies$ **Use Spherical Coordinates $(r, \theta, \phi)$**. Gravitational and electrostatic central forces reduce to $\mathbf{F} = F(r)\mathbf{\hat{e}}_r$, making angular components vanish.
+3. **Is there rotational symmetry about an axis?**
+   * $\implies$ **Use Cylindrical Coordinates $(\rho, \phi, z)$**. Pipes, spinning cylinders, and straight current-carrying conductors decouple azimuth $\phi$ from radius $\rho$ and height $z$.
+4. **Is the motion planar around a central pivot or origin?**
+   * $\implies$ **Use 2D Polar Coordinates $(r, \theta)$**. Centripetal $(-r\dot{\theta}^2)$ and Coriolis $(2\dot{r}\dot{\theta})$ accelerations emerge naturally.
+5. **Are boundaries flat, rectangular, or is gravity uniform?**
+   * $\implies$ **Use Cartesian Coordinates $(x, y, z)$**. Basis vectors are constant and derivatives decouple completely.
+
+---
+
+## 9. Related Articles in this Series
+
+* For hyperplanes, linear projections, and $\mathrm{SO}(3)$ rotation matrices, see:
+  * [Geometric Foundations: Coordinate Systems, Reference Frames, Orientations, Planes, and Projections](../coordinate-systems-reference-frames-orientations-geometry/index.qmd)
+* For abstract vector spaces, coordinate isomorphisms $[\mathbf{v}]_\mathcal{B}$, and rank-nullity, see:
+  * [Algebraic Foundations: Fields, Rings, Coordinate Isomorphisms, and Rank-Nullity](../algebraic-structures-coordinate-mappings-rank-nullity/index.qmd)
+* For the full theory of mathematical mappings and functional representations, see:
+  * [The Mathematical Architecture of Functions: Relations, Operations, and Morphisms](../mathematical-functions-relations-operations-morphisms/index.qmd)
+* For oscillator kinematics, phase space, and rotating frames, see:
+  * [Classical and Analytical Mechanics: The Complete Theory of Harmonic Oscillators](../harmonic-oscillators-damped-driven-coupled-mechanics/index.qmd)
+
+---
+
+© 2026 Igor Kan
